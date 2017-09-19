@@ -1,0 +1,26 @@
+{
+  "name": "Motion",
+  "version": "1",
+  "slug": "motion",
+  "description": "Motion package as add-on to HASSIO",
+  "startup": "before",
+  "boot": "auto",
+  "options": {
+    "beer": true,
+    "wine": true,
+    "liquor": false,
+    "name": "world",
+    "year": 2017
+  },
+  "schema": {
+    "beer": "bool",
+    "wine": "bool",
+    "liquor": "bool",
+    "name": "str",
+    "year": "int"
+  },
+  "ports": {
+     "8080/tcp": 8080,
+     "8081/tcp": 8081
+  }
+}
