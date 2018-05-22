@@ -8,23 +8,26 @@ RUN echo "@testing http://nl.alpinelinux.org/alpine/edge/testing" >> /etc/apk/re
 
 RUN apk update
 
-RUN apk add motion@testing
-
 # REQUIRED: packages
 RUN apk add mosquitto-clients jq
 
-# Copy "motion" scripts 
-COPY scripts/* /usr/local/bin/
-COPY motion.conf /etc/motion/motion.conf
+# Copy "ageathome" scripts 
+COPY ../../../cgi/*.{csh,cgi,bash} /cgi
+COPY ../../../bin/* /usr/local/bin
+
+# copy start script
+COPY run.sh /usr/local/bin
+
+COPY ageathome.conf /etc/ageathome/ageathome.conf
 
 # Ports for motion (control and stream)
-EXPOSE 8080 8081
+EXPOSE 80
 
 # Create volume to store images & videos
-VOLUME ["/var/lib/motion"]
+VOLUME ["/var/lib/age-at-home"]
 
 # set working directory
-WORKDIR /var/lib/motion
+WORKDIR /var/lib/age-at-home
 
 # invoke motion detection script (NOT as daemon; re-direct logging to STDERR)
 CMD [ "/usr/local/bin/run.sh" ]

@@ -1,8 +1,36 @@
 #!/bin/bash
 
-# INITIATE DEVICE
-IPADDR=$(/bin/hostname -I | /usr/bin/awk '{ print $1 }')
+# { "mqtt_on": false, "location": "laboratory", "name": "test-device", "mqtt": "192.168.1.26", "threshold": 1500, "interval": 30 }
+CONFIG_PATH=/data/options.json
+#
+TIMEZONE=$(jq -r ".timezone" $CONFIG_PATH)
+LOCATION=$(jq -r ".location" $CONFIG_PATH)
+DEVICE_NAME=$(jq -r ".name" $CONFIG_PATH)
 
+VR_URL=$(jq -r ".vr_url" $CONFIG_PATH)
+VR_APIKEY=$(jq -r ".vr_apikey" $CONFIG_PATH)
+VR_CLASSIFIER=$(jq -r ".vr_classifier" $CONFIG_PATH)
+VR_DATE=$(jq -r ".vr_date" $CONFIG_PATH)
+VR_VERSION=$(jq -r ".vr_version" $CONFIG_PATH)
+
+DIGITS_JOB_ID=$(jq -r ".digits_jobid" $CONFIG_PATH)
+DIGITS_SERVER_URL=$(jq -r ".digits_url" $CONFIG_PATH)
+
+MQTT_ON=$(jq -r ".mqtt_on" $CONFIG_PATH)
+MQTT_HOST=$(jq -r ".mqtt_host" $CONFIG_PATH)
+
+MOTION_PIXELS=$(jq -r ".extant" $CONFIG_PATH)
+MOTION_EVENT_GAP=$(jq -r ".interval" $CONFIG_PATH)
+MOTION_LOCATE_MODE=$(jq -r ".locate" $CONFIG_PATH)
+MOTION_IMAGE_ROTATE=$(jq -r ".rotate" $CONFIG_PATH)
+MOTION_OUTPUT_PICTURES=$(jq -r ".output" $CONFIG_PATH)
+MOTION_THRESHOLD_TUNE=$(jq -r ".tune" $CONFIG_PATH)
+MOTION_THRESHOLD=$(jq -r ".threshold" $CONFIG_PATH)
+
+# INITIATE DEVICE
+# IPADDR=$(/bin/hostname -I | /usr/bin/awk '{ print $1 }')
+
+# start building device JSON information record
 JSON='{"name":"'"${DEVICE_NAME}"'","date":'$(/bin/date +%s)',"location":"'"${AAH_LOCATION}"'","ip_address":"'"${IPADDR}"'"'
 
 if [ -n "${DIGITS_JOB_ID}" ] && [ -n "${DIGITS_SERVER_URL}" ]; then
@@ -87,7 +115,7 @@ if [ -n "${MOTION_IMAGE_ROTATE}" ]; then
     JSON="${JSON}"',"image_rotate":'"${MOTION_IMAGE_ROTATE}"
 fi
 
-# Override THRESHOLD_TUNE (which pictures selected; on, off, first, best, center); default "center"
+# Override MOTION_OUTPUT_PICTURES (which pictures selected; on, off, first, best, center); default "center"
 if [ -n "${MOTION_OUTPUT_PICTURES}" ]; then
     echo "Set output pictures to ${MOTION_OUTPUT_PICTURES}"
     sed -i "s/^output_pictures\s.*/output_pictures ${MOTION_OUTPUT_PICTURES}/g" /etc/motion/motion.conf
@@ -100,6 +128,7 @@ if [ -n "${MOTION_THRESHOLD_TUNE}" ]; then
    sed -i "s/^threshold_tune\s.*/threshold_tune ${MOTION_THRESHOLD_TUNE}/g" /etc/motion/motion.conf
    JSON="${JSON}"',"threshold_tune":"'"${MOTION_THRESHOLD_TUNE}"'"'
 fi
+
 # Override THRESHOLD (pixels changed) default 1500
 if [ -n "${MOTION_THRESHOLD}" ]; then
    echo "Set threshold to ${MOTION_THRESHOLD}"
@@ -114,25 +143,8 @@ if [ -n "${MOTION_EVENT_GAP}" ]; then
    JSON="${JSON}"',"event_gap":'"${MOTION_EVENT_GAP}"
 fi
 
-#
-# setup IBM IOTF
-#
-if [ -n "${IOTF_ORG_ID}" ]; then
-    IOTF_CONFIG_FILE="/etc/iotsample-raspberrypi/device.cfg"
-    echo "#Device configuration file" > "${IOTF_CONFIG_FILE}"
-    echo "org = ${IOTF_ORG_ID}" >> "${IOTF_CONFIG_FILE}"
-    echo "type = ${IOTF_DEVICE_TYPE}" >> "${IOTF_CONFIG_FILE}"
-    echo "id = ${IOTF_DEVICE_ID}" >> "${IOTF_CONFIG_FILE}"
-    echo "auth-method = ${IOTF_AUTH_METHOD}" >> "${IOTF_CONFIG_FILE}"
-    echo "auth-token = ${IOTF_AUTH_TOKEN}" >> "${IOTF_CONFIG_FILE}"
-    echo "#End of Configuration file" >> "${IOTF_CONFIG_FILE}"
-    JSON="${JSON}"',"iotf":{"org":"'"${IOTF_ORG_ID}"'","type":"'"${IOTF_DEVICE_TYPE}"'","id":"'"${IOTF_DEVICE_ID}"'"}'
-fi
-
-
+# COMPLETE JSON DESCRIPTION OF DEVICE
 JSON="${JSON}"'}'
-
-/bin/echo "${JSON}" | jq '.'
 
 if [ -n "${CLOUDANT_URL}" ] && [ -n "${DEVICE_NAME}" ]; then
   echo "Using CLOUDANT as ${CLOUDANT_USERNAME}"
@@ -155,22 +167,18 @@ if [ -n "${CLOUDANT_URL}" ] && [ -n "${DEVICE_NAME}" ]; then
         curl -q -s -H "Content-type: application/json" -X PUT "${URL}" -d "${JSON}"
     fi
 else
-    echo "+++ $0 NO CLOUDANT ${JSON}"
+    echo "${JSON}" > /tmp/$$
+    jq '.' /tmp/$$
+    rm /tmp/$$
 fi
 
-# restart, check status, getdeviceid
-service iot restart
-service iot status
-service iot getdeviceid
-
-# VSFTPD
-service vsftpd restart
-service vsftpd status
 
 # FONTS
-mkdir -p ~/.magick
-convert -list font \
-  | awk -F': ' 'BEGIN { printf("<?xml version=\"1.0\"?>\n<typemap>\n"); } /Font: / { font=$2; getline; family=$2; getline; style=$2; getline; stretch=$2; getline; weight=$2; getline; glyphs=$2; type=substr(glyphs,index(glyphs,".")+1,3); printf("<type format=\"%s\" name=\"%s\" glyphs=\"%s\"\n", type, font, glyphs); } END { printf("</typemap>\n"); }' > ~/.magick/type.xml
+if [ -n "${IMAGE_MAGIC}" ]; then
+  mkdir -p ~/.magick
+  convert -list font \
+    | awk -F': ' 'BEGIN { printf("<?xml version=\"1.0\"?>\n<typemap>\n"); } /Font: / { font=$2; getline; family=$2; getline; style=$2; getline; stretch=$2; getline; weight=$2; getline; glyphs=$2; type=substr(glyphs,index(glyphs,".")+1,3); printf("<type format=\"%s\" name=\"%s\" glyphs=\"%s\"\n", type, font, glyphs); } END { printf("</typemap>\n"); }' > ~/.magick/type.xml
+fi
 
 if [ -n "${MOTION_DAEMON}" ]; then
    echo "Set daemon to ${MOTION_DAEMON}"
@@ -193,5 +201,5 @@ if [ -n "${URL_LAUNCHER_URL}" ]; then
 else
   # Run motion (not as daemon)
   echo "START MOTION WITHOUT ELECTRON"
-  motion -n -l /dev/stderr
+  motion -l /dev/stderr
 fi

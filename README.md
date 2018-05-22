@@ -25,6 +25,19 @@ https://github.com/dcmartin/hassio-addons
 
 ## Add-ons provided by this repository
 
+### &#10003; [Age-At-Home][addon-ageathome]
+
+![Latest Version][ageathome-version-shield]
+![Supports armhf Architecture][ageathome-armhf-shield]
+![Supports aarch64 Architecture][ageathome-aarch64-shield]
+![Supports amd64 Architecture][ageathome-amd64-shield]
+![Supports i386 Architecture][ageathome-i386-shield]
+![Docker Pulls][ageathome-pulls-shield]
+
+Age-At-Home is a eldercare cognitive assistant using
+motion detection cameras using the Motion and Intu addons
+
+[:books: Motion add-on documentation][addon-motion]
 ### &#10003; [Motion][addon-motion]
 
 ![Latest Version][motion-version-shield]
@@ -39,7 +52,7 @@ to support the motion camera platform
 
 [:books: Motion add-on documentation][addon-motion]
 
-### &#10003; [SSH - Intu Self][addon-intu]
+### &#10003; [Intu Self][addon-intu]
 
 ![Latest Version][intu-version-shield]
 ![Supports armhf Architecture][intu-armhf-shield]
@@ -50,7 +63,7 @@ to support the motion camera platform
 
 Add embodied cognition through IBM Watson to your Home Assistant 
 
-[:books: SSH add-on documentation][addon-intu]
+[:books: add-on documentation][addon-intu]
 
 ## Changelog
 
