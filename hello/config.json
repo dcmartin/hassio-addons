@@ -1,0 +1,25 @@
+{
+  "name": "Hello World",
+  "version": "1.2",
+  "slug": "hello_world",
+  "description": "Adding Python server",
+  "startup": "before",
+  "boot": "auto",
+  "ports": {
+    "8000/tcp":8000
+  },
+  "options": {
+    "beer": true,
+    "wine": true,
+    "liquor": false,
+    "name": "world",
+    "year": 2017
+  },
+  "schema": {
+    "beer": "bool",
+    "wine": "bool",
+    "liquor": "bool",
+    "name": "str",
+    "year": "int"
+  }
+}
