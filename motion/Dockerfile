@@ -1,8 +1,8 @@
-FROM %%BASE_IMAGE%%
-#FROM homeassistant/amd64-base:latest
+ARG BUILD_FROM
+
+FROM $BUILD_FROM
 
 ENV LANG C.UTF-8
-#LABEL io.hass.version="00"
 
 RUN echo "@testing http://nl.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
 
@@ -20,11 +20,13 @@ COPY motion.conf /etc/motion/motion.conf
 # Ports for motion (control and stream)
 EXPOSE 8080 8081
 
-# Create volume to store images & videos
-VOLUME ["/var/lib/motion"]
-
 # set working directory
 WORKDIR /var/lib/motion
 
-# invoke motion detection script (NOT as daemon; re-direct logging to STDERR)
-CMD [ "/usr/local/bin/run.sh" ]
+# Copy data for add-on
+ARG DESTDIR "/usr/local/bin"
+COPY run.sh ${DESTDIR}
+RUN chmod a+x ${DESTDIR}/run.sh
+CMD [ "${DESTDIR}/run.sh" ]
+
+

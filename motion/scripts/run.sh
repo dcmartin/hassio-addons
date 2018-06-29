@@ -1,61 +1,51 @@
 #!/bin/bash
 
-# { "mqtt_on": false, "location": "laboratory", "name": "test-device", "mqtt": "192.168.1.26", "threshold": 1500, "interval": 30 }
 CONFIG_PATH=/data/options.json
-#
-TIMEZONE=$(jq -r ".timezone" $CONFIG_PATH)
-LOCATION=$(jq -r ".location" $CONFIG_PATH)
+
+## INITIATE DEVICE
 DEVICE_NAME=$(jq -r ".name" $CONFIG_PATH)
-
-VR_URL=$(jq -r ".vr_url" $CONFIG_PATH)
-VR_APIKEY=$(jq -r ".vr_apikey" $CONFIG_PATH)
-VR_CLASSIFIER=$(jq -r ".vr_classifier" $CONFIG_PATH)
-VR_DATE=$(jq -r ".vr_date" $CONFIG_PATH)
-VR_VERSION=$(jq -r ".vr_version" $CONFIG_PATH)
-
-DIGITS_JOB_ID=$(jq -r ".digits_jobid" $CONFIG_PATH)
-DIGITS_SERVER_URL=$(jq -r ".digits_url" $CONFIG_PATH)
-
-MQTT_ON=$(jq -r ".mqtt_on" $CONFIG_PATH)
-MQTT_HOST=$(jq -r ".mqtt_host" $CONFIG_PATH)
-
-MOTION_PIXELS=$(jq -r ".extant" $CONFIG_PATH)
-MOTION_EVENT_GAP=$(jq -r ".interval" $CONFIG_PATH)
-MOTION_LOCATE_MODE=$(jq -r ".locate" $CONFIG_PATH)
-MOTION_IMAGE_ROTATE=$(jq -r ".rotate" $CONFIG_PATH)
-MOTION_OUTPUT_PICTURES=$(jq -r ".output" $CONFIG_PATH)
-MOTION_THRESHOLD_TUNE=$(jq -r ".tune" $CONFIG_PATH)
-MOTION_THRESHOLD=$(jq -r ".threshold" $CONFIG_PATH)
-
-# INITIATE DEVICE
-# IPADDR=$(/bin/hostname -I | /usr/bin/awk '{ print $1 }')
-
-# start building device JSON information record
+LOCATION=$(jq -r ".location" $CONFIG_PATH)
+IPADDR=$(/bin/hostname -I | /usr/bin/awk '{ print $1 }')
 JSON='{"name":"'"${DEVICE_NAME}"'","date":'$(/bin/date +%s)',"location":"'"${AAH_LOCATION}"'","ip_address":"'"${IPADDR}"'"'
 
+## TIMEZONE
+TIMEZONE=$(jq -r ".timezone" $CONFIG_PATH)
+if [ -n "${TIMEZONE}" ]; then
+    echo "Setting TIMEZONE ${TIMEZONE}"
+    cp /usr/share/zoneinfo/${TIMEZONE} /etc/localtime
+    JSON="${JSON}"',"timezone":"'"${TIMEZONE}"'"'
+fi
+
+## DIGITS
+DIGITS_JOB_ID=$(jq -r ".digits_jobid" $CONFIG_PATH)
+DIGITS_SERVER_URL=$(jq -r ".digits_url" $CONFIG_PATH)
 if [ -n "${DIGITS_JOB_ID}" ] && [ -n "${DIGITS_SERVER_URL}" ]; then
   JOBIDS=$(echo "${DIGITS_JOB_ID}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
   echo "Using DIGITS ${JOBIDS}"
   JSON="${JSON}"',"digits":{"host":"'"${DIGITS_SERVER_URL}"'","models":['"${JOBIDS}"']}'
 fi
 
-if [ -n "${VR_URL}" ] && [ -n "${VR_APIKEY}" ]; then
-  echo "Using Watson Visual Recognition at ${VR_URL} with ${VR_DATE} and {$VR_VERSION}"
-  JSON="${JSON}"',"watson":{"release":"'"${VR_DATE}"'","version":"'"${VR_VERSION}"'","models":["default"'
-  if [ -n "${VR_CLASSIFIER}" ]; then
+## WATSON VR
+WVR_URL=$(jq -r ".wvr_url" $CONFIG_PATH)
+WVR_APIKEY=$(jq -r ".wvr_apikey" $CONFIG_PATH)
+WVR_CLASSIFIER=$(jq -r ".wvr_classifier" $CONFIG_PATH)
+WVR_DATE=$(jq -r ".wvr_date" $CONFIG_PATH)
+WVR_VERSION=$(jq -r ".wvr_version" $CONFIG_PATH)
+if [ -n "${WVR_URL}" ] && [ -n "${WVR_APIKEY}" ]; then
+  echo "Using Watson Visual Recognition at ${WVR_URL} with ${WVR_DATE} and {$WVR_VERSION}"
+  JSON="${JSON}"',"watson":{"release":"'"${WVR_DATE}"'","version":"'"${WVR_VERSION}"'","models":["default"'
+  if [ -n "${WVR_CLASSIFIER}" ]; then
     # quote the model names
-    CLASSIFIERS=$(echo "${VR_CLASSIFIER}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
+    CLASSIFIERS=$(echo "${WVR_CLASSIFIER}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
     echo 'Using custom classifiers(s):'"${CLASSIFIERS}"
     JSON="${JSON}"','"${CLASSIFIERS}"
   fi
   JSON="${JSON}"']}'
 fi
 
-if [ -n "${URL_LAUNCHER_URL}" ]; then
-  echo "Using ELECTRON for ${URL_LAUNCHER_URL}"
-  JSON="${JSON}"',"electron":"'"${URL_LAUNCHER_URL}"'"'
-fi
-
+## MQTT
+MQTT_ON=$(jq -r ".mqtt_on" $CONFIG_PATH)
+MQTT_HOST=$(jq -r ".mqtt_host" $CONFIG_PATH)
 if [ -n "${MQTT_ON}" ] && [ -n "${MQTT_HOST}" ]; then
   echo "Using MQTT on ${MQTT_HOST}"
   JSON="${JSON}"',"mqtt":"'"${MQTT_HOST}"'"'
@@ -66,14 +56,13 @@ if [ -n "${EMAILME_ON}" ] && [ -n "${EMAIL_ADDRESS}" ]; then
   JSON="${JSON}"',"email":"'"${EMAIL_ADDRESS}"'"'
 fi
 
-# Set the correct timezone
-if [ -n "${TIMEZONE}" ]; then
-    echo "Setting TIMEZONE ${TIMEZONE}"
-    cp /usr/share/zoneinfo/${TIMEZONE} /etc/localtime
-    JSON="${JSON}"',"timezone":"'"${TIMEZONE}"'"'
-fi
+
+###
+### MOTION PACKAGE
+###
 
 # Override capture size for Motion
+MOTION_PIXELS=$(jq -r ".extant" $CONFIG_PATH)
 if [ -n "${MOTION_PIXELS}" ]; then
     echo "Set capture size to ${MOTION_PIXELS}"
     IFS='x' read -a wxh<<< "${MOTION_PIXELS}"
@@ -87,11 +76,18 @@ else
 fi
 JSON="${JSON}"',"image":{"width":'"${WIDTH}"',"height":'"${HEIGHT}"'}'
 
+MOTION_EVENT_GAP=$(jq -r ".interval" $CONFIG_PATH)
+MOTION_IMAGE_ROTATE=$(jq -r ".rotate" $CONFIG_PATH)
+MOTION_OUTPUT_PICTURES=$(jq -r ".output" $CONFIG_PATH)
+MOTION_THRESHOLD_TUNE=$(jq -r ".tune" $CONFIG_PATH)
+MOTION_THRESHOLD=$(jq -r ".threshold" $CONFIG_PATH)
+
 #
 # override motion 
 #
 
 # Override locate_motion_mode
+MOTION_LOCATE_MODE=$(jq -r ".locate_motion_mode" $CONFIG_PATH)
 if [ -n "${MOTION_LOCATE_MODE}" ]; then
     echo "Set locate_motion_mode (on/off/preview) to ${MOTION_LOCATE_MODE}"
     sed -i "s/^locate_motion_mode\s.*/locate_motion_mode ${MOTION_LOCATE_MODE}/g" /etc/motion/motion.conf
@@ -99,16 +95,20 @@ if [ -n "${MOTION_LOCATE_MODE}" ]; then
 fi
 
 # Override control and video ports
+WEBCONTROL_PORT=$(jq -r ".webcontrol_port" $CONFIG_PATH)
 if [ -n "${WEBCONTROL_PORT}" ]; then
     echo "Set webcontrol_port to ${WEBCONTROL_PORT}"
     sed -i "s/^webcontrol_port\s[0-9]\+/webcontrol_port ${WEBCONTROL_PORT}/g" /etc/motion/motion.conf
     JSON="${JSON}"',"webcontrol_port":'"${WEBCONTROL_PORT}"
 fi
+STREAM_PORT=$(jq -r ".stream_port" $CONFIG_PATH)
 if [ -n "${STREAM_PORT}" ]; then
     echo "Set stream_port to ${STREAM_PORT}"
     sed -i "s/^stream_port\s[0-9]\+/stream_port ${STREAM_PORT}/g" /etc/motion/motion.conf
     JSON="${JSON}"',"stream_port":'"${STREAM_PORT}"
 fi
+
+MOTION_IMAGE_ROTATE=$(jq -r ".rotate" $CONFIG_PATH)
 if [ -n "${MOTION_IMAGE_ROTATE}" ]; then
     echo "Set image rotation to ${MOTION_IMAGE_ROTATE} degrees"
     sed -i "s/^rotate\s[0-9]\+/rotate ${MOTION_IMAGE_ROTATE}/g" /etc/motion/motion.conf
