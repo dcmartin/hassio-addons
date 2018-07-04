@@ -1,10 +1,13 @@
-ARG BUILD_FROM
+ARG BUILD_ARG
 
 FROM $BUILD_FROM
 
 ENV LANG C.UTF-8
 
-RUN apk add --no-cache python3 mosquitto-clients jq tcsh
+RUN apk add --no-cache python3
+RUN apk add --no-cache mosquitto-clients
+RUN apk add --no-cache jq
+RUN apk add --no-cache tcsh
 
 RUN echo "@testing http://nl.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
 RUN apk update
