@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons/motion/",
-  "version": "1.8.1",
+  "version": "1.9",
   "slug": "motion",
   "description": "Motion package for networked camera with Watson VR support",
   "startup": "before",

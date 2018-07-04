@@ -1,4 +1,4 @@
-ARG BUILD_ARG
+ARG BUILD_FROM=hassioaddons/base-amd64:1.4.2
 
 FROM $BUILD_FROM
 
