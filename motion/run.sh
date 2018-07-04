@@ -1,205 +1,405 @@
 #!/bin/bash
 
-CONFIG_PATH=/data/options.json
+# location of configuration file
+if [ -z ${CONFIG_PATH} ]; then 
+  CONFIG_PATH=/data/options.json
+  MOTION_CONF=/etc/motion/motion.conf
+else
+  CONFIG_PATH=/tmp/options.json
+  MOTION_CONF=/tmp/motion.conf
+  jq '.options' $PWD/config.json > ${CONFIG_PATH}
+  cp $PWD/motion.conf /tmp/motion.conf
+fi
 
-## INITIATE DEVICE
-DEVICE_NAME=$(jq -r ".name" $CONFIG_PATH)
-LOCATION=$(jq -r ".location" $CONFIG_PATH)
-IPADDR=$(/bin/hostname -I | /usr/bin/awk '{ print $1 }')
-JSON='{"name":"'"${DEVICE_NAME}"'","date":'$(/bin/date +%s)',"location":"'"${AAH_LOCATION}"'","ip_address":"'"${IPADDR}"'"'
+###
+### START JSON
+###
+JSON='{'
 
-## TIMEZONE
-TIMEZONE=$(jq -r ".timezone" $CONFIG_PATH)
+##
+## IP address
+##
+IPADDR=$(ipaddr show | egrep "inet" | egrep dynamic | awk '{ print $2 }')
+if [ -n "${IPADDR}" ]; then
+  # start building device JSON information record
+  JSON="${JSON}"'"ip_address":"'"${IPADDR}"'"'
+else
+  echo "Cannot determine IP address; exiting"
+  # exit
+fi
+
+##
+## time zone
+##
+TIMEZONE=$(jq -r ".timezone" "${CONFIG_PATH}")
+# Set the correct timezone
 if [ -n "${TIMEZONE}" ]; then
-    echo "Setting TIMEZONE ${TIMEZONE}"
-    cp /usr/share/zoneinfo/${TIMEZONE} /etc/localtime
-    JSON="${JSON}"',"timezone":"'"${TIMEZONE}"'"'
+  echo "Setting TIMEZONE ${TIMEZONE}"
+  cp /usr/share/zoneinfo/${TIMEZONE} /etc/localtime
+  JSON="${JSON}"',"timezone":"'"${TIMEZONE}"'"'
+else
+  echo "Time zone not set; exiting"
+  exit
 fi
 
-## DIGITS
-DIGITS_JOB_ID=$(jq -r ".digits_jobid" $CONFIG_PATH)
-DIGITS_SERVER_URL=$(jq -r ".digits_url" $CONFIG_PATH)
-if [ -n "${DIGITS_JOB_ID}" ] && [ -n "${DIGITS_SERVER_URL}" ]; then
-  JOBIDS=$(echo "${DIGITS_JOB_ID}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
-  echo "Using DIGITS ${JOBIDS}"
-  JSON="${JSON}"',"digits":{"host":"'"${DIGITS_SERVER_URL}"'","models":['"${JOBIDS}"']}'
-fi
-
-## WATSON VR
-WVR_URL=$(jq -r ".wvr_url" $CONFIG_PATH)
-WVR_APIKEY=$(jq -r ".wvr_apikey" $CONFIG_PATH)
-WVR_CLASSIFIER=$(jq -r ".wvr_classifier" $CONFIG_PATH)
-WVR_DATE=$(jq -r ".wvr_date" $CONFIG_PATH)
-WVR_VERSION=$(jq -r ".wvr_version" $CONFIG_PATH)
-if [ -n "${WVR_URL}" ] && [ -n "${WVR_APIKEY}" ]; then
-  echo "Using Watson Visual Recognition at ${WVR_URL} with ${WVR_DATE} and {$WVR_VERSION}"
-  JSON="${JSON}"',"watson":{"release":"'"${WVR_DATE}"'","version":"'"${WVR_VERSION}"'","models":["default"'
-  if [ -n "${WVR_CLASSIFIER}" ]; then
-    # quote the model names
-    CLASSIFIERS=$(echo "${WVR_CLASSIFIER}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
-    echo 'Using custom classifiers(s):'"${CLASSIFIERS}"
-    JSON="${JSON}"','"${CLASSIFIERS}"
-  fi
-  JSON="${JSON}"']}'
+##
+## device name & location
+##
+NAME=$(jq -r ".name" "${CONFIG_PATH}")
+LOCATION=$(jq -r ".location" "${CONFIG_PATH}")
+if [ -n "${NAME}" ] && [ -n "${LOCATION}" ]; then
+  JSON="${JSON}"',"name":"'"${NAME}"'","location":"'"${LOCATION}"'","date":'$(/bin/date +%s)
+else
+  echo "Device name and/or location undefined; exiting"
+  exit
 fi
 
 ## MQTT
-MQTT_ON=$(jq -r ".mqtt_on" $CONFIG_PATH)
-MQTT_HOST=$(jq -r ".mqtt_host" $CONFIG_PATH)
-if [ -n "${MQTT_ON}" ] && [ -n "${MQTT_HOST}" ]; then
-  echo "Using MQTT on ${MQTT_HOST}"
-  JSON="${JSON}"',"mqtt":"'"${MQTT_HOST}"'"'
-fi
-
-if [ -n "${EMAILME_ON}" ] && [ -n "${EMAIL_ADDRESS}" ]; then
-  echo "Sending email to ${EMAIL_ADDRESS}"
-  JSON="${JSON}"',"email":"'"${EMAIL_ADDRESS}"'"'
-fi
-
-
-###
-### MOTION PACKAGE
-###
-
-# Override capture size for Motion
-MOTION_PIXELS=$(jq -r ".extant" $CONFIG_PATH)
-if [ -n "${MOTION_PIXELS}" ]; then
-    echo "Set capture size to ${MOTION_PIXELS}"
-    IFS='x' read -a wxh<<< "${MOTION_PIXELS}"
-    WIDTH=${wxh[0]}
-    HEIGHT=${wxh[1]}
-    sed -i "s/^width\s[0-9]\+/width ${WIDTH}/g" /etc/motion/motion.conf
-    sed -i "s/^height\s[0-9]\+/height ${HEIGHT}/g" /etc/motion/motion.conf
+# local MQTT server (hassio addon)
+MQTT_HOST=$(jq -r ".mqtt_host" "${CONFIG_PATH}")
+MQTT_PORT=$(jq -r ".mqtt_port" "${CONFIG_PATH}")
+if [ -n "${MQTT_PORT}" ] && [ -n "${MQTT_HOST}" ]; then
+  echo "Using MQTT at ${MQTT_HOST}"
+  JSON="${JSON}"',"mqtt":{"host":"'"${MQTT_HOST}"'","port":'"${MQTT_PORT}"'}'
 else
-    WIDTH=640
-    HEIGHT=480
-fi
-JSON="${JSON}"',"image":{"width":'"${WIDTH}"',"height":'"${HEIGHT}"'}'
-
-MOTION_EVENT_GAP=$(jq -r ".interval" $CONFIG_PATH)
-MOTION_IMAGE_ROTATE=$(jq -r ".rotate" $CONFIG_PATH)
-MOTION_OUTPUT_PICTURES=$(jq -r ".output" $CONFIG_PATH)
-MOTION_THRESHOLD_TUNE=$(jq -r ".tune" $CONFIG_PATH)
-MOTION_THRESHOLD=$(jq -r ".threshold" $CONFIG_PATH)
-
-#
-# override motion 
-#
-
-# Override locate_motion_mode
-MOTION_LOCATE_MODE=$(jq -r ".locate_motion_mode" $CONFIG_PATH)
-if [ -n "${MOTION_LOCATE_MODE}" ]; then
-    echo "Set locate_motion_mode (on/off/preview) to ${MOTION_LOCATE_MODE}"
-    sed -i "s/^locate_motion_mode\s.*/locate_motion_mode ${MOTION_LOCATE_MODE}/g" /etc/motion/motion.conf
-    JSON="${JSON}"',"locate_mode":"'"${MOTION_LOCATE_MODE}"'"'
+  echo "MQTT host or port undefined; exiting"
+  exit
 fi
 
-# Override control and video ports
-WEBCONTROL_PORT=$(jq -r ".webcontrol_port" $CONFIG_PATH)
-if [ -n "${WEBCONTROL_PORT}" ]; then
-    echo "Set webcontrol_port to ${WEBCONTROL_PORT}"
-    sed -i "s/^webcontrol_port\s[0-9]\+/webcontrol_port ${WEBCONTROL_PORT}/g" /etc/motion/motion.conf
-    JSON="${JSON}"',"webcontrol_port":'"${WEBCONTROL_PORT}"
-fi
-STREAM_PORT=$(jq -r ".stream_port" $CONFIG_PATH)
-if [ -n "${STREAM_PORT}" ]; then
-    echo "Set stream_port to ${STREAM_PORT}"
-    sed -i "s/^stream_port\s[0-9]\+/stream_port ${STREAM_PORT}/g" /etc/motion/motion.conf
-    JSON="${JSON}"',"stream_port":'"${STREAM_PORT}"
-fi
-
-MOTION_IMAGE_ROTATE=$(jq -r ".rotate" $CONFIG_PATH)
-if [ -n "${MOTION_IMAGE_ROTATE}" ]; then
-    echo "Set image rotation to ${MOTION_IMAGE_ROTATE} degrees"
-    sed -i "s/^rotate\s[0-9]\+/rotate ${MOTION_IMAGE_ROTATE}/g" /etc/motion/motion.conf
-    JSON="${JSON}"',"image_rotate":'"${MOTION_IMAGE_ROTATE}"
-fi
-
-# Override MOTION_OUTPUT_PICTURES (which pictures selected; on, off, first, best, center); default "center"
-if [ -n "${MOTION_OUTPUT_PICTURES}" ]; then
-    echo "Set output pictures to ${MOTION_OUTPUT_PICTURES}"
-    sed -i "s/^output_pictures\s.*/output_pictures ${MOTION_OUTPUT_PICTURES}/g" /etc/motion/motion.conf
-    JSON="${JSON}"',"output_pictures":"'"${MOTION_OUTPUT_PICTURES}"'"'
+## WATSON
+# watson visual recognition
+WVR_URL=$(jq -r ".wvr_url" "${CONFIG_PATH}")
+WVR_APIKEY=$(jq -r ".wvr_apikey" "${CONFIG_PATH}")
+WVR_CLASSIFIER=$(jq -r ".wvr_classifier" "${CONFIG_PATH}")
+WVR_DATE=$(jq -r ".wvr_date" "${CONFIG_PATH}")
+WVR_VERSION=$(jq -r ".wvr_version" "${CONFIG_PATH}")
+if [ -n "${WVR_URL}" ] && [ -n "${WVR_APIKEY}" ] && [ -n "${WVR_DATE}" ] && [ -n "${WVR_VERSION}" ]; then
+  echo "Watson Visual Recognition at ${WVR_URL} with ${WVR_DATE} and {$WVR_VERSION}"
+  JSON="${JSON}"',"watson":{"url":"'"${WVR_URL}"'","release":"'"${WVR_DATE}"'","version":"'"${WVR_VERSION}"'","models":['
+  if [ -n "${WVR_CLASSIFIER}" ]; then
+    # quote the model names
+    CLASSIFIERS=$(echo "${WVR_CLASSIFIER}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
+    echo "Using custom classifiers(s): ${CLASSIFIERS}"
+    JSON="${JSON}"','"${CLASSIFIERS}"
+  else
+    # add default iif none specified
+    JSON="${JSON}"'"default"'
+  fi
+  JSON="${JSON}"']}'
+else
+  echo "Watson Visual Recognition NOT CONFIGURED"
+  JSON="${JSON}"',"watson":null'
 fi
 
-# Override THRESHOLD_TUNE (pixels changed) default "off"
-if [ -n "${MOTION_THRESHOLD_TUNE}" ]; then
-   echo "Set threshold_tune to ${MOTION_THRESHOLD_TUNE}"
-   sed -i "s/^threshold_tune\s.*/threshold_tune ${MOTION_THRESHOLD_TUNE}/g" /etc/motion/motion.conf
-   JSON="${JSON}"',"threshold_tune":"'"${MOTION_THRESHOLD_TUNE}"'"'
+## DIGITS
+# local nVidia DIGITS/Caffe image classification server
+DIGITS_JOBID=$(jq -r ".digits_jobid" "${CONFIG_PATH}")
+DIGITS_SERVER_URL=$(jq -r ".digits_server_url" "${CONFIG_PATH}")
+if [ -n "${DIGITS_JOBID}" ] && [ -n "${DIGITS_SERVER_URL}" ]; then
+  JOBIDS=$(echo "${DIGITS_JOBID}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
+  echo "Using DIGITS ${JOBIDS}"
+  JSON="${JSON}"',"digits":{"host":"'"${DIGITS_SERVER_URL}"'","models":['"${JOBIDS}"']}'
+else
+  echo "DIGITS NOT CONFIGURED"
+  JSON="${JSON}"',"digits":null'
 fi
 
-# Override THRESHOLD (pixels changed) default 1500
-if [ -n "${MOTION_THRESHOLD}" ]; then
-   echo "Set threshold to ${MOTION_THRESHOLD}"
-    sed -i "s/^threshold\s[0-9]\+/threshold ${MOTION_THRESHOLD}/g" /etc/motion/motion.conf
-    JSON="${JSON}"',"threshold":'"${MOTION_THRESHOLD}"
+###
+### MOTION
+###
+
+MOTION='"motion":{'
+
+## alphanumeric values
+
+# set videodevice
+VALUE=$(jq -r ".videodevice" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE="/dev/video0"; fi
+echo "Set videodevice to ${VALUE}"
+sed -i "s/^videodevice\s[0-9]\+/videodevice ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"videodevice":"'"${VALUE}"'"'
+
+# set auto_brightness
+VALUE=$(jq -r ".auto_brightness" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE="off"; fi
+echo "Set auto_brightness to ${VALUE}"
+sed -i "s/^auto_brightness\s[0-9]\+/auto_brightness ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"auto_brightness":"'"${VALUE}"'"'
+
+# set locate_motion_mode
+VALUE=$(jq -r ".locate_motion_mode" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE="off"; fi
+echo "Set locate_motion_mode to ${VALUE}"
+sed -i "s/^locate_motion_mode\s[0-9]\+/locate_motion_mode ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"locate_motion_mode":"'"${VALUE}"'"'
+
+# set locate_motion_style (box, redbox, cross, redcross)
+VALUE=$(jq -r ".locate_motion_style" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE="box"; fi
+echo "Set locate_motion_style to ${VALUE}"
+sed -i "s/^locate_motion_style\s[0-9]\+/locate_motion_style ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"locate_motion_style":"'"${VALUE}"'"'
+
+# set output_pictures (on, off, first, best, center)
+VALUE=$(jq -r ".output_pictures" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE="on"; fi
+echo "Set output_pictures to ${VALUE}"
+sed -i "s/^output_pictures\s[0-9]\+/output_pictures ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"output_pictures":"'"${VALUE}"'"'
+
+# set picture_type (jpeg, ppm)
+VALUE=$(jq -r ".picture_type" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE="jpeg"; fi
+echo "Set picture_type to ${VALUE}"
+sed -i "s/^picture_type\s[0-9]\+/picture_type ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"picture_type":"'"${VALUE}"'"'
+
+# set threshold_tune (jpeg, ppm)
+VALUE=$(jq -r ".threshold_tune" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE="off"; fi
+echo "Set threshold_tune to ${VALUE}"
+sed -i "s/^threshold_tune\s[0-9]\+/threshold_tune ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"threshold_tune":"'"${VALUE}"'"'
+
+## numeric values
+
+# set v412_pallette
+VALUE=$(jq -r ".v412_pallette" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE=17; fi
+echo "Set v412_pallette to ${VALUE}"
+sed -i "s/^v412_pallette\s[0-9]\+/v412_pallette ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"v412_pallette":'"${VALUE}"
+
+# set pre_capture
+VALUE=$(jq -r ".pre_capture" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE=0; fi
+echo "Set pre_capture to ${VALUE}"
+sed -i "s/^pre_capture\s[0-9]\+/pre_capture ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"pre_capture":'"${VALUE}"
+
+# set post_capture
+VALUE=$(jq -r ".post_capture" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE=0; fi
+echo "Set post_capture to ${VALUE}"
+sed -i "s/^post_capture\s[0-9]\+/post_capture ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"post_capture":'"${VALUE}"
+
+# set event_gap
+VALUE=$(jq -r ".event_gap" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE=60; fi
+echo "Set event_gap to ${VALUE}"
+sed -i "s/^event_gap\s[0-9]\+/event_gap ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"event_gap":'"${VALUE}"
+
+# set minimum_motion_frames
+VALUE=$(jq -r ".minimum_motion_frames" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE=1; fi
+echo "Set minimum_motion_frames to ${VALUE}"
+sed -i "s/^minimum_motion_frames\s[0-9]\+/minimum_motion_frames ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"minimum_motion_frames":'"${VALUE}"
+
+# set quality
+VALUE=$(jq -r ".quality" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE=7; fi
+echo "Set quality to ${VALUE}"
+sed -i "s/^quality\s[0-9]\+/quality ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"quality":'"${VALUE}"
+
+# set width
+VALUE=$(jq -r ".width" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE=640; fi
+echo "Set width to ${VALUE}"
+sed -i "s/^width\s[0-9]\+/width ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"width":'"${VALUE}"
+
+# set height
+VALUE=$(jq -r ".height" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE=480; fi
+echo "Set height to ${VALUE}"
+sed -i "s/^height\s[0-9]\+/height ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"height":'"${VALUE}"
+
+# set framerate
+VALUE=$(jq -r ".framerate" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE=100; fi
+echo "Set framerate to ${VALUE}"
+sed -i "s/^framerate\s[0-9]\+/framerate ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"framerate":'"${VALUE}"
+
+# set minimum_frame_time
+VALUE=$(jq -r ".minimum_frame_time" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE=0; fi
+echo "Set minimum_frame_time to ${VALUE}"
+sed -i "s/^minimum_frame_time\s[0-9]\+/minimum_frame_time ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"minimum_frame_time":'"${VALUE}"
+
+# set brightness
+VALUE=$(jq -r ".brightness" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE=0; fi
+echo "Set brightness to ${VALUE}"
+sed -i "s/^brightness\s[0-9]\+/brightness ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"brightness":'"${VALUE}"
+
+# set contrast
+VALUE=$(jq -r ".contrast" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE=0; fi
+echo "Set contrast to ${VALUE}"
+sed -i "s/^contrast\s[0-9]\+/contrast ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"contrast":'"${VALUE}"
+
+# set saturation
+VALUE=$(jq -r ".saturation" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE=0; fi
+echo "Set saturation to ${VALUE}"
+sed -i "s/^saturation\s[0-9]\+/saturation ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"saturation":'"${VALUE}"
+
+# set hue
+VALUE=$(jq -r ".hue" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE=0; fi
+echo "Set hue to ${VALUE}"
+sed -i "s/^hue\s[0-9]\+/hue ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"hue":'"${VALUE}"
+
+# set rotate
+VALUE=$(jq -r ".rotate" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE=0; fi
+echo "Set rotate to ${VALUE}"
+sed -i "s/^rotate\s[0-9]\+/rotate ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"rotate":'"${VALUE}"
+
+# set webcontrol_port
+VALUE=$(jq -r ".webcontrol_port" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE=8080; fi
+echo "Set webcontrol_port to ${VALUE}"
+sed -i "s/^webcontrol_port\s[0-9]\+/webcontrol_port ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"webcontrol_port":'"${VALUE}"
+
+# set stream_port
+VALUE=$(jq -r ".stream_port" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE=8081; fi
+echo "Set stream_port to ${VALUE}"
+sed -i "s/^stream_port\s[0-9]\+/stream_port ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"stream_port":'"${VALUE}"
+
+# set stream_quality
+VALUE=$(jq -r ".stream_quality" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE=50; fi
+echo "Set stream_quality to ${VALUE}"
+sed -i "s/^stream_quality\s[0-9]\+/stream_quality ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"stream_quality":'"${VALUE}"
+
+# set threshold
+VALUE=$(jq -r ".threshold" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE=1500; fi
+echo "Set threshold to ${VALUE}"
+sed -i "s/^threshold\s[0-9]\+/threshold ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"threshold":'"${VALUE}"
+
+# set lightswitch
+VALUE=$(jq -r ".lightswitch" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE=0; fi
+echo "Set lightswitch to ${VALUE}"
+sed -i "s/^lightswitch\s[0-9]\+/lightswitch ${VALUE}/g" "${MOTION_CONF}"
+MOTION="${MOTION}"',"lightswitch":'"${VALUE}"
+
+## process collectively
+
+# set username and password
+USERNAME=$(jq -r ".username" "${CONFIG_PATH}")
+PASSWORD=$(jq -r ".password" "${CONFIG_PATH}")
+if [ -n "${USERNAME}" ] && [ -n "${PASSWORD}" ]; then
+  echo "Set authentication to Basic for both stream and webcontrol"
+  sed -i "s/^stream_auth_method.*/stream_auth_method 1/g" "${MOTION_CONF}"
+  sed -i "s/.*stream_authentication.*/stream_authentication ${USERNAME}:${PASSWORD}/g" "${MOTION_CONF}"
+  sed -i "s/.*webcontrol_authentication.*/webcontrol_authentication ${USERNAME}:${PASSWORD}/g" "${MOTION_CONF}"
+  MOTION="${MOTION}"',"stream_auth_method":"Basic"'
 fi
 
-# Override EVENT_GAP (seconds) default 10
-if [ -n "${MOTION_EVENT_GAP}" ]; then
-   echo "Set event_gap to ${MOTION_EVENT_GAP}"
-   sed -i "s/^event_gap\s[0-9]\+/event_gap ${MOTION_EVENT_GAP}/g" /etc/motion/motion.conf
-   JSON="${JSON}"',"event_gap":'"${MOTION_EVENT_GAP}"
+# set netcam parameters
+URL=$(jq -r ".netcam_url" "${CONFIG_PATH}")
+USERPASS=$(jq -r ".netcam_userpass" "${CONFIG_PATH}")
+if [ -n "${URL}" ] && [ -n "${USERPASS}" ]; then
+  echo "Using network camera at ${URL} with ${USERPASS}"
+  sed -i "s|.*netcam_url.*|netcam_url ${URL}|" "${MOTION_CONF}"
+  sed -i "s|.*netcam_userpass.*|netcam_userpass ${USERPASS}|" "${MOTION_CONF}"
+  MOTION="${MOTION}"',"netcam_url":"'"${URL}"'"'
 fi
 
-# COMPLETE JSON DESCRIPTION OF DEVICE
+### end motion
+MOTION="${MOTION}"'}'
+
+JSON="${JSON}"','"${MOTION}"
+
+###
+### parameters not in prior configuration 
+###
+
+# set field of view; 56 or 75 degrees for PS3 Eye camera
+VALUE=$(jq -r ".fov" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE=75; fi
+echo "Set field of view to ${VALUE}"
+JSON="${JSON}"',"fov":"'"${VALUE}"'"'
+
+###
+### DONE w/ JSON
+###
+
 JSON="${JSON}"'}'
 
-if [ -n "${CLOUDANT_URL}" ] && [ -n "${DEVICE_NAME}" ]; then
-  echo "Using CLOUDANT as ${CLOUDANT_USERNAME}"
-  URL="${CLOUDANT_URL}/devices"
-  DB=$(curl -q -s -X GET "${URL}" | jq '.db_name')
-    if [ "${DB}" == "null" ]; then
-        # create DB
-        DB=$(curl -q -s -X PUT "${CLOUDANT_URL}/devices" | jq '.ok')
-        if [ "${DB}" != "true" ]; then
-            CLOUDANT_OFF=TRUE
-        fi
+###
+### CLOUDANT
+###
+
+URL=$(jq -r ".cloudant_url" "${CONFIG_PATH}")
+USERNAME=$(jq -r ".cloudant_username" "${CONFIG_PATH}")
+PASSWORD=$(jq -r ".cloudant_password" "${CONFIG_PATH}")
+if [ -n "${URL}" ] && [ -n "${USERNAME}" ] && [ -n "${PASSWORD}" ]; then
+  echo "Using CLOUDANT as ${USERNAME}"
+  DB=$(curl -u "${USERNAME}":"${PASSWORD}" -q -s -X GET "${URL}/devices" | jq '.db_name')
+  if [ "${DB}" == "null" ]; then
+    # create DB
+    DB=$(curl -u "${USERNAME}":"${PASSWORD}" -q -s -X PUT "${URL}/devices" | jq '.ok')
+    if [ "${DB}" != "true" ]; then
+      OFF=TRUE
     fi
-    if [ -z "${CLOUDANT_OFF}" ]; then
-        URL="${URL}/${DEVICE_NAME}"
-        REV=$(curl -s -q "${URL}" | jq -r '._rev')
-        if [ -n "${REV}" ]; then
-          URL="${URL}?rev=${REV}"
-        fi
-        echo "Updating ${DEVICE_NAME} with ${URL}"
-        curl -q -s -H "Content-type: application/json" -X PUT "${URL}" -d "${JSON}"
+  fi
+  if [ -z "${OFF}" ]; then
+    URL="${URL}/${DEVICE_NAME}"
+    REV=$(curl -u "${USERNAME}":"${PASSWORD}" -s -q "${URL}" | jq -r '._rev')
+    if [ -n "${REV}" ]; then
+      URL="${URL}?rev=${REV}"
     fi
+    echo "Updating ${DEVICE_NAME} with " $(echo "${JSON}" | jq -c '.')
+    curl -u "${USERNAME}":"${PASSWORD}" -q -s -H "Content-type: application/json" -X PUT "${URL}" -d "${JSON}"
+  else
+    echo "Failed to access/create DB"
+    exit
+  fi
 else
-    echo "${JSON}" > /tmp/$$
-    jq '.' /tmp/$$
-    rm /tmp/$$
+  echo "Cloudant URL, username and/or password undefined; exiting"
+  # exit
 fi
 
+## TARGET_DIR
+VALUE=$(jq -r ".target_dir" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE="/share/motion"; fi
+echo "Set target_dir to ${VALUE}"
+sed -i "s/^target_dir\s.*/target_dir ${VALUE}/g" "${MOTION_CONF}"
+echo "CHANGING CURRENT WORKING DIRECTORY TO ${VALUE}"
+mkdir -p "${VALUE}" ; cd "${VALUE}"
 
-# FONTS
-if [ -n "${IMAGE_MAGIC}" ]; then
-  mkdir -p ~/.magick
-  convert -list font \
-    | awk -F': ' 'BEGIN { printf("<?xml version=\"1.0\"?>\n<typemap>\n"); } /Font: / { font=$2; getline; family=$2; getline; style=$2; getline; stretch=$2; getline; weight=$2; getline; glyphs=$2; type=substr(glyphs,index(glyphs,".")+1,3); printf("<type format=\"%s\" name=\"%s\" glyphs=\"%s\"\n", type, font, glyphs); } END { printf("</typemap>\n"); }' > ~/.magick/type.xml
-fi
+## DAEMON MODE
+VALUE=$(jq -r ".daemon" "${CONFIG_PATH}")
+if [ -n "${VALUE}" ]; then VALUE="on"; fi
+echo "Set daemon to ${VALUE}"
+sed -i "s/^daemon\s.*/daemon ${VALUE}/g" "${MOTION_CONF}"
 
-if [ -n "${MOTION_DAEMON}" ]; then
-   echo "Set daemon to ${MOTION_DAEMON}"
-   sed -i "s/^daemon\s.*/daemon ${MOTION_DAEMON}/g" /etc/motion/motion.conf
-fi
+# run
+echo "START MOTION"
+motion -l /dev/stderr
 
-if [ -n "${URL_LAUNCHER_URL}" ]; then
-  # override motion daemon status for electron
-  echo 'Overriding MOTION_DAEMON to "on" for ELECTRON'
-  sed -i "s/^daemon\s.*/daemon on/g" /etc/motion/motion.conf
-  # Run motion (as daemon)
-  echo "START MOTION AS DAEMON"
-  motion -l /dev/stderr
-  # By default docker gives us 64MB of shared memory size but to display heavy pages we need more.
-  umount /dev/shm && mount -t tmpfs shm /dev/shm
-  # start X
-  rm /tmp/.X0-lock &>/dev/null || true
-  echo "START ELECTRON"
-  startx /usr/src/app/node_modules/electron/dist/electron /usr/src/app --enable-logging
-else
-  # Run motion (not as daemon)
-  echo "START MOTION WITHOUT ELECTRON"
-  motion -l /dev/stderr
-fi
+# start python httpd server
+
+echo "START PYTHON"
+python3 -m http.server

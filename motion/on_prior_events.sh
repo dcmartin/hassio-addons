@@ -1,4 +1,4 @@
-#!/bin/csh -fb
+#!/bin/csh -fb 8000
 echo "+++ BEGIN: $0 $* ($$)" `date` >& /dev/stderr
 # interval time in minutes
 set INTERVAL = 15
