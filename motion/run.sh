@@ -1,14 +1,9 @@
 #!/bin/bash
 
-# location of configuration file
-if [ -z ${CONFIG_PATH} ]; then 
-  CONFIG_PATH=/data/options.json
-  MOTION_CONF=/etc/motion/motion.conf
-else
-  CONFIG_PATH=/tmp/options.json
-  MOTION_CONF=/tmp/motion.conf
-  jq '.options' $PWD/config.json > ${CONFIG_PATH}
-  cp $PWD/motion.conf /tmp/motion.conf
+if [ ! -s "${CONFIG_PATH}" ]; then
+  echo "Cannot find options ${CONFIG_PATH}" >&2
+  ls -al /data
+  exit
 fi
 
 ###
@@ -17,15 +12,16 @@ fi
 JSON='{'
 
 ##
-## IP address
+## host name
 ##
-IPADDR=$(ipaddr show | egrep "inet" | egrep dynamic | awk '{ print $2 }')
-if [ -n "${IPADDR}" ]; then
-  # start building device JSON information record
-  JSON="${JSON}"'"ip_address":"'"${IPADDR}"'"'
+# Set the correct timezone
+if [ -n "${HOSTNAME}" ]; then
+  echo "Setting HOSTNAME ${HOSTNAME}" >&2
+  # FIRST ITEM NO COMMA
+  JSON="${JSON}"'"hostname":"'"${HOSTNAME}"'"'
 else
-  echo "Cannot determine IP address; exiting"
-  # exit
+  echo "Host name not set; exiting" >&2
+  exit
 fi
 
 ##
@@ -34,23 +30,23 @@ fi
 TIMEZONE=$(jq -r ".timezone" "${CONFIG_PATH}")
 # Set the correct timezone
 if [ -n "${TIMEZONE}" ]; then
-  echo "Setting TIMEZONE ${TIMEZONE}"
+  echo "Setting TIMEZONE ${TIMEZONE}" >&2
   cp /usr/share/zoneinfo/${TIMEZONE} /etc/localtime
   JSON="${JSON}"',"timezone":"'"${TIMEZONE}"'"'
 else
-  echo "Time zone not set; exiting"
+  echo "Time zone not set; exiting" >&2
   exit
 fi
 
 ##
 ## device name & location
 ##
-NAME=$(jq -r ".name" "${CONFIG_PATH}")
+DEVICE_NAME=$(jq -r ".name" "${CONFIG_PATH}")
 LOCATION=$(jq -r ".location" "${CONFIG_PATH}")
-if [ -n "${NAME}" ] && [ -n "${LOCATION}" ]; then
-  JSON="${JSON}"',"name":"'"${NAME}"'","location":"'"${LOCATION}"'","date":'$(/bin/date +%s)
+if [ "${DEVICE_NAME}" != "null" ] && [ "${LOCATION}" != "null" ] && [ ! -z "${LOCATION}" ]; then
+  JSON="${JSON}"',"name":"'"${DEVICE_NAME}"'","location":"'"${LOCATION}"'","date":'$(/bin/date +%s)
 else
-  echo "Device name and/or location undefined; exiting"
+  echo "Device name and/or location undefined; exiting" >&2
   exit
 fi
 
@@ -58,11 +54,11 @@ fi
 # local MQTT server (hassio addon)
 MQTT_HOST=$(jq -r ".mqtt_host" "${CONFIG_PATH}")
 MQTT_PORT=$(jq -r ".mqtt_port" "${CONFIG_PATH}")
-if [ -n "${MQTT_PORT}" ] && [ -n "${MQTT_HOST}" ]; then
-  echo "Using MQTT at ${MQTT_HOST}"
+if [ "${MQTT_PORT}" != "null" ] && [ "${MQTT_HOST}" != "null" ] && [ ! -z "${MQTT_HOST}" ]; then
+  echo "Using MQTT at ${MQTT_HOST}" >&2
   JSON="${JSON}"',"mqtt":{"host":"'"${MQTT_HOST}"'","port":'"${MQTT_PORT}"'}'
 else
-  echo "MQTT host or port undefined; exiting"
+  echo "MQTT host or port undefined; exiting" >&2
   exit
 fi
 
@@ -73,34 +69,39 @@ WVR_APIKEY=$(jq -r ".wvr_apikey" "${CONFIG_PATH}")
 WVR_CLASSIFIER=$(jq -r ".wvr_classifier" "${CONFIG_PATH}")
 WVR_DATE=$(jq -r ".wvr_date" "${CONFIG_PATH}")
 WVR_VERSION=$(jq -r ".wvr_version" "${CONFIG_PATH}")
-if [ -n "${WVR_URL}" ] && [ -n "${WVR_APIKEY}" ] && [ -n "${WVR_DATE}" ] && [ -n "${WVR_VERSION}" ]; then
-  echo "Watson Visual Recognition at ${WVR_URL} with ${WVR_DATE} and {$WVR_VERSION}"
+if [ ! -z "${WVR_URL}" ] && [ ! -z "${WVR_APIKEY}" ] && [ ! -z "${WVR_DATE}" ] && [ ! -z "${WVR_VERSION}" ] && [ "${WVR_URL}" != "null" ] && [ "${WVR_APIKEY}" != "null" ] && [ "${WVR_DATE}" != "null" ] && [ "${WVR_VERSION}" != "null" ]; then
+  echo "Watson Visual Recognition at ${WVR_URL} date ${WVR_DATE} version ${WVR_VERSION}" >&2
   JSON="${JSON}"',"watson":{"url":"'"${WVR_URL}"'","release":"'"${WVR_DATE}"'","version":"'"${WVR_VERSION}"'","models":['
-  if [ -n "${WVR_CLASSIFIER}" ]; then
+  if [ ! -z "${WVR_CLASSIFIER}" ] && [ "${WVR_CLASSIFIER}" != "null" ]; then
     # quote the model names
     CLASSIFIERS=$(echo "${WVR_CLASSIFIER}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
-    echo "Using custom classifiers(s): ${CLASSIFIERS}"
-    JSON="${JSON}"','"${CLASSIFIERS}"
+    echo "Using classifiers(s): ${CLASSIFIERS}" >&2
+    JSON="${JSON}""${CLASSIFIERS}"
   else
     # add default iif none specified
     JSON="${JSON}"'"default"'
   fi
   JSON="${JSON}"']}'
 else
-  echo "Watson Visual Recognition NOT CONFIGURED"
+  echo "Watson Visual Recognition NOT CONFIGURED" >&2
   JSON="${JSON}"',"watson":null'
 fi
 
 ## DIGITS
 # local nVidia DIGITS/Caffe image classification server
-DIGITS_JOBID=$(jq -r ".digits_jobid" "${CONFIG_PATH}")
-DIGITS_SERVER_URL=$(jq -r ".digits_server_url" "${CONFIG_PATH}")
-if [ -n "${DIGITS_JOBID}" ] && [ -n "${DIGITS_SERVER_URL}" ]; then
-  JOBIDS=$(echo "${DIGITS_JOBID}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
-  echo "Using DIGITS ${JOBIDS}"
-  JSON="${JSON}"',"digits":{"host":"'"${DIGITS_SERVER_URL}"'","models":['"${JOBIDS}"']}'
+VALUE=$(jq -r ".digits_server_url" "${CONFIG_PATH}")
+if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
+  JSON="${JSON}"',"digits":{"host":"'"${VALUE}"'"'
+  if [ -z "${DIGITS_SERVER_URL}" ]; then DIGITS_SERVER_URL="${VALUE}"; fi
+  VALUE=$(jq -r ".digits_jobid" "${CONFIG_PATH}")
+  if [ ! -z "${VALUE}" ] && [ "${VALUE}" != "null" ]; then
+    DIGITS_JOBIDS=$(echo "${VALUE}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
+    echo "Using DIGITS at ${DIGITS_SERVER_URL} and ${DIGITS_JOBIDS}" >&2
+    JSON="${JSON}"',"models":['"${DIGITS_JOBIDS}"']'
+  fi
+  JSON="${JSON}"'}'
 else
-  echo "DIGITS NOT CONFIGURED"
+  echo "DIGITS server URL not specified" >&2
   JSON="${JSON}"',"digits":null'
 fi
 
@@ -114,193 +115,217 @@ MOTION='"motion":{'
 
 # set videodevice
 VALUE=$(jq -r ".videodevice" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE="/dev/video0"; fi
-echo "Set videodevice to ${VALUE}"
-sed -i "s/^videodevice\s[0-9]\+/videodevice ${VALUE}/g" "${MOTION_CONF}"
-MOTION="${MOTION}"',"videodevice":"'"${VALUE}"'"'
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="/dev/video0"; fi
+echo "Set videodevice to ${VALUE}" >&2
+sed -i "s|.*videodevice .*|videodevice ${VALUE}|" "${MOTION_CONF}"
+# FIRST ITEM NO COMMA
+MOTION="${MOTION}"'"videodevice":"'"${VALUE}"'"'
+
+# set log_type
+VALUE=$(jq -r ".log_type" "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="all"; fi
+echo "Set log_type to ${VALUE}" >&2
+sed -i "s|.*log_type .*|log_type ${VALUE}|" "${MOTION_CONF}"
+MOTION="${MOTION}"',"log_type":"'"${VALUE}"'"'
 
 # set auto_brightness
 VALUE=$(jq -r ".auto_brightness" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE="off"; fi
-echo "Set auto_brightness to ${VALUE}"
-sed -i "s/^auto_brightness\s[0-9]\+/auto_brightness ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="off"; fi
+echo "Set auto_brightness to ${VALUE}" >&2
+sed -i "s/.*auto_brightness .*/auto_brightness ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"auto_brightness":"'"${VALUE}"'"'
 
 # set locate_motion_mode
 VALUE=$(jq -r ".locate_motion_mode" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE="off"; fi
-echo "Set locate_motion_mode to ${VALUE}"
-sed -i "s/^locate_motion_mode\s[0-9]\+/locate_motion_mode ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="off"; fi
+echo "Set locate_motion_mode to ${VALUE}" >&2
+sed -i "s/.*locate_motion_mode .*/locate_motion_mode ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"locate_motion_mode":"'"${VALUE}"'"'
 
 # set locate_motion_style (box, redbox, cross, redcross)
 VALUE=$(jq -r ".locate_motion_style" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE="box"; fi
-echo "Set locate_motion_style to ${VALUE}"
-sed -i "s/^locate_motion_style\s[0-9]\+/locate_motion_style ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="box"; fi
+echo "Set locate_motion_style to ${VALUE}" >&2
+sed -i "s/.*locate_motion_style .*/locate_motion_style ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"locate_motion_style":"'"${VALUE}"'"'
 
 # set output_pictures (on, off, first, best, center)
 VALUE=$(jq -r ".output_pictures" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE="on"; fi
-echo "Set output_pictures to ${VALUE}"
-sed -i "s/^output_pictures\s[0-9]\+/output_pictures ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="on"; fi
+echo "Set output_pictures to ${VALUE}" >&2
+sed -i "s/.*output_pictures .*/output_pictures ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"output_pictures":"'"${VALUE}"'"'
 
 # set picture_type (jpeg, ppm)
 VALUE=$(jq -r ".picture_type" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE="jpeg"; fi
-echo "Set picture_type to ${VALUE}"
-sed -i "s/^picture_type\s[0-9]\+/picture_type ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="jpeg"; fi
+echo "Set picture_type to ${VALUE}" >&2
+sed -i "s/.*picture_type .*/picture_type ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"picture_type":"'"${VALUE}"'"'
 
 # set threshold_tune (jpeg, ppm)
 VALUE=$(jq -r ".threshold_tune" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE="off"; fi
-echo "Set threshold_tune to ${VALUE}"
-sed -i "s/^threshold_tune\s[0-9]\+/threshold_tune ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="off"; fi
+echo "Set threshold_tune to ${VALUE}" >&2
+sed -i "s/.*threshold_tune .*/threshold_tune ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"threshold_tune":"'"${VALUE}"'"'
+
+# set netcam_keepalive (off,force,on)
+VALUE=$(jq -r ".netcam_keepalive" "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="on"; fi
+echo "Set netcam_keepalive to ${VALUE}" >&2
+sed -i "s/.*netcam_keepalive .*/netcam_keepalive ${VALUE}/" "${MOTION_CONF}"
+MOTION="${MOTION}"',"netcam_keepalive":"'"${VALUE}"'"'
 
 ## numeric values
 
+# set log_level
+VALUE=$(jq -r ".log_level" "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=6; fi
+echo "Set log_level to ${VALUE}" >&2
+sed -i "s/.*log_level\s[0-9]\+/log_level ${VALUE}/" "${MOTION_CONF}"
+MOTION="${MOTION}"',"log_level":'"${VALUE}"
+
 # set v412_pallette
 VALUE=$(jq -r ".v412_pallette" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE=17; fi
-echo "Set v412_pallette to ${VALUE}"
-sed -i "s/^v412_pallette\s[0-9]\+/v412_pallette ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=17; fi
+echo "Set v412_pallette to ${VALUE}" >&2
+sed -i "s/.*v412_pallette\s[0-9]\+/v412_pallette ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"v412_pallette":'"${VALUE}"
 
 # set pre_capture
 VALUE=$(jq -r ".pre_capture" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE=0; fi
-echo "Set pre_capture to ${VALUE}"
-sed -i "s/^pre_capture\s[0-9]\+/pre_capture ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
+echo "Set pre_capture to ${VALUE}" >&2
+sed -i "s/.*pre_capture\s[0-9]\+/pre_capture ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"pre_capture":'"${VALUE}"
 
 # set post_capture
 VALUE=$(jq -r ".post_capture" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE=0; fi
-echo "Set post_capture to ${VALUE}"
-sed -i "s/^post_capture\s[0-9]\+/post_capture ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
+echo "Set post_capture to ${VALUE}" >&2
+sed -i "s/.*post_capture\s[0-9]\+/post_capture ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"post_capture":'"${VALUE}"
 
 # set event_gap
 VALUE=$(jq -r ".event_gap" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE=60; fi
-echo "Set event_gap to ${VALUE}"
-sed -i "s/^event_gap\s[0-9]\+/event_gap ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=60; fi
+echo "Set event_gap to ${VALUE}" >&2
+sed -i "s/.*event_gap\s[0-9]\+/event_gap ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"event_gap":'"${VALUE}"
+MOTION_EVENT_GAP=${VALUE}
 
 # set minimum_motion_frames
 VALUE=$(jq -r ".minimum_motion_frames" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE=1; fi
-echo "Set minimum_motion_frames to ${VALUE}"
-sed -i "s/^minimum_motion_frames\s[0-9]\+/minimum_motion_frames ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1; fi
+echo "Set minimum_motion_frames to ${VALUE}" >&2
+sed -i "s/.*minimum_motion_frames\s[0-9]\+/minimum_motion_frames ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"minimum_motion_frames":'"${VALUE}"
 
 # set quality
 VALUE=$(jq -r ".quality" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE=7; fi
-echo "Set quality to ${VALUE}"
-sed -i "s/^quality\s[0-9]\+/quality ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=75; fi
+echo "Set quality to ${VALUE}" >&2
+sed -i "s/.*quality\s[0-9]\+/quality ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"quality":'"${VALUE}"
 
 # set width
 VALUE=$(jq -r ".width" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE=640; fi
-echo "Set width to ${VALUE}"
-sed -i "s/^width\s[0-9]\+/width ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=640; fi
+echo "Set width to ${VALUE}" >&2
+sed -i "s/.*width\s[0-9]\+/width ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"width":'"${VALUE}"
 
 # set height
 VALUE=$(jq -r ".height" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE=480; fi
-echo "Set height to ${VALUE}"
-sed -i "s/^height\s[0-9]\+/height ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=480; fi
+echo "Set height to ${VALUE}" >&2
+sed -i "s/.*height\s[0-9]\+/height ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"height":'"${VALUE}"
 
 # set framerate
 VALUE=$(jq -r ".framerate" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE=100; fi
-echo "Set framerate to ${VALUE}"
-sed -i "s/^framerate\s[0-9]\+/framerate ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=100; fi
+echo "Set framerate to ${VALUE}" >&2
+sed -i "s/.*framerate\s[0-9]\+/framerate ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"framerate":'"${VALUE}"
 
 # set minimum_frame_time
 VALUE=$(jq -r ".minimum_frame_time" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE=0; fi
-echo "Set minimum_frame_time to ${VALUE}"
-sed -i "s/^minimum_frame_time\s[0-9]\+/minimum_frame_time ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
+echo "Set minimum_frame_time to ${VALUE}" >&2
+sed -i "s/.*minimum_frame_time\s[0-9]\+/minimum_frame_time ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"minimum_frame_time":'"${VALUE}"
 
 # set brightness
 VALUE=$(jq -r ".brightness" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE=0; fi
-echo "Set brightness to ${VALUE}"
-sed -i "s/^brightness\s[0-9]\+/brightness ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
+echo "Set brightness to ${VALUE}" >&2
+sed -i "s/.*brightness\s[0-9]\+/brightness ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"brightness":'"${VALUE}"
 
 # set contrast
 VALUE=$(jq -r ".contrast" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE=0; fi
-echo "Set contrast to ${VALUE}"
-sed -i "s/^contrast\s[0-9]\+/contrast ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
+echo "Set contrast to ${VALUE}" >&2
+sed -i "s/.*contrast\s[0-9]\+/contrast ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"contrast":'"${VALUE}"
 
 # set saturation
 VALUE=$(jq -r ".saturation" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE=0; fi
-echo "Set saturation to ${VALUE}"
-sed -i "s/^saturation\s[0-9]\+/saturation ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
+echo "Set saturation to ${VALUE}" >&2
+sed -i "s/.*saturation\s[0-9]\+/saturation ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"saturation":'"${VALUE}"
 
 # set hue
 VALUE=$(jq -r ".hue" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE=0; fi
-echo "Set hue to ${VALUE}"
-sed -i "s/^hue\s[0-9]\+/hue ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
+echo "Set hue to ${VALUE}" >&2
+sed -i "s/.*hue\s[0-9]\+/hue ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"hue":'"${VALUE}"
 
 # set rotate
 VALUE=$(jq -r ".rotate" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE=0; fi
-echo "Set rotate to ${VALUE}"
-sed -i "s/^rotate\s[0-9]\+/rotate ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
+echo "Set rotate to ${VALUE}" >&2
+sed -i "s/.*rotate\s[0-9]\+/rotate ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"rotate":'"${VALUE}"
 
 # set webcontrol_port
 VALUE=$(jq -r ".webcontrol_port" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE=8080; fi
-echo "Set webcontrol_port to ${VALUE}"
-sed -i "s/^webcontrol_port\s[0-9]\+/webcontrol_port ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=8080; fi
+echo "Set webcontrol_port to ${VALUE}" >&2
+sed -i "s/.*webcontrol_port\s[0-9]\+/webcontrol_port ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"webcontrol_port":'"${VALUE}"
 
 # set stream_port
 VALUE=$(jq -r ".stream_port" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE=8081; fi
-echo "Set stream_port to ${VALUE}"
-sed -i "s/^stream_port\s[0-9]\+/stream_port ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=8081; fi
+echo "Set stream_port to ${VALUE}" >&2
+sed -i "s/.*stream_port\s[0-9]\+/stream_port ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"stream_port":'"${VALUE}"
+if [ -z ${MOTION_STREAM_PORT} ]; then MOTION_STREAM_PORT=${VALUE}; fi
 
 # set stream_quality
 VALUE=$(jq -r ".stream_quality" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE=50; fi
-echo "Set stream_quality to ${VALUE}"
-sed -i "s/^stream_quality\s[0-9]\+/stream_quality ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=50; fi
+echo "Set stream_quality to ${VALUE}" >&2
+sed -i "s/.*stream_quality\s[0-9]\+/stream_quality ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"stream_quality":'"${VALUE}"
 
 # set threshold
 VALUE=$(jq -r ".threshold" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE=1500; fi
-echo "Set threshold to ${VALUE}"
-sed -i "s/^threshold\s[0-9]\+/threshold ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1500; fi
+echo "Set threshold to ${VALUE}" >&2
+sed -i "s/.*threshold .*/threshold ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"threshold":'"${VALUE}"
 
 # set lightswitch
 VALUE=$(jq -r ".lightswitch" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE=0; fi
-echo "Set lightswitch to ${VALUE}"
-sed -i "s/^lightswitch\s[0-9]\+/lightswitch ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
+echo "Set lightswitch to ${VALUE}" >&2
+sed -i "s/.*lightswitch\s[0-9]\+/lightswitch ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"lightswitch":'"${VALUE}"
 
 ## process collectively
@@ -308,23 +333,87 @@ MOTION="${MOTION}"',"lightswitch":'"${VALUE}"
 # set username and password
 USERNAME=$(jq -r ".username" "${CONFIG_PATH}")
 PASSWORD=$(jq -r ".password" "${CONFIG_PATH}")
-if [ -n "${USERNAME}" ] && [ -n "${PASSWORD}" ]; then
-  echo "Set authentication to Basic for both stream and webcontrol"
-  sed -i "s/^stream_auth_method.*/stream_auth_method 1/g" "${MOTION_CONF}"
-  sed -i "s/.*stream_authentication.*/stream_authentication ${USERNAME}:${PASSWORD}/g" "${MOTION_CONF}"
-  sed -i "s/.*webcontrol_authentication.*/webcontrol_authentication ${USERNAME}:${PASSWORD}/g" "${MOTION_CONF}"
+if [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "null" ] && [ ! -z "${USERNAME}" ] && [ ! -z "${PASSWORD}" ]; then
+  echo "Set authentication to Basic for both stream and webcontrol" >&2
+  sed -i "s/.*stream_auth_method.*/stream_auth_method 1/" "${MOTION_CONF}"
+  sed -i "s/.*stream_authentication.*/stream_authentication ${USERNAME}:${PASSWORD}/" "${MOTION_CONF}"
+  sed -i "s/.*webcontrol_authentication.*/webcontrol_authentication ${USERNAME}:${PASSWORD}/" "${MOTION_CONF}"
   MOTION="${MOTION}"',"stream_auth_method":"Basic"'
 fi
 
-# set netcam parameters
-URL=$(jq -r ".netcam_url" "${CONFIG_PATH}")
-USERPASS=$(jq -r ".netcam_userpass" "${CONFIG_PATH}")
-if [ -n "${URL}" ] && [ -n "${USERPASS}" ]; then
-  echo "Using network camera at ${URL} with ${USERPASS}"
-  sed -i "s|.*netcam_url.*|netcam_url ${URL}|" "${MOTION_CONF}"
-  sed -i "s|.*netcam_userpass.*|netcam_userpass ${USERPASS}|" "${MOTION_CONF}"
-  MOTION="${MOTION}"',"netcam_url":"'"${URL}"'"'
+# set netcam_url (off,force,on)
+VALUE=$(jq -r ".netcam_url" "${CONFIG_PATH}")
+if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
+  echo "Set netcam_url to ${VALUE}" >&2
+  sed -i "s|.*netcam_url .*|netcam_url ${VALUE}|" "${MOTION_CONF}"
+  MOTION="${MOTION}"',"netcam_url":"'"${VALUE}"'"'
 fi
+
+# set netcam_userpass (off,force,on)
+VALUE=$(jq -r ".netcam_userpass" "${CONFIG_PATH}")
+if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
+  echo "Set netcam_userpass to ${VALUE}" >&2
+  sed -i "s/.*netcam_userpass .*/netcam_userpass ${VALUE}/" "${MOTION_CONF}"
+  MOTION="${MOTION}"',"netcam_userpass":"'"${VALUE}"'"'
+  MOTION_NETCAM_USERPASS="${VALUE}"
+fi
+
+## MOTION_TARGET_DIR
+VALUE=$(jq -r ".target_dir" "${CONFIG_PATH}")
+if [ "${VALUE}" != "null" ]; then VALUE="/share/motion"; fi
+echo "Set target_dir to ${VALUE}" >&2
+sed -i "s|.*target_dir.*|target_dir ${VALUE}|" "${MOTION_CONF}"
+if [ ! -z ${MOTION_TARGET_DIR} ]; then echo "Using current MOTION_TARGET_DIR from environment: ${MOTION_TARGET_DIR}"; else MOTION_TARGET_DIR="${VALUE}"; fi
+
+## process cameras
+l=$(jq '.cameras|length' "${CONFIG_PATH}")
+echo "Found ${l} cameras" >&2
+for (( i=0; i<l ; i++)) ; do
+  n=$(jq -r '.cameras['$i'].name' "${CONFIG_PATH}")
+  u=$(jq -r '.cameras['$i'].url' "${CONFIG_PATH}")
+  p=$(jq -r '.cameras['$i'].userpass' "${CONFIG_PATH}")
+  sp=$(jq -r '.cameras['$i'].port' "${CONFIG_PATH}")
+  q=$(jq -r '.cameras['$i'].quality' "${CONFIG_PATH}")
+  th=$(jq -r '.cameras['$i'].threshold' "${CONFIG_PATH}")
+  h=$(jq -r '.cameras['$i'].keepalive' "${CONFIG_PATH}")
+  # only name and url are required
+  if [ "${n}" != "null" ] && [ "${u}" != "null" ]; then
+    TD="${MOTION_TARGET_DIR}/${n}"
+    if [ ! -d "${TD}" ]; then mkdir -p "${TD}"; fi
+    if [ ${MOTION_CONF%/*} != ${MOTION_CONF} ]; then
+      c="${MOTION_CONF%/*}/${n}.conf"
+    else
+      c="${n}.conf"
+    fi
+    if [ -z "${CAMERAS}" ]; then
+      CAMERAS='['
+    else
+      CAMERAS="${CAMERAS}"','
+    fi
+    CAMERAS="${CAMERAS}"'{"id":'${i}',"name":"'"${n}"'","url":"'${u}'"'
+    k=$(jq -r '.cameras['$i'].models' "${CONFIG_PATH}")
+    if [ ! -z ${k} ] && [ "${k}" != "null" ]; then
+      MODELS=$(echo "${k}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
+    fi
+    if [ -n "${MODELS}" ]; then CAMERAS="${CAMERAS}"',"models":['"${MODELS}"']'; fi
+    unset MODELS
+    sed -i 's|; camera .*camera'"$i"'.*|camera '"${c}"'|' "${MOTION_CONF}"
+    echo "camera_id ${i}" > "${c}"
+    echo "camera_name ${n}" >> "${c}"
+    echo "target_dir ${MOTION_TARGET_DIR}/${n}" >> "${c}"
+    echo "netcam_url ${u}" >> "${c}"
+    if [ "${sp}" == "null" ] || [ -z "${sp}" ]; then sp=$((MOTION_STREAM_PORT + i)); fi
+    echo "stream_port ${sp}" >> "${c}"
+    if [ "${q}" != "null" ] && [ ! -z "${q}"]; then echo "stream_quality ${q}" >> "${c}"; fi
+    if [ "${th}" != "null" ] && [ ! -z "${th}"]; then echo "threshold ${th}" >> "${c}"; fi
+    if [ "${p}" != "null" ] && [ ! -z "${p}"]; then echo "netcam_userpass ${p}" >> "${c}"; fi
+    if [ "${h}" != "null" ] && [ ! -z "${h}"]; then echo "netcam_keepalive ${h}" >> "${c}"; fi
+    if [ -n ${CAMERAS} ]; then CAMERAS="${CAMERAS}"'}'; fi
+  else
+    echo "Invalid camera $i" >&2
+  fi
+done
+if [ -n "${CAMERAS}" ]; then MOTION="${MOTION}"',"cameras":'"${CAMERAS}"']'; fi
 
 ### end motion
 MOTION="${MOTION}"'}'
@@ -337,15 +426,31 @@ JSON="${JSON}"','"${MOTION}"
 
 # set field of view; 56 or 75 degrees for PS3 Eye camera
 VALUE=$(jq -r ".fov" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE=75; fi
-echo "Set field of view to ${VALUE}"
+if [ "${VALUE}" != "null" ]; then VALUE=75; fi
+echo "Set field of view to ${VALUE}" >&2
 JSON="${JSON}"',"fov":"'"${VALUE}"'"'
+
+# set interval for events
+VALUE=$(jq -r ".interval" "${CONFIG_PATH}")
+if [ "${VALUE}" != "null" ]; then VALUE=${MOTION_EVENT_GAP}; fi
+echo "Set interval to ${VALUE}" >&2
+JSON="${JSON}"',"interval":'"${VALUE}"
+MOTION_INTERVAL=${VALUE}
 
 ###
 ### DONE w/ JSON
 ###
 
 JSON="${JSON}"'}'
+
+JSONFILE=$(mktemp)
+echo "${JSON}" | jq '.' > "${JSONFILE}"
+if [ ! -s "${JSONFILE}" ]; then
+  echo "Invalid JSON: ${JSON}" >&2
+  # exit
+else
+  echo "Valid JSON:" $(jq -c '.' "${JSONFILE}") >&2
+fi
 
 ###
 ### CLOUDANT
@@ -354,52 +459,76 @@ JSON="${JSON}"'}'
 URL=$(jq -r ".cloudant_url" "${CONFIG_PATH}")
 USERNAME=$(jq -r ".cloudant_username" "${CONFIG_PATH}")
 PASSWORD=$(jq -r ".cloudant_password" "${CONFIG_PATH}")
-if [ -n "${URL}" ] && [ -n "${USERNAME}" ] && [ -n "${PASSWORD}" ]; then
-  echo "Using CLOUDANT as ${USERNAME}"
-  DB=$(curl -u "${USERNAME}":"${PASSWORD}" -q -s -X GET "${URL}/devices" | jq '.db_name')
-  if [ "${DB}" == "null" ]; then
+if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "null" ]; then
+  CLOUDANT_URL="${URL%:*}"'://'"${USERNAME}"':'"${PASSWORD}"'@'"${USERNAME}"."${URL#*.}"
+  echo "Using CLOUDANT as ${CLOUDANT_URL}" >&2
+  URL="${CLOUDANT_URL}/motion"
+  ERROR=$(curl -s -q -f -L "${URL}" | jq '.error')
+  if [ "${ERROR}" == "not_found" ]; then
     # create DB
-    DB=$(curl -u "${USERNAME}":"${PASSWORD}" -q -s -X PUT "${URL}/devices" | jq '.ok')
-    if [ "${DB}" != "true" ]; then
+    OK=$(curl -u "${USERNAME}":"${PASSWORD}" -q -s -f -L -X PUT "${URL}" | jq '.ok')
+    if [ "${OK}" != "true" ]; then
+      echo "Failed to create CLOUDANT DB motion" >&2
       OFF=TRUE
+    else
+      echo "Created CLOUDANT DB motion" >&2
     fi
+  else
+    echo "CLOUDANT DB motion exists" >&2
   fi
-  if [ -z "${OFF}" ]; then
+  if [ -s "${JSONFILE}" ] && [ -z "${OFF}" ]; then
     URL="${URL}/${DEVICE_NAME}"
-    REV=$(curl -u "${USERNAME}":"${PASSWORD}" -s -q "${URL}" | jq -r '._rev')
-    if [ -n "${REV}" ]; then
+    REV=$(curl -s -q -f -L "${URL}" | jq -r '._rev')
+    if [ "${REV}" != "null" ]; then
+      echo "Prior record exists ${REV}" >&2
       URL="${URL}?rev=${REV}"
     fi
-    echo "Updating ${DEVICE_NAME} with " $(echo "${JSON}" | jq -c '.')
-    curl -u "${USERNAME}":"${PASSWORD}" -q -s -H "Content-type: application/json" -X PUT "${URL}" -d "${JSON}"
+    OK=$(curl -q -s -f -L -H "Content-type: application/json" -X PUT "${URL}" -d @"${JSONFILE}" | jq '.ok')
+    if [ "${OK}" == "null" ]; then
+      echo "Failed to update ${DEVICE_NAME}; rev = ${REV}; exiting" >&2
+      # exit
+    else
+      echo "SUCCESS: ${URL}" >&2
+      echo "RETRIEVE: " $(curl -s -q -f -L "${URL}" | jq -c '.') >&2
+    fi
   else
-    echo "Failed to access/create DB"
-    exit
+    echo "Failed; no DB or bad JSON; exiting" >&2
+    # exit
   fi
 else
-  echo "Cloudant URL, username and/or password undefined; exiting"
+  echo "Cloudant URL, username and/or password undefined; exiting" >&2
   # exit
 fi
 
-## TARGET_DIR
-VALUE=$(jq -r ".target_dir" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE="/share/motion"; fi
-echo "Set target_dir to ${VALUE}"
-sed -i "s/^target_dir\s.*/target_dir ${VALUE}/g" "${MOTION_CONF}"
-echo "CHANGING CURRENT WORKING DIRECTORY TO ${VALUE}"
-mkdir -p "${VALUE}" ; cd "${VALUE}"
-
 ## DAEMON MODE
 VALUE=$(jq -r ".daemon" "${CONFIG_PATH}")
-if [ -n "${VALUE}" ]; then VALUE="on"; fi
-echo "Set daemon to ${VALUE}"
-sed -i "s/^daemon\s.*/daemon ${VALUE}/g" "${MOTION_CONF}"
+if [ "${VALUE}" != "null" ]; then VALUE="on"; fi
+echo "Set daemon to ${VALUE}" >&2
+sed -i "s/^daemon\s.*/daemon ${VALUE}/" "${MOTION_CONF}"
 
-# run
-echo "START MOTION"
-motion -l /dev/stderr
+# test hassio
+echo "Testing hassio" >&2
+curl -s -q -f -L -H "X-HASSIO-KEY: ${HASSIO_TOKEN}" "http://hassio/supervisor/info" | jq -c '.' >&2
+# test homeassistant
+echo "Testing homeassistant" >&2
+curl -s -q -f -L -u ":${HASSIO_TOKEN}" "http://hassio/homeassistant/api/states" | jq -c '.|length' >&2
 
-# start python httpd server
+MOTION=$(command -v motion)
+if [ ! -s "${MOTION}" ] || [ ! -s "${MOTION_CONF}" ]; then
+  echo "No motion installed (${MOTION}) or motion configuration ${MOTION_CONF} does not exist" >&2
+else
+  # start motion
+  echo "Start motion with ${MOTION_CONF}" >&2
+  motion -c "${MOTION_CONF}" -l /dev/stderr
+fi
 
-echo "START PYTHON"
-python3 -m http.server
+if [ ! -z "${MOTION_TARGET_DIR}" ]; then
+  if [ ! -d "${MOTION_TARGET_DIR}" ]; then mkdir -p "${MOTION_TARGET_DIR}"; fi
+  echo "Changing working directory: ${MOTION_TARGET_DIR}" >&2
+  cd "${MOTION_TARGET_DIR}"
+  # start python httpd server
+  echo "Starting python httpd server" >&2
+  python3 -m http.server
+else
+  echo "No directory ${MOTION_TARGET_DIR}; exiting" >&2
+fi
