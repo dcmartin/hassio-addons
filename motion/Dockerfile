@@ -9,18 +9,24 @@ RUN apk update
 
 RUN apk add --no-cache coreutils python3 mosquitto-clients jq curl motion@testing
 
+# 
+ARG MOTION_CONF=/etc/motion/motion.conf 
+ARG LOCAL_BIN=/usr/local/bin
+
+# environment
+ENV CONFIG_PATH /data/options.json
+ENV MOTION_CONF "${MOTION_CONF}"
+
+
 # Copy "motion" scripts 
-COPY *.sh /usr/local/bin/
-COPY motion.conf /etc/motion/motion.conf
+COPY motion.conf "${MOTION_CONF}"
+COPY *.sh "${LOCAL_BIN}"
+RUN chmod a+x "${LOCAL_BIN}"/*.sh
 
 # Ports for motion (control and stream)
 EXPOSE 8000 8080 8081 8082 8083 8084
 
-# environment
-ENV CONFIG_PATH /data/options.json
-ENV MOTION_CONF /etc/motion/motion.conf
-
-CMD [ "/usr/local/bin/run.sh" ]
+CMD [ "${LOCAL_BIN}/run.sh" ]
 
 # Build arugments
 ARG BUILD_ARCH
