@@ -404,10 +404,10 @@ for (( i=0; i<l ; i++)) ; do
     echo "netcam_url ${u}" >> "${c}"
     if [ "${sp}" == "null" ] || [ -z "${sp}" ]; then sp=$((MOTION_STREAM_PORT + i)); fi
     echo "stream_port ${sp}" >> "${c}"
-    if [ "${q}" != "null" ] && [ ! -z "${q}"]; then echo "stream_quality ${q}" >> "${c}"; fi
-    if [ "${th}" != "null" ] && [ ! -z "${th}"]; then echo "threshold ${th}" >> "${c}"; fi
-    if [ "${p}" != "null" ] && [ ! -z "${p}"]; then echo "netcam_userpass ${p}" >> "${c}"; fi
-    if [ "${h}" != "null" ] && [ ! -z "${h}"]; then echo "netcam_keepalive ${h}" >> "${c}"; fi
+    if [ "${q}" != "null" ] && [ ! -z "${q}" ]; then echo "stream_quality ${q}" >> "${c}"; fi
+    if [ "${th}" != "null" ] && [ ! -z "${th}" ]; then echo "threshold ${th}" >> "${c}"; fi
+    if [ "${p}" != "null" ] && [ ! -z "${p}" ]; then echo "netcam_userpass ${p}" >> "${c}"; fi
+    if [ "${h}" != "null" ] && [ ! -z "${h}" ]; then echo "netcam_keepalive ${h}" >> "${c}"; fi
     if [ -n ${CAMERAS} ]; then CAMERAS="${CAMERAS}"'}'; fi
   else
     echo "Invalid camera $i" >&2
