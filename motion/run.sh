@@ -14,7 +14,6 @@ JSON='{'
 ##
 ## host name
 ##
-# Set the correct timezone
 if [ -n "${HOSTNAME}" ]; then
   echo "Setting HOSTNAME ${HOSTNAME}" >&2
   # FIRST ITEM NO COMMA
@@ -29,7 +28,7 @@ fi
 ##
 TIMEZONE=$(jq -r ".timezone" "${CONFIG_PATH}")
 # Set the correct timezone
-if [ -n "${TIMEZONE}" ]; then
+if [ ! -z "${TIMEZONE}" ] && [ "${TIMEZONE}" != "null" ]; then
   echo "Setting TIMEZONE ${TIMEZONE}" >&2
   cp /usr/share/zoneinfo/${TIMEZONE} /etc/localtime
   JSON="${JSON}"',"timezone":"'"${TIMEZONE}"'"'
@@ -71,17 +70,20 @@ WVR_DATE=$(jq -r ".wvr_date" "${CONFIG_PATH}")
 WVR_VERSION=$(jq -r ".wvr_version" "${CONFIG_PATH}")
 if [ ! -z "${WVR_URL}" ] && [ ! -z "${WVR_APIKEY}" ] && [ ! -z "${WVR_DATE}" ] && [ ! -z "${WVR_VERSION}" ] && [ "${WVR_URL}" != "null" ] && [ "${WVR_APIKEY}" != "null" ] && [ "${WVR_DATE}" != "null" ] && [ "${WVR_VERSION}" != "null" ]; then
   echo "Watson Visual Recognition at ${WVR_URL} date ${WVR_DATE} version ${WVR_VERSION}" >&2
-  JSON="${JSON}"',"watson":{"url":"'"${WVR_URL}"'","release":"'"${WVR_DATE}"'","version":"'"${WVR_VERSION}"'","models":['
+  WATSON='{"url":"'"${WVR_URL}"'","release":"'"${WVR_DATE}"'","version":"'"${WVR_VERSION}"'","models":['
   if [ ! -z "${WVR_CLASSIFIER}" ] && [ "${WVR_CLASSIFIER}" != "null" ]; then
     # quote the model names
     CLASSIFIERS=$(echo "${WVR_CLASSIFIER}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
     echo "Using classifiers(s): ${CLASSIFIERS}" >&2
-    JSON="${JSON}""${CLASSIFIERS}"
+    WATSON="${WATSON}""${CLASSIFIERS}"
   else
     # add default iif none specified
-    JSON="${JSON}"'"default"'
+    WATSON="${WATSON}"'"default"'
   fi
-  JSON="${JSON}"']}'
+  WATSON="${WATSON}"']}'
+fi
+if [ -n "${WATSON}" ]; then
+  JSON="${JSON}"',"watson":'"${WATSON}"
 else
   echo "Watson Visual Recognition NOT CONFIGURED" >&2
   JSON="${JSON}"',"watson":null'
@@ -91,15 +93,18 @@ fi
 # local nVidia DIGITS/Caffe image classification server
 VALUE=$(jq -r ".digits_server_url" "${CONFIG_PATH}")
 if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
-  JSON="${JSON}"',"digits":{"host":"'"${VALUE}"'"'
+  DIGITS='{"host":"'"${VALUE}"'"'
   if [ -z "${DIGITS_SERVER_URL}" ]; then DIGITS_SERVER_URL="${VALUE}"; fi
   VALUE=$(jq -r ".digits_jobid" "${CONFIG_PATH}")
   if [ ! -z "${VALUE}" ] && [ "${VALUE}" != "null" ]; then
     DIGITS_JOBIDS=$(echo "${VALUE}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
     echo "Using DIGITS at ${DIGITS_SERVER_URL} and ${DIGITS_JOBIDS}" >&2
-    JSON="${JSON}"',"models":['"${DIGITS_JOBIDS}"']'
+    DIGITS="${DIGITS}"',"models":['"${DIGITS_JOBIDS}"']'
   fi
-  JSON="${JSON}"'}'
+  DIGITS="${DIGITS}"'}'
+fi
+if [ -n "${DIGITS}" ]; then
+  JSON="${JSON}"',"digits":'"${DIGITS}"
 else
   echo "DIGITS server URL not specified" >&2
   JSON="${JSON}"',"digits":null'
@@ -109,7 +114,9 @@ fi
 ### MOTION
 ###
 
-MOTION='"motion":{'
+echo "+++ MOTION" >&2
+
+MOTION='{'
 
 ## alphanumeric values
 
@@ -213,7 +220,6 @@ if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=60; fi
 echo "Set event_gap to ${VALUE}" >&2
 sed -i "s/.*event_gap\s[0-9]\+/event_gap ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"event_gap":'"${VALUE}"
-MOTION_EVENT_GAP=${VALUE}
 
 # set minimum_motion_frames
 VALUE=$(jq -r ".minimum_motion_frames" "${CONFIG_PATH}")
@@ -341,7 +347,7 @@ if [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "null" ] && [ ! -z "${USERN
   MOTION="${MOTION}"',"stream_auth_method":"Basic"'
 fi
 
-# set netcam_url (off,force,on)
+# set netcam_url to be shared across all cameras
 VALUE=$(jq -r ".netcam_url" "${CONFIG_PATH}")
 if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
   echo "Set netcam_url to ${VALUE}" >&2
@@ -349,7 +355,7 @@ if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
   MOTION="${MOTION}"',"netcam_url":"'"${VALUE}"'"'
 fi
 
-# set netcam_userpass (off,force,on)
+# set netcam_userpass across all cameras
 VALUE=$(jq -r ".netcam_userpass" "${CONFIG_PATH}")
 if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
   echo "Set netcam_userpass to ${VALUE}" >&2
@@ -358,84 +364,165 @@ if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
   MOTION_NETCAM_USERPASS="${VALUE}"
 fi
 
-## MOTION_TARGET_DIR
+# MOTION_TARGET_DIR defined for all cameras base path
 VALUE=$(jq -r ".target_dir" "${CONFIG_PATH}")
-if [ "${VALUE}" != "null" ]; then VALUE="/share/motion"; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="/share/motion"; fi
+if [ ! -z ${MOTION_TARGET_DIR} ]; then echo "*** WARNING *** ${MOTION_TARGET_DIR}"; VALUE="${MOTION_TARGET_DIR}"; else MOTION_TARGET_DIR="${VALUE}"; fi
 echo "Set target_dir to ${VALUE}" >&2
 sed -i "s|.*target_dir.*|target_dir ${VALUE}|" "${MOTION_CONF}"
-if [ ! -z ${MOTION_TARGET_DIR} ]; then echo "Using current MOTION_TARGET_DIR from environment: ${MOTION_TARGET_DIR}"; else MOTION_TARGET_DIR="${VALUE}"; fi
+MOTION="${MOTION}"',"target_dir":"'"${VALUE}"'"'
 
-## process cameras
-l=$(jq '.cameras|length' "${CONFIG_PATH}")
-echo "Found ${l} cameras" >&2
-for (( i=0; i<l ; i++)) ; do
-  n=$(jq -r '.cameras['$i'].name' "${CONFIG_PATH}")
-  u=$(jq -r '.cameras['$i'].url' "${CONFIG_PATH}")
-  p=$(jq -r '.cameras['$i'].userpass' "${CONFIG_PATH}")
-  sp=$(jq -r '.cameras['$i'].port' "${CONFIG_PATH}")
-  q=$(jq -r '.cameras['$i'].quality' "${CONFIG_PATH}")
-  th=$(jq -r '.cameras['$i'].threshold' "${CONFIG_PATH}")
-  h=$(jq -r '.cameras['$i'].keepalive' "${CONFIG_PATH}")
-  # only name and url are required
-  if [ "${n}" != "null" ] && [ "${u}" != "null" ]; then
-    TD="${MOTION_TARGET_DIR}/${n}"
-    if [ ! -d "${TD}" ]; then mkdir -p "${TD}"; fi
-    if [ ${MOTION_CONF%/*} != ${MOTION_CONF} ]; then
-      c="${MOTION_CONF%/*}/${n}.conf"
-    else
-      c="${n}.conf"
-    fi
-    if [ -z "${CAMERAS}" ]; then
-      CAMERAS='['
-    else
-      CAMERAS="${CAMERAS}"','
-    fi
-    CAMERAS="${CAMERAS}"'{"id":'${i}',"name":"'"${n}"'","url":"'${u}'"'
-    k=$(jq -r '.cameras['$i'].models' "${CONFIG_PATH}")
-    if [ ! -z ${k} ] && [ "${k}" != "null" ]; then
-      MODELS=$(echo "${k}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
-    fi
-    if [ -n "${MODELS}" ]; then CAMERAS="${CAMERAS}"',"models":['"${MODELS}"']'; fi
-    unset MODELS
-    sed -i 's|; camera .*camera'"$i"'.*|camera '"${c}"'|' "${MOTION_CONF}"
-    echo "camera_id ${i}" > "${c}"
-    echo "camera_name ${n}" >> "${c}"
-    echo "target_dir ${MOTION_TARGET_DIR}/${n}" >> "${c}"
-    echo "netcam_url ${u}" >> "${c}"
-    if [ "${sp}" == "null" ] || [ -z "${sp}" ]; then sp=$((MOTION_STREAM_PORT + i)); fi
-    echo "stream_port ${sp}" >> "${c}"
-    if [ "${q}" != "null" ] && [ ! -z "${q}" ]; then echo "stream_quality ${q}" >> "${c}"; fi
-    if [ "${th}" != "null" ] && [ ! -z "${th}" ]; then echo "threshold ${th}" >> "${c}"; fi
-    if [ "${p}" != "null" ] && [ ! -z "${p}" ]; then echo "netcam_userpass ${p}" >> "${c}"; fi
-    if [ "${h}" != "null" ] && [ ! -z "${h}" ]; then echo "netcam_keepalive ${h}" >> "${c}"; fi
-    if [ -n ${CAMERAS} ]; then CAMERAS="${CAMERAS}"'}'; fi
-  else
-    echo "Invalid camera $i" >&2
-  fi
-done
-if [ -n "${CAMERAS}" ]; then MOTION="${MOTION}"',"cameras":'"${CAMERAS}"']'; fi
-
-### end motion
+## end motion structure; cameras section depends on well-formed JSON for $MOTION
 MOTION="${MOTION}"'}'
 
-JSON="${JSON}"','"${MOTION}"
+## append to configuration JSON
+JSON="${JSON}"',"motion":'"${MOTION}"
 
 ###
-### parameters not in prior configuration 
+### process cameras 
 ###
 
-# set field of view; 56 or 75 degrees for PS3 Eye camera
-VALUE=$(jq -r ".fov" "${CONFIG_PATH}")
-if [ "${VALUE}" != "null" ]; then VALUE=75; fi
-echo "Set field of view to ${VALUE}" >&2
-JSON="${JSON}"',"fov":"'"${VALUE}"'"'
+ncamera=$(jq '.cameras|length' "${CONFIG_PATH}")
+echo "Found ${ncamera} cameras" >&2
+for (( i=0; i<ncamera ; i++)) ; do
+
+  if [ -z "${CAMERAS}" ]; then CAMERAS='['; else CAMERAS="${CAMERAS}"','; fi
+
+  echo "+++ CAMERA $i" >&2
+
+  CAMERAS="${CAMERAS}"'{"id":'${i}
+
+  # name
+  VALUE=$(jq -r '.cameras['$i'].name' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="camera-name${i}"; fi
+  echo "Set name to ${VALUE}" >&2
+  CAMERAS="${CAMERAS}"',"name":"'"${VALUE}"'"'
+
+  # SPECIAL CASE FOR NAME
+  CNAME=${VALUE}
+  if [ ${MOTION_CONF%/*} != ${MOTION_CONF} ]; then 
+    CAMERA_CONF="${MOTION_CONF%/*}/${CNAME}.conf"
+  else
+    CAMERA_CONF="${CNAME}.conf"
+  fi
+  echo "camera_id ${i}" > "${CAMERA_CONF}"
+  echo "camera_name ${VALUE}" >> "${CAMERA_CONF}"
+
+  # process camera type; only wcv80n
+  VALUE=$(jq -r '.cameras['$i'].type' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="wcv80n"; fi
+  echo "Set type to ${VALUE}" >&2
+  CAMERAS="${CAMERAS}"',"type":"'"${VALUE}"'"'
+  # process camera fov; 56 or 75 degrees for PS3 Eye camera
+  VALUE=$(jq -r '.cameras['$i'].fov' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=56; fi
+  echo "Set fov to ${VALUE}" >&2
+  CAMERAS="${CAMERAS}"',"fov":'"${VALUE}"
+  # process camera fps; set on wcv80n web GUI; default 6
+  VALUE=$(jq -r '.cameras['$i'].fps' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=6; fi
+  echo "Set fps to ${VALUE}" >&2
+  CAMERAS="${CAMERAS}"',"fps":'"${VALUE}"
+
+  # target_dir 
+  VALUE=$(jq -r '.cameras['$i'].target_dir' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.target_dir'); VALUE="${VALUE}/${CNAME}"; fi
+  echo "Set target_dir to ${VALUE}" >&2
+  echo "target_dir ${VALUE}" >> "${CAMERA_CONF}"
+  if [ ! -d "${VALUE}" ]; then mkdir -p "${VALUE}"; fi
+  CAMERAS="${CAMERAS}"',"target_dir":"'"${VALUE}"'"'
+
+  # url
+  VALUE=$(jq -r '.cameras['$i'].url' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_url'); fi
+  echo "Set url to ${VALUE}" >&2
+  echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
+  CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
+
+  # stream_port 
+  VALUE=$(jq -r '.cameras['$i'].port' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.stream_port'); VALUE=$((VALUE + i)); fi
+  echo "Set stream_port to ${VALUE}" >&2
+  echo "stream_port ${VALUE}" >> "${CAMERA_CONF}"
+  CAMERAS="${CAMERAS}"',"port":"'"${VALUE}"'"'
+
+  # keepalive 
+  VALUE=$(jq -r '.cameras['$i'].keepalive' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_keepalive'); fi
+  echo "Set netcam_keepalive to ${VALUE}" >&2
+  echo "netcam_keepalive ${VALUE}" >> "${CAMERA_CONF}"
+  CAMERAS="${CAMERAS}"',"keepalive":"'"${VALUE}"'"'
+
+  # userpass 
+  VALUE=$(jq -r '.cameras['$i'].userpass' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_userpass'); fi
+  echo "Set netcam_userpass to ${VALUE}" >&2
+  echo "netcam_userpass ${VALUE}" >> "${CAMERA_CONF}"
+  # DO NOT RECORD; CAMERAS="${CAMERAS}"',"userpass":"'"${VALUE}"'"'
+
+  ## numeric VALUE
+
+  # stream_quality 
+  VALUE=$(jq -r '.cameras['$i'].stream_quality' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.stream_quality'); fi
+  echo "Set stream_quality to ${VALUE}" >&2
+  echo "stream_quality ${VALUE}" >> "${CAMERA_CONF}"
+  CAMERAS="${CAMERAS}"',"quality":'"${VALUE}"
+
+  # threshold 
+  VALUE=$(jq -r '.cameras['$i'].threshold' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.threshold'); fi
+  echo "Set threshold to ${VALUE}" >&2
+  echo "threshold ${VALUE}" >> "${CAMERA_CONF}"
+  CAMERAS="${CAMERAS}"',"threshold":'"${VALUE}"
+
+  # width 
+  VALUE=$(jq -r '.cameras['$i'].width' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.width'); fi
+  echo "Set width to ${VALUE}" >&2
+  echo "width ${VALUE}" >> "${CAMERA_CONF}"
+  CAMERAS="${CAMERAS}"',"width":'"${VALUE}"
+
+  # height 
+  VALUE=$(jq -r '.cameras['$i'].height' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.height'); fi
+  echo "Set height to ${VALUE}" >&2
+  echo "height ${VALUE}" >> "${CAMERA_CONF}"
+  CAMERAS="${CAMERAS}"',"height":'"${VALUE}"
+
+  # process models string to array of strings
+  VALUE=$(jq -r '.cameras['$i'].models' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then 
+    W=$(echo "${WATSON}" | jq -r '.models[]?'| sed 's/\([^,]*\)\([,]*\)/"wvr:\1"\2/g' | fmt -1000)
+    # echo "WATSON: ${WATSON} ${W}" >&2
+    D=$(echo "${DIGITS}" | jq -r '.models[]?'| sed 's/\([^,]*\)\([,]*\)/"digits:\1"\2/g' | fmt -1000)
+    # echo "DIGITS: ${DIGITS} ${D}" >&2
+    VALUE=$(echo ${W} ${D})
+    VALUE=$(echo "${VALUE}" | sed "s/ /,/g")
+  else
+    VALUE=$(echo "${VALUE}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
+  fi
+  echo "Set models to ${VALUE}" >&2
+  CAMERAS="${CAMERAS}"',"models":['"${VALUE}"']'
+
+  ## close CAMERAS structure
+  CAMERAS="${CAMERAS}"'}'
+
+  # modify primary configuration file with new camera configuration
+  sed -i 's|; camera .*camera'"$i"'.*|camera '"${CAMERA_CONF}"'|' "${MOTION_CONF}"
+
+done
+
+## append to configuration JSON
+if [ -n "${CAMERAS}" ]; then 
+  JSON="${JSON}"',"cameras":'"${CAMERAS}"']'
+fi
 
 # set interval for events
-VALUE=$(jq -r ".interval" "${CONFIG_PATH}")
-if [ "${VALUE}" != "null" ]; then VALUE=${MOTION_EVENT_GAP}; fi
+VALUE=$(jq -r '.interval' "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.event_gap'); fi
 echo "Set interval to ${VALUE}" >&2
 JSON="${JSON}"',"interval":'"${VALUE}"
-MOTION_INTERVAL=${VALUE}
 
 ###
 ### DONE w/ JSON
@@ -447,9 +534,7 @@ JSONFILE=$(mktemp)
 echo "${JSON}" | jq '.' > "${JSONFILE}"
 if [ ! -s "${JSONFILE}" ]; then
   echo "Invalid JSON: ${JSON}" >&2
-  # exit
-else
-  echo "Valid JSON:" $(jq -c '.' "${JSONFILE}") >&2
+  exit
 fi
 
 ###
@@ -461,7 +546,7 @@ USERNAME=$(jq -r ".cloudant_username" "${CONFIG_PATH}")
 PASSWORD=$(jq -r ".cloudant_password" "${CONFIG_PATH}")
 if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "null" ]; then
   CLOUDANT_URL="${URL%:*}"'://'"${USERNAME}"':'"${PASSWORD}"'@'"${USERNAME}"."${URL#*.}"
-  echo "Using CLOUDANT as ${CLOUDANT_URL}" >&2
+  # echo "Using CLOUDANT as ${CLOUDANT_URL}" >&2
   URL="${CLOUDANT_URL}/motion"
   ERROR=$(curl -s -q -f -L "${URL}" | jq '.error')
   if [ "${ERROR}" == "not_found" ]; then
@@ -485,19 +570,16 @@ if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "
     fi
     OK=$(curl -q -s -f -L -H "Content-type: application/json" -X PUT "${URL}" -d @"${JSONFILE}" | jq '.ok')
     if [ "${OK}" == "null" ]; then
-      echo "Failed to update ${DEVICE_NAME}; rev = ${REV}; exiting" >&2
-      # exit
-    else
-      echo "SUCCESS: ${URL}" >&2
-      echo "RETRIEVE: " $(curl -s -q -f -L "${URL}" | jq -c '.') >&2
+      echo "Failed to update ${DEVICE_NAME}; rev = ${REV}" >&2
+      # echo "Exiting" >&2; exit
     fi
   else
-    echo "Failed; no DB or bad JSON; exiting" >&2
-    # exit
+    echo "Failed; no DB or bad JSON" >&2
+    # echo "Exiting" >&2; exit
   fi
 else
-  echo "Cloudant URL, username and/or password undefined; exiting" >&2
-  # exit
+  echo "Cloudant URL, username and/or password undefined" >&2
+  # echo "Exiting" >&2; exit
 fi
 
 ## DAEMON MODE
