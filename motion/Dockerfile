@@ -17,7 +17,6 @@ ARG LOCAL_BIN=/usr/local/bin
 ENV CONFIG_PATH /data/options.json
 ENV MOTION_CONF "${MOTION_CONF}"
 
-
 # Copy "motion" scripts 
 COPY motion.conf "${MOTION_CONF}"
 RUN mkdir -p "{LOCAL_BIN}" 
@@ -27,7 +26,7 @@ RUN chmod 755 "${LOCAL_BIN}"/run.sh
 # Ports for motion (control and stream)
 EXPOSE 8000 8080 8081 8082 8083 8084
 
-CMD [ "${LOCAL_BIN}/run.sh" ]
+CMD [ "/usr/local/bin/run.sh" ]
 
 # Build arugments
 ARG BUILD_ARCH
