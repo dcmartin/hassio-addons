@@ -57,8 +57,8 @@ if [ "${MQTT_PORT}" != "null" ] && [ "${MQTT_HOST}" != "null" ] && [ ! -z "${MQT
   echo "Using MQTT at ${MQTT_HOST}" >&2
   JSON="${JSON}"',"mqtt":{"host":"'"${MQTT_HOST}"'","port":'"${MQTT_PORT}"'}'
 else
-  echo "MQTT host or port undefined; exiting" >&2
-  exit
+  JSON="${JSON}"',"mqtt":null'
+  echo "MQTT host or port undefined" >&2
 fi
 
 ## WATSON
