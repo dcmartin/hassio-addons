@@ -21,7 +21,7 @@ ENV MOTION_CONF "${MOTION_CONF}"
 # Copy "motion" scripts 
 COPY motion.conf "${MOTION_CONF}"
 RUN mkdir -p "{LOCAL_BIN}" 
-COPY *.sh "${LOCAL_BIN}"
+COPY *.sh "${LOCAL_BIN}"/
 RUN chmod 755 "${LOCAL_BIN}"/run.sh
 
 # Ports for motion (control and stream)
