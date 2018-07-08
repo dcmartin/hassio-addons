@@ -6,6 +6,9 @@ if [ ! -s "${CONFIG_PATH}" ]; then
   exit
 fi
 
+echo "+++ ENVIRONMENT"
+env >&2
+
 ###
 ### START JSON
 ###
@@ -14,14 +17,12 @@ JSON='{'
 ##
 ## host name
 ##
-if [ -n "${HOSTNAME}" ]; then
-  echo "Setting HOSTNAME ${HOSTNAME}" >&2
-  # FIRST ITEM NO COMMA
-  JSON="${JSON}"'"hostname":"'"${HOSTNAME}"'","date":'$(/bin/date +%s)
-else
-  echo "Host name not set; exiting" >&2
-  exit
-fi
+VALUE=$(jq -r ".name" "${CONFIG_PATH}")
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="${HOSTNAME}"; fi
+echo "Setting name ${VALUE}" >&2
+# FIRST ITEM NO COMMA
+JSON="${JSON}"'"name":"'"${VALUE}"'","date":'$(/bin/date +%s)
+MOTION_DEVICE_NAME="${VALUE}"
 
 ##
 ## time zone
@@ -533,13 +534,20 @@ URL=$(jq -r ".cloudant_url" "${CONFIG_PATH}")
 USERNAME=$(jq -r ".cloudant_username" "${CONFIG_PATH}")
 PASSWORD=$(jq -r ".cloudant_password" "${CONFIG_PATH}")
 if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "null" ]; then
+  echo "Testing CLOUDANT" >&2
+  OK=$(curl -s -q -f -L "${URL}" -u "${USERNAME}:${PASSWORD}" | jq -r '.couchdb')
+  if [ "${OK}" == "null" ] || [ -z "${OK}" ]; then
+    echo "Cloudant failed at ${URL} with ${USERNAME} and ${PASSWORD}" >&2
+    exit
+  fi
   CLOUDANT_URL="${URL%:*}"'://'"${USERNAME}"':'"${PASSWORD}"'@'"${USERNAME}"."${URL#*.}"
-  # echo "Using CLOUDANT as ${CLOUDANT_URL}" >&2
   URL="${CLOUDANT_URL}/motion"
-  ERROR=$(curl -s -q -f -L "${URL}" | jq '.error')
-  if [ "${ERROR}" == "not_found" ]; then
+  echo "Fetching ${URL}" >&2
+  DB=$(curl -s -q -f -L "${URL}" | jq -r '.db_name')
+  if [ "${DB}" != "motion" ]; then
     # create DB
-    OK=$(curl -u "${USERNAME}":"${PASSWORD}" -q -s -f -L -X PUT "${URL}" | jq '.ok')
+    echo "Putting ${URL}" >&2
+    OK=$(curl -s -q -f -L -X PUT "${URL}" | jq '.ok')
     if [ "${OK}" != "true" ]; then
       echo "Failed to create CLOUDANT DB motion" >&2
       OFF=TRUE
@@ -550,16 +558,20 @@ if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "
     echo "CLOUDANT DB motion exists" >&2
   fi
   if [ -s "${JSONFILE}" ] && [ -z "${OFF}" ]; then
-    URL="${URL}/${HOSTNAME}"
+    URL="${URL}/${MOTION_DEVICE_NAME}"
+    echo "Fetching ${URL}" >&2
     REV=$(curl -s -q -f -L "${URL}" | jq -r '._rev')
-    if [ "${REV}" != "null" ]; then
+    if [ "${REV}" != "null" ] && [ ! -z "${REV}" ]; then
       echo "Prior record exists ${REV}" >&2
       URL="${URL}?rev=${REV}"
     fi
-    OK=$(curl -q -s -f -L -H "Content-type: application/json" -X PUT "${URL}" -d @"${JSONFILE}" | jq '.ok')
-    if [ "${OK}" == "null" ]; then
-      echo "Failed to update ${DEVICE_NAME}; rev = ${REV}" >&2
+    echo "Putting ${URL}" >&2
+    OK=$(curl -s -q -f -L "${URL}" -X PUT -d "@${JSONFILE}" | jq '.ok')
+    if [ "${OK}" != "true" ]; then
+      echo "Failed to update ${URL}" $(jq -c '.' "${JSONFILE}") >&2
       # echo "Exiting" >&2; exit
+    else
+      echo "Update ${URL} with" $(jq -c '.' "${JSONFILE}") >&2
     fi
   else
     echo "Failed; no DB or bad JSON" >&2

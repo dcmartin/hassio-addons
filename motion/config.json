@@ -24,6 +24,7 @@
      "8084/tcp": 8084
   },
   "options": {
+    "name":"",
     "log_level":6,
     "log_type":"all",
     "timezone":"America/Los_Angeles",
@@ -83,6 +84,7 @@
     "target_dir":"/share/motion"
   },
   "schema": {
+    "name":"str?",
     "log_level":"int?",
     "log_type":"str?",
     "cameras":[{
