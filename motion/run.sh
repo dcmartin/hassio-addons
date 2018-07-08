@@ -17,7 +17,7 @@ JSON='{'
 if [ -n "${HOSTNAME}" ]; then
   echo "Setting HOSTNAME ${HOSTNAME}" >&2
   # FIRST ITEM NO COMMA
-  JSON="${JSON}"'"hostname":"'"${HOSTNAME}"'"'
+  JSON="${JSON}"'"hostname":"'"${HOSTNAME}"'","date":'$(/bin/date +%s)
 else
   echo "Host name not set; exiting" >&2
   exit
@@ -34,18 +34,6 @@ if [ ! -z "${TIMEZONE}" ] && [ "${TIMEZONE}" != "null" ]; then
   JSON="${JSON}"',"timezone":"'"${TIMEZONE}"'"'
 else
   echo "Time zone not set; exiting" >&2
-  exit
-fi
-
-##
-## device name & location
-##
-DEVICE_NAME=$(jq -r ".name" "${CONFIG_PATH}")
-LOCATION=$(jq -r ".location" "${CONFIG_PATH}")
-if [ "${DEVICE_NAME}" != "null" ] && [ "${LOCATION}" != "null" ] && [ ! -z "${LOCATION}" ]; then
-  JSON="${JSON}"',"name":"'"${DEVICE_NAME}"'","location":"'"${LOCATION}"'","date":'$(/bin/date +%s)
-else
-  echo "Device name and/or location undefined; exiting" >&2
   exit
 fi
 
@@ -562,7 +550,7 @@ if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "
     echo "CLOUDANT DB motion exists" >&2
   fi
   if [ -s "${JSONFILE}" ] && [ -z "${OFF}" ]; then
-    URL="${URL}/${DEVICE_NAME}"
+    URL="${URL}/${HOSTNAME}"
     REV=$(curl -s -q -f -L "${URL}" | jq -r '._rev')
     if [ "${REV}" != "null" ]; then
       echo "Prior record exists ${REV}" >&2
