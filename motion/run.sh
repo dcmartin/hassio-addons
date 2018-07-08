@@ -530,7 +530,7 @@ fi
 URL=$(jq -r ".cloudant_url" "${CONFIG_PATH}")
 USERNAME=$(jq -r ".cloudant_username" "${CONFIG_PATH}")
 PASSWORD=$(jq -r ".cloudant_password" "${CONFIG_PATH}")
-if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "null" ]; then
+if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "null" ] && [ ! -z "${URL}" ] && [ ! -z "${USERNAME}" ] && [ ! -z "${PASSWORD}" ]; then
   echo "Testing CLOUDANT" >&2
   OK=$(curl -s -q -f -L "${URL}" -u "${USERNAME}:${PASSWORD}" | jq -r '.couchdb')
   if [ "${OK}" == "null" ] || [ -z "${OK}" ]; then
