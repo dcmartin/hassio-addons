@@ -96,6 +96,7 @@
       "quality":"int?",
       "width":"int?",
       "height":"int?",
+      "rotate":"int?",
       "threshold":"int?",
       "models":"str?"}],
     "timezone":"str",

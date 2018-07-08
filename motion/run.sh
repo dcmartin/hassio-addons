@@ -16,7 +16,7 @@ JSON='{'
 ##
 VALUE=$(jq -r ".name" "${CONFIG_PATH}")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="${HOSTNAME}"; fi
-echo "Setting name ${VALUE}" >&2
+echo "Setting name ${VALUE} [MOTION_DEVICE_NAME]" >&2
 # FIRST ITEM NO COMMA
 JSON="${JSON}"'"name":"'"${VALUE}"'","date":'$(/bin/date +%s)
 MOTION_DEVICE_NAME="${VALUE}"
@@ -475,6 +475,13 @@ for (( i=0; i<ncamera ; i++)) ; do
   echo "Set height to ${VALUE}" >&2
   echo "height ${VALUE}" >> "${CAMERA_CONF}"
   CAMERAS="${CAMERAS}"',"height":'"${VALUE}"
+
+  # rotate 
+  VALUE=$(jq -r '.cameras['$i'].rotate' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.rotate'); fi
+  echo "Set rotate to ${VALUE}" >&2
+  echo "rotate ${VALUE}" >> "${CAMERA_CONF}"
+  CAMERAS="${CAMERAS}"',"rotate":'"${VALUE}"
 
   # process models string to array of strings
   VALUE=$(jq -r '.cameras['$i'].models' "${CONFIG_PATH}")
