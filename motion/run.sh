@@ -6,9 +6,6 @@ if [ ! -s "${CONFIG_PATH}" ]; then
   exit
 fi
 
-echo "+++ ENVIRONMENT"
-env >&2
-
 ###
 ### START JSON
 ###
@@ -349,7 +346,7 @@ VALUE=$(jq -r ".netcam_userpass" "${CONFIG_PATH}")
 if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
   echo "Set netcam_userpass to ${VALUE}" >&2
   sed -i "s/.*netcam_userpass .*/netcam_userpass ${VALUE}/" "${MOTION_CONF}"
-  MOTION="${MOTION}"',"netcam_userpass":"'"${VALUE}"'"'
+  # DO NOT RECORD; MOTION="${MOTION}"',"netcam_userpass":"'"${VALUE}"'"'
   MOTION_NETCAM_USERPASS="${VALUE}"
 fi
 
@@ -444,7 +441,7 @@ for (( i=0; i<ncamera ; i++)) ; do
 
   # userpass 
   VALUE=$(jq -r '.cameras['$i'].userpass' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_userpass'); fi
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="${MOTION_NETCAM_USERPASS}"; fi
   echo "Set netcam_userpass to ${VALUE}" >&2
   echo "netcam_userpass ${VALUE}" >> "${CAMERA_CONF}"
   # DO NOT RECORD; CAMERAS="${CAMERAS}"',"userpass":"'"${VALUE}"'"'
@@ -519,7 +516,7 @@ JSON="${JSON}"',"interval":'"${VALUE}"
 
 JSON="${JSON}"'}'
 
-JSONFILE=$(mktemp)
+JSONFILE="${MOTION_CONF%/*}/${MOTION_DEVICE_NAME}.json"
 echo "${JSON}" | jq '.' > "${JSONFILE}"
 if [ ! -s "${JSONFILE}" ]; then
   echo "Invalid JSON: ${JSON}" >&2
@@ -542,11 +539,9 @@ if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "
   fi
   CLOUDANT_URL="${URL%:*}"'://'"${USERNAME}"':'"${PASSWORD}"'@'"${USERNAME}"."${URL#*.}"
   URL="${CLOUDANT_URL}/motion"
-  echo "Fetching ${URL}" >&2
   DB=$(curl -s -q -f -L "${URL}" | jq -r '.db_name')
   if [ "${DB}" != "motion" ]; then
     # create DB
-    echo "Putting ${URL}" >&2
     OK=$(curl -s -q -f -L -X PUT "${URL}" | jq '.ok')
     if [ "${OK}" != "true" ]; then
       echo "Failed to create CLOUDANT DB motion" >&2
@@ -559,27 +554,24 @@ if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "
   fi
   if [ -s "${JSONFILE}" ] && [ -z "${OFF}" ]; then
     URL="${URL}/${MOTION_DEVICE_NAME}"
-    echo "Fetching ${URL}" >&2
     REV=$(curl -s -q -f -L "${URL}" | jq -r '._rev')
     if [ "${REV}" != "null" ] && [ ! -z "${REV}" ]; then
       echo "Prior record exists ${REV}" >&2
       URL="${URL}?rev=${REV}"
     fi
-    echo "Putting ${URL}" >&2
     OK=$(curl -s -q -f -L "${URL}" -X PUT -d "@${JSONFILE}" | jq '.ok')
     if [ "${OK}" != "true" ]; then
       echo "Failed to update ${URL}" $(jq -c '.' "${JSONFILE}") >&2
-      # echo "Exiting" >&2; exit
+      echo "Exiting" >&2; exit
     else
-      echo "Update ${URL} with" $(jq -c '.' "${JSONFILE}") >&2
+      echo "COnfiguration for ${MOTION_DEVICE_NAME} at ${JSONFILE}" >&2
     fi
   else
     echo "Failed; no DB or bad JSON" >&2
-    # echo "Exiting" >&2; exit
+    echo "Exiting" >&2; exit
   fi
 else
   echo "Cloudant URL, username and/or password undefined" >&2
-  # echo "Exiting" >&2; exit
 fi
 
 ## DAEMON MODE
@@ -589,11 +581,9 @@ echo "Set daemon to ${VALUE}" >&2
 sed -i "s/^daemon\s.*/daemon ${VALUE}/" "${MOTION_CONF}"
 
 # test hassio
-echo "Testing hassio" >&2
-curl -s -q -f -L -H "X-HASSIO-KEY: ${HASSIO_TOKEN}" "http://hassio/supervisor/info" | jq -c '.' >&2
+echo "Testing hassio ..." $(curl -s -q -f -L -H "X-HASSIO-KEY: ${HASSIO_TOKEN}" "http://hassio/supervisor/info" | jq -c '.result') >&2
 # test homeassistant
-echo "Testing homeassistant" >&2
-curl -s -q -f -L -u ":${HASSIO_TOKEN}" "http://hassio/homeassistant/api/states" | jq -c '.|length' >&2
+echo "Testing homeassistant ..." $(curl -s -q -f -L -u ":${HASSIO_TOKEN}" "http://hassio/homeassistant/api/states" | jq -c '.|length') "states" >&2
 
 MOTION=$(command -v motion)
 if [ ! -s "${MOTION}" ] || [ ! -s "${MOTION_CONF}" ]; then
