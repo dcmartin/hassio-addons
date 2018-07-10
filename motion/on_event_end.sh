@@ -54,7 +54,7 @@ foreach jpg ( `find "${MOTION_TARGET_DIR}" -name "${YR}${MO}${DY}${HR}${MN}*-${E
     if ( $INTERVAL > ${MOTION_EVENT_INTERVAL} ) then
       break
     else if ( $INTERVAL >= 0) then
-      set frames = ( "$jpg:r" $frames )
+      set frames = ( $frames "$jpg:r" )
     else
       break
     endif
