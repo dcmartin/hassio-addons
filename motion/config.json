@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.2",
+  "version": "0.3",
   "slug": "motion",
   "description": "Motion package for networked camera(s) with Watson VR and nVidia DIGITS image classification",
   "startup": "before",
@@ -42,7 +42,7 @@
     "auto_brightness":"off",
     "locate_motion_mode":"on",
     "locate_motion_style":"box",
-    "output_pictures":"best",
+    "output_pictures":"on",
     "picture_type":"jpeg",
     "threshold_tune":"on",
     "pre_capture":0,

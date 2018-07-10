@@ -1,8 +1,8 @@
 #!/bin/bash
 
 if [ ! -s "${CONFIG_PATH}" ]; then
-  echo "Cannot find options ${CONFIG_PATH}" >&2
-  ls -al /data
+  echo "Cannot find options ${CONFIG_PATH}; exiting" >&2
+  ls -al /data >&2
   exit
 fi
 
@@ -19,7 +19,7 @@ if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="${HOSTNAME}"; fi
 echo "Setting name ${VALUE} [MOTION_DEVICE_NAME]" >&2
 # FIRST ITEM NO COMMA
 JSON="${JSON}"'"name":"'"${VALUE}"'","date":'$(/bin/date +%s)
-MOTION_DEVICE_NAME="${VALUE}"
+export MOTION_DEVICE_NAME="${VALUE}"
 
 ##
 ## time zone
@@ -36,6 +36,30 @@ else
 fi
 
 ## MQTT
+# local MQTT server (hassio addon)
+VALUE=$(jq -r ".mqtt_host" "${CONFIG_PATH}")
+if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
+  echo "Using MQTT at ${VALUE}" >&2
+  MQTT='{"host":"'"${VALUE}"'"'
+  export MOTION_MQTT_HOST="${VALUE}"
+fi
+
+if [ -n "${MQTT}" ]; then
+  VALUE=$(jq -r ".mqtt_port" "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1883; fi
+  echo "Using MQTT port: ${VALUE}" >&2
+  MQTT="${MQTT}"',"port":'"${VALUE}"'}'
+  export MOTION_MQTT_PORT="${VALUE}"
+else
+  echo "MQTT undefined; continuing" >&2
+fi
+
+if [ -n "${MQTT}" ]; then
+  JSON="${JSON}"',"mqtt":'"${MQTT}"
+else
+  JSON="${JSON}"',"mqtt":null'
+fi
+
 # local MQTT server (hassio addon)
 MQTT_HOST=$(jq -r ".mqtt_host" "${CONFIG_PATH}")
 MQTT_PORT=$(jq -r ".mqtt_port" "${CONFIG_PATH}")
@@ -347,13 +371,13 @@ if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
   echo "Set netcam_userpass to ${VALUE}" >&2
   sed -i "s/.*netcam_userpass .*/netcam_userpass ${VALUE}/" "${MOTION_CONF}"
   # DO NOT RECORD; MOTION="${MOTION}"',"netcam_userpass":"'"${VALUE}"'"'
-  MOTION_NETCAM_USERPASS="${VALUE}"
+  NETCAM_USERPASS="${VALUE}"
 fi
 
 # MOTION_TARGET_DIR defined for all cameras base path
 VALUE=$(jq -r ".target_dir" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="/share/motion"; fi
-if [ ! -z ${MOTION_TARGET_DIR} ]; then echo "*** WARNING *** ${MOTION_TARGET_DIR}"; VALUE="${MOTION_TARGET_DIR}"; else MOTION_TARGET_DIR="${VALUE}"; fi
+if [ ! -z ${MOTION_TARGET_DIR} ]; then echo "*** MOTION_TARGET_DIR *** ${MOTION_TARGET_DIR}"; VALUE="${MOTION_TARGET_DIR}"; else export MOTION_TARGET_DIR="${VALUE}"; fi
 echo "Set target_dir to ${VALUE}" >&2
 sed -i "s|.*target_dir.*|target_dir ${VALUE}|" "${MOTION_CONF}"
 MOTION="${MOTION}"',"target_dir":"'"${VALUE}"'"'
@@ -441,7 +465,7 @@ for (( i=0; i<ncamera ; i++)) ; do
 
   # userpass 
   VALUE=$(jq -r '.cameras['$i'].userpass' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="${MOTION_NETCAM_USERPASS}"; fi
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="${NETCAM_USERPASS}"; fi
   echo "Set netcam_userpass to ${VALUE}" >&2
   echo "netcam_userpass ${VALUE}" >> "${CAMERA_CONF}"
   # DO NOT RECORD; CAMERAS="${CAMERAS}"',"userpass":"'"${VALUE}"'"'
@@ -513,9 +537,10 @@ fi
 
 # set interval for events
 VALUE=$(jq -r '.interval' "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.event_gap'); fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=30; fi
 echo "Set interval to ${VALUE}" >&2
 JSON="${JSON}"',"interval":'"${VALUE}"
+export MOTION_EVENT_INTERVAL="${VALUE}"
 
 ###
 ### DONE w/ JSON
@@ -523,9 +548,9 @@ JSON="${JSON}"',"interval":'"${VALUE}"
 
 JSON="${JSON}"'}'
 
-JSONFILE="${MOTION_CONF%/*}/${MOTION_DEVICE_NAME}.json"
-echo "${JSON}" | jq '.' > "${JSONFILE}"
-if [ ! -s "${JSONFILE}" ]; then
+export MOTION_JSON_FILE="${MOTION_CONF%/*}/${MOTION_DEVICE_NAME}.json"
+echo "${JSON}" | jq '.' > "${MOTION_JSON_FILE}"
+if [ ! -s "${MOTION_JSON_FILE}" ]; then
   echo "Invalid JSON: ${JSON}" >&2
   exit
 fi
@@ -541,11 +566,12 @@ if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "
   echo "Testing CLOUDANT" >&2
   OK=$(curl -s -q -f -L "${URL}" -u "${USERNAME}:${PASSWORD}" | jq -r '.couchdb')
   if [ "${OK}" == "null" ] || [ -z "${OK}" ]; then
-    echo "Cloudant failed at ${URL} with ${USERNAME} and ${PASSWORD}" >&2
+    echo "Cloudant failed at ${URL} with ${USERNAME} and ${PASSWORD}; exiting" >&2
     exit
+  else
+    export MOTION_CLOUDANT_URL="${URL%:*}"'://'"${USERNAME}"':'"${PASSWORD}"'@'"${USERNAME}"."${URL#*.}"
   fi
-  CLOUDANT_URL="${URL%:*}"'://'"${USERNAME}"':'"${PASSWORD}"'@'"${USERNAME}"."${URL#*.}"
-  URL="${CLOUDANT_URL}/motion"
+  URL="${MOTION_CLOUDANT_URL}/motion"
   DB=$(curl -s -q -f -L "${URL}" | jq -r '.db_name')
   if [ "${DB}" != "motion" ]; then
     # create DB
@@ -559,19 +585,19 @@ if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "
   else
     echo "CLOUDANT DB motion exists" >&2
   fi
-  if [ -s "${JSONFILE}" ] && [ -z "${OFF}" ]; then
+  if [ -s "${MOTION_JSON_FILE}" ] && [ -z "${OFF}" ]; then
     URL="${URL}/${MOTION_DEVICE_NAME}"
     REV=$(curl -s -q -f -L "${URL}" | jq -r '._rev')
     if [ "${REV}" != "null" ] && [ ! -z "${REV}" ]; then
       echo "Prior record exists ${REV}" >&2
       URL="${URL}?rev=${REV}"
     fi
-    OK=$(curl -s -q -f -L "${URL}" -X PUT -d "@${JSONFILE}" | jq '.ok')
+    OK=$(curl -s -q -f -L "${URL}" -X PUT -d "@${MOTION_JSON_FILE}" | jq '.ok')
     if [ "${OK}" != "true" ]; then
-      echo "Failed to update ${URL}" $(jq -c '.' "${JSONFILE}") >&2
+      echo "Failed to update ${URL}" $(jq -c '.' "${MOTION_JSON_FILE}") >&2
       echo "Exiting" >&2; exit
     else
-      echo "COnfiguration for ${MOTION_DEVICE_NAME} at ${JSONFILE}" >&2
+      echo "Configuration for ${MOTION_DEVICE_NAME} at ${MOTION_JSON_FILE}" $(jq -c '.' "${MOTION_JSON_FILE}") >&2
     fi
   else
     echo "Failed; no DB or bad JSON" >&2
@@ -583,7 +609,7 @@ fi
 
 ## DAEMON MODE
 VALUE=$(jq -r ".daemon" "${CONFIG_PATH}")
-if [ "${VALUE}" != "null" ]; then VALUE="on"; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="on"; fi
 echo "Set daemon to ${VALUE}" >&2
 sed -i "s/^daemon\s.*/daemon ${VALUE}/" "${MOTION_CONF}"
 
@@ -592,9 +618,9 @@ echo "Testing hassio ..." $(curl -s -q -f -L -H "X-HASSIO-KEY: ${HASSIO_TOKEN}" 
 # test homeassistant
 echo "Testing homeassistant ..." $(curl -s -q -f -L -u ":${HASSIO_TOKEN}" "http://hassio/homeassistant/api/states" | jq -c '.|length') "states" >&2
 
-MOTION=$(command -v motion)
-if [ ! -s "${MOTION}" ] || [ ! -s "${MOTION_CONF}" ]; then
-  echo "No motion installed (${MOTION}) or motion configuration ${MOTION_CONF} does not exist" >&2
+MOTION_CMD=$(command -v motion)
+if [ ! -s "${MOTION_CMD}" ] || [ ! -s "${MOTION_CONF}" ]; then
+  echo "No motion installed (${MOTION_CMD}) or motion configuration ${MOTION_CONF} does not exist" >&2
 else
   # start motion
   echo "Start motion with ${MOTION_CONF}" >&2
@@ -609,5 +635,6 @@ if [ ! -z "${MOTION_TARGET_DIR}" ]; then
   echo "Starting python httpd server" >&2
   python3 -m http.server
 else
-  echo "No directory ${MOTION_TARGET_DIR}; exiting" >&2
+  echo "Motion target directory not defined; exiting" >&2
+  exit
 fi
