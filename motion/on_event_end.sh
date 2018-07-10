@@ -1,7 +1,7 @@
 #!/bin/tcsh
 echo "$0:t $$ -- START" `date` >& /dev/stderr
 
-# setenv DEBUG
+setenv DEBUG
 # setenv VERBOSE
 
 ## REQUIRES date utilities
@@ -12,14 +12,15 @@ else if ( -e /usr/bin/dateconv ) then
 else if ( -e /usr/local/bin/dateconv ) then
    set dateconv = /usr/local/bin/dateconv
 else
-  if ($?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"'$0:t'":"'$$'","error":"no date converter; install dateutils"}'
+  if ($?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"ERROR":"'$0:t'","pid":"'$$'","error":"no date converter; install dateutils"}'
   goto done
 endif
 
 ## ARGUMENTS
 #
-# on_event_end.sh %v %Y %m %d %H %M %S
+# on_event_end.sh %$ %v %Y %m %d %H %M %S
 #
+# %$ - camera name
 # %v - Event number. An event is a series of motion detections happening with less than 'gap' seconds between them. 
 # %Y - The year as a decimal number including the century. 
 # %m - The month as a decimal number (range 01 to 12). 
@@ -37,30 +38,75 @@ set DY = "$5"
 set HR = "$6"
 set MN = "$7"
 set SC = "$8"
+set TS = "${YR}${MO}${DY}${HR}${MN}${SC}"
 
 # in seconds
-set NOW = `$dateconv -i '%Y%m%d%H%M%S' -f "%s" "${YR}${MO}${DY}${HR}${MN}${SC}"`
+if ($#TS && "$TS" != "") then
+  set NOW = `$dateconv -i '%Y%m%d%H%M%S' -f "%s" "${TS}"`
+else
+  goto done
+endif
+
+set dir = "${MOTION_TARGET_DIR}/${CN}"
+
+if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","dir":"'${dir}'","camera":"'$CN'","event":"'$EN'","time":'$NOW'}'
 
 ##
-## PROCESS MOTION_EVENT_GAP
+## find all images during event
 ##
+
+# find all jsons w/in last 5 minutes and return filename only
+# set jsons = ( `find "${dir}" -mmin -5 -name "[0-9]*-${EN}.json" -print"` )
+set jsons = ( `echo "$dir"/*.json` )
+
+if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","dir":"'${dir}'","camera":"'$CN'","event":"'$EN'","jsons":'$#jsons'}'
+
+# find event start
+if ($#jsons) then
+  set lastjson = $jsons[$#jsons]
+  if (! -s "$lastjson") then
+    if ($?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"DEBUG":"'$0:t'","pid":"'$$'","dir":"'${dir}'","camera":"'$CN'","event":"'$EN'","error":"'"$lastjson:t"' is empty"}'
+    goto done
+  else
+    set START = `jq -r '.start' $lastjson`
+    if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","dir":"'${dir}'","camera":"'$CN'","event":"'$EN'","start":'$START'}'
+  endif
+  # set jpgs = ( `find "${dir}" -name "*.jpg" -newer "$lastjson" -print"` )
+  set jpgs = ( `echo "${dir}"/*.jpg` )
+else
+  if ($?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"DEBUG":"'$0:t'","pid":"'$$'","dir":"'${dir}'","camera":"'$CN'","event":"'$EN'","error":"no JSONS '"$?jsons"'"}'
+  goto done
+endif
+
+if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","dir":"'${dir}'","camera":"'$CN'","event":"'$EN'","jpgs":"'"$#jpgs"'"}'
 
 set frames = ()
-foreach jpg ( `find "${MOTION_TARGET_DIR}" -name "${YR}${MO}${DY}${HR}${MN}*-${EN}-*.jpg" -printf "%f\n"` )
-    set LAST = `echo "$jpg:r" | sed 's/\(.*\)-.*-.*/\1/'`
+set interval = 0
+if ($#jpgs) then
+  @ i = $#jpgs
+  while ($i > 0) 
+    set jpg = $jpgs[$i]
+    set LAST = `echo "$jpg:t:r" | sed 's/\(.*\)-.*-.*/\1/'`
     set LAST = `$dateconv -i '%Y%m%d%H%M%S' -f "%s" $LAST`
-    @ INTERVAL = $NOW - $LAST
-
-    if ( $INTERVAL > ${MOTION_EVENT_INTERVAL} ) then
-      break
-    else if ( $INTERVAL >= 0) then
-      set frames = ( $frames "$jpg:r" )
+    @ seconds = $LAST - $START
+    if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","camera":"'$CN'","jpg":"'$jpg'","interval":'$seconds'}'
+    if ( $seconds >= 0) then
+      if ($?MOTION_EVENT_INTERVAL) then
+        if ( $seconds > $MOTION_EVENT_INTERVAL ) break
+      endif
+      set frames = ( "$jpg:t:r" $frames )
+      if ($seconds > $interval) set interval = $seconds
     else
       break
     endif
-end
+    @ i--
+  end
+else
+  if ($?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"DEBUG":"'$0:t'","pid":"'$$'","camera":"'$CN'","time":'$NOW',"error":"no jpgs"}'
+  goto done
+endif
 
-if ($?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"'$0:t'":"'$$'","camera":"'$CN'","frames":'$#frames'}'
+if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","camera":"'$CN'","time":'$NOW',"frames":'$#frames',"interval":'$interval'}'
 
 if ($#frames) then
   set images = `echo "$frames" | sed 's/ /,/g' | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g'`
@@ -69,21 +115,26 @@ else
   set images = "null"
 endif
 
-if ($?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"'$0:t'":"'$$'","camera":"'$CN'","images":"'"$images"'"}'
+if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","camera":"'$CN'","event":"'${EN}'","interval":'$interval',"images":"'"$images"'"}'
 
 ## JSON
-set ID = "${YR}${MO}${DY}${HR}${MN}${SC}-${EN}"
-set EJ = "${MOTION_TARGET_DIR}/${ID}.json"
-echo '{"camera":"'"${CN}"'","time":'"${NOW}"',"date":'`date +%s`',"event":"'"${EN}"'","images":'"$images"'}' > "${EJ}"
-
-if ($?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"'$0:t'":"'$$'","camera":"'"${CN}"'","time":'"${NOW}"',"date":'`date +%s`',"event":"'"${EN}"'","images":'"$images"'}'
+jq -c '.interval='"${interval}"'|.end='${NOW}'|.date='`date +%s`'|.images='"$images" "${lastjson}" > "${lastjson}.$$"
+if ( ! -s "${lastjson}.$$" ) then
+  if ($?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"DEBUG":"'$0:t'","pid":"'$$'","camera":"'$CN'","event":"'${EN}'","lastjson":"'"$lastjson"'"}'
+  rm -f "${lastjson}.$$"
+  goto done
+else
+  mv -f "${lastjson}.$$" "${lastjson}"
+endif
 
 ## do MQTT
 if ($?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then
-  set MQTT_TOPIC = "motion/${MOTION_DEVICE_NAME}/${CN}/event"
-  mosquitto_pub -i "${MOTION_DEVICE_NAME}" -h "${MOTION_MQTT_HOST}" -t "${MQTT_TOPIC}" -f "${EJ}"
+  set MQTT_TOPIC = "motion/${MOTION_DEVICE_NAME}/${CN}/event/end"
+  mosquitto_pub -i "${MOTION_DEVICE_NAME}" -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "${MQTT_TOPIC}" -f "${lastjson}"
 endif
 
 done:
 
 echo "$0:t $$ -- END" `date` >& /dev/stderr
+
+exit

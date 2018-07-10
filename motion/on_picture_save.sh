@@ -2,7 +2,14 @@
 echo "${0##*/} $$ -- BEGIN $*" $(date) >& /dev/stderr
 
 DEBUG=true
-VERBOSE=true
+# VERBOSE=true
+
+if [ -z "${dateconv}" ]; then dateconv=$(command -v "dateconv"); fi
+if [ -z "${dateconv}" ]; then dateconv=$(command -v "dateutils.dconv"); fi
+if [ -z "${dateconv}" ]; then 
+  if [ -n "${DEBUG}" ]; then mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"CMD":"'${0##*/}'","pid":"'$$'","error":"no date utilities; install dateutils"}'; fi
+  exit
+fi
 
 # get arguments
 CN=$1
@@ -23,27 +30,28 @@ if [ =z "${MY}" ]; then MY=0; fi
 if [ =z "${MW}" ]; then MW=0; fi
 if [ =z "${MH}" ]; then MH=0; fi
 
-# image identifier
+# image identifier, timestamp, seqno
 ID="${IF##*/}"
 ID="${ID%.*}"
 TS=$(echo "${ID}" | sed 's/\(.*\)-.*-.*/\1/')
-TS=$(dateutils.dconv -i '%Y%m%d%H%M%S' -f "%s" "${TS}")
 SN=$(echo "${ID}" | sed 's/.*-..-\(.*\).*/\1/')
-IJ=$(mktemp)
+
+NOW=$($dateconv -i '%Y%m%d%H%M%S' -f "%s" "${TS}")
+
+if [ -n "${VERBOSE}" ]; then mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'${0##*/}'","pid":"'$$'","dir":"'${MOTION_TARGET_DIR}'","camera":"'$CN'","time":'$NOW'}'; fi
 
 ## create JSON
-echo '{"camera":"'"${CN}"'","type":"jpg","time":'"${TS}"',"date":'$(date +%s)',"seqno":"'"${SN}"'","event":"'"${EN}"'","id":"'"${ID}"'","center":{"x":'"${MX}"',"y":'"${MY}"'},"width":'"${MW}"',"height":'"${MH}"'}' > "${IJ}"
+IJ=$(mktemp)
+echo '{"camera":"'"${CN}"'","type":"jpg","time":'"${NOW}"',"date":'$(date +%s)',"seqno":"'"${SN}"'","event":"'"${EN}"'","id":"'"${ID}"'","center":{"x":'"${MX}"',"y":'"${MY}"'},"width":'"${MW}"',"height":'"${MH}"'}' > "${IJ}"
 
 ## do MQTT
 if [ -n "${MOTION_MQTT_HOST}" ] && [ -n "${MOTION_MQTT_PORT}" ]; then
   # POST JSON
   MQTT_TOPIC="motion/${MOTION_DEVICE_NAME}/${CN}"
-  if [ -n "${VERBOSE}" ]; then echo "${0##*/} $$ -- MQTT post to ${MQTT_TOPIC}" >& /dev/stderr; fi
-  mosquitto_pub -i "${MOTION_DEVICE_NAME}" -h "${MOTION_MQTT_HOST}" -t "${MQTT_TOPIC}" -f "${IJ}"
+  mosquitto_pub -i "${MOTION_DEVICE_NAME}" -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "${MQTT_TOPIC}" -f "${IJ}"
   # POST IMAGE 
   MQTT_TOPIC="motion/${MOTION_DEVICE_NAME}/${CN}/image"
-  if [ -n "${VERBOSE}" ]; then echo "${0##*/} $$ -- MQTT post to ${MQTT_TOPIC}" >& /dev/stderr; fi
-  mosquitto_pub -i "${MOTION_DEVICE_NAME}" -h "${MOTION_MQTT_HOST}" -t "${MQTT_TOPIC}" -f "${IF}"
+  mosquitto_pub -i "${MOTION_DEVICE_NAME}" -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "${MQTT_TOPIC}" -f "${IF}"
 fi
 
 echo "${0##*/} $$ -- END $*" $(date) >& /dev/stderr

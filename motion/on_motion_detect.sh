@@ -1,8 +1,8 @@
 #!/bin/bash
 echo "+++ BEGIN: ${0##*/}: $*" $(date) >& /dev/stderr
 
-DEBUG=true
-VERBOSE=true
+# DEBUG=true
+# VERBOSE=true
 
 # %Y = year, %m = month, %d = date,
 # %H = hour, %M = minute, %S = second,
