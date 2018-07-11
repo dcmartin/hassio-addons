@@ -542,6 +542,13 @@ echo "Set interval to ${VALUE}" >&2
 JSON="${JSON}"',"interval":'"${VALUE}"
 export MOTION_EVENT_INTERVAL="${VALUE}"
 
+# set minimum_animate; minimum 2
+VALUE=$(jq -r '.minimum_animate' "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=5; fi
+echo "Set minimum_animate to ${VALUE}" >&2
+JSON="${JSON}"',"minimum_animate":'"${VALUE}"
+export MOTION_MINIMUM_ANIMATE="${VALUE}"
+
 ###
 ### DONE w/ JSON
 ###

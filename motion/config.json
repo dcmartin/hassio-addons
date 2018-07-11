@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.3.6",
+  "version": "0.3.8",
   "slug": "motion",
   "description": "Motion package for networked camera(s) with Watson VR and nVidia DIGITS image classification",
   "startup": "before",
@@ -32,6 +32,8 @@
     "name":"",
     "log_level":6,
     "log_type":"all",
+    "target_dir":"/share/motion",
+    "daemon":"on",
     "timezone":"America/Los_Angeles",
     "wvr_url": "https://gateway-a.watsonplatform.net/visual-recognition/api",
     "wvr_apikey":"",
@@ -53,7 +55,7 @@
     "pre_capture":0,
     "post_capture":0,
     "event_gap":60,
-    "minimum_motion_frames":0,
+    "minimum_motion_frames":1,
     "quality":100,
     "width":640,
     "height":480,
@@ -84,9 +86,8 @@
     "cloudant_url":"",
     "cloudant_username":"",
     "cloudant_password":"",
-    "daemon":"on",
     "interval":30,
-    "target_dir":"/share/motion"
+    "minimum_animate":2
   },
   "schema": {
     "name":"str?",
@@ -152,6 +153,7 @@
     "cloudant_password":"str?",
     "daemon":"str?",
     "interval":"int?",
+    "minimum_animate":"int?",
     "target_dir":"str?"
   }
 }

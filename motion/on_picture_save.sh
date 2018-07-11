@@ -11,16 +11,33 @@ if [ -z "${dateconv}" ]; then
   exit
 fi
 
+
+# 
+# %Y = year, %m = month, %d = date,
+# %H = hour, %M = minute, %S = second,
+# %v = event, %q = frame number, %t = thread (camera) number,
+# %D = changed pixels, %N = noise level,
+# %i and %J = width and height of motion area,
+# %K and %L = X and Y coordinates of motion center
+# %C = value defined by text_event
+# %f = filename with full path
+# %n = number indicating filetype
+# Both %f and %n are only defined for on_picture_save, on_movie_start and on_movie_end
+#
+# on_picture_save /usr/local/bin/on_picture_save.sh %$ %v %f %n %K %L %i %J %D %N
+#
+
 # get arguments
-CN=$1
-EN=$2
-IF=$3
-IT=$4
-MX=$5
-MY=$6
-MW=$7
-MH=$8
-SZ=$9
+CN="$1"
+EN="$2"
+IF="$3"
+IT="$4"
+MX="$5"
+MY="$6"
+MW="$7"
+MH="$8"
+SZ="$9"
+NZ="$10"
 
 ## check args
 if [ =z "${CN}" ]; then CN="error"; fi
@@ -31,6 +48,7 @@ if [ =z "${MY}" ]; then MY=0; fi
 if [ =z "${MW}" ]; then MW=0; fi
 if [ =z "${MH}" ]; then MH=0; fi
 if [ =z "${SZ}" ]; then SZ=0; fi
+if [ =z "${NZ}" ]; then NZ=0; fi
 
 # image identifier, timestamp, seqno
 ID="${IF##*/}"
@@ -44,7 +62,7 @@ if [ -n "${VERBOSE}" ]; then mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -
 
 ## create JSON
 IJ=$(mktemp)
-echo '{"device":"'${MOTION_DEVICE_NAME}'","camera":"'"${CN}"'","type":"jpg","time":'"${NOW}"',"date":'$(date +%s)',"seqno":"'"${SN}"'","event":"'"${EN}"'","id":"'"${ID}"'","center":{"x":'"${MX}"',"y":'"${MY}"'},"width":'"${MW}"',"height":'"${MH}"',"size":'$SZ'}' > "${IJ}"
+echo '{"device":"'${MOTION_DEVICE_NAME}'","camera":"'"${CN}"'","type":"jpg","time":'"${NOW}"',"date":'$(date +%s)',"seqno":"'"${SN}"'","event":"'"${EN}"'","id":"'"${ID}"'","center":{"x":'"${MX}"',"y":'"${MY}"'},"width":'"${MW}"',"height":'"${MH}"',"size":'$SZ',"noise":'$NZ'}' > "${IJ}"
 
 ## do MQTT
 if [ -n "${MOTION_MQTT_HOST}" ] && [ -n "${MOTION_MQTT_PORT}" ]; then
