@@ -26,7 +26,7 @@ RUN chmod 755 "${LOCAL_BIN}"/*.sh
 
 # Ports for motion (control and stream)
 EXPOSE 8000 
-EXPOSE 8080 8081 8082 8083 8084 8085 8086 8087 8088 8089
+EXPOSE 8080 8081 8082 8083 8084 8085 8086 8087 8088 8089 8090
 
 CMD [ "/usr/local/bin/run.sh" ]
 

@@ -226,7 +226,7 @@ MOTION="${MOTION}"',"post_capture":'"${VALUE}"
 
 # set event_gap
 VALUE=$(jq -r ".event_gap" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=60; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=10; fi
 echo "Set event_gap to ${VALUE}" >&2
 sed -i "s/.*event_gap\s[0-9]\+/event_gap ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"event_gap":'"${VALUE}"
@@ -354,7 +354,14 @@ if [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "null" ] && [ ! -z "${USERN
   sed -i "s/.*stream_auth_method.*/stream_auth_method 1/" "${MOTION_CONF}"
   sed -i "s/.*stream_authentication.*/stream_authentication ${USERNAME}:${PASSWORD}/" "${MOTION_CONF}"
   sed -i "s/.*webcontrol_authentication.*/webcontrol_authentication ${USERNAME}:${PASSWORD}/" "${MOTION_CONF}"
+  echo "Enable access for any host" >&2
+  sed -i "s/.*stream_localhost .*/stream_localhost off/" "${MOTION_CONF}"
+  sed -i "s/.*webcontrol_localhost .*/webcontrol_localhost off/" "${MOTION_CONF}"
   MOTION="${MOTION}"',"stream_auth_method":"Basic"'
+else
+  echo "WARNING: no username and password; stream and webcontrol limited to localhost only" >&2
+  sed -i "s/.*stream_localhost .*/stream_localhost on/" "${MOTION_CONF}"
+  sed -i "s/.*webcontrol_localhost .*/webcontrol_localhost on/" "${MOTION_CONF}"
 fi
 
 # set netcam_url to be shared across all cameras
@@ -423,9 +430,9 @@ for (( i=0; i<ncamera ; i++)) ; do
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="wcv80n"; fi
   echo "Set type to ${VALUE}" >&2
   CAMERAS="${CAMERAS}"',"type":"'"${VALUE}"'"'
-  # process camera fov; 56 or 75 degrees for PS3 Eye camera
+  # process camera fov; WCV80n is 61.5 (62); 56 or 75 degrees for PS3 Eye camera
   VALUE=$(jq -r '.cameras['$i'].fov' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=56; fi
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=62; fi
   echo "Set fov to ${VALUE}" >&2
   CAMERAS="${CAMERAS}"',"fov":'"${VALUE}"
   # process camera fps; set on wcv80n web GUI; default 6

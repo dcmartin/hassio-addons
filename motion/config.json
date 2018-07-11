@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.3.9",
+  "version": "0.3.10",
   "slug": "motion",
   "description": "Motion package for networked camera(s) with Watson VR and nVidia DIGITS image classification",
   "startup": "before",
@@ -26,7 +26,8 @@
      "8086/tcp": 8086,
      "8087/tcp": 8087,
      "8088/tcp": 8088,
-     "8089/tcp": 8089
+     "8089/tcp": 8089,
+     "8090/tcp": 8090
   },
   "options": {
     "name":"",
@@ -54,7 +55,7 @@
     "threshold_tune":"on",
     "pre_capture":0,
     "post_capture":0,
-    "event_gap":60,
+    "event_gap":10,
     "minimum_motion_frames":1,
     "quality":100,
     "width":640,
@@ -74,15 +75,12 @@
     "username":"",
     "password":"",
     "cameras":[
-      {"name":"garage","url":"mjpeg://192.168.1.180:80/img/video.mjpeg"},
-      {"name":"upperpath","url":"mjpeg://192.168.1.176:80/img/video.mjpeg"},
-      {"name":"frontwalk","url":"mjpeg://192.168.1.179:80/img/video.mjpeg"},
-      {"name":"dogyard","url":"mjpeg://192.168.1.169:80/img/video.mjpeg"}
+      {"name":"kelispond","url":"mjpeg://dcmartin.dyndns.org:8897/img/video.mjpeg"}
     ],
     "netcam_url":"",
     "netcam_userpass":"",
     "netcam_keepalive":"1.1",
-    "fov":75,
+    "fov": 62,
     "cloudant_url":"",
     "cloudant_username":"",
     "cloudant_password":"",
