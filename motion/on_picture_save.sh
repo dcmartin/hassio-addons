@@ -20,6 +20,7 @@ MX=$5
 MY=$6
 MW=$7
 MH=$8
+SZ=$9
 
 ## check args
 if [ =z "${CN}" ]; then CN="error"; fi
@@ -29,6 +30,7 @@ if [ =z "${MX}" ]; then MX=0; fi
 if [ =z "${MY}" ]; then MY=0; fi
 if [ =z "${MW}" ]; then MW=0; fi
 if [ =z "${MH}" ]; then MH=0; fi
+if [ =z "${SZ}" ]; then SZ=0; fi
 
 # image identifier, timestamp, seqno
 ID="${IF##*/}"
@@ -42,7 +44,7 @@ if [ -n "${VERBOSE}" ]; then mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -
 
 ## create JSON
 IJ=$(mktemp)
-echo '{"camera":"'"${CN}"'","type":"jpg","time":'"${NOW}"',"date":'$(date +%s)',"seqno":"'"${SN}"'","event":"'"${EN}"'","id":"'"${ID}"'","center":{"x":'"${MX}"',"y":'"${MY}"'},"width":'"${MW}"',"height":'"${MH}"'}' > "${IJ}"
+echo '{"device":"'${MOTION_DEVICE_NAME}'","camera":"'"${CN}"'","type":"jpg","time":'"${NOW}"',"date":'$(date +%s)',"seqno":"'"${SN}"'","event":"'"${EN}"'","id":"'"${ID}"'","center":{"x":'"${MX}"',"y":'"${MY}"'},"width":'"${MW}"',"height":'"${MH}"',"size":'$SZ'}' > "${IJ}"
 
 ## do MQTT
 if [ -n "${MOTION_MQTT_HOST}" ] && [ -n "${MOTION_MQTT_PORT}" ]; then
