@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.3.1",
+  "version": "0.3.6",
   "slug": "motion",
   "description": "Motion package for networked camera(s) with Watson VR and nVidia DIGITS image classification",
   "startup": "before",
@@ -21,7 +21,12 @@
      "8081/tcp": 8081,
      "8082/tcp": 8082,
      "8083/tcp": 8083,
-     "8084/tcp": 8084
+     "8084/tcp": 8084,
+     "8085/tcp": 8085,
+     "8086/tcp": 8086,
+     "8087/tcp": 8087,
+     "8088/tcp": 8088,
+     "8089/tcp": 8089
   },
   "options": {
     "name":"",

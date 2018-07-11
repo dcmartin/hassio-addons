@@ -1,7 +1,7 @@
 #!/bin/bash
 echo "+++ BEGIN: ${0##*/}: $*" $(date) >& /dev/stderr
 
-# DEBUG=true
+DEBUG=true
 # VERBOSE=true
 
 # %Y = year, %m = month, %d = date,

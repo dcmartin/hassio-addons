@@ -8,9 +8,9 @@ RUN echo "@testing http://nl.alpinelinux.org/alpine/edge/testing" >> /etc/apk/re
 RUN echo "@community http://nl.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
 RUN apk update
 
-RUN apk add --no-cache coreutils python3 mosquitto-clients jq curl dateutils findutils imagemagick tcsh@community motion@testing
+RUN apk add --no-cache coreutils python3 mosquitto-clients jq bc curl dateutils findutils imagemagick tcsh@community motion@testing
 
-# 
+# args
 ARG MOTION_CONF=/etc/motion/motion.conf 
 ARG LOCAL_BIN=/usr/local/bin
 
@@ -25,7 +25,8 @@ COPY *.sh "${LOCAL_BIN}"/
 RUN chmod 755 "${LOCAL_BIN}"/*.sh
 
 # Ports for motion (control and stream)
-EXPOSE 8000 8080 8081 8082 8083 8084
+EXPOSE 8000 
+EXPOSE 8080 8081 8082 8083 8084 8085 8086 8087 8088 8089
 
 CMD [ "/usr/local/bin/run.sh" ]
 

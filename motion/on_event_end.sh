@@ -2,7 +2,7 @@
 echo "$0:t $$ -- START" `date` >& /dev/stderr
 
 setenv DEBUG
-setenv VERBOSE
+# setenv VERBOSE
 
 ## REQUIRES date utilities
 if ( -e /usr/bin/dateutils.dconv ) then
@@ -57,7 +57,7 @@ if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":
 
 # find all jsons w/in last 5 minutes and return filename only
 # set jsons = ( `find "${dir}" -mmin -5 -name "[0-9]*-${EN}.json" -print"` )
-set jsons = ( `echo "$dir"/*.json` )
+set jsons = ( `echo "$dir"/*"-${EN}".json` )
 
 if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","dir":"'${dir}'","camera":"'$CN'","event":"'$EN'","jsons":'$#jsons'}'
 
@@ -72,7 +72,7 @@ if ($#jsons) then
     if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","dir":"'${dir}'","camera":"'$CN'","event":"'$EN'","start":'$START'}'
   endif
   # set jpgs = ( `find "${dir}" -name "*.jpg" -newer "$lastjson" -print"` )
-  set jpgs = ( `echo "${dir}"/*.jpg` )
+  set jpgs = ( `echo "${dir}"/*"-${EN}-"*.jpg` )
 else
   if ($?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"DEBUG":"'$0:t'","pid":"'$$'","dir":"'${dir}'","camera":"'$CN'","event":"'$EN'","error":"no JSONS '"$?jsons"'"}'
   goto done
@@ -137,35 +137,43 @@ endif
 ### PROCESS FRAMES
 ###
 
-set tmpdir = `mktemp`
+if ($#frames > 1) then
+  set jpgs = ()
+  foreach f ( $frames )
+    set jpg = "$dir/$f.jpg" 
+    set jpgid = ( `identify "$jpg" | awk '{ printf("{\"type\":\"%s\", \"size\":\"%s\", \"bps\":\"%s\",\"color\":\"%s\"}", $2, $3, $5, $6) }' | jq '.'` )
+    if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","jpg":"'"$jpg"'","jpgid":'"${jpgid}"'}'
+    set jpgs = ( $jpgs "$jpg" )
+  end
+  if ($#jpgs) then
+    if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","njpgs":'$#jpgs'}'
+  else
+    if ($?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"DEBUG":"'$0:t'","pid":"'$$'","insufficient jpegs"}'
+    goto done
+  endif
+else
+  if ($?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"DEBUG":"'$0:t'","pid":"'$$'","warn":"insufficient frames"}'
+  goto done
+endif
+
+set tmpdir = /tmp/$0:t.$$
 mkdir -p $tmpdir
 
-if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","tmpdir":"'"$tmpdir"'"}'
-
 ## AVERAGE IMAGE
-set average = "$tmpdir/$lastjson:t:r-average.png"
-pushd "$dir"
-convert $frames -average $average
-popd
-if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","average":"'"$average"'"}'
+set average = "$tmpdir/$lastjson:t:r-average.jpg"
+convert $jpgs -average $average >&! /tmp/$$.out
+if ( -s "$average") then
+  if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","average":"'"$average"'"}'
+else
+  set out = `cat "/tmp/$$.out"`
+  if ($?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"DEBUG":"'$0:t'","pid":"'$$'","error":"'"$out"'"}'
+  rm -f "/tmp/$$.out"
+  goto done
+endif
 
 if ($?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then
   set MQTT_TOPIC = "motion/${MOTION_DEVICE_NAME}/${CN}/image-average"
-  mosquitto_pub -r -i "${MOTION_DEVICE_NAME}" -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "$MQTT_TOPIC" -f "$average"
-  if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","topic":"'"$MQTT_TOPIC"'"}'
-endif
-
-
-## BLENDED IMAGE
-set blend = "$tmpdir/$lastjson:t:r-blend.png"
-pushd "$dir"
-convert $frames -compose blend -define 'compose:args=50' -alpha on -composite $blend
-popd
-if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","blend":"'"$blend"'"}'
-
-if ($?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then
-  set MQTT_TOPIC = "motion/${MOTION_DEVICE_NAME}/${CN}/image-blend"
-  mosquitto_pub -r -i "$MOTION_DEVICE_NAME" -h "$MOTION_MQTT_HOST" -p "${MOTION_MQTT_PORT}" -t "$MQTT_TOPIC" -f "$blend"
+  mosquitto_pub -i "${MOTION_DEVICE_NAME}" -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "$MQTT_TOPIC" -f "$average"
   if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","topic":"'"$MQTT_TOPIC"'"}'
 endif
 
@@ -174,73 +182,110 @@ endif
 ##
 
 # calculate all frame-to-frame differences
-@ fuzz = 20
-@ t = 0
-@ i = 1
+set fuzz = 20
+set a = 0
+set t = 0
+set i = 1
 set ps = ()
 set diffs = ()
-while ( $i <= $#frames )
-    set diffs = ( $diffs "$tmpdir/$frames[$i]:t-mask.jpg" )
+if ($#jpgs > 1) then
+  while ( $i <= $#jpgs )
+    set diffs = ( $diffs "$tmpdir/$jpgs[$i]:t-mask.jpg" )
     # calculate difference
-    set p = ( `compare -metric fuzz -fuzz "$fuzz"'%' "$dir/$frames[$i]" "$average" -compose src -highlight-color white -lowlight-color black "$diffs[$#diffs]" |& awk '{ print $1 }'` )
+    set p = ( `compare -metric fuzz -fuzz "$fuzz"'%' "$jpgs[$i]" "$average" -compose src -highlight-color white -lowlight-color black "$diffs[$#diffs]" |& awk '{ print $1 }'` )
+    if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","pixels":"'$p'"}'
     # keep track of differences
     set ps = ( $ps $p:r )
     @ t += $ps[$#ps]
     @ i++
-end
+  end
+endif
 # calculate average difference
-set a = ( `echo "$t / $#ps" | bc` )
+# if ($#ps) set a = ( `echo "$t / $#ps" | bc` )
+if ($#ps) @ a = $t / $#ps
+
+if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","average":'"$a"'}'
 
 # subset to key frames
-if ($?MOTION_IMAGE_KEY_FRAMES) then
-  set kframes = ()
+if ($?MOTION_KEY_FRAMES && $a > 0 && $#diffs) then
+  set kjpgs = ()
   set kdiffs = ()
   @ i = 1
   while ( $i <= $#diffs )
-    # keep track of frames w/ change > average
+    # keep track of jpgs w/ change > average
     if ($ps[$i] > $a) then
-      set kframes = ( $frames[$i] $kframes )
+      set kjpgs = ( $jpgs[$i] $kjpgs )
       set kdiffs = ( $diffs[$i] $kdiffs )
     endif
     @ i++
   end
-  set frames = ( $kframes )
+  set jpgs = ( $kjpgs )
   set diffs = ( $kdiffs )
 endif
 
 ## COMPOSITE KEY FRAMES AGAINST AVERAGE USING MASK
-set composite = $tmpdir/$lastjson:t:r-composite.jpg
+set composite = "$tmpdir/$lastjson:t:r-composite.jpg"
 cp "$average" "$composite"
 @ i = 1
-while ( $i <= $#frames )
+while ( $i <= $#jpgs )
     set c = $composite:r.$i.jpg
-    composite $dir/$frames[$i] $composite $diffs[$i] $c
+    composite "$jpgs[$i]" $composite "$diffs[$i]" $c
     mv -f $c $composite
     @ i++
 end
+if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","composite":"'"$composite"'"}'
+
 if ($?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then
   set MQTT_TOPIC = "motion/${MOTION_DEVICE_NAME}/${CN}/image-composite"
-  mosquitto_pub -r -i "$MOTION_DEVICE_NAME" -h "$MOTION_MQTT_HOST" -p "${MOTION_MQTT_PORT}" -t "$MQTT_TOPIC" -f "$composite"
+  mosquitto_pub -i "$MOTION_DEVICE_NAME" -h "$MOTION_MQTT_HOST" -p "${MOTION_MQTT_PORT}" -t "$MQTT_TOPIC" -f "$composite"
+  if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","topic":"'"$MQTT_TOPIC"'"}'
 endif
 
-# calculate milliseconds between frames (fps should come from camera)
+# calculate milliseconds between jpgs (fps should come from camera)
 set fps = 10
 set ms = `echo "$fps / 60.0 * 100.0" | bc -l`
 set ms = $ms:r
 
-## PRODUCE ANIMATED GIF/MASK
+## animated GIF
 set gif = $tmpdir/$lastjson:t:r.gif
-pushd $dir ; convert -loop 0 -delay $ms $frames $gif ; popd
+convert -loop 0 -delay $ms $jpgs $gif
+if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","gif":"'"$gif"'"}'
+
 if ($?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then
   set MQTT_TOPIC = "motion/${MOTION_DEVICE_NAME}/${CN}/image-animated"
-  mosquitto_pub -r -i "$MOTION_DEVICE_NAME" -h "$MOTION_MQTT_HOST" -p "${MOTION_MQTT_PORT}" -t "$MQTT_TOPIC" -f "$gif"
+  mosquitto_pub -i "$MOTION_DEVICE_NAME" -h "$MOTION_MQTT_HOST" -p "${MOTION_MQTT_PORT}" -t "$MQTT_TOPIC" -f "$gif"
+  if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","topic":"'"$MQTT_TOPIC"'"}'
 endif
 
+## animated GIF mask
 set mask = $tmpdir/$lastjson:t:r.mask.gif
+pushd "$dir"
 convert -loop 1 -delay $ms $diffs $mask
+popd
+if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","mask":"'"$mask"'"}'
+
 if ($?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then
   set MQTT_TOPIC = "motion/${MOTION_DEVICE_NAME}/${CN}/image-animated-mask"
-  mosquitto_pub -r -i "$MOTION_DEVICE_NAME" -h "$MOTION_MQTT_HOST" -p "${MOTION_MQTT_PORT}" -t "$MQTT_TOPIC" -f "$mask"
+  mosquitto_pub -i "$MOTION_DEVICE_NAME" -h "$MOTION_MQTT_HOST" -p "${MOTION_MQTT_PORT}" -t "$MQTT_TOPIC" -f "$mask"
+  if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","topic":"'"$MQTT_TOPIC"'"}'
+endif
+
+if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","tmpdir":"'"$tmpdir"'"}'
+
+## BLENDED IMAGE
+set blend = "$tmpdir/$lastjson:t:r-blend.jpg"
+convert $jpgs -compose blend -define 'compose:args=50' -alpha on -composite $blend
+if ( -s "$blend") then
+  if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","blend":"'"$blend"'"}'
+else
+  if ($?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"DEBUG":"'$0:t'","pid":"'$$'","blend":"FAILED"}'
+  goto done
+endif
+
+if ($?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then
+  set MQTT_TOPIC = "motion/${MOTION_DEVICE_NAME}/${CN}/image-blend"
+  mosquitto_pub -i "$MOTION_DEVICE_NAME" -h "$MOTION_MQTT_HOST" -p "${MOTION_MQTT_PORT}" -t "$MQTT_TOPIC" -f "$blend"
+  if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","topic":"'"$MQTT_TOPIC"'"}'
 endif
 
 ## cleanup
@@ -252,4 +297,5 @@ rm -fr $tmpdir
 
 done:
   echo "$0:t $$ -- END" `date` >& /dev/stderr
+  if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","info":"END"}'
   exit
