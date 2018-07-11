@@ -57,7 +57,7 @@ if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":
 
 # find all jsons w/in last 5 minutes and return filename only
 # set jsons = ( `find "${dir}" -mmin -5 -name "[0-9]*-${EN}.json" -print"` )
-set jsons = ( `echo "$dir"/*"-${EN}".json` )
+set jsons = ( `echo "$dir"/[0-9]*"-${EN}".json` )
 
 if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","dir":"'${dir}'","camera":"'$CN'","event":"'$EN'","jsons":'$#jsons'}'
 
