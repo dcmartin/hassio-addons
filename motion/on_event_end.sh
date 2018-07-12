@@ -116,7 +116,7 @@ endif
 if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","camera":"'$CN'","event":"'${EN}'","interval":'$interval',"images":'"$images"'}'
 
 ## JSON
-jq -c '.interval='"${interval}"'|.end='${NOW}'|.date='`date +%s`'|.images='"$images" "${lastjson}" > "${lastjson}.$$"
+jq '.interval='"${interval}"'|.end='${NOW}'|.date='`date +%s`'|.images='"$images" "${lastjson}" > "${lastjson}.$$"
 if ( ! -s "${lastjson}.$$" ) then
   if ($?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"DEBUG":"'$0:t'","pid":"'$$'","camera":"'$CN'","event":"'${EN}'","lastjson":"'"$lastjson"'"}'
   rm -f "${lastjson}.$$"
@@ -143,7 +143,7 @@ foreach f ( $frames )
   set info = ( `identify "$jpg" | awk '{ printf("{\"type\":\"%s\", \"size\":\"%s\", \"bps\":\"%s\",\"color\":\"%s\"}", $2, $3, $5, $6) }' | jq '.'` )
   if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","jpg":"'"$jpg"'","info":'"${info}"'}'
   if (-e "$jpg:r.json") then
-    set json = ( `jq -c '.info='"$info"'|.end='"${NOW}" "$jpg:r.json"` )
+    set json = ( `jq '.info='"$info"'|.end='"${NOW}" "$jpg:r.json"` )
     if ($#json) then
       echo "$json" >! "$jpg:r.json"
       set jpgs = ( $jpgs "$jpg" )
@@ -253,12 +253,13 @@ switch ( $MOTION_POST_PICTURES )
     breaksw
 endsw
 if ($#IF && -s "$IF" && $?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then
-  # POST IMAGE 
-  MQTT_TOPIC="motion/${MOTION_DEVICE_NAME}/${CN}/image"
-  mosquitto_pub -r -i "${MOTION_DEVICE_NAME}" -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "${MQTT_TOPIC}" -f "${IF}"
-  if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","post_pictures":"'${IF}'"}'
+  
+  MQTT_TOPIC="motion/$MOTION_DEVICE_NAME/$CN/image"
+  mosquitto_pub -r -i "$MOTION_DEVICE_NAME" -h "$MOTION_MQTT_HOST" -p "$MOTION_MQTT_PORT" -t "$MQTT_TOPIC" -f "$IF"
+
+  if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","topic":"'"$MQTT_TOPIC"'","image":"'${IF}'"}'
 else
-  if ($?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"DEBUG":"'$0:t'","pid":"'$$'","post_pictures":"'"$MOTION_POST_PICTURES"'"}'
+  if ($?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"DEBUG":"'$0:t'","pid":"'$$'","post":"'"$MOTION_POST_PICTURES"',"topic":"'"$MQTT_TOPIC"'","image":"'${IF}'"}'
 endif
 
 #
@@ -301,8 +302,21 @@ if ($?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then
   if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","topic":"'"$MQTT_TOPIC"'"}'
 endif
 
+## determine frames per second for this camera
+set fps = `jq '.cameras[]|select(.name=="'"${CN}"'")' "$MOTION_JSON_FILE"`
+if ($#fps == 0) then
+  if ($?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"DEBUG":"'$0:t'","pid":"'$$'","WARN":"camera '"$CN"' not found in '"${MOTION_JSON_FILE}"'"}'
+  set fps = `echo "$#frames / $interval" | bc -l`
+  set rem = `echo $fps:e | sed "s/\(.\).*/\1/"`
+  if ($rem >= 5) then
+    @ fps = $fps:r + 1
+  else
+    set fps = $fps:r
+  endif
+endif
+if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","FPS":"'$fps'"}'
+
 # calculate milliseconds between calculated from remaining frames 
-@ fps = $#frames / $interval
 set ms = `echo "$fps / 60.0 * 100.0" | bc -l`
 set ms = $ms:r
 

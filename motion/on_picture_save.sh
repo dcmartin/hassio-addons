@@ -2,7 +2,7 @@
 echo "${0##*/} $$ -- BEGIN $*" $(date)
 
 DEBUG=true
-# VERBOSE=true
+VERBOSE=true
 
 if [ -z "${dateconv}" ]; then dateconv=$(command -v "dateconv"); fi
 if [ -z "${dateconv}" ]; then dateconv=$(command -v "dateutils.dconv"); fi
@@ -65,7 +65,7 @@ IJ="${IF%.*}".json
 
 JSON=$(echo '{"device":"'${MOTION_DEVICE_NAME}'","camera":"'"${CN}"'","type":"jpeg","time":'"${NOW}"',"seqno":"'"${SN}"'","event":"'"${EN}"'","id":"'"${ID}"'","center":{"x":'"${MX}"',"y":'"${MY}"'},"width":'"${MW}"',"height":'"${MH}"',"size":'${SZ}'}')
 
-TEST=$(echo "${JSON}" | jq -c '.')
+TEST=$(echo "${JSON}" | jq '.')
 
 if [ ! -z "${TEST}" ]; then
   echo "${TEST}" > "${IJ}"
@@ -82,7 +82,7 @@ if [ -n "${MOTION_MQTT_HOST}" ] && [ -n "${MOTION_MQTT_PORT}" ]; then
   if [ "${MOTION_POST_PICTURES}" == "on" ]; then
     # POST IMAGE 
     MQTT_TOPIC="motion/${MOTION_DEVICE_NAME}/${CN}/image"
-    mosquitto_pub -i "${MOTION_DEVICE_NAME}" -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "${MQTT_TOPIC}" -f "${IF}"
+    mosquitto_pub -r -i "${MOTION_DEVICE_NAME}" -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "${MQTT_TOPIC}" -f "${IF}"
   fi
 fi
 

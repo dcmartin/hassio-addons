@@ -437,7 +437,7 @@ for (( i=0; i<ncamera ; i++)) ; do
   CAMERAS="${CAMERAS}"',"fov":'"${VALUE}"
   # process camera fps; set on wcv80n web GUI; default 6
   VALUE=$(jq -r '.cameras['$i'].fps' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=6; fi
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=6; fi
   echo "Set fps to ${VALUE}" >&2
   CAMERAS="${CAMERAS}"',"fps":'"${VALUE}"
 

@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.3.11",
+  "version": "0.3.12",
   "slug": "motion",
   "description": "Motion package for networked camera(s) with Watson VR and nVidia DIGITS image classification",
   "startup": "before",
@@ -85,6 +85,7 @@
     "cloudant_username":"",
     "cloudant_password":"",
     "interval":30,
+    "fps":6,
     "post_pictures":"best",
     "minimum_animate":2
   },
@@ -152,6 +153,7 @@
     "cloudant_password":"str?",
     "daemon":"str?",
     "interval":"int?",
+    "fps":"int?",
     "post_pictures":"str?",
     "minimum_animate":"int?",
     "target_dir":"str?"
