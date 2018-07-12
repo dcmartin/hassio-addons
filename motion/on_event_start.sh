@@ -45,7 +45,6 @@ set NOW = `$dateconv -i '%Y%m%d%H%M%S' -f "%s" "${TS}"`
 
 set dir = "${MOTION_TARGET_DIR}/${CN}"
 
-
 set EJ = "${dir}/${TS}-${EN}.json"
 
 if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","dir":"'${dir}'","camera":"'$CN'","event":"'$EN'","start":'$NOW',"timestamp":"'"$TS"'","json":"'"$EJ"'"}'

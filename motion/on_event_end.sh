@@ -55,9 +55,8 @@ if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":
 ## find all images during event
 ##
 
-# find all jsons w/in last 5 minutes and return filename only
-# set jsons = ( `find "${dir}" -mmin -5 -name "[0-9]*-${EN}.json" -print"` )
-set jsons = ( `echo "$dir"/[0-9]*"-${EN}".json` )
+# find all event jsons (YYYYMMDDHHMMSS-##.json)
+set jsons = ( `echo "$dir"/??????????????"-${EN}".json` )
 
 if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","dir":"'${dir}'","camera":"'$CN'","event":"'$EN'","jsons":'$#jsons'}'
 
@@ -71,7 +70,6 @@ if ($#jsons) then
     set START = `jq -r '.start' $lastjson`
     if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","dir":"'${dir}'","camera":"'$CN'","event":"'$EN'","start":'$START'}'
   endif
-  # set jpgs = ( `find "${dir}" -name "*.jpg" -newer "$lastjson" -print"` )
   set jpgs = ( `echo "${dir}"/*"-${EN}-"*.jpg` )
 else
   if ($?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"DEBUG":"'$0:t'","pid":"'$$'","dir":"'${dir}'","camera":"'$CN'","event":"'$EN'","error":"no JSONS '"$?jsons"'"}'
@@ -140,17 +138,26 @@ endif
 set jpgs = ()
 foreach f ( $frames )
   set jpg = "$dir/$f.jpg" 
-  set jpgs = ( $jpgs "$jpg" )
 
   # get image information
   set info = ( `identify "$jpg" | awk '{ printf("{\"type\":\"%s\", \"size\":\"%s\", \"bps\":\"%s\",\"color\":\"%s\"}", $2, $3, $5, $6) }' | jq '.'` )
   if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","jpg":"'"$jpg"'","info":'"${info}"'}'
-  echo "$info" | jq -c '.id="'$jpg:t:r'"|.camera="'"${CN}"'"|.end='${NOW}'|.date='`date +%s`'|.info='"$info" > "$jpg:r.json"
+  if (-e "$jpg:r.json") then
+    set json = ( `jq -c '.info='"$info"'|.end='"${NOW}" "$jpg:r.json"` )
+    if ($#json) then
+      echo "$json" >! "$jpg:r.json"
+      set jpgs = ( $jpgs "$jpg" )
+    else
+      if ($?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"DEBUG":"'$0:t'","pid":"'$$'","jpg":"'"$jpg"'","error":"JSON failed"}'
+    endif
+  else
+    if ($?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"DEBUG":"'$0:t'","pid":"'$$'","jpg":"'"$jpg"'","error":"JSON not found"}'
+  endif
 end
 if ($#jpgs) then
   if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","njpgs":'$#jpgs'}'
 else
-  if ($?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"DEBUG":"'$0:t'","pid":"'$$'","insufficient jpegs"}'
+  if ($?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"DEBUG":"'$0:t'","pid":"'$$'","error":"insufficient jpegs"}'
   goto done
 endif
 
@@ -167,7 +174,8 @@ endif
 ### PROCESS multiple jpgs
 ###
 
-set tmpdir = /tmp/$0:t.$$
+# use temporary direction in target_dir; should be setup as RAM disk
+set tmpdir = "${MOTION_TARGET_DIR}/tmp/$0:t/$$"
 mkdir -p $tmpdir
 
 ## AVERAGE IMAGE
@@ -195,6 +203,8 @@ endif
 # calculate all frame-to-frame differences
 set fuzz = 20
 set a = 0
+set max = 0
+set biggest = ()
 set t = 0
 set i = 1
 set ps = ()
@@ -208,16 +218,54 @@ if ($#jpgs > 1) then
     # keep track of differences
     set ps = ( $ps $p:r )
     @ t += $ps[$#ps]
+    if ($max < $p:r) then
+      set max = $p:r
+      set biggest = $jpgs[$i]
+    endif
     @ i++
   end
 endif
 # calculate average difference
 if ($#ps) @ a = $t / $#ps
 
-if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","average":'"$a"'}'
+if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","average":'"$a"',"max":'$max'}'
 
+##
+## POST IMAGE with maximum pixels changes
+##
+set IF = ()
+switch ( $MOTION_POST_PICTURES )
+  case "off":
+    breaksw
+  case "center":
+    @ h = $#ps / 2
+    if ($h > 1 && $h <= $#ps) set IF = "$jpgs[$h]"
+    breaksw
+  case "best":
+    if ($#biggest) set IF = "$biggest"
+    breaksw
+  case "last":
+    set IF = "$jpgs[$#jpgs]"
+    breaksw
+  case "first":
+  default:
+    set IF = "$jpgs[1]"
+    breaksw
+endsw
+if ($#IF && -s "$IF" && $?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then
+  # POST IMAGE 
+  MQTT_TOPIC="motion/${MOTION_DEVICE_NAME}/${CN}/image"
+  mosquitto_pub -r -i "${MOTION_DEVICE_NAME}" -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "${MQTT_TOPIC}" -f "${IF}"
+  if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","post_pictures":"'${IF}'"}'
+else
+  if ($?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"DEBUG":"'$0:t'","pid":"'$$'","post_pictures":"'"$MOTION_POST_PICTURES"'"}'
+endif
+
+#
 # subset to key frames
-if ($?MOTION_KEY_FRAMES && $a > 0 && $#diffs && $#jpgs ) then
+#
+
+if ($a > 0 && $#diffs && $#jpgs ) then
   set kjpgs = ()
   set kdiffs = ()
   @ i = 1
@@ -229,8 +277,10 @@ if ($?MOTION_KEY_FRAMES && $a > 0 && $#diffs && $#jpgs ) then
     endif
     @ i++
   end
-  set jpgs = ( $kjpgs )
-  set diffs = ( $kdiffs )
+  if ($?MOTION_KEY_FRAMES) then
+    set jpgs = ( $kjpgs )
+    set diffs = ( $kdiffs )
+  endif
 endif
 
 ## COMPOSITE KEY FRAMES AGAINST AVERAGE USING MASK

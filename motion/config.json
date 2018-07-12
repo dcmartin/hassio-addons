@@ -72,8 +72,8 @@
     "stream_quality":100,
     "threshold":5000,
     "lightswitch":0,
-    "username":"",
-    "password":"",
+    "username":null,
+    "password":null,
     "cameras":[
       {"name":"kelispond","url":"mjpeg://dcmartin.dyndns.org:8897/img/video.mjpeg"}
     ],
@@ -85,6 +85,7 @@
     "cloudant_username":"",
     "cloudant_password":"",
     "interval":30,
+    "post_pictures":"best",
     "minimum_animate":2
   },
   "schema": {
@@ -151,6 +152,7 @@
     "cloudant_password":"str?",
     "daemon":"str?",
     "interval":"int?",
+    "post_pictures":"str?",
     "minimum_animate":"int?",
     "target_dir":"str?"
   }

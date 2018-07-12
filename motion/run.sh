@@ -544,17 +544,27 @@ fi
 
 # set interval for events
 VALUE=$(jq -r '.interval' "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=30; fi
-echo "Set interval to ${VALUE}" >&2
-JSON="${JSON}"',"interval":'"${VALUE}"
-export MOTION_EVENT_INTERVAL="${VALUE}"
+if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ] && [[ "${VALUE}" > 0 ]]; then
+  echo "Set interval to ${VALUE}" >&2
+  JSON="${JSON}"',"interval":'"${VALUE}"
+  export MOTION_EVENT_INTERVAL="${VALUE}"
+else
+  echo "[INFO] MOTION_EVENT_INTERVAL unset; interval = ${VALUE}" >&2
+fi
 
 # set minimum_animate; minimum 2
 VALUE=$(jq -r '.minimum_animate' "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=5; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=2; fi
 echo "Set minimum_animate to ${VALUE}" >&2
 JSON="${JSON}"',"minimum_animate":'"${VALUE}"
 export MOTION_MINIMUM_ANIMATE="${VALUE}"
+
+# set post_pictures; boolean (true/false)
+VALUE=$(jq -r '.post_pictures' "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="center"; fi
+echo "Set post_pictures to ${VALUE}" >&2
+JSON="${JSON}"',"post_pictures":"'"${VALUE}"'"'
+export MOTION_POST_PICTURES="${VALUE}"
 
 ###
 ### DONE w/ JSON
