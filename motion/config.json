@@ -72,8 +72,8 @@
     "stream_quality":100,
     "threshold":5000,
     "lightswitch":0,
-    "username":null,
-    "password":null,
+    "username":"",
+    "password":"",
     "cameras":[
       {"name":"kelispond","url":"mjpeg://dcmartin.dyndns.org:8897/img/video.mjpeg"}
     ],
