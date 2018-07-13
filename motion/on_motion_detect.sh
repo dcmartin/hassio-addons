@@ -19,13 +19,13 @@ DEBUG=true
 
 
 # get arguments
-CAMERA_NAME=$1
-EVENT=$2
-YEAR=$3
-MONTH=$4
-DAY=$5
-HOUR=$6
-MINUTE=$7
-SECOND=$8
+CAMERA_NAME="${1}"
+EVENT="${2}"
+YEAR="${3}"
+MONTH="${4}"
+DAY="${5}"
+HOUR="${6}"
+MINUTE="${7}"
+SECOND="${8}"
 
 echo "+++ END: ${0##*/}: $*" $(date) >& /dev/stderr

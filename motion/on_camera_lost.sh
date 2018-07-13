@@ -2,7 +2,7 @@
 echo "$0:t $$ -- START" `date` >& /dev/stderr
 
 setenv DEBUG true
-setenv VERBOSE true
+# setenv VERBOSE true
 
 ## REQUIRES date utilities
 if ( -e /usr/bin/dateutils.dconv ) then
@@ -35,11 +35,7 @@ set MN = "$6"
 set SC = "$7"
 set TS = "${YR}${MO}${DY}${HR}${MN}${SC}"
 
-# image identifier, timestamp, seqno
-set ID = "$IF:t:r"
-set TS = `echo "$ID" | sed 's/\(.*\)-.*-.*/\1/'`
-set SN = `echo "$ID" | sed 's/.*-..-\(.*\).*/\1/'`
-
+# get time
 set NOW = `$dateconv -i '%Y%m%d%H%M%S' -f "%s" "$TS"`
 
 if ($?VERBOSE) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","dir":"'$MOTION_TARGET_DIR'","camera":"'$CN'","time":'$NOW'}'

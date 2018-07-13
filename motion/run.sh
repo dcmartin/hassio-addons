@@ -415,7 +415,9 @@ for (( i=0; i<ncamera ; i++)) ; do
   echo "Set name to ${VALUE}" >&2
   CAMERAS="${CAMERAS}"',"name":"'"${VALUE}"'"'
 
-  # SPECIAL CASE FOR NAME
+  ## SPECIAL CASES
+
+  # name
   CNAME=${VALUE}
   if [ ${MOTION_CONF%/*} != ${MOTION_CONF} ]; then 
     CAMERA_CONF="${MOTION_CONF%/*}/${CNAME}.conf"
@@ -426,20 +428,32 @@ for (( i=0; i<ncamera ; i++)) ; do
   echo "camera_name ${VALUE}" >> "${CAMERA_CONF}"
 
   # process camera type; only wcv80n
-  VALUE=$(jq -r '.cameras['$i'].type' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="wcv80n"; fi
+  VALUE=$(jq -r '.type' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then 
+    VALUE=$(jq -r '.cameras['$i'].type' "${CONFIG_PATH}")
+    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="wcv80n"; fi
+  fi
   echo "Set type to ${VALUE}" >&2
   CAMERAS="${CAMERAS}"',"type":"'"${VALUE}"'"'
+
   # process camera fov; WCV80n is 61.5 (62); 56 or 75 degrees for PS3 Eye camera
-  VALUE=$(jq -r '.cameras['$i'].fov' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=62; fi
+  VALUE=$(jq -r '.fov' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then 
+    VALUE=$(jq -r '.cameras['$i'].fov' "${CONFIG_PATH}")
+    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=62; fi
+  fi
   echo "Set fov to ${VALUE}" >&2
-  CAMERAS="${CAMERAS}"',"fov":'"${VALUE}"
+
   # process camera fps; set on wcv80n web GUI; default 6
-  VALUE=$(jq -r '.cameras['$i'].fps' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=6; fi
+  VALUE=$(jq -r '.fps' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then 
+    VALUE=$(jq -r '.cameras['$i'].fps' "${CONFIG_PATH}")
+    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=6; fi
+  fi
   echo "Set fps to ${VALUE}" >&2
   CAMERAS="${CAMERAS}"',"fps":'"${VALUE}"
+
+  ## MOTION attributes
 
   # target_dir 
   VALUE=$(jq -r '.cameras['$i'].target_dir' "${CONFIG_PATH}")
@@ -557,14 +571,12 @@ VALUE=$(jq -r '.minimum_animate' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=2; fi
 echo "Set minimum_animate to ${VALUE}" >&2
 JSON="${JSON}"',"minimum_animate":'"${VALUE}"
-export MOTION_MINIMUM_ANIMATE="${VALUE}"
 
 # set post_pictures; boolean (true/false)
 VALUE=$(jq -r '.post_pictures' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="center"; fi
 echo "Set post_pictures to ${VALUE}" >&2
 JSON="${JSON}"',"post_pictures":"'"${VALUE}"'"'
-export MOTION_POST_PICTURES="${VALUE}"
 
 ###
 ### DONE w/ JSON
