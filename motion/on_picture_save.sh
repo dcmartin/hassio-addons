@@ -55,7 +55,7 @@ if ($?VERBOSE) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "debug" -m '{"VERBOSE":"'
 ## create JSON
 set IJ = "$IF:r.json"
 
-set JSON = '{"device":"'$MOTION_DEVICE_NAME'","camera":"'"$CN"'","type":"jpeg","time":'"$NOW"',"seqno":"'"$SN"'","event":"'"$EN"'","id":"'"$ID"'","center":{"x":'"$MX"',"y":'"$MY"'},"width":'"$MW"',"height":'"$MH"',"size":'$SZ',"noise":"'$NL'"}'
+set JSON = '{"device":"'$MOTION_DEVICE_NAME'","camera":"'"$CN"'","type":"jpeg","time":'"$NOW"',"seqno":"'"$SN"'","event":"'"$EN"'","id":"'"$ID"'","center":{"x":'"$MX"',"y":'"$MY"'},"width":'"$MW"',"height":'"$MH"',"size":'$SZ',"noise":'$NL'}'
 
 echo "$JSON" > "$IJ"
 
