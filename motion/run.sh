@@ -321,7 +321,6 @@ if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=8081; fi
 echo "Set stream_port to ${VALUE}" >&2
 sed -i "s/.*stream_port\s[0-9]\+/stream_port ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"stream_port":'"${VALUE}"
-if [ -z ${MOTION_STREAM_PORT} ]; then MOTION_STREAM_PORT=${VALUE}; fi
 
 # set stream_quality
 VALUE=$(jq -r ".stream_quality" "${CONFIG_PATH}")
