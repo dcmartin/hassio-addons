@@ -1,6 +1,6 @@
 {
   "name": "Intu",
-  "version": "1",
+  "version": "0.0.1",
   "slug": "intu",
   "description": "Intu as add-on to HASSIO",
   "startup": "before",
