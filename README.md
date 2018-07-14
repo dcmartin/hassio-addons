@@ -20,12 +20,10 @@ This is a repository of add-ons for Hass.io, which is part of HomeAssistant (htt
 
 1. motion - a packaging of the popular Motion software: https://motion-project.github.io/
 1. ageathome - an applicaiton of motion used to analyze daily activities http://age-at-home.mybluemix.net
-1. intu - a cognitive platform add-on https://github.com/watson-intu
+1. intu - a cognitive platform using IBM Watson https://github.com/watson-intu
 1. horizon - a decentralized, zero-ops, computing platform https://github.com/open-horizon
 
 ## Installation
-
-There are several add-ons in this repository.
 
 The installation of any add-on is pretty straightforward and not different in
 comparison to installing an "app" on your smartphone.
