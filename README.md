@@ -14,13 +14,14 @@
 
 [![Buy me a coffee][buymeacoffee-shield]][buymeacoffee]
 
-My Add-Ons: Things I Hacked Together
-
 ## About
 
 This is a repository of add-ons for Hass.io, which is part of HomeAssistant (http://home-assistant.io)
 
-1. Motion - https://github.com/dcmartin/hassio-addons/blob/master/motion/README.md
+1. motion - a packaging of the popular Motion software: https://motion-project.github.io/
+1. ageathome - an applicaiton of motion used to analyze daily activities http://age-at-home.mybluemix.net
+1. intu - a cognitive platform add-on https://github.com/watson-intu
+1. horizon - a decentralized, zero-ops, computing platform https://github.com/open-horizon
 
 ## Installation
 
@@ -35,7 +36,7 @@ comparison to installing an "app" on your smartphone.
 1. Start the add-on
 1. Check the logs of the "Example" add-on to see it in action.
 
-**NOTE**: Logs are also available on the host system using the docker(1) command; for example, `docker logs -f addon_cb7b3237_motion`
+**NOTE**: Please see the README for each add-on
 
 ## Changelog & Releases
 
