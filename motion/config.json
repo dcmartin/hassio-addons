@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.2",
+  "version": "0.3.14",
   "slug": "motion",
   "description": "Motion package for networked camera(s) with Watson VR and nVidia DIGITS image classification",
   "startup": "before",
@@ -21,12 +21,20 @@
      "8081/tcp": 8081,
      "8082/tcp": 8082,
      "8083/tcp": 8083,
-     "8084/tcp": 8084
+     "8084/tcp": 8084,
+     "8085/tcp": 8085,
+     "8086/tcp": 8086,
+     "8087/tcp": 8087,
+     "8088/tcp": 8088,
+     "8089/tcp": 8089,
+     "8090/tcp": 8090
   },
   "options": {
     "name":"",
     "log_level":6,
     "log_type":"all",
+    "target_dir":"/share/motion",
+    "daemon":"on",
     "timezone":"America/Los_Angeles",
     "wvr_url": "https://gateway-a.watsonplatform.net/visual-recognition/api",
     "wvr_apikey":"",
@@ -42,13 +50,13 @@
     "auto_brightness":"off",
     "locate_motion_mode":"on",
     "locate_motion_style":"box",
-    "output_pictures":"best",
+    "output_pictures":"on",
     "picture_type":"jpeg",
     "threshold_tune":"on",
     "pre_capture":0,
     "post_capture":0,
-    "event_gap":60,
-    "minimum_motion_frames":0,
+    "event_gap":10,
+    "minimum_motion_frames":1,
     "quality":100,
     "width":640,
     "height":480,
@@ -67,21 +75,19 @@
     "username":"",
     "password":"",
     "cameras":[
-      {"name":"garage","url":"mjpeg://192.168.1.180:80/img/video.mjpeg"},
-      {"name":"upperpath","url":"mjpeg://192.168.1.176:80/img/video.mjpeg"},
-      {"name":"frontwalk","url":"mjpeg://192.168.1.179:80/img/video.mjpeg"},
-      {"name":"dogyard","url":"mjpeg://192.168.1.169:80/img/video.mjpeg"}
+      {"name":"kelispond","url":"mjpeg://dcmartin.dyndns.org:8897/img/video.mjpeg"}
     ],
     "netcam_url":"",
     "netcam_userpass":"",
     "netcam_keepalive":"1.1",
-    "fov":75,
+    "fov": 62,
     "cloudant_url":"",
     "cloudant_username":"",
     "cloudant_password":"",
-    "daemon":"on",
     "interval":30,
-    "target_dir":"/share/motion"
+    "fps":6,
+    "post_pictures":"best",
+    "minimum_animate":2
   },
   "schema": {
     "name":"str?",
@@ -147,6 +153,9 @@
     "cloudant_password":"str?",
     "daemon":"str?",
     "interval":"int?",
+    "fps":"int?",
+    "post_pictures":"str?",
+    "minimum_animate":"int?",
     "target_dir":"str?"
   }
 }

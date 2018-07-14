@@ -5,11 +5,12 @@ FROM $BUILD_FROM
 ENV LANG C.UTF-8
 
 RUN echo "@testing http://nl.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
+RUN echo "@community http://nl.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
 RUN apk update
 
-RUN apk add --no-cache coreutils python3 mosquitto-clients jq curl motion@testing
+RUN apk add --no-cache coreutils python3 mosquitto-clients jq bc curl dateutils findutils imagemagick tcsh@community motion@testing
 
-# 
+# args
 ARG MOTION_CONF=/etc/motion/motion.conf 
 ARG LOCAL_BIN=/usr/local/bin
 
@@ -21,10 +22,13 @@ ENV MOTION_CONF "${MOTION_CONF}"
 COPY motion.conf "${MOTION_CONF}"
 RUN mkdir -p "{LOCAL_BIN}" 
 COPY *.sh "${LOCAL_BIN}"/
-RUN chmod 755 "${LOCAL_BIN}"/run.sh
+RUN chmod 755 "${LOCAL_BIN}"/*.sh
 
 # Ports for motion (control and stream)
-EXPOSE 8000 8080 8081 8082 8083 8084
+EXPOSE 8000 
+EXPOSE 8080 8081 8082 8083 8084 8085 8086 8087 8088 8089 8090
+
+# mount -t tmpfs -o size=512m tmpfs /mnt/ramdisk
 
 CMD [ "/usr/local/bin/run.sh" ]
 
