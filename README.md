@@ -1,4 +1,4 @@
-# Community Hass.io Add-ons: Example
+# DCMARTIN Hass.io Add-ons: Maybe it works, maybe it doesn't
 
 [![GitHub Release][releases-shield]][releases]
 ![Project Stage][project-stage-shield]
@@ -14,14 +14,13 @@
 
 [![Buy me a coffee][buymeacoffee-shield]][buymeacoffee]
 
-Example add-on by Community Hass.io add-ons.
+My Add-Ons: Things I Hacked Together
 
 ## About
 
-This is an example add-on for Hass.io. When started, it displays a
-random quote every 5 seconds.
+This is a repository of add-ons for Hass.io, which is part of HomeAssistant [http://home-assistant.io]
 
-It shows off several features and structures like:
+Some of the things that should work consistently (but might not):
 
 - Full blown GitHub repository.
 - General Dockerfile structure and setup.
@@ -35,82 +34,18 @@ It shows off several features and structures like:
 
 ## Installation
 
-The installation of this add-on is pretty straightforward and not different in
-comparison to installing any other Hass.io add-on.
+There are several add-ons in this repository.
 
-1. [Add our Hass.io add-ons repository][repository] to your Hass.io instance.
-1. Install the "Example" add-on
-1. Start the "Example" add-on
+The installation of any add-on is pretty straightforward and not different in
+comparison to installing an "app" on your smartphone.
+
+1. [Add this Hass.io add-ons repository][repository] to your Hass.io instance.
+1. Install the add-on 
+1. Configure the add-on 
+1. Start the add-on
 1. Check the logs of the "Example" add-on to see it in action.
 
-**NOTE**: Do not add this repository to Hass.io, please use:
-`https://github.com/hassio-addons/repository`.
-
-## Docker status
-
-[![Docker Architecture][armhf-arch-shield]][armhf-dockerhub]
-[![Docker Version][armhf-version-shield]][armhf-microbadger]
-[![Docker Layers][armhf-layers-shield]][armhf-microbadger]
-[![Docker Pulls][armhf-pulls-shield]][armhf-dockerhub]
-[![Anchore Image Overview][armhf-anchore-shield]][armhf-anchore]
-
-[![Docker Architecture][aarch64-arch-shield]][aarch64-dockerhub]
-[![Docker Version][aarch64-version-shield]][aarch64-microbadger]
-[![Docker Layers][aarch64-layers-shield]][aarch64-microbadger]
-[![Docker Pulls][aarch64-pulls-shield]][aarch64-dockerhub]
-[![Anchore Image Overview][aarch64-anchore-shield]][aarch64-anchore]
-
-[![Docker Architecture][amd64-arch-shield]][amd64-dockerhub]
-[![Docker Version][amd64-version-shield]][amd64-microbadger]
-[![Docker Layers][amd64-layers-shield]][amd64-microbadger]
-[![Docker Pulls][amd64-pulls-shield]][amd64-dockerhub]
-[![Anchore Image Overview][amd64-anchore-shield]][amd64-anchore]
-
-[![Docker Architecture][i386-arch-shield]][i386-dockerhub]
-[![Docker Version][i386-version-shield]][i386-microbadger]
-[![Docker Layers][i386-layers-shield]][i386-microbadger]
-[![Docker Pulls][i386-pulls-shield]][i386-dockerhub]
-[![Anchore Image Overview][i386-anchore-shield]][i386-anchore]
-
-## Configuration
-
-Eventought this add-on is just an example add-on, it does come with some
-configuration options to play around with.
-
-**Note**: _Remember to restart the add-on when the configuration is changed._
-
-Example add-on configuration:
-
-```json
-{
-  "log_level": "info",
-  "seconds_between_quotes": 5
-}
-```
-
-### Option: `log_level`
-
-The `log_level` option controls the level of log output by the addon and can
-be changed to be more or less verbose, which might be useful when you are
-dealing with an unknown issue. Possible values are:
-
-- `trace`: Show every detail, like all called internal functions.
-- `debug`: Shows detailed debug information.
-- `info`: Normal (usually) interesting events.
-- `warning`: Exceptional occurrences that are not errors.
-- `error`:  Runtime errors that do not require immediate action.
-- `fatal`: Something went terribly wrong. Add-on becomes unusable.
-
-Please note that each level automatically includes log messages from a
-more severe level, e.g., `debug` also shows `info` messages. By default,
-the `log_level` is set to `info`, which is the recommended setting unless
-you are troubleshooting.
-
-### Option: `seconds_between_quotes`
-
-Sets the number of seconds between the output of each quote. The value
-must be between `1` and `120` seconds. This value is set to `5` seconds by
-default.
+**NOTE**: Logs are also available on the host system using the docker(1) command; for example, `docker logs -f addon_cb7b3237_motion`
 
 ## Changelog & Releases
 
