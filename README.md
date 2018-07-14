@@ -1,4 +1,4 @@
-# DCMARTIN Hass.io Add-ons: Maybe it works, maybe it doesn't
+# DCMARTIN Hass.io Add-ons
 
 [![GitHub Release][releases-shield]][releases]
 ![Project Stage][project-stage-shield]
@@ -18,19 +18,9 @@ My Add-Ons: Things I Hacked Together
 
 ## About
 
-This is a repository of add-ons for Hass.io, which is part of HomeAssistant [http://home-assistant.io]
+This is a repository of add-ons for Hass.io, which is part of HomeAssistant (http://home-assistant.io)
 
-Some of the things that should work consistently (but might not):
-
-- Full blown GitHub repository.
-- General Dockerfile structure and setup.
-- The use of the `config.json` and `build.json` files.
-- General shell scripting structure (`run.sh`).
-- Quality assurance using CodeClimate.
-- Continuous integration and deployment using CircleCI.
-- Usage of the Community Hass.io Add-ons build environment.
-- Small use of the Bash function library in our base images.
-- The use of Docker label schema.
+1. Motion - https://github.com/dcmartin/hassio-addons/blob/master/motion/README.md
 
 ## Installation
 
@@ -87,23 +77,15 @@ Thank you for being involved! :heart_eyes:
 
 ## Authors & contributors
 
+David C Martin (github@dcmartin.com)
+
 The original setup of this repository is by [Franck Nijhof][frenck].
-
-For a full list of all authors and contributors,
-check [the contributor's page][contributors].
-
-## We have got some Hass.io add-ons for you
-
-Want some more functionality to your Hass.io Home Assistant instance?
-
-We have created multiple add-ons for Hass.io. For a full list, check out
-our [GitHub Repository][repository].
 
 ## License
 
 MIT License
 
-Copyright (c) 2017 Franck Nijhof
+Copyright (c) 2017 David C Martin
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
