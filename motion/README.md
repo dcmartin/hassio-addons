@@ -4,7 +4,7 @@
 
 This is add-on for the [Motion package][motionpkg]
 
-It provides for the specification of almost all the configuration [options][https://motion-project.github.io/motion_config.html] for Motion,
+It provides for the specification of almost all the configuration [options][motiondoc] for Motion,
 including the specification of up to 10 (ten) cameras.
 
 ## Installation
@@ -18,6 +18,8 @@ comparison to installing any other Hass.io add-on.
 1. Start the "Motion" add-on
 1. Check the logs of the "Motion" add-on for failures :-(
 1. Select the "Open WebUI" button to see the cameras output
+
+**Note**: _Remember to SAVE and then restart the add-on when the configuration is changed._
 
 ## Configuration
 
@@ -43,8 +45,6 @@ For example configuration:
     "locate_motion_style":"box",
 }
 ```
-
-**Note**: _Remember to SAVE and then restart the add-on when the configuration is changed._
 
 ### Option: `cameras`
 
