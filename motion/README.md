@@ -26,18 +26,45 @@ comparison to installing any other Hass.io add-on.
 The configuration for this add-on includes configuration for the [Motion package][motionpkg], 
 but also for utilization of various services from the IBM Cloud, including [Watson Visual Recognition][watsonvr]
 
-### Option: `name`
+#### Option: `name`
 
 The top-level `name` option controls the identification of the device running the Motion software.
 Providing a name will consistently identify the configuration utilized during operation.
 Defaults to the HOSTNAME environment from Hass.io.  
 
+#### Option: `fps`
+
+This option specifies the estimate frames-per-second that are processed to create the event GIF animations
+
+#### Option: `mqtt_host` `mqtt_port`
+
+Specify the host and port for sending MQTT messages.  Topics are based on 'motion/{hostname}/{cameraname}' and include sub-topics for '/event/start' and '/event/end'.
+
+#### Option: `post_pictures`
+
+This specifies if pictures should be posted to MQTT as they are captured (i.e. "on") _or_ if a single picture should be posted for each event.
+The value may be "on" to post every picture; "off" to post no pictures; or one of the following:
+
+1. "best" - the picture with movement closest to the center
+1. "center" - the center picture (half-way between start and end of event)
+1. "first" - the first picture 
+1. "last" - the last picture
+1. "most" - the picture with the most pixels changed from previous frame
+
+#### Option: `minimum_animate`
+
+The minimum number of images captured during an event that should be animated as a GIF.  Optional.  Default and minimum value is 2.
+
+#### Option: `interval`
+
+The maximum time in seconds that will comprise an event; measured backward from the event of the event.  Optional. Default 0; indicating no maximum.
+
 ### Motion Configuration
 
-The Motion package has extensive [documentation][motiondoc]
+The Motion package has extensive [documentation][motiondoc] on available parameters.  Almost all parameters are avsailable.
 The JSON configuration options are provided using the same name as in the Motion documentation.
 
-For example the options for `location_motion_mode` and `location_motion_style` would be indicated in the configuration as follows:
+For example the Motion parameters for `location_motion_mode` and `location_motion_style` would be indicated in the configuration as follows:
 
 ```json
 options: {
@@ -50,7 +77,7 @@ options: {
 
 #### Option: `cameras`
 
-Some add-on configuration options are for _all_ cameras, as in the example above.
+Motion configuration options are for _all_ cameras, as in the example above.  Each camera must also be defined with a minimum set of characteristics.
 
 Options which can be specified on a per camera basis are:
 
@@ -65,35 +92,6 @@ Options which can be specified on a per camera basis are:
 1. rotate (int, optional; valid (0,360); default 0)
 1. threshold \[of pixels changed to detect motion\] (int, optional; valid (0,10000); default 5000)
 1. models \[for visual recognition\] (string, optional; format "\[wvr|digits\]:modelname,<model2>,.."bbbbbbb
-
-### Additional Options
-
-#### Option: `fps`
-
-This option specifies the estimate frames-per-second that are processed to create the event GIF animations
-
-### Option: `mqtt_host` `mqtt_port`
-
-Specify the host and port for sending MQTT messages.  Topics are based on 'motion/{hostname}/{cameraname}' and include sub-topics for '/event/start' and '/event/end'.
-
-### Option: `post_pictures`
-
-This specifies if pictures should be posted to MQTT as they are captured (i.e. "on") _or_ if a single picture should be posted for each event.
-The value may be "on" to post every picture; "off" to post no pictures; or one of the following:
-
-1. "best" - the picture with movement closest to the center
-1. "center" - the center picture (half-way between start and end of event)
-1. "first" - the first picture 
-1. "last" - the last picture
-1. "most" - the picture with the most pixels changed from previous frame
-
-### Option: `minimum_animate`
-
-The minimum number of images captured during an event that should be animated as a GIF.  Optional.  Default and minimum value is 2.
-
-### Option: `interval`
-
-The maximum time in seconds that will comprise an event; measured backward from the event of the event.  Optional. Default 0; indicating no maximum.
 
 ## Changelog & Releases
 
