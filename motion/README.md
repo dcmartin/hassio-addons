@@ -111,11 +111,7 @@ Options which can be specified on a per camera basis are:
 
 ## Changelog & Releases
 
-This repository keeps a change log using [GitHub's releases][releases]
-functionality. The format of the log is based on
-[Keep a Changelog][keepchangelog].
-
-Releases are based on [Semantic Versioning][semver], and use the format
+Releases are based on Semantic Versioning, and use the format
 of ``MAJOR.MINOR.PATCH``. In a nutshell, the version will be incremented
 based on the following:
 
