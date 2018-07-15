@@ -2,7 +2,7 @@
 
 ## About
 
-This is add-on for the [Motion package][https://motion-project.github.io]
+This is add-on for the [Motion package][motionpkg]
 
 It provides for the specification of almost all the configuration [options][https://motion-project.github.io/motion_config.html] for Motion,
 including the specification of up to 10 (ten) cameras.
@@ -21,7 +21,7 @@ comparison to installing any other Hass.io add-on.
 
 ## Configuration
 
-The configuration for this add-on includes configuration for the Motion package (https://motion-project.github.io), 
+The configuration for this add-on includes configuration for the [Motion package][motionpkg], 
 but also for utilization of various services from the IBM Cloud, including Watson Visual Recognition (https://www.ibm.com/watson/services/visual-recognition/).
 
 ### Option: `name`
@@ -32,7 +32,7 @@ Defaults to the HOSTNAME environment from Hass.io.
 
 ### Option: `Motion Configuration`
 
-The Motion package has extensive documentation (https://motion-project.github.io/motion_config.html).
+The Motion package has extensive [documentation][motiondoc]
 The JSON configuration options are provided using the same name as in the Motion documentation.
 
 For example configuration:
@@ -118,3 +118,5 @@ The original setup of this repository is by [Franck Nijhof][frenck].
 [keepchangelog]: http://keepachangelog.com/en/1.0.0/
 [releases]: https://github.com/dcmartin/hassio-addons/motion/releases
 [repository]: https://github.com/dcmartin/hassio-addons
+[motionpkg]: https://motion-project.github.io]
+[motiondoc]: https://motion-project.github.io/motion_config.html
