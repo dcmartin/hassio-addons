@@ -48,7 +48,7 @@ options: {
 }
 ```
 
-### Option: `cameras`
+#### Option: `cameras`
 
 Some add-on configuration options are for _all_ cameras, as in the example above.
 
@@ -66,7 +66,9 @@ Options which can be specified on a per camera basis are:
 1. threshold \[of pixels changed to detect motion\] (int, optional; valid (0,10000); default 5000)
 1. models \[for visual recognition\] (string, optional; format "\[wvr|digits\]:modelname,<model2>,.."bbbbbbb
 
-### Option: `fps`
+### Additional Options
+
+#### Option: `fps`
 
 This option specifies the estimate frames-per-second that are processed to create the event GIF animations
 
