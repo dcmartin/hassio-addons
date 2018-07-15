@@ -1,7 +1,7 @@
 {
   "name": "",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.3.15",
+  "version": "0.3.16",
   "slug": "motion",
   "description": "Motion package for networked camera(s)",
   "startup": "before",
