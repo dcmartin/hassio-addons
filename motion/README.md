@@ -38,7 +38,18 @@ This option specifies the estimate frames-per-second that are processed to creat
 
 #### Option: `mqtt_host` `mqtt_port`
 
-Specify the host and port for sending MQTT messages.  Topics are based on 'motion/{hostname}/{cameraname}' and include sub-topics for '/event/start' and '/event/end'.
+Specify the host and port for sending MQTT messages.  All topics begin with 'motion'.
+
+1. `motion/{hostname}/{cameraname}` -- JSON payload of motion detected
+1. `motion/{hostname}/{cameraname}/lost` -- JSON payload of motion detected
+1. `motion/{hostname}/{cameraname}/event/start` -- JSON payload of motion detected
+1. `motion/{hostname}/{cameraname}/event/end` -- JSON payload of motion detected
+1. `motion/{hostname}/{cameraname}/image` -- JPEG payload of image (**see** `post_picture`)
+1. `motion/{hostname}/{cameraname}/image-average` -- JPEG payload of average event 
+1. `motion/{hostname}/{cameraname}/image-blend` -- JPEG payload of blended event (50%)
+1. `motion/{hostname}/{cameraname}/image-composite` --  JPEG payload of composite event
+1. `motion/{hostname}/{cameraname}/image-animated` -- GIF payload of event
+1. `motion/{hostname}/{cameraname}/image-animated-mask` -- GIF payload of event (as B/W mask)
 
 #### Option: `post_pictures`
 

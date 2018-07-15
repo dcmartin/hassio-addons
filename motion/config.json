@@ -1,7 +1,7 @@
 {
-  "name": "Motion",
+  "name": "",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.3.14",
+  "version": "0.3.15",
   "slug": "motion",
   "description": "Motion package for networked camera(s) with Watson VR and nVidia DIGITS image classification",
   "startup": "before",
