@@ -5,7 +5,7 @@
 This is add-on for the [Motion package][motionpkg]
 
 It provides for the specification of almost all the configuration [options][motiondoc] for Motion,
-including the specification of up to 10 (ten) cameras.
+including the specification of up to ten cameras.
 
 ## Installation
 
@@ -24,25 +24,27 @@ comparison to installing any other Hass.io add-on.
 ## Configuration
 
 The configuration for this add-on includes configuration for the [Motion package][motionpkg], 
-but also for utilization of various services from the IBM Cloud, including Watson Visual Recognition (https://www.ibm.com/watson/services/visual-recognition/).
+but also for utilization of various services from the IBM Cloud, including [Watson Visual Recognition][watsonvr]
 
 ### Option: `name`
 
-The top-level `name` option controls the identification of the device running the Motion software
+The top-level `name` option controls the identification of the device running the Motion software.
 Providing a name will consistently identify the configuration utilized during operation.
 Defaults to the HOSTNAME environment from Hass.io.  
 
-### Option: `Motion Configuration`
+### Motion Configuration
 
 The Motion package has extensive [documentation][motiondoc]
 The JSON configuration options are provided using the same name as in the Motion documentation.
 
-For example configuration:
+For example the options for `location_motion_mode` and `location_motion_style` would be indicated in the configuration as follows:
 
 ```json
-{
+options: {
+..
     "locate_motion_mode":"on",
     "locate_motion_style":"box",
+..
 }
 ```
 
@@ -120,3 +122,6 @@ The original setup of this repository is by [Franck Nijhof][frenck].
 [repository]: https://github.com/dcmartin/hassio-addons
 [motionpkg]: https://motion-project.github.io]
 [motiondoc]: https://motion-project.github.io/motion_config.html
+[watsonvr]: https://www.ibm.com/watson/services/visual-recognition
+[digitsgit]: https://github.com/nvidia/digits
+[digits]: https://developer.nvidia.com/digits
