@@ -32,6 +32,11 @@ The top-level `name` option controls the identification of the device running th
 Providing a name will consistently identify the configuration utilized during operation.
 Defaults to the HOSTNAME environment from Hass.io.  
 
+#### Options: `username` `password`
+
+The `username` and `password` options are optional, but restrict access to the WebUI.  Specify
+a username and password to utilize the WebUI.
+
 #### Option: `fps`
 
 This option specifies the estimate frames-per-second that are processed to create the event GIF animations
@@ -102,7 +107,7 @@ Options which can be specified on a per camera basis are:
 1. height (int, optional; default 480)
 1. rotate (int, optional; valid (0,360); default 0)
 1. threshold \[of pixels changed to detect motion\] (int, optional; valid (0,10000); default 5000)
-1. models \[for visual recognition\] (string, optional; format "\[wvr|digits\]:modelname,<model2>,.."bbbbbbb
+1. models \[for visual recognition\] (string, optional; format "\[wvr|digits\]:modelname,<model2>,..")
 
 ## Changelog & Releases
 
