@@ -402,6 +402,11 @@ ncamera=$(jq '.cameras|length' "${CONFIG_PATH}")
 echo "Found ${ncamera} cameras" >&2
 for (( i=0; i<ncamera ; i++)) ; do
 
+  if (( i >= 10 )); then
+    echo "[WARN] too many cameras; maximum 10" >&2
+    break
+  fi
+
   if [ -z "${CAMERAS}" ]; then CAMERAS='['; else CAMERAS="${CAMERAS}"','; fi
 
   echo "+++ CAMERA $i" >&2
@@ -547,7 +552,6 @@ for (( i=0; i<ncamera ; i++)) ; do
 
   # modify primary configuration file with new camera configuration
   sed -i 's|; camera .*camera'"$i"'.*|camera '"${CAMERA_CONF}"'|' "${MOTION_CONF}"
-
 done
 
 ## append to configuration JSON
