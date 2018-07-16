@@ -1,7 +1,7 @@
 {
-  "name": "",
+  "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.3.17",
+  "version": "0.3.18",
   "slug": "motion",
   "description": "Motion package - https://motion-project.github.io/",
   "startup": "before",
