@@ -1,5 +1,3 @@
-# DCMARTIN Hass.io Add-ons: Motion
-
 ## About
 
 This is add-on for the [Motion package][motionpkg]
