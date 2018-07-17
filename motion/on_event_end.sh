@@ -188,7 +188,7 @@ endif
 ###
 
 # use temporary direction in target_dir; should be setup as RAM disk
-set tmpdir = "${MOTION_TARGET_DIR}/tmp/$0:t/$$"
+set tmpdir = "/tmpfs/$0:t/$$"
 mkdir -p $tmpdir
 
 if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"tmpdir":"'"$tmpdir"'"}'

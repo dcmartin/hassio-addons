@@ -4,6 +4,7 @@ if ($?CONFIG_PATH == 0) set CONFIG_PATH = "$cwd/config.json"
 
 if ($#argv > 0) then
   set m = "$1"
+  if ($m:h == $m) set m = $cwd/$m
 endif
 
 if ($?m == 0) set m = $CONFIG_PATH
@@ -13,32 +14,34 @@ if ( ! -s "$m") then
   exit
 endif
 
-set out = "motion.yaml"
-set hosts = ()
-
+## process configuration
 if (-s "$m") then
   if ( "$m:t" != "config.json" ) then
     # assume options only
     set q = '.cameras[]|.name'
   else
-    set hosts = ( `jq -r '.name' "$m"` )
+    # assume full configuration
     set q = '.options.cameras[]|.name'
   endif
-  if ($#hosts == 0) set hosts = ( $host )
   set cameras = ( `jq -r "$q" $m | sort` )
   set unique = ( `jq -r "$q" $m | sort | uniq` )
   if ($#unique != $#cameras) then
-    echo "Duplicate camera names across hosts ($#cameras vs $#unique); exiting" >& /dev/stderr
+    echo "Duplicate camera names ($#cameras vs $#unique); exiting" >& /dev/stderr
     exit
   endif
 else
   echo "Unable to find configuration file: $m" >& /dev/stderr
   exit
 endif
+echo "Found $#cameras cameras" >& /dev/stderr
 
-echo "Found $#cameras cameras across $#hosts hosts" >& /dev/stderr
+####
+#### CORE configuration.yaml
+####
 
-echo "###" >! "$out"
+set out = "$m:h/configuration.yaml"; rm -f "$out"
+
+echo "###" >> "$out"
 echo "### MOTION add-on" >> "$out"
 echo "###" >> "$out"
 
@@ -93,20 +96,33 @@ foreach c ( $cameras )
   echo "" >> "$out"
 end
 
-#
-# MOTION VIEW
-#
+####
+#### GROUPS groups.yaml
+####
 
-## group for all motion 
-echo "group motion_view:" >> "$out"
+set out = "$m:h/groups.yaml"; rm -f "$out"
+
+## group for motion animated cameras
+echo "motion_animated_view:" >> "$out"
 echo "  view: true" >> "$out"
-echo "  name: Motion View" >> "$out"
+echo "  name: Motion Animated View" >> "$out"
 echo "  icon: mdi:animation" >> "$out"
 echo "  entities:" >> "$out"
-echo "    - camera.motion_last" >> "$out"
 echo "    - camera.motion_animated" >> "$out"
 foreach c ( $cameras )
   # echo "    - camera.motion_${c}" >> "$out"
   echo "    - camera.motion_${c}_animated" >> "$out"
 end
 echo "" >> "$out"
+
+####
+#### AUTOMATIONS automations.yaml
+####
+
+set out = "$m:h/automations.yaml"; rm -f "$out"
+
+####
+#### SCRIPTS scripts.yaml
+####
+
+set out = "$m:t/scripts.yaml"; rm -f "$out"
