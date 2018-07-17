@@ -31,8 +31,7 @@ if [ ! -z "${TIMEZONE}" ] && [ "${TIMEZONE}" != "null" ]; then
   cp /usr/share/zoneinfo/${TIMEZONE} /etc/localtime
   JSON="${JSON}"',"timezone":"'"${TIMEZONE}"'"'
 else
-  echo "Time zone not set; exiting" >&2
-  exit
+  echo "Time zone not set; continuing" >&2
 fi
 
 ## MQTT
