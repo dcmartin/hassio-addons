@@ -19,6 +19,10 @@ comparison to installing any other Hass.io add-on.
 
 **Note**: _Remember to SAVE and then restart the add-on when the configuration is changed._
 
+## Example WebUI
+
+![Example](example.png)
+
 ## Configuration
 
 The configuration for this add-on includes configuration for the [Motion package][motionpkg], 
@@ -29,8 +33,6 @@ but also for utilization of various services from the IBM Cloud, including [Wats
 The top-level `name` option controls the identification of the device running the Motion software.
 Providing a name will consistently identify the configuration utilized during operation.
 Defaults to the HOSTNAME environment from Hass.io.  
-
-![Example](example.png)
 
 #### Options: `username` `password`
 
