@@ -96,6 +96,31 @@ foreach c ( $cameras )
   echo "" >> "$out"
 end
 
+## binary_sensor for input_boolean
+echo "" >> "$out"
+echo "binary_sensor motion_binary_sensor_template:" >> "$out"
+echo "  - platform: template" >> "$out"
+echo "    sensors:" >> "$out"
+foreach c ( $cameras )
+  echo "      motion_notify_${c}:" >> "$out"
+  echo "        entity_id:" >> "$out"
+  echo "          - input_boolean.motion_notify_${c}" >> "$out"
+  echo "        value_template: >" >> "$out"
+  echo "          {{ is_state('input_boolean.motion_notify_${c}','on') }}" >> "$out"
+end
+echo "" >> "$out"
+
+## sensor for camera picture
+echo "" >> "$out"
+echo "sensor motion_entity_picture_template:" >> "$out"
+echo "  - platform: template" >> "$out"
+echo "    sensors:" >> "$out"
+foreach c ( $cameras )
+  echo "      motion_${c}_entity_picture:" >> "$out"
+  echo "        value_template: '{{ states.camera.motion_${c}_animated.attributes.entity_picture }}'" >> "$out"
+end
+echo "" >> "$out"
+
 ####
 #### GROUPS groups.yaml
 ####
@@ -117,13 +142,101 @@ end
 echo "" >> "$out"
 
 ####
+#### input_booleans.yaml
+####
+
+set out = "$m:h/input_booleans.yaml"; rm -f "$out"
+
+foreach c ( $cameras )
+echo "" >> "$out"
+echo "motion_notify_${c}:" >> "$out"
+echo "  name: motion_notify_${c}" >> "$out"
+echo "  initial: false" >> "$out"
+echo "  icon: mdi:${c}" >> "$out"
+end
+
+####
 #### AUTOMATIONS automations.yaml
 ####
 
 set out = "$m:h/automations.yaml"; rm -f "$out"
 
+echo "" >> "$out"
+echo "- id: motion_notify_recognize" >> "$out"
+echo "  alias: motion_notify_recognize" >> "$out"
+echo "  initial_state: on" >> "$out"
+echo "  trigger:" >> "$out"
+echo "    - platform: mqtt" >> "$out"
+echo "      topic: 'motion/+/+/event/recognize'" >> "$out"
+echo "  condition:" >> "$out"
+echo "    condition: and" >> "$out"
+echo "    conditions:" >> "$out"
+echo "      - condition: time" >> "$out"
+echo "        after: '06:00'" >> "$out"
+echo "      - condition: time" >> "$out"
+echo "        before: '22:00'" >> "$out"
+echo "      - condition: template" >> "$out"
+echo "        value_template: >" >> "$out"
+echo "          {{ ((now().timestamp()|int) - trigger.payload_json.date) < 60 }}" >> "$out"
+echo "      - condition: template" >> "$out"
+echo "        value_template: >" >> "$out"
+echo "          {{ states(("binary_sensor.motion_notify_",trigger.payload_json.location)|join|lower) == 'on' }}" >> "$out"
+echo "  action:" >> "$out"
+echo "    - service: notify.notify" >> "$out"
+echo "      data_template:" >> "$out"
+echo "        title: >-" >> "$out"
+echo "          {{ trigger.payload_json.class }} recognized" >> "$out"
+echo "        message: >-" >> "$out"
+echo "          SAW {{ trigger.payload_json.class }} at {{ trigger.payload_json.location }}" >> "$out"
+echo '          AT {{ trigger.payload_json.date|int|timestamp_custom("%a %b %d @ %I:%M %p") | default(null) }}' >> "$out"
+echo "          [ {{ trigger.payload_json.model }} {{ trigger.payload_json.score|float }} {{ trigger.payload_json.size }} {{ trigger.payload_json.id }} ]" >> "$out"
+echo "        data:" >> "$out"
+echo "          attachment:" >> "$out"
+echo '            url: http://homeassistant.dcmartin.com:8123{{- states(("sensor.motion_",trigger.payload_json.location,"_entity_picture")|join|lower) -}}' >> "$out"
+echo "            content-type: gif" >> "$out"
+echo "            hide-thumbnail: false" >> "$out"
+echo "" >> "$out"
+
 ####
 #### SCRIPTS scripts.yaml
 ####
 
-set out = "$m:t/scripts.yaml"; rm -f "$out"
+set out = "$m:h/scripts.yaml"; rm -f "$out"
+
+####
+#### ui-lovelace.yaml
+####
+
+set out = "$m:h/ui-lovelace.yaml"; rm -f "$out"
+
+echo "  - icon: mdi:animation" >> "$out"
+echo "    title: ANIMATIONS" >> "$out"
+echo "    cards:" >> "$out"
+foreach c ( $cameras )
+echo "    - type: picture-entity" >> "$out"
+echo "      entity: camera.motion_${c}_animated" >> "$out"
+end
+echo "  - icon: mdi:webcam" >> "$out"
+echo "    title: CAMERAS" >> "$out"
+echo "    cards:" >> "$out"
+foreach c ( $cameras )
+echo "    - type: picture-entity" >> "$out"
+echo "      entity: camera.motion_${c}" >> "$out"
+end
+echo "  - icon: mdi:toggle-switch" >> "$out"
+echo "    title: SWITCHES" >> "$out"
+echo "    cards:" >> "$out"
+echo "    - type: entities" >> "$out"
+echo "      title: Controls" >> "$out"
+echo "      entities:" >> "$out"
+foreach c ( $cameras )
+echo "        - input_boolean.motion_notify_${c}" >> "$out"
+end
+echo "" >> "$out"
+
+foreach c ( $cameras )
+echo "motion_notify_${c}:" >> "$out"
+echo "  name: motion_notify_${c}" >> "$out"
+echo "  initial: false" >> "$out"
+end
+

@@ -124,7 +124,8 @@ endif
 if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"camera":"'$CN'","event":"'${EN}'","elapsed":'$elapsed',"images":'"$images"'}'
 
 ## JSON
-set JSON = `jq '.elapsed='"$elapsed"'|.end='${NOW}'|.images='"$images" "$lastjson"`
+set date = `date +%s`
+set JSON = `jq '.elapsed='"$elapsed"'|.end='${NOW}'|.date='"$date"'|.images='"$images" "$lastjson"`
 
 if ( "$JSON" == "" ) then
   if ($?DEBUG) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "debug" -m '{"DEBUG":"'$0:t'","pid":'$$',"camera":"'$CN'","event":"'"$EN"'","FAILED":"'"$lastjson"'"}'
