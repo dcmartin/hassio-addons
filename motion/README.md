@@ -30,6 +30,8 @@ The top-level `name` option controls the identification of the device running th
 Providing a name will consistently identify the configuration utilized during operation.
 Defaults to the HOSTNAME environment from Hass.io.  
 
+![Example](example.png)
+
 #### Options: `username` `password`
 
 The `username` and `password` options are optional, but restrict access to the WebUI.  Specify
