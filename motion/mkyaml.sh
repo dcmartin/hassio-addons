@@ -103,6 +103,7 @@ end
 set out = "$m:h/groups.yaml"; rm -f "$out"
 
 ## group for motion animated cameras
+echo "" >> "$out"
 echo "motion_animated_view:" >> "$out"
 echo "  view: true" >> "$out"
 echo "  name: Motion Animated View" >> "$out"
