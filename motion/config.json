@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.3.20",
+  "version": "0.3.21",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -11,12 +11,12 @@
   "homeassistant_api":true,
   "privileged":["SYS_ADMIN"],
   "webui":"http://[HOST]:[PORT:8080]/",
+  "timeout":30,
+  "tmpfs":"size=256m,uid=0,rw",
   "map":[
     "share:rw",
     "config:rw"
   ],
-  "timeout":30,
-  "tmpfs":"size=256m,uid=0,rw",
   "ports": {
      "8000/tcp": 8000,
      "8080/tcp": 8080,
