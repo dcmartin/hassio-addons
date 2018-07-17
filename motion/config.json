@@ -1,9 +1,9 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.3.18",
+  "version": "0.3.20",
   "slug": "motion",
-  "description": "Motion package - https://motion-project.github.io/",
+  "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
   "boot": "auto",
   "arch": [ "aarch64","amd64","armhf","i386" ],
@@ -13,8 +13,10 @@
   "webui":"http://[HOST]:[PORT:8080]/",
   "map":[
     "share:rw",
-    "addons:rw"
+    "config:rw"
   ],
+  "timeout":30,
+  "tmpfs":"size=256m,uid=0,rw",
   "ports": {
      "8000/tcp": 8000,
      "8080/tcp": 8080,
@@ -33,7 +35,7 @@
     "name":"",
     "log_level":6,
     "log_type":"all",
-    "target_dir":"/tmp/motion",
+    "target_dir":"/tmpfs/motion",
     "daemon":"on",
     "timezone":"America/Los_Angeles",
     "wvr_url": "https://gateway-a.watsonplatform.net/visual-recognition/api",

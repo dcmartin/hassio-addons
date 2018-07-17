@@ -666,6 +666,11 @@ else
   motion -c "${MOTION_CONF}" -l /dev/stderr
 fi
 
+# build new yaml
+./mkyaml.sh "${CONFIG_PATH}"
+# reload configuration
+# ./rlyaml.sh "${HASSIO_TOKEN}"
+
 if [ ! -z "${MOTION_TARGET_DIR}" ]; then
   if [ ! -d "${MOTION_TARGET_DIR}" ]; then mkdir -p "${MOTION_TARGET_DIR}"; fi
   echo "Changing working directory: ${MOTION_TARGET_DIR}" >&2
