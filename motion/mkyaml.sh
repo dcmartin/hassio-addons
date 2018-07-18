@@ -122,10 +122,10 @@ end
 echo "" >> "$out"
 
 ####
-#### GROUPS groups.yaml
+#### GROUPS group.yaml
 ####
 
-set out = "$m:h/groups.yaml"; rm -f "$out"
+set out = "$m:h/group.yaml"; rm -f "$out"
 
 ## group for motion animated cameras
 echo "" >> "$out"
@@ -142,10 +142,10 @@ end
 echo "" >> "$out"
 
 ####
-#### input_booleans.yaml
+#### input_boolean.yaml
 ####
 
-set out = "$m:h/input_booleans.yaml"; rm -f "$out"
+set out = "$m:h/input_boolean.yaml"; rm -f "$out"
 
 foreach c ( $cameras )
 echo "" >> "$out"
@@ -156,10 +156,10 @@ echo "  icon: mdi:${c}" >> "$out"
 end
 
 ####
-#### AUTOMATIONS automations.yaml
+#### AUTOMATIONS automation.yaml
 ####
 
-set out = "$m:h/automations.yaml"; rm -f "$out"
+set out = "$m:h/automation.yaml"; rm -f "$out"
 
 echo "" >> "$out"
 echo "- id: motion_notify_recognize" >> "$out"
@@ -198,10 +198,10 @@ echo "            hide-thumbnail: false" >> "$out"
 echo "" >> "$out"
 
 ####
-#### SCRIPTS scripts.yaml
+#### SCRIPTS script.yaml
 ####
 
-set out = "$m:h/scripts.yaml"; rm -f "$out"
+set out = "$m:h/script.yaml"; rm -f "$out"
 
 ####
 #### ui-lovelace.yaml
