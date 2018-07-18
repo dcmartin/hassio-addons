@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.3.24",
+  "version": "0.3.25",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -40,7 +40,7 @@
   },
   "options": {
     "name": "",
-    "timezone": "Americas/Los_Angeles",
+    "timezone": "America/Los_Angeles",
     "username": null,
     "password": null,
     "cameras": [
