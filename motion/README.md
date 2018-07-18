@@ -1,6 +1,6 @@
 ## About
 
-This is add-on for the [Motion package][motionpkg]
+This add-on is for the [Motion package][motionpkg]
 
 It provides for the specification of almost all the configuration [options][motiondoc] for Motion,
 including the specification of up to ten cameras.
