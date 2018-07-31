@@ -1,17 +1,24 @@
 #!/bin/tcsh 
 
-if ($?CONFIG_PATH == 0) set CONFIG_PATH = "$cwd/config.json"
+echo "$0:t $$ -- START $*" >& /dev/stderr
+
+if ($?CONFIG_PATH == 0) then
+  set CONFIG_PATH = "$cwd/config.json"
+endif
 
 if ($#argv > 0) then
   set m = "$1"
-  if ($m:h == $m) set m = $cwd/$m
+else
+  set m = $CONFIG_PATH
 endif
 
-if ($?m == 0) set m = $CONFIG_PATH
+set CONFIG_DIR = $m:h
 
 if ( ! -s "$m") then
-  echo "Cannot find configuration JSON file; exiting" >& /dev/stderr
+  echo "$0:t $$ -- Cannot find configuration JSON file; exiting" >& /dev/stderr
   exit
+else
+  echo "$0:t $$ -- Found configuration JSON file: $m" >& /dev/stderr
 endif
 
 ## process configuration
@@ -26,20 +33,20 @@ if (-s "$m") then
   set cameras = ( `jq -r "$q" $m | sort` )
   set unique = ( `jq -r "$q" $m | sort | uniq` )
   if ($#unique != $#cameras) then
-    echo "Duplicate camera names ($#cameras vs $#unique); exiting" >& /dev/stderr
+    echo "$0:t $$ -- Duplicate camera names ($#cameras vs $#unique); exiting" >& /dev/stderr
     exit
   endif
 else
-  echo "Unable to find configuration file: $m" >& /dev/stderr
+  echo "$0:t $$ -- Unable to find configuration file: $m" >& /dev/stderr
   exit
 endif
-echo "Found $#cameras cameras" >& /dev/stderr
+echo "$0:t $$ -- Found $#cameras cameras" >& /dev/stderr
 
 ####
 #### CORE configuration.yaml
 ####
 
-set out = "$m:h/configuration.yaml"; rm -f "$out"
+set out = "$CONFIG_DIR/configuration.yaml"; rm -f "$out"
 
 echo "###" >> "$out"
 echo "### MOTION add-on" >> "$out"
@@ -121,11 +128,13 @@ foreach c ( $cameras )
 end
 echo "" >> "$out"
 
+echo "$0:t $$ -- processed $out" >& /dev/stderr
+
 ####
 #### GROUPS group.yaml
 ####
 
-set out = "$m:h/group.yaml"; rm -f "$out"
+set out = "$CONFIG_DIR/group.yaml"; rm -f "$out"
 
 ## group for motion animated cameras
 echo "" >> "$out"
@@ -141,11 +150,13 @@ foreach c ( $cameras )
 end
 echo "" >> "$out"
 
+echo "$0:t $$ -- processed $out" >& /dev/stderr
+
 ####
 #### input_boolean.yaml
 ####
 
-set out = "$m:h/input_boolean.yaml"; rm -f "$out"
+set out = "$CONFIG_DIR/input_boolean.yaml"; rm -f "$out"
 
 foreach c ( $cameras )
 echo "" >> "$out"
@@ -155,11 +166,13 @@ echo "  initial: false" >> "$out"
 echo "  icon: mdi:${c}" >> "$out"
 end
 
+echo "$0:t $$ -- processed $out" >& /dev/stderr
+
 ####
 #### AUTOMATIONS automation.yaml
 ####
 
-set out = "$m:h/automation.yaml"; rm -f "$out"
+set out = "$CONFIG_DIR/automation.yaml"; rm -f "$out"
 
 echo "" >> "$out"
 echo "- id: motion_notify_recognize" >> "$out"
@@ -197,17 +210,19 @@ echo "            content-type: gif" >> "$out"
 echo "            hide-thumbnail: false" >> "$out"
 echo "" >> "$out"
 
+echo "$0:t $$ -- processed $out" >& /dev/stderr
+
 ####
 #### SCRIPTS script.yaml
 ####
 
-set out = "$m:h/script.yaml"; rm -f "$out"
+set out = "$CONFIG_DIR/script.yaml"; rm -f "$out"
 
 ####
 #### ui-lovelace.yaml
 ####
 
-set out = "$m:h/ui-lovelace.yaml"; rm -f "$out"
+set out = "$CONFIG_DIR/ui-lovelace.yaml"; rm -f "$out"
 
 echo "  - icon: mdi:animation" >> "$out"
 echo "    title: ANIMATIONS" >> "$out"
@@ -240,3 +255,8 @@ echo "  name: motion_notify_${c}" >> "$out"
 echo "  initial: false" >> "$out"
 end
 
+echo "$0:t $$ -- processed $out" >& /dev/stderr
+
+##
+
+echo "$0:t $$ -- finished processing" >& /dev/stderr

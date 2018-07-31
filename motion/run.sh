@@ -127,6 +127,12 @@ echo "+++ MOTION" >&2
 
 MOTION='{'
 
+## DAEMON MODE
+VALUE=$(jq -r ".daemon" "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="on"; fi
+echo "Set daemon to ${VALUE}" >&2
+sed -i "s/^daemon\s.*/daemon ${VALUE}/" "${MOTION_CONF}"
+
 ## alphanumeric values
 
 # set videodevice
@@ -316,7 +322,7 @@ MOTION="${MOTION}"',"webcontrol_port":'"${VALUE}"
 
 # set stream_port
 VALUE=$(jq -r ".stream_port" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=8081; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=8090; fi
 echo "Set stream_port to ${VALUE}" >&2
 sed -i "s/.*stream_port\s[0-9]\+/stream_port ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"stream_port":'"${VALUE}"
@@ -399,41 +405,61 @@ JSON="${JSON}"',"motion":'"${MOTION}"
 
 ncamera=$(jq '.cameras|length' "${CONFIG_PATH}")
 echo "Found ${ncamera} cameras" >&2
+
+MOTION_COUNT=1
+
 for (( i=0; i<ncamera ; i++)) ; do
 
-  if (( i >= 10 )); then
-    echo "[WARN] too many cameras; maximum 10" >&2
-    break
+  ## handle more than one motion process (10 camera/process)
+  if (( i / 10 )); then
+    if (( i % 10 == 0 )); then
+      CONF="${MOTION_CONF%%.*}.${MOTION_COUNT}.${MOTION_CONF##*.}"
+      cp "${MOTION_CONF}" "${CONF}"
+      sed -i 's|^camera|; camera|' "${CONF}"
+      MOTION_CONF=${CONF}
+      # get webcontrol_port (base)
+      VALUE=$(jq -r ".webcontrol_port" "${CONFIG_PATH}")
+      if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=8080; fi
+      VALUE=$(echo "$VALUE + $MOTION_COUNT" | bc)
+      echo "Set webcontrol_port to ${VALUE}" >&2
+      sed -i "s/.*webcontrol_port\s[0-9]\+/webcontrol_port ${VALUE}/" "${MOTION_CONF}"
+      MOTION_COUNT=$(echo "${MOTION_COUNT} + 1" | bc)
+      CNUM=0
+    else
+      CNUM=$(echo "$CNUM + 1" | bc)
+    fi
+  else
+    CNUM=$i
   fi
+
+  echo "CAMERA #: $i CONF: ${MOTION_CONF} NUM: $CNUM" >&2
 
   if [ -z "${CAMERAS}" ]; then CAMERAS='['; else CAMERAS="${CAMERAS}"','; fi
 
-  echo "+++ CAMERA $i" >&2
+  echo "+++ CAMERA ${i}" >&2
 
   CAMERAS="${CAMERAS}"'{"id":'${i}
-
-  # name
-  VALUE=$(jq -r '.cameras['$i'].name' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="camera-name${i}"; fi
-  echo "Set name to ${VALUE}" >&2
-  CAMERAS="${CAMERAS}"',"name":"'"${VALUE}"'"'
 
   ## SPECIAL CASES
 
   # name
+  VALUE=$(jq -r '.cameras['${i}'].name' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="camera-name${i}"; fi
+  echo "Set name to ${VALUE}" >&2
+  CAMERAS="${CAMERAS}"',"name":"'"${VALUE}"'"'
   CNAME=${VALUE}
   if [ ${MOTION_CONF%/*} != ${MOTION_CONF} ]; then 
     CAMERA_CONF="${MOTION_CONF%/*}/${CNAME}.conf"
   else
     CAMERA_CONF="${CNAME}.conf"
   fi
-  echo "camera_id ${i}" > "${CAMERA_CONF}"
+  echo "camera_id ${CNUM}" > "${CAMERA_CONF}"
   echo "camera_name ${VALUE}" >> "${CAMERA_CONF}"
 
   # process camera type; only wcv80n
   VALUE=$(jq -r '.type' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then 
-    VALUE=$(jq -r '.cameras['$i'].type' "${CONFIG_PATH}")
+    VALUE=$(jq -r '.cameras['${i}'].type' "${CONFIG_PATH}")
     if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="wcv80n"; fi
   fi
   echo "Set type to ${VALUE}" >&2
@@ -442,7 +468,7 @@ for (( i=0; i<ncamera ; i++)) ; do
   # process camera fov; WCV80n is 61.5 (62); 56 or 75 degrees for PS3 Eye camera
   VALUE=$(jq -r '.fov' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then 
-    VALUE=$(jq -r '.cameras['$i'].fov' "${CONFIG_PATH}")
+    VALUE=$(jq -r '.cameras['${i}'].fov' "${CONFIG_PATH}")
     if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=62; fi
   fi
   echo "Set fov to ${VALUE}" >&2
@@ -450,7 +476,7 @@ for (( i=0; i<ncamera ; i++)) ; do
   # process camera fps; set on wcv80n web GUI; default 6
   VALUE=$(jq -r '.fps' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then 
-    VALUE=$(jq -r '.cameras['$i'].fps' "${CONFIG_PATH}")
+    VALUE=$(jq -r '.cameras['${i}'].fps' "${CONFIG_PATH}")
     if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=6; fi
   fi
   echo "Set fps to ${VALUE}" >&2
@@ -459,7 +485,7 @@ for (( i=0; i<ncamera ; i++)) ; do
   ## MOTION attributes
 
   # target_dir 
-  VALUE=$(jq -r '.cameras['$i'].target_dir' "${CONFIG_PATH}")
+  VALUE=$(jq -r '.cameras['${i}'].target_dir' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.target_dir'); VALUE="${VALUE}/${CNAME}"; fi
   echo "Set target_dir to ${VALUE}" >&2
   echo "target_dir ${VALUE}" >> "${CAMERA_CONF}"
@@ -467,28 +493,34 @@ for (( i=0; i<ncamera ; i++)) ; do
   CAMERAS="${CAMERAS}"',"target_dir":"'"${VALUE}"'"'
 
   # url
-  VALUE=$(jq -r '.cameras['$i'].url' "${CONFIG_PATH}")
+  VALUE=$(jq -r '.cameras['${i}'].url' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_url'); fi
   echo "Set url to ${VALUE}" >&2
-  echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
   CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
+  # test if file designation for directory
+  if [[ "${VALUE}" == file* ]]; then
+    # file which motion package will poll and will be created
+    VALUE="${VALUE%*/}.jpg"
+  fi
+  echo "Set netcam_url to ${VALUE}" >&2
+  echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
 
   # stream_port 
-  VALUE=$(jq -r '.cameras['$i'].port' "${CONFIG_PATH}")
+  VALUE=$(jq -r '.cameras['${i}'].port' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.stream_port'); VALUE=$((VALUE + i)); fi
   echo "Set stream_port to ${VALUE}" >&2
   echo "stream_port ${VALUE}" >> "${CAMERA_CONF}"
   CAMERAS="${CAMERAS}"',"port":"'"${VALUE}"'"'
 
   # keepalive 
-  VALUE=$(jq -r '.cameras['$i'].keepalive' "${CONFIG_PATH}")
+  VALUE=$(jq -r '.cameras['${i}'].keepalive' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_keepalive'); fi
   echo "Set netcam_keepalive to ${VALUE}" >&2
   echo "netcam_keepalive ${VALUE}" >> "${CAMERA_CONF}"
   CAMERAS="${CAMERAS}"',"keepalive":"'"${VALUE}"'"'
 
   # userpass 
-  VALUE=$(jq -r '.cameras['$i'].userpass' "${CONFIG_PATH}")
+  VALUE=$(jq -r '.cameras['${i}'].userpass' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="${NETCAM_USERPASS}"; fi
   echo "Set netcam_userpass to ${VALUE}" >&2
   echo "netcam_userpass ${VALUE}" >> "${CAMERA_CONF}"
@@ -497,42 +529,42 @@ for (( i=0; i<ncamera ; i++)) ; do
   ## numeric VALUE
 
   # stream_quality 
-  VALUE=$(jq -r '.cameras['$i'].stream_quality' "${CONFIG_PATH}")
+  VALUE=$(jq -r '.cameras['${i}'].stream_quality' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.stream_quality'); fi
   echo "Set stream_quality to ${VALUE}" >&2
   echo "stream_quality ${VALUE}" >> "${CAMERA_CONF}"
   CAMERAS="${CAMERAS}"',"quality":'"${VALUE}"
 
   # threshold 
-  VALUE=$(jq -r '.cameras['$i'].threshold' "${CONFIG_PATH}")
+  VALUE=$(jq -r '.cameras['${i}'].threshold' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.threshold'); fi
   echo "Set threshold to ${VALUE}" >&2
   echo "threshold ${VALUE}" >> "${CAMERA_CONF}"
   CAMERAS="${CAMERAS}"',"threshold":'"${VALUE}"
 
   # width 
-  VALUE=$(jq -r '.cameras['$i'].width' "${CONFIG_PATH}")
+  VALUE=$(jq -r '.cameras['${i}'].width' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.width'); fi
   echo "Set width to ${VALUE}" >&2
   echo "width ${VALUE}" >> "${CAMERA_CONF}"
   CAMERAS="${CAMERAS}"',"width":'"${VALUE}"
 
   # height 
-  VALUE=$(jq -r '.cameras['$i'].height' "${CONFIG_PATH}")
+  VALUE=$(jq -r '.cameras['${i}'].height' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.height'); fi
   echo "Set height to ${VALUE}" >&2
   echo "height ${VALUE}" >> "${CAMERA_CONF}"
   CAMERAS="${CAMERAS}"',"height":'"${VALUE}"
 
   # rotate 
-  VALUE=$(jq -r '.cameras['$i'].rotate' "${CONFIG_PATH}")
+  VALUE=$(jq -r '.cameras['${i}'].rotate' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.rotate'); fi
   echo "Set rotate to ${VALUE}" >&2
   echo "rotate ${VALUE}" >> "${CAMERA_CONF}"
   CAMERAS="${CAMERAS}"',"rotate":'"${VALUE}"
 
   # process models string to array of strings
-  VALUE=$(jq -r '.cameras['$i'].models' "${CONFIG_PATH}")
+  VALUE=$(jq -r '.cameras['${i}'].models' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then 
     W=$(echo "${WATSON}" | jq -r '.models[]?'| sed 's/\([^,]*\)\([,]*\)/"wvr:\1"\2/g' | fmt -1000)
     # echo "WATSON: ${WATSON} ${W}" >&2
@@ -549,9 +581,11 @@ for (( i=0; i<ncamera ; i++)) ; do
   ## close CAMERAS structure
   CAMERAS="${CAMERAS}"'}'
 
-  # modify primary configuration file with new camera configuration
-  sed -i 's|; camera .*camera'"$i"'.*|camera '"${CAMERA_CONF}"'|' "${MOTION_CONF}"
+  # add new camera configuration
+  echo "camera ${CAMERA_CONF}" >> "${MOTION_CONF}"
 done
+
+### DONE w/ MOTION_CONF
 
 ## append to configuration JSON
 if [ -n "${CAMERAS}" ]; then 
@@ -645,30 +679,31 @@ else
   echo "Cloudant URL, username and/or password undefined" >&2
 fi
 
-## DAEMON MODE
-VALUE=$(jq -r ".daemon" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="on"; fi
-echo "Set daemon to ${VALUE}" >&2
-sed -i "s/^daemon\s.*/daemon ${VALUE}/" "${MOTION_CONF}"
-
 # test hassio
 echo "Testing hassio ..." $(curl -s -q -f -L -H "X-HASSIO-KEY: ${HASSIO_TOKEN}" "http://hassio/supervisor/info" | jq -c '.result') >&2
 # test homeassistant
 echo "Testing homeassistant ..." $(curl -s -q -f -L -u ":${HASSIO_TOKEN}" "http://hassio/homeassistant/api/states" | jq -c '.|length') "states" >&2
 
+# start ftp_notifywait for all file:// cameras (uses environment MOTION_JSON_FILE)
+ftp_notifywait.sh "${MOTION_JSON_FILE}"
+
+# build new yaml
+mkyaml.sh "${CONFIG_PATH}"
+# reload configuration
+rlyaml.sh "${HASSIO_TOKEN}"
+
 MOTION_CMD=$(command -v motion)
 if [ ! -s "${MOTION_CMD}" ] || [ ! -s "${MOTION_CONF}" ]; then
   echo "No motion installed (${MOTION_CMD}) or motion configuration ${MOTION_CONF} does not exist" >&2
 else
-  # start motion
-  echo "Start motion with ${MOTION_CONF}" >&2
-  motion -c "${MOTION_CONF}" -l /dev/stderr
+  CONF="${MOTION_CONF%%.*}.${MOTION_CONF##*.}"
+  for (( i = 1; i <= MOTION_COUNT;  i++)); do
+    # start motion
+    echo "Start motion with ${CONF}" >&2
+    motion -c "${CONF}" -l /dev/stderr
+    CONF="${MOTION_CONF%%.*}.${i}.${MOTION_CONF##*.}"
+  done
 fi
-
-# build new yaml
-./mkyaml.sh "${CONFIG_PATH}"
-# reload configuration
-# ./rlyaml.sh "${HASSIO_TOKEN}"
 
 if [ ! -z "${MOTION_TARGET_DIR}" ]; then
   if [ ! -d "${MOTION_TARGET_DIR}" ]; then mkdir -p "${MOTION_TARGET_DIR}"; fi

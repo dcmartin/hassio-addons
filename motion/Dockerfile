@@ -8,7 +8,7 @@ RUN echo "@testing http://nl.alpinelinux.org/alpine/edge/testing" >> /etc/apk/re
 RUN echo "@community http://nl.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
 RUN apk update
 
-RUN apk add --no-cache coreutils python3 mosquitto-clients jq bc curl dateutils findutils imagemagick tcsh@community motion@testing
+RUN apk add --no-cache coreutils python3 mosquitto-clients jq bc curl dateutils findutils imagemagick inotify-tools tcsh@community motion@testing
 
 # args
 ARG MOTION_CONF=/etc/motion/motion.conf 
@@ -24,9 +24,14 @@ RUN mkdir -p "{LOCAL_BIN}"
 COPY *.sh "${LOCAL_BIN}"/
 RUN chmod 755 "${LOCAL_BIN}"/*.sh
 
+# copy sample image
+COPY sample.jpg /etc/motion/sample.jpg
+
 # Ports for motion (control and stream)
-EXPOSE 8000 
-EXPOSE 8080 8081 8082 8083 8084 8085 8086 8087 8088 8089 8090
+EXPOSE 8000 8080 8081 8082 
+EXPOSE 8090 8091 8092 8093 8094 8095 8096 8097 8099 8099
+EXPOSE 8100 8101 8102 8103 8104 8105 8106 8107 8109 8109
+EXPOSE 8110 8111 8112 8113 8114 8115 8116 8117 8119 8119
 
 # mount -t tmpfs -o size=512m tmpfs /mnt/ramdisk
 

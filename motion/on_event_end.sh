@@ -399,14 +399,14 @@ if ($?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then
   if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"topic":"'"$MQTT_TOPIC"'"}'
 endif
 
-## cleanup
-rm -fr $tmpdir
-
 ##
 ## ALL DONE
 ##
 
 done:
+  if ($?tmpdir) then
+    rm -fr $tmpdir
+  endif
   echo "$0:t $$ -- END" `date` >& /dev/stderr
   if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"info":"END"}'
   exit
