@@ -74,7 +74,7 @@ foreach rl ( $reload $core )
     cat "$original" "$additional" >! "$current"
     if ( $i <= $#reload && $?HASSIO_TOKEN) then
       echo -n "$0:t $$ -- [INFO] Reloading YAML configuration for: ${rl} ... "
-      curl -s -q -f -L -H "X-HA-ACCESS: ${HASSIO_TOKEN}" -X POST -H "Content-Type: application/json" "http://${HASSIO_HOST}/api/services/${rl}/reload"
+      curl -s -q -f -L -H "X-HA-ACCESS: ${HASSIO_TOKEN}" -X POST -H "Content-Type: application/json" "http://${HASSIO_HOST}/api/services/${rl}/reload" >& /dev/null
       echo "done"
     else
       set reload_core
@@ -86,7 +86,7 @@ end
 
 if ($?reload_core && $?HASSIO_TOKEN) then
   echo -n "$0:t $$ -- [INFO] Reloading core YAML configuration ... "
-  curl -s -q -f -L -H "X-HA-ACCESS: ${HASSIO_TOKEN}" -X POST -H "Content-Type: application/json" "http://${HASSIO_HOST}/api/services/homeassistant/reload_core_config"
+  curl -s -q -f -L -H "X-HA-ACCESS: ${HASSIO_TOKEN}" -X POST -H "Content-Type: application/json" "http://${HASSIO_HOST}/api/services/homeassistant/reload_core_config" >& /dev/null
   echo "done"
 endif
 
