@@ -137,9 +137,10 @@ sed -i "s/^daemon\s.*/daemon ${VALUE}/" "${MOTION_CONF}"
 
 # set videodevice
 VALUE=$(jq -r ".videodevice" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="/dev/video0"; fi
-echo "Set videodevice to ${VALUE}" >&2
-sed -i "s|.*videodevice .*|videodevice ${VALUE}|" "${MOTION_CONF}"
+if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then 
+  echo "Set videodevice to ${VALUE}" >&2
+  sed -i "s|.*videodevice .*|videodevice ${VALUE}|" "${MOTION_CONF}"
+fi
 # FIRST ITEM NO COMMA
 MOTION="${MOTION}"'"videodevice":"'"${VALUE}"'"'
 
@@ -210,9 +211,10 @@ MOTION="${MOTION}"',"log_level":'"${VALUE}"
 
 # set v412_pallette
 VALUE=$(jq -r ".v412_pallette" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=17; fi
-echo "Set v412_pallette to ${VALUE}" >&2
-sed -i "s/.*v412_pallette\s[0-9]\+/v412_pallette ${VALUE}/" "${MOTION_CONF}"
+if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
+  echo "Set v412_pallette to ${VALUE}" >&2
+  sed -i "s/.*v412_pallette\s[0-9]\+/v412_pallette ${VALUE}/" "${MOTION_CONF}"
+fi
 MOTION="${MOTION}"',"v412_pallette":'"${VALUE}"
 
 # set pre_capture
@@ -689,6 +691,7 @@ ftp_notifywait.sh "${MOTION_JSON_FILE}"
 
 # build new yaml
 mkyaml.sh "${CONFIG_PATH}"
+
 # reload configuration
 rlyaml.sh "${HASSIO_TOKEN}"
 
