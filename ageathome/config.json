@@ -1,7 +1,7 @@
 {
   "name": "AgeAtHome",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.3.29",
+  "version": "0.0.1",
   "slug": "ageathome",
   "description": "AgeAtHome addon for cognitive eldercare",
   "startup": "before",
