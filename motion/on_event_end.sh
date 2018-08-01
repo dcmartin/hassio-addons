@@ -221,15 +221,15 @@ set fuzz = 20
 set avgdiff = 0
 set maxdiff = 0
 set changed = ()
-set totaldiff = 0
-
 set avgsize = 0
 set maxsize = 0
 set biggest = ()
+set totaldiff = 0
 set totalsize = 0
 set i = 1
 set ps = ()
 set diffs = ()
+
 if ($#jpgs > 1) then
   while ( $i <= $#jpgs )
     # calculate difference

@@ -46,6 +46,12 @@ if ($?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then
   # POST JSON
   set MQTT_TOPIC = "motion/$MOTION_DEVICE_NAME/$CN/lost"
   mosquitto_pub -i "$MOTION_DEVICE_NAME" -h "$MOTION_MQTT_HOST" -p "$MOTION_MQTT_PORT" -t "$MQTT_TOPIC" -m '{"device":"'$MOTION_DEVICE_NAME'","camera":"'"$CN"'","time":'"$NOW"'}'
+  # POST no signal jpg
+  set MQTT_TOPIC = "motion/$MOTION_DEVICE_NAME/$CN/image"
+  mosquitto_pub -r -i "$MOTION_DEVICE_NAME" -h "$MOTION_MQTT_HOST" -p "$MOTION_MQTT_PORT" -t "$MQTT_TOPIC" -f "/etc/motion/sample.jpg"
+  # POST no signal gif
+  set MQTT_TOPIC = "motion/$MOTION_DEVICE_NAME/$CN/image-animated"
+  mosquitto_pub -r -i "$MOTION_DEVICE_NAME" -h "$MOTION_MQTT_HOST" -p "$MOTION_MQTT_PORT" -t "$MQTT_TOPIC" -f "/etc/motion/sample.gif"
 endif
 
 ##
