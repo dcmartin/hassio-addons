@@ -47,7 +47,7 @@ else
   goto done
 endif
 
-set dir = "${MOTION_TARGET_DIR}/${CN}"
+set dir = "${MOTION_DATA_DIR}/${CN}"
 
 if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"dir":"'${dir}'","camera":"'$CN'","event":"'$EN'","time":'$NOW'}'
 

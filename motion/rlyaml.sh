@@ -10,12 +10,8 @@ if ($?HASSIO_TOKEN == 0) then
   set HASSIO_PASSWORD = "${1}"
 endif
 
-if ($?CONFIG_PATH == 0) then
-  set CONFIG_PATH = "$cwd"
-  set CONFIG = $cwd/config
-else
-  set CONFIG = /config
-endif
+set CONFIG = /config
+set DATA_DIR = /tmpfs
 
 # core modules require core reload
 # set all = ( `echo "$CONFIG/"*.yaml | sed "s|.*/\([^\.]*\).yaml|\1|"` )
@@ -57,9 +53,9 @@ echo "$0:t $$ -- [INFO] Found $#core core components and $#reload reloadable com
 foreach rl ( $reload $core )
   @ i++
 
-  set current = "${CONFIG}/${rl}.yaml"
-  set additional = "$CONFIG_PATH:h/${rl}.yaml"
-  set original = "$CONFIG_PATH:h/${rl}.yaml.orig"
+  set current = "$CONFIG/${rl}.yaml"
+  set additional = "$DATA_DIR/${rl}.yaml"
+  set original = "$CONFIG/${rl}.yaml.orig"
 
   echo "$0:t $$ -- [INFO] current $current additional $additional original $original" >& /dev/stderr
 
@@ -80,7 +76,7 @@ foreach rl ( $reload $core )
       set reload_core
     endif
   else
-    echo -n "$0:t $$ -- [INFO] Nothing to update for ${rl}"
+    echo "$0:t $$ -- [INFO] Nothing to update for ${rl}"
   endif
 end
 

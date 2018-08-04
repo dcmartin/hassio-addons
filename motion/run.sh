@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo $(date) "$0 $*" >&2
+
 if [ ! -s "${CONFIG_PATH}" ]; then
   echo "Cannot find options ${CONFIG_PATH}; exiting" >&2
   ls -al /data >&2
@@ -20,6 +22,15 @@ echo "Setting name ${VALUE} [MOTION_DEVICE_NAME]" >&2
 # FIRST ITEM NO COMMA
 JSON="${JSON}"'"name":"'"${VALUE}"'","date":'$(/bin/date +%s)
 export MOTION_DEVICE_NAME="${VALUE}"
+
+##
+## device db name
+##
+VALUE=$(jq -r ".device_db" "${CONFIG_PATH}")
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="devices"; fi
+echo "Setting device_db ${VALUE} [MOTION_DEVICE_DB]" >&2
+JSON="${JSON}"',"device_db":"'"${VALUE}"'"'
+export MOTION_DEVICE_DB="${VALUE}"
 
 ##
 ## time zone
@@ -79,7 +90,7 @@ WVR_DATE=$(jq -r ".wvr_date" "${CONFIG_PATH}")
 WVR_VERSION=$(jq -r ".wvr_version" "${CONFIG_PATH}")
 if [ ! -z "${WVR_URL}" ] && [ ! -z "${WVR_APIKEY}" ] && [ ! -z "${WVR_DATE}" ] && [ ! -z "${WVR_VERSION}" ] && [ "${WVR_URL}" != "null" ] && [ "${WVR_APIKEY}" != "null" ] && [ "${WVR_DATE}" != "null" ] && [ "${WVR_VERSION}" != "null" ]; then
   echo "Watson Visual Recognition at ${WVR_URL} date ${WVR_DATE} version ${WVR_VERSION}" >&2
-  WATSON='{"url":"'"${WVR_URL}"'","release":"'"${WVR_DATE}"'","version":"'"${WVR_VERSION}"'","models":['
+  WATSON='{"url":"'"${WVR_URL}"'","date":"'"${WVR_DATE}"'","version":"'"${WVR_VERSION}"'","models":['
   if [ ! -z "${WVR_CLASSIFIER}" ] && [ "${WVR_CLASSIFIER}" != "null" ]; then
     # quote the model names
     CLASSIFIERS=$(echo "${WVR_CLASSIFIER}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
@@ -90,6 +101,8 @@ if [ ! -z "${WVR_URL}" ] && [ ! -z "${WVR_APIKEY}" ] && [ ! -z "${WVR_DATE}" ] &
     WATSON="${WATSON}"'"default"'
   fi
   WATSON="${WATSON}"']}'
+  # make available
+  export MOTION_WATSON_APIKEY="${WVR_APIKEY}"
 fi
 if [ -n "${WATSON}" ]; then
   JSON="${JSON}"',"watson":'"${WATSON}"
@@ -387,10 +400,10 @@ if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
   NETCAM_USERPASS="${VALUE}"
 fi
 
-# MOTION_TARGET_DIR defined for all cameras base path
+# MOTION_DATA_DIR defined for all cameras base path
 VALUE=$(jq -r ".target_dir" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="/share/motion"; fi
-if [ ! -z ${MOTION_TARGET_DIR} ]; then echo "*** MOTION_TARGET_DIR *** ${MOTION_TARGET_DIR}"; VALUE="${MOTION_TARGET_DIR}"; else export MOTION_TARGET_DIR="${VALUE}"; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="/data"; fi
+if [ ! -z ${MOTION_DATA_DIR} ]; then echo "*** MOTION_DATA_DIR *** ${MOTION_DATA_DIR}"; VALUE="${MOTION_DATA_DIR}"; else export MOTION_DATA_DIR="${VALUE}"; fi
 echo "Set target_dir to ${VALUE}" >&2
 sed -i "s|.*target_dir.*|target_dir ${VALUE}|" "${MOTION_CONF}"
 MOTION="${MOTION}"',"target_dir":"'"${VALUE}"'"'
@@ -494,11 +507,16 @@ for (( i=0; i<ncamera ; i++)) ; do
   if [ ! -d "${VALUE}" ]; then mkdir -p "${VALUE}"; fi
   CAMERAS="${CAMERAS}"',"target_dir":"'"${VALUE}"'"'
 
-  # url
+  # stream_port 
+  VALUE=$(jq -r '.cameras['${i}'].port' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.stream_port'); VALUE=$((VALUE + i)); fi
+  echo "Set stream_port to ${VALUE}" >&2
+  echo "stream_port ${VALUE}" >> "${CAMERA_CONF}"
+  CAMERAS="${CAMERAS}"',"port":"'"${VALUE}"'"'
+
+  # netcam_url
   VALUE=$(jq -r '.cameras['${i}'].url' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_url'); fi
-  echo "Set url to ${VALUE}" >&2
-  CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
   # test if file designation for directory
   if [[ "${VALUE}" == file* ]]; then
     # file which motion package will poll and will be created
@@ -506,13 +524,7 @@ for (( i=0; i<ncamera ; i++)) ; do
   fi
   echo "Set netcam_url to ${VALUE}" >&2
   echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
-
-  # stream_port 
-  VALUE=$(jq -r '.cameras['${i}'].port' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.stream_port'); VALUE=$((VALUE + i)); fi
-  echo "Set stream_port to ${VALUE}" >&2
-  echo "stream_port ${VALUE}" >> "${CAMERA_CONF}"
-  CAMERAS="${CAMERAS}"',"port":"'"${VALUE}"'"'
+  CAMERAS="${CAMERAS}"',"netcam_url":"'"${VALUE}"'"'
 
   # keepalive 
   VALUE=$(jq -r '.cameras['${i}'].keepalive' "${CONFIG_PATH}")
@@ -596,13 +608,10 @@ fi
 
 # set interval for events
 VALUE=$(jq -r '.interval' "${CONFIG_PATH}")
-if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ] && [[ "${VALUE}" > 0 ]]; then
-  echo "Set interval to ${VALUE}" >&2
-  JSON="${JSON}"',"interval":'"${VALUE}"
-  export MOTION_EVENT_INTERVAL="${VALUE}"
-else
-  echo "[INFO] MOTION_EVENT_INTERVAL unset; interval = ${VALUE}" >&2
-fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
+echo "Set interval to ${VALUE}" >&2
+JSON="${JSON}"',"interval":'"${VALUE}"
+export MOTION_EVENT_INTERVAL="${VALUE}"
 
 # set minimum_animate; minimum 2
 VALUE=$(jq -r '.minimum_animate' "${CONFIG_PATH}")
@@ -610,11 +619,18 @@ if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=2; fi
 echo "Set minimum_animate to ${VALUE}" >&2
 JSON="${JSON}"',"minimum_animate":'"${VALUE}"
 
-# set post_pictures; boolean (true/false)
+# set post_pictures; enumerated [center,first,last,best,most]
 VALUE=$(jq -r '.post_pictures' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="center"; fi
 echo "Set post_pictures to ${VALUE}" >&2
 JSON="${JSON}"',"post_pictures":"'"${VALUE}"'"'
+
+# MOTION_SHARE_DIR defined for all cameras base path
+VALUE=$(jq -r ".share_dir" "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="/share/motion"; fi
+if [ ! -z ${MOTION_SHARE_DIR} ]; then echo "*** MOTION_SHARE_DIR *** ${MOTION_SHARE_DIR}"; VALUE="${MOTION_SHARE_DIR}"; else export MOTION_SHARE_DIR="${VALUE}"; fi
+echo "Set share_dir to ${VALUE}" >&2
+JSON="${JSON}"',"share_dir":"'"${VALUE}"'"'
 
 ###
 ### DONE w/ JSON
@@ -633,9 +649,9 @@ fi
 ### CLOUDANT
 ###
 
-URL=$(jq -r ".cloudant_url" "${CONFIG_PATH}")
-USERNAME=$(jq -r ".cloudant_username" "${CONFIG_PATH}")
-PASSWORD=$(jq -r ".cloudant_password" "${CONFIG_PATH}")
+URL=$(jq -r ".cloudant.url" "${CONFIG_PATH}")
+USERNAME=$(jq -r ".cloudant.username" "${CONFIG_PATH}")
+PASSWORD=$(jq -r ".cloudant.password" "${CONFIG_PATH}")
 if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "null" ] && [ ! -z "${URL}" ] && [ ! -z "${USERNAME}" ] && [ ! -z "${PASSWORD}" ]; then
   echo "Testing CLOUDANT" >&2
   OK=$(curl -s -q -f -L "${URL}" -u "${USERNAME}:${PASSWORD}" | jq -r '.couchdb')
@@ -645,13 +661,13 @@ if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "
   else
     export MOTION_CLOUDANT_URL="${URL%:*}"'://'"${USERNAME}"':'"${PASSWORD}"'@'"${USERNAME}"."${URL#*.}"
   fi
-  URL="${MOTION_CLOUDANT_URL}/motion"
+  URL="${MOTION_CLOUDANT_URL}/${MOTION_DEVICE_DB}"
   DB=$(curl -s -q -f -L "${URL}" | jq -r '.db_name')
-  if [ "${DB}" != "motion" ]; then
+  if [ "${DB}" != "${MOTION_DEVICE_DB}" ]; then
     # create DB
     OK=$(curl -s -q -f -L -X PUT "${URL}" | jq '.ok')
     if [ "${OK}" != "true" ]; then
-      echo "Failed to create CLOUDANT DB motion" >&2
+      echo "Failed to create CLOUDANT DB ${MOTION_DEVICE_DB}" >&2
       OFF=TRUE
     else
       echo "Created CLOUDANT DB motion" >&2
@@ -695,27 +711,58 @@ mkyaml.sh "${CONFIG_PATH}"
 # reload configuration
 rlyaml.sh "${HASSIO_TOKEN}"
 
+###
+### START MOTION
+###
+
 MOTION_CMD=$(command -v motion)
 if [ ! -s "${MOTION_CMD}" ] || [ ! -s "${MOTION_CONF}" ]; then
   echo "No motion installed (${MOTION_CMD}) or motion configuration ${MOTION_CONF} does not exist" >&2
 else
+  echo "Starting ${MOTION_COUNT} motion daemons" >&2
   CONF="${MOTION_CONF%%.*}.${MOTION_CONF##*.}"
   for (( i = 1; i <= MOTION_COUNT;  i++)); do
     # start motion
-    echo "Start motion with ${CONF}" >&2
+    echo "Start motion ${i} with ${CONF}" >&2
     motion -c "${CONF}" -l /dev/stderr
     CONF="${MOTION_CONF%%.*}.${i}.${MOTION_CONF##*.}"
   done
 fi
 
-if [ ! -z "${MOTION_TARGET_DIR}" ]; then
-  if [ ! -d "${MOTION_TARGET_DIR}" ]; then mkdir -p "${MOTION_TARGET_DIR}"; fi
-  echo "Changing working directory: ${MOTION_TARGET_DIR}" >&2
-  cd "${MOTION_TARGET_DIR}"
+###
+### START HTTPD
+###
+if [ -s "${MOTION_APACHE_CONF}" ]; then
+  # edit defaults
+  sed -i 's|^Listen \(.*\)|Listen '${MOTION_APACHE_PORT}'|' "${MOTION_APACHE_CONF}"
+  sed -i 's|^ServerName \(.*\)|ServerName '"${MOTION_APACHE_HOST}:${MOTION_APACHE_PORT}"'|' "${MOTION_APACHE_CONF}"
+  sed -i 's|^ServerAdmin \(.*\)|ServerAdmin '"${MOTION_APACHE_ADMIN}"'|' "${MOTION_APACHE_CONF}"
+  # sed -i 's|^ServerTokens \(.*\)|ServerTokens '"${MOTION_APACHE_TOKENS}"'|' "${MOTION_APACHE_CONF}"
+  # sed -i 's|^ServerSignature \(.*\)|ServerSignature '"${MOTION_APACHE_SIGNATURE}"'|' "${MOTION_APACHE_CONF}"
+  # enable CGI
+  sed -i 's|^\([^#]\)#LoadModule cgi|\1LoadModule cgi|' "${MOTION_APACHE_CONF}"
+  # set environment
+  echo 'PassEnv MOTION_JSON_FILE' >> "${MOTION_APACHE_CONF}"
+  echo 'PassEnv MOTION_CLOUDANT_URL' >> "${MOTION_APACHE_CONF}"
+  echo 'PassEnv MOTION_SHARE_DIR' >> "${MOTION_APACHE_CONF}"
+  echo 'PassEnv MOTION_DATA_DIR' >> "${MOTION_APACHE_CONF}"
+  echo 'PassEnv MOTION_WATSON_APIKEY' >> "${MOTION_APACHE_CONF}"
+  # make /run/apache2 for PID file
+  mkdir /run/apache2
+  # start HTTP daemon in foreground
+  echo "Starting Apache: ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT} ${MOTION_APACHE_HTDOCS}" >&2
+  httpd -E /dev/stderr -e debug -f "${MOTION_APACHE_CONF}" -DFOREGROUND
+fi
+
+if [ ! -z "${MOTION_DATA_DIR}" ]; then
+  if [ ! -d "${MOTION_DATA_DIR}" ]; then mkdir -p "${MOTION_DATA_DIR}"; fi
+  echo "Changing working directory: ${MOTION_DATA_DIR}" >&2
+  cd "${MOTION_DATA_DIR}"
   # start python httpd server
   echo "Starting python httpd server" >&2
   python3 -m http.server
 else
-  echo "Motion target directory not defined; exiting" >&2
-  exit
+  echo "Motion data directory not defined; exiting" >&2
 fi
+
+exit

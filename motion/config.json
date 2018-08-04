@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.3.30",
+  "version": "0.3.37",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -17,7 +17,7 @@
   "privileged": [
     "SYS_ADMIN"
   ],
-  "webui": "http://[HOST]:[PORT:8000]/",
+  "webui": "http://[HOST]:[PORT:7999]/",
   "timeout": 30,
   "tmpfs": "size=256m,uid=0,rw",
   "map": [
@@ -25,6 +25,7 @@
     "config:rw"
   ],
   "ports": {
+    "7999/tcp": 7999,
     "8000/tcp": 8000,
     "8080/tcp": 8080,
     "8081/tcp": 8081,
@@ -61,10 +62,13 @@
     "8119/tcp": 8119
   },
   "options": {
-    "name": "",
-    "timezone": "America/Los_Angeles",
+    "name":"default-0.3.37",
     "username": null,
     "password": null,
+    "www":"hassio.local",
+    "port":7999,
+    "email":"root@hassio.local",
+    "timezone": "America/Los_Angeles",
     "cameras": [
       {
         "name": "kelispond",
@@ -73,9 +77,13 @@
     ]
   },
   "schema": {
-    "name": "str?",
+    "device_db":"str?",
+    "name":"str?",
     "username": "str?",
     "password": "str?",
+    "www": "str?",
+    "port": "port?",
+    "email":"email?",
     "timezone": "str?",
     "cameras": [
       {
@@ -135,14 +143,13 @@
     "mqtt_host": "str?",
     "mqtt_port": "port?",
     "fov": "int?",
-    "cloudant_url": "str?",
-    "cloudant_username": "str?",
-    "cloudant_password": "str?",
+    "cloudant":{ "url": "str?", "username": "str?", "password": "str?" },
     "daemon": "str?",
     "interval": "int?",
     "fps": "int?",
     "post_pictures": "str?",
     "minimum_animate": "int?",
-    "target_dir": "str?"
+    "target_dir": "str?",
+    "share_dir": "str?"
   }
 }

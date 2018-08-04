@@ -1,4 +1,4 @@
-ARG BUILD_FROM=hassioaddons/base:2.0.0
+ARG BUILD_FROM=hassioaddons/base:2.0.1
 
 FROM $BUILD_FROM
 
@@ -8,7 +8,33 @@ RUN echo "@testing http://nl.alpinelinux.org/alpine/edge/testing" >> /etc/apk/re
 RUN echo "@community http://nl.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
 RUN apk update
 
-RUN apk add --no-cache coreutils python3 mosquitto-clients jq bc curl dateutils findutils imagemagick inotify-tools tcsh@community motion@testing
+RUN apk add --no-cache \
+  apache2 \
+  apache2-utils \
+  bc \
+  coreutils \
+  curl \
+  dateutils \
+  findutils \
+  gawk \
+  imagemagick \
+  inotify-tools \
+  jq \
+  mosquitto-clients \
+  motion@testing \
+  python3 \
+  tcsh@community
+
+RUN apk add --update \
+    python \
+    python-dev \
+    py-pip \
+    build-base
+
+RUN pip install --upgrade pip \
+    && pip install --upgrade setuptools \
+    && pip install --upgrade csvkit --ignore-installed six \
+    && rm -rf /var/cache/apk/*
 
 # args
 ARG MOTION_CONF=/etc/motion/motion.conf 
@@ -24,10 +50,30 @@ RUN mkdir -p "${LOCAL_BIN}"
 COPY *.sh "${LOCAL_BIN}"/
 RUN chmod 755 "${LOCAL_BIN}"/*.sh
 
+## APACHE
+
+ARG MOTION_APACHE_CONF=/etc/apache2/httpd.conf
+ARG MOTION_APACHE_HTDOCS=/var/www/localhost/htdocs
+ARG MOTION_APACHE_CGIBIN=/var/www/localhost/cgi-bin
+ARG MOTION_APACHE_HOST=localhost
+ARG MOTION_APACHE_PORT=7999
+ARG MOTION_APACHE_ADMIN=root@hassio.local
+
+ENV MOTION_APACHE_CONF "${MOTION_APACHE_CONF}"
+ENV MOTION_APACHE_HTDOCS "${MOTION_APACHE_HTDOCS}"
+ENV MOTION_APACHE_CGIBIN "${MOTION_APACHE_CGIBIN}"
+ENV MOTION_APACHE_HOST "${MOTION_APACHE_HOST}"
+ENV MOTION_APACHE_PORT "${MOTION_APACHE_PORT}"
+ENV MOTION_APACHE_ADMIN "${MOTION_APACHE_ADMIN}"
+
+COPY ./public/ "${MOTION_APACHE_HTDOCS}"
+COPY ./cgi/ "${MOTION_APACHE_CGIBIN}"
+
 # copy sample image
 COPY sample.jpg /etc/motion/sample.jpg
 
 # Ports for motion (control and stream)
+EXPOSE ${MOTION_APACHE_PORT}
 EXPOSE 8000 8080 8081 8082 
 EXPOSE 8090 8091 8092 8093 8094 8095 8096 8097 8099 8099
 EXPOSE 8100 8101 8102 8103 8104 8105 8106 8107 8109 8109

@@ -12,7 +12,7 @@ else
   set m = $CONFIG_PATH
 endif
 
-set CONFIG_DIR = $m:h
+set DATA_DIR = /tmpfs
 
 if ( ! -s "$m") then
   echo "$0:t $$ -- Cannot find configuration JSON file; exiting" >& /dev/stderr
@@ -46,7 +46,7 @@ echo "$0:t $$ -- Found $#cameras cameras" >& /dev/stderr
 #### CORE configuration.yaml
 ####
 
-set out = "$CONFIG_DIR/configuration.yaml"; rm -f "$out"
+set out = "$DATA_DIR/configuration.yaml"; rm -f "$out"
 
 echo "###" >> "$out"
 echo "### MOTION add-on" >> "$out"
@@ -134,7 +134,7 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 #### GROUPS group.yaml
 ####
 
-set out = "$CONFIG_DIR/group.yaml"; rm -f "$out"
+set out = "$DATA_DIR/group.yaml"; rm -f "$out"
 
 ## group for motion animated cameras
 echo "" >> "$out"
@@ -156,7 +156,7 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 #### input_boolean.yaml
 ####
 
-set out = "$CONFIG_DIR/input_boolean.yaml"; rm -f "$out"
+set out = "$DATA_DIR/input_boolean.yaml"; rm -f "$out"
 
 foreach c ( $cameras )
 echo "" >> "$out"
@@ -172,7 +172,7 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 #### AUTOMATIONS automation.yaml
 ####
 
-set out = "$CONFIG_DIR/automation.yaml"; rm -f "$out"
+set out = "$DATA_DIR/automation.yaml"; rm -f "$out"
 
 echo "" >> "$out"
 echo "- id: motion_notify_recognize" >> "$out"
@@ -216,13 +216,13 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 #### SCRIPTS script.yaml
 ####
 
-set out = "$CONFIG_DIR/script.yaml"; rm -f "$out"
+set out = "$DATA_DIR/script.yaml"; rm -f "$out"
 
 ####
 #### ui-lovelace.yaml
 ####
 
-set out = "$CONFIG_DIR/ui-lovelace.yaml"; rm -f "$out"
+set out = "$DATA_DIR/ui-lovelace.yaml"; rm -f "$out"
 
 echo "  - icon: mdi:animation" >> "$out"
 echo "    title: ANIMATIONS" >> "$out"

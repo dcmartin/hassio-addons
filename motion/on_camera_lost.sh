@@ -38,7 +38,7 @@ set TS = "${YR}${MO}${DY}${HR}${MN}${SC}"
 # get time
 set NOW = `$dateconv -i '%Y%m%d%H%M%S' -f "%s" "$TS"`
 
-if ($?VERBOSE) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","dir":"'$MOTION_TARGET_DIR'","camera":"'$CN'","time":'$NOW'}'
+if ($?VERBOSE) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","dir":"'$MOTION_DATA_DIR'","camera":"'$CN'","time":'$NOW'}'
 
 
 ## do MQTT
