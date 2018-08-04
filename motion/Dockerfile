@@ -71,6 +71,7 @@ COPY ./cgi/ "${MOTION_APACHE_CGIBIN}"
 
 # copy sample image
 COPY sample.jpg /etc/motion/sample.jpg
+COPY sample.gif /etc/motion/sample.gif
 
 # Ports for motion (control and stream)
 EXPOSE ${MOTION_APACHE_PORT}
