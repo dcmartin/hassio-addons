@@ -1,0 +1,3 @@
+#!/bin/csh
+docker build -t local_motion .
+
