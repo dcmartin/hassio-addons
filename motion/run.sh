@@ -402,7 +402,7 @@ fi
 
 # MOTION_DATA_DIR defined for all cameras base path
 VALUE=$(jq -r ".target_dir" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="/data"; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="/data/cameras"; fi
 if [ ! -z ${MOTION_DATA_DIR} ]; then echo "*** MOTION_DATA_DIR *** ${MOTION_DATA_DIR}"; VALUE="${MOTION_DATA_DIR}"; else export MOTION_DATA_DIR="${VALUE}"; fi
 echo "Set target_dir to ${VALUE}" >&2
 sed -i "s|.*target_dir.*|target_dir ${VALUE}|" "${MOTION_CONF}"
@@ -751,7 +751,7 @@ if [ -s "${MOTION_APACHE_CONF}" ]; then
   mkdir /run/apache2
   # start HTTP daemon in foreground
   echo "Starting Apache: ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT} ${MOTION_APACHE_HTDOCS}" >&2
-  httpd -E /dev/stderr -e debug -f "${MOTION_APACHE_CONF}" -DFOREGROUND
+  httpd -E /dev/stderr -e debug -f "${MOTION_APACHE_CONF}" # -DFOREGROUND
 fi
 
 if [ ! -z "${MOTION_DATA_DIR}" ]; then
@@ -764,5 +764,3 @@ if [ ! -z "${MOTION_DATA_DIR}" ]; then
 else
   echo "Motion data directory not defined; exiting" >&2
 fi
-
-exit

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<link href="https://fonts.googleapis.com/css?family=IBM+Plex+Sans" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'IBM+Plex+Sans', sans-serif, serif;
+      }
+    </style>
+
+
+<title>MOTION</title>
+</head>
+
+<script>
+var devreq = new XMLHttpRequest();
+devreq.onreadystatechange = function() {
+  if (this.readyState == 4 && this.status == 200 && this.responseText != null) {
+    var jobj = JSON.parse(this.responseText);
+
+    jobj.devices.forEach(function(item,index) {
+      devices.innerHTML += '<h2>NAME: ' + item.name + '</h2>';
+      devices.innerHTML += '<ul>'
+      devices.innerHTML += '<li><a href="/cgi-bin/motion-index.cgi?db=' + item.name + '">View</a> current training set&nbsp;';
+      devices.innerHTML += '<li><a href="/cgi-bin/motion-classify.cgi?db=' + item.name + '">Classify</a> new images&nbsp;';
+      devices.innerHTML += '<li>Trained models: <ul><div id="' + item.name + '_models' + '"></div></ul>';
+      devices.innerHTML += '</ul>';
+    });
+    jobj.devices.forEach(function(item,index) {
+      var modreq = new XMLHttpRequest();
+      modreq.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200 && this.responseText != null) {
+          var jobj = JSON.parse(this.responseText);
+
+          if (jobj != null) {
+            if (jobj["error"] != null) {
+              console.log(jobj.error);
+            } else if (jobj.models != null) {
+              console.log(jobj.models);
+              jobj.models.forEach(function(model,index){
+                did = model.device + '_models';
+                mod = document.getElementById(did)
+                mod.innerHTML += '<li><a href="/cfmatrix.html?model=' + model.model + '">' + model.model + '</a>' 
+              });
+            }
+          } else {
+            console.log('null JSON object');
+          }
+        } else {
+          console.log('null responseText');
+        }
+      }
+      modreq.open("GET","/cgi-bin/motion-models.cgi?db=" + item.name, true);
+      modreq.send();
+    });
+  }
+}
+devreq.open("GET","/cgi-bin/motion-devices.cgi", true);
+devreq.send();
+</script>
+
+<script>
+var matreq = new XMLHttpRequest();
+matreq.onreadystatechange = function() {
+  if (this.readyState == 4 && this.status == 200 && this.responseText != null) {
+    var jobj = JSON.parse(this.responseText);
+
+    <!-- jobj.models.forEach(function(item,index){ matrices.innerHTML = matrices.innerHTML + "matrix#" + index + ": " + item + "<br>" }); -->
+    jobj.models.forEach(function(item,index){ matrices.innerHTML = matrices.innerHTML + '<a href="/cfmatrix.html?model=' + item + '">' + item + '</a><br>' });
+  }
+}
+matreq.open("GET","/cgi-bin/motion-cfmatrix.cgi", true);
+matreq.send();
+</script>
+
+
+<body>
+
+<h1>MOTION</h1>
+<ul>
+<li><h2><a href="http://homeassistant.dcmartin.com:8080">Controls</a></h1><div id="controls"></div></li>
+<li><h2><a href="http://homeassistant.dcmartin.com:8123/lovelace">Cameras</a></h1><div id="cameras"></div></li>
+<li><h2><a href="http://homeassistant.dcmartin.com:8000">Data</a></h1><div id="data"></div></li>
+</ul>
+
+<h1>DEVICES</h1><div id="devices"></div>
+
+<h1>MODELS</h1><div id="matrices"></div>
+
+</body>
+</html>

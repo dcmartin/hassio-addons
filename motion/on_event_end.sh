@@ -82,6 +82,7 @@ set interval = `jq -r '.interval' "$MOTION_JSON_FILE"`
 if ("$interval" == "null" || $#interval == 0) set interval = 0
 if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"interval":'"$interval"'}'
 
+set LAST = START
 set frames = ()
 set elapsed = 0
 if ($#jpgs) then
@@ -94,9 +95,8 @@ if ($#jpgs) then
       @ i--
       continue
     endif
-    set LAST = `jq -r '.time' "$jsn"`
-    # set LAST = `echo "$jpg:t:r" | sed 's/\(.*\)-.*-.*/\1/'`
-    # set LAST = `$dateconv -i '%Y%m%d%H%M%S' -f "%s" $LAST`
+    set LAST = `echo "$jpg:t:r" | sed 's/\(.*\)-.*-.*/\1/'`
+    set LAST = `$dateconv -i '%Y%m%d%H%M%S' -f "%s" $LAST`
     @ seconds = $LAST - $START
     if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"json":"'"$jsn"'","elapsed":'$seconds'}'
     # test for breaking conditions
@@ -125,7 +125,7 @@ if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":
 
 ## JSON
 set date = `date +%s`
-set JSON = `jq '.elapsed='"$elapsed"'|.end='${NOW}'|.date='"$date"'|.images='"$images" "$lastjson"`
+set JSON = `jq '.elapsed='"$elapsed"'|.end='${LAST}'|.date='"$date"'|.images='"$images" "$lastjson"`
 
 if ( "$JSON" == "" ) then
   if ($?DEBUG) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "debug" -m '{"DEBUG":"'$0:t'","pid":'$$',"camera":"'$CN'","event":"'"$EN"'","FAILED":"'"$lastjson"'"}'
