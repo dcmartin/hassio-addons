@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.3.38",
+  "version": "0.3.39",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -18,7 +18,7 @@
     "SYS_ADMIN"
   ],
   "webui": "http://[HOST]:[PORT:7999]/",
-  "timeout": 30,
+  "timeout": 90,
   "tmpfs": "size=256m,uid=0,rw",
   "map": [
     "share:rw",
@@ -89,6 +89,9 @@
       {
         "name": "str",
         "url": "str?",
+	"type": "str?",
+	"fov": "int?",
+	"fps": "int?",
         "device": "str?",
         "userpass": "str?",
         "keepalive": "str?",
