@@ -223,7 +223,7 @@ set out = "$DATA_DIR/script.yaml"; rm -f "$out"
 ####
 
 set out = "$DATA_DIR/ui-lovelace.yaml.base"; rm -f "$out"
-echo "name: Home-Assistant Lovelace UI" >> "$out"
+echo "name: Auto-generated Lovelace UI" >> "$out"
 echo "" >> "$out"
 echo "views:" >> "$out"
 
