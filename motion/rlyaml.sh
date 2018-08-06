@@ -67,6 +67,7 @@ foreach rl ( $reload $core )
     else
       echo "$0:t $$ -- [INFO] creating YAML ($current) from $additional alone" >& /dev/stderr
       cp "$additional" "$current"
+    endif
     continue
   endif
 
