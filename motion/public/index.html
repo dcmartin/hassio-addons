@@ -83,11 +83,11 @@ window.onload = function () {
   port = site[1];
   site = site[0];
   cid = document.getElementById("controls");
-  cid.href = prot + "//" + site + ":8080";
+  cid.href = prot + "//" + site + ":8080/";
   cid = document.getElementById("data");
-  cid.href = prot + "//" + site + ":8000";
+  cid.href = prot + "//" + site + ":8000/";
   cid = document.getElementById("cameras");
-  cid.href = prot + "//" + site + "8123" + "/lovelace";
+  cid.href = prot + "//" + site + ":8123/" + "lovelace";
 }
 
 </script>
@@ -96,7 +96,7 @@ window.onload = function () {
 
 <h1>MOTION</h1>
 <ul>
-<li><h2><a href="">Cameras</a></h1><div id="cameras"></div></li>
+<li><h2><a id="cameras" href="">Cameras</a></h1><div id="lovelace"></div></li>
 <li><h2><a id="controls" href="">Controls</a></h1><div id="threads"></div></li>
 <li><h2><a id="data" href="">Data</a></h1><div id="datasets"></div></li>
 </ul>
