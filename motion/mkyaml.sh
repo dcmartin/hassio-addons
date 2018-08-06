@@ -12,7 +12,7 @@ else
   set m = $CONFIG_PATH
 endif
 
-set DATA_DIR = /tmpfs
+set DATA_DIR = /data
 
 if ( ! -s "$m") then
   echo "$0:t $$ -- Cannot find configuration JSON file; exiting" >& /dev/stderr
@@ -221,6 +221,11 @@ set out = "$DATA_DIR/script.yaml"; rm -f "$out"
 ####
 #### ui-lovelace.yaml
 ####
+
+set out = "$DATA_DIR/ui-lovelace.yaml.base"; rm -f "$out"
+echo "name: Home-Assistant Lovelace UI" >> "$out"
+echo "" >> "$out"
+echo "views:" >> "$out"
 
 set out = "$DATA_DIR/ui-lovelace.yaml"; rm -f "$out"
 

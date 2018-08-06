@@ -11,7 +11,7 @@ if ($?HASSIO_TOKEN == 0) then
 endif
 
 set CONFIG = /config
-set DATA_DIR = /tmpfs
+set DATA_DIR = /data
 
 # core modules require core reload
 # set all = ( `echo "$CONFIG/"*.yaml | sed "s|.*/\([^\.]*\).yaml|\1|"` )
@@ -55,28 +55,37 @@ foreach rl ( $reload $core )
 
   set current = "$CONFIG/${rl}.yaml"
   set additional = "$DATA_DIR/${rl}.yaml"
-  set original = "$CONFIG/${rl}.yaml.orig"
+  set base = "$DATA_DIR/${rl}.yaml.base"
+  set original = "$DATA_DIR/${rl}.yaml.orig"
 
   echo "$0:t $$ -- [INFO] current $current additional $additional original $original" >& /dev/stderr
 
   if ((! -e "$current") && (! -e "$original")) then
-    echo "$0:t $$ -- [INFO] No existing $current; copying $additional" >& /dev/stderr
-    cp "$additional" "$current"
+    if (-s "$base") then
+      echo "$0:t $$ -- [INFO] creating YAML ($current) from $base and $additional" >& /dev/stderr
+      cat "$base" "$additional" >! "$current"
+    else
+      echo "$0:t $$ -- [INFO] creating YAML ($current) from $additional alone" >& /dev/stderr
+      cp "$additional" "$current"
     continue
   endif
 
-  if (-s "$additional" && (-M "$additional") > (-M "$current")) then
+  if (-s "$additional") then
     if (! -e "$original") cp "$current" "$original"
-    cat "$original" "$additional" >! "$current"
-    if ( $i <= $#reload && $?HASSIO_TOKEN) then
-      echo -n "$0:t $$ -- [INFO] Reloading YAML configuration for: ${rl} ... "
-      curl -s -q -f -L -H "X-HA-ACCESS: ${HASSIO_TOKEN}" -X POST -H "Content-Type: application/json" "http://${HASSIO_HOST}/api/services/${rl}/reload" >& /dev/null
-      echo "done"
+    if ((-M "$additional") > (-M "$current")) then
+      cat "$original" "$additional" >! "$current"
+      if ( $i <= $#reload && $?HASSIO_TOKEN) then
+        echo -n "$0:t $$ -- [INFO] updating YAML: ${rl} ... "
+        curl -s -q -f -L -H "X-HA-ACCESS: ${HASSIO_TOKEN}" -X POST -H "Content-Type: application/json" "http://${HASSIO_HOST}/api/services/${rl}/reload" >& /dev/null
+        echo "done"
+      else
+        set reload_core
+      endif
     else
-      set reload_core
+      echo "$0:t $$ -- [INFO] current YAML: ${rl}"
     endif
   else
-    echo "$0:t $$ -- [INFO] Nothing to update for ${rl}"
+    echo "$0:t $$ -- [INFO] no YAML: ${rl}"
   endif
 end
 

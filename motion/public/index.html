@@ -10,7 +10,7 @@
     </style>
 
 
-<title>MOTION</title>
+<title>addon_motion</title>
 </head>
 
 <script>
@@ -74,14 +74,31 @@ matreq.open("GET","/cgi-bin/motion-cfmatrix.cgi", true);
 matreq.send();
 </script>
 
+<script>
+
+window.onload = function () {
+  rfr = document.referrer.split('/');
+  prot = rfr[0];
+  site = rfr[2].split(':');
+  port = site[1];
+  site = site[0];
+  cid = document.getElementById("controls");
+  cid.href = prot + "//" + site + ":8080";
+  cid = document.getElementById("data");
+  cid.href = prot + "//" + site + ":8000";
+  cid = document.getElementById("cameras");
+  cid.href = prot + "//" + site + "8123" + "/lovelace";
+}
+
+</script>
 
 <body>
 
 <h1>MOTION</h1>
 <ul>
-<li><h2><a href="http://homeassistant.dcmartin.com:8080">Controls</a></h1><div id="controls"></div></li>
-<li><h2><a href="http://homeassistant.dcmartin.com:8123/lovelace">Cameras</a></h1><div id="cameras"></div></li>
-<li><h2><a href="http://homeassistant.dcmartin.com:8000">Data</a></h1><div id="data"></div></li>
+<li><h2><a href="">Cameras</a></h1><div id="cameras"></div></li>
+<li><h2><a id="controls" href="">Controls</a></h1><div id="threads"></div></li>
+<li><h2><a id="data" href="">Data</a></h1><div id="datasets"></div></li>
 </ul>
 
 <h1>DEVICES</h1><div id="devices"></div>
