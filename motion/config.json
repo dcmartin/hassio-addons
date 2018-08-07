@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.3.46",
+  "version": "0.3.49",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -62,7 +62,7 @@
     "8119/tcp": 8119
   },
   "options": {
-    "name":"default-0.3.46",
+    "name":"default-0.3.49",
     "username": null,
     "password": null,
     "www":"hassio.local",

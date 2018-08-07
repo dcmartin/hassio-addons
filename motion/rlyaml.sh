@@ -12,6 +12,7 @@ endif
 
 set CONFIG = /config
 set DATA_DIR = /data
+set TMPFS = /tmpfs
 
 # core modules require core reload
 # set all = ( `echo "$CONFIG/"*.yaml | sed "s|.*/\([^\.]*\).yaml|\1|"` )
@@ -54,39 +55,41 @@ foreach rl ( $reload $core )
   @ i++
 
   set current = "$CONFIG/${rl}.yaml"
+  set currents = "$CONFIG/${rl}s.yaml"
   set additional = "$DATA_DIR/${rl}.yaml"
   set base = "$DATA_DIR/${rl}.yaml.base"
   set original = "$DATA_DIR/${rl}.yaml.orig"
 
+  if (-e "$currents") set current = "$currents"
+
   echo "$0:t $$ -- [INFO] current $current additional $additional original $original" >& /dev/stderr
 
-  if ((! -e "$current") && (! -e "$original")) then
-    if (-s "$base") then
-      echo "$0:t $$ -- [INFO] creating YAML ($current) from $base and $additional" >& /dev/stderr
-      cat "$base" "$additional" >! "$current"
-    else
-      echo "$0:t $$ -- [INFO] creating YAML ($current) from $additional alone" >& /dev/stderr
-      cp "$additional" "$current"
-    endif
-    continue
+  if (`egrep '### MOTION' "$current" | wc -c | awk '{ print $1 }'` > 0) then
+    rm -f "$current"
   endif
 
   if (-s "$additional") then
-    if (! -e "$original") cp "$current" "$original"
-    if ((-M "$additional") > (-M "$current")) then
-      cat "$original" "$additional" >! "$current"
-      if ( $i <= $#reload && $?HASSIO_TOKEN) then
-        echo -n "$0:t $$ -- [INFO] updating YAML: ${rl} ... "
-        curl -s -q -f -L -H "X-HA-ACCESS: ${HASSIO_TOKEN}" -X POST -H "Content-Type: application/json" "http://${HASSIO_HOST}/api/services/${rl}/reload" >& /dev/null
-        echo "done"
+    if ((! -e "$current" || (`jq -r '.==[]' "$current"` == "true")) && (! -s "$original")) then
+      if (-s "$base") then
+        echo "$0:t $$ -- [INFO] creating YAML ($current) from $base and $additional" >& /dev/stderr
+        cat "$base" "$additional" >! "$current"
       else
-        set reload_core
+        echo "$0:t $$ -- [INFO] creating YAML ($current) from $additional alone" >& /dev/stderr
+        cat "$additional" >! "$current"
       endif
+      continue
+    endif
+    if (! -e "$original") cp "$current" "$original"
+    cat "$original" "$additional" >! "$current"
+    if ( $i <= $#reload && $?HASSIO_TOKEN) then
+      echo -n "$0:t $$ -- [INFO] updating YAML: ${rl} ... "
+      curl -s -q -f -L -H "X-HA-ACCESS: ${HASSIO_TOKEN}" -X POST -H "Content-Type: application/json" "http://${HASSIO_HOST}/api/services/${rl}/reload" >& /dev/null
+      echo "done"
     else
-      echo "$0:t $$ -- [INFO] current YAML: ${rl}"
+      set reload_core
     endif
   else
-    echo "$0:t $$ -- [INFO] no YAML: ${rl}"
+    echo "$0:t $$ -- [INFO] no additional YAML: ${rl}"
   endif
 end
 

@@ -48,6 +48,7 @@ echo "$0:t $$ -- Found $#cameras cameras" >& /dev/stderr
 
 set out = "$DATA_DIR/configuration.yaml"; rm -f "$out"
 
+echo "" >> "$out"
 echo "###" >> "$out"
 echo "### MOTION add-on" >> "$out"
 echo "###" >> "$out"
@@ -138,6 +139,7 @@ set out = "$DATA_DIR/group.yaml"; rm -f "$out"
 
 ## group for motion animated cameras
 echo "" >> "$out"
+echo "### MOTION" >> "$out"
 echo "motion_animated_view:" >> "$out"
 echo "  view: true" >> "$out"
 echo "  name: Motion Animated View" >> "$out"
@@ -160,6 +162,7 @@ set out = "$DATA_DIR/input_boolean.yaml"; rm -f "$out"
 
 foreach c ( $cameras )
 echo "" >> "$out"
+echo "### MOTION" >> "$out"
 echo "motion_notify_${c}:" >> "$out"
 echo "  name: motion_notify_${c}" >> "$out"
 echo "  initial: false" >> "$out"
@@ -175,6 +178,7 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 set out = "$DATA_DIR/automation.yaml"; rm -f "$out"
 
 echo "" >> "$out"
+echo "### MOTION" >> "$out"
 echo "- id: motion_notify_recognize" >> "$out"
 echo "  alias: motion_notify_recognize" >> "$out"
 echo "  initial_state: on" >> "$out"
@@ -229,6 +233,7 @@ echo "views:" >> "$out"
 
 set out = "$DATA_DIR/ui-lovelace.yaml"; rm -f "$out"
 
+echo "### MOTION" >> "$out"
 echo "  - icon: mdi:animation" >> "$out"
 echo "    title: ANIMATIONS" >> "$out"
 echo "    cards:" >> "$out"
