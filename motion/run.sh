@@ -47,7 +47,7 @@ fi
 
 ## MQTT
 # local MQTT server (hassio addon)
-VALUE=$(jq -r ".mqtt_host" "${CONFIG_PATH}")
+VALUE=$(jq -r ".mqtt.host" "${CONFIG_PATH}")
 if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
   echo "Using MQTT at ${VALUE}" >&2
   MQTT='{"host":"'"${VALUE}"'"'
@@ -55,7 +55,7 @@ if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
 fi
 
 if [ -n "${MQTT}" ]; then
-  VALUE=$(jq -r ".mqtt_port" "${CONFIG_PATH}")
+  VALUE=$(jq -r ".mqtt.port" "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1883; fi
   echo "Using MQTT port: ${VALUE}" >&2
   MQTT="${MQTT}"',"port":'"${VALUE}"'}'
@@ -71,53 +71,70 @@ else
 fi
 
 # local MQTT server (hassio addon)
-MQTT_HOST=$(jq -r ".mqtt_host" "${CONFIG_PATH}")
-MQTT_PORT=$(jq -r ".mqtt_port" "${CONFIG_PATH}")
+MQT=$(jq -r ".mqtt" "${CONFIG_PATH}")
+if [ -z "${MQT}" || "${MQT}" == "null" || "${MQT}" == "[]" ]; then
+  echo "MQTT NOT CONFIGURED" >&2
+  MQTT="null"
+else
+  MQTT_HOST=$(jq -r ".mqtt.host" "${CONFIG_PATH}")
+  MQTT_PORT=$(jq -r ".mqtt.port" "${CONFIG_PATH}")
+fi
 if [ "${MQTT_PORT}" != "null" ] && [ "${MQTT_HOST}" != "null" ] && [ ! -z "${MQTT_HOST}" ]; then
-  echo "Using MQTT at ${MQTT_HOST}" >&2
-  JSON="${JSON}"',"mqtt":{"host":"'"${MQTT_HOST}"'","port":'"${MQTT_PORT}"'}'
+  MQTT='{"host":"'"${MQTT_HOST}"'","port":'"${MQTT_PORT}"'}'
+  echo "Using MQTT at ${MQTT}" >&2
+  JSON="${JSON}"',"mqtt":'"${MQTT}"
 else
   JSON="${JSON}"',"mqtt":null'
   echo "MQTT host or port undefined" >&2
 fi
 
 ## WATSON
-# watson visual recognition
-WVR_URL=$(jq -r ".wvr_url" "${CONFIG_PATH}")
-WVR_APIKEY=$(jq -r ".wvr_apikey" "${CONFIG_PATH}")
-WVR_CLASSIFIER=$(jq -r ".wvr_classifier" "${CONFIG_PATH}")
-WVR_DATE=$(jq -r ".wvr_date" "${CONFIG_PATH}")
-WVR_VERSION=$(jq -r ".wvr_version" "${CONFIG_PATH}")
-if [ ! -z "${WVR_URL}" ] && [ ! -z "${WVR_APIKEY}" ] && [ ! -z "${WVR_DATE}" ] && [ ! -z "${WVR_VERSION}" ] && [ "${WVR_URL}" != "null" ] && [ "${WVR_APIKEY}" != "null" ] && [ "${WVR_DATE}" != "null" ] && [ "${WVR_VERSION}" != "null" ]; then
-  echo "Watson Visual Recognition at ${WVR_URL} date ${WVR_DATE} version ${WVR_VERSION}" >&2
-  WATSON='{"url":"'"${WVR_URL}"'","date":"'"${WVR_DATE}"'","version":"'"${WVR_VERSION}"'","models":['
-  if [ ! -z "${WVR_CLASSIFIER}" ] && [ "${WVR_CLASSIFIER}" != "null" ]; then
-    # quote the model names
-    CLASSIFIERS=$(echo "${WVR_CLASSIFIER}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
-    echo "Using classifiers(s): ${CLASSIFIERS}" >&2
-    WATSON="${WATSON}""${CLASSIFIERS}"
-  else
-    # add default iif none specified
-    WATSON="${WATSON}"'"default"'
+WVR=$(jq -r ".watson" "${CONFIG_PATH}")
+if [ -z "${WVR}" || "${WVR}" == "null" || "${WVR}" == "[]" ]; then
+  echo "Watson Visual Recognition NOT CONFIGURED" >&2
+  WATSON="null"
+else
+  WVR_URL=$(jq -r ".watson.url" "${CONFIG_PATH}")
+  WVR_APIKEY=$(jq -r ".watson.apikey" "${CONFIG_PATH}")
+  WVR_CLASSIFIER=$(jq -r ".watson.classifier" "${CONFIG_PATH}")
+  WVR_DATE=$(jq -r ".watson.date" "${CONFIG_PATH}")
+  WVR_VERSION=$(jq -r ".watson.version" "${CONFIG_PATH}")
+  if [ ! -z "${WVR_URL}" ] && [ ! -z "${WVR_APIKEY}" ] && [ ! -z "${WVR_DATE}" ] && [ ! -z "${WVR_VERSION}" ] && [ "${WVR_URL}" != "null" ] && [ "${WVR_APIKEY}" != "null" ] && [ "${WVR_DATE}" != "null" ] && [ "${WVR_VERSION}" != "null" ]; then
+    echo "Watson Visual Recognition at ${WVR_URL} date ${WVR_DATE} version ${WVR_VERSION}" >&2
+    WATSON='{"url":"'"${WVR_URL}"'","date":"'"${WVR_DATE}"'","version":"'"${WVR_VERSION}"'","models":['
+    if [ ! -z "${WVR_CLASSIFIER}" ] && [ "${WVR_CLASSIFIER}" != "null" ]; then
+      # quote the model names
+      CLASSIFIERS=$(echo "${WVR_CLASSIFIER}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
+      echo "Using classifiers(s): ${CLASSIFIERS}" >&2
+      WATSON="${WATSON}""${CLASSIFIERS}"
+    else
+      # add default iif none specified
+      WATSON="${WATSON}"'"default"'
+    fi
+    WATSON="${WATSON}"']}'
+    # make available
+    export MOTION_WATSON_APIKEY="${WVR_APIKEY}"
   fi
-  WATSON="${WATSON}"']}'
-  # make available
-  export MOTION_WATSON_APIKEY="${WVR_APIKEY}"
 fi
 if [ -n "${WATSON}" ]; then
   JSON="${JSON}"',"watson":'"${WATSON}"
 else
-  echo "Watson Visual Recognition NOT CONFIGURED" >&2
+  echo "Watson Visual Recognition not specified" >&2
   JSON="${JSON}"',"watson":null'
 fi
 
 ## DIGITS
+DGS=$(jq -r ".digits" "${CONFIG_PATH}")
+if [ -z "${DGS}" || "${DGS}" == "null" || "${DGS}" == "[]" ]; then
+  echo "DIGITS NOT CONFIGURED" >&2
+  DIGITS="null"
+else
 # local nVidia DIGITS/Caffe image classification server
-VALUE=$(jq -r ".digits_server_url" "${CONFIG_PATH}")
+VALUE=$(jq -r ".digits.url" "${CONFIG_PATH}")
 if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
-  DIGITS='{"host":"'"${VALUE}"'"'
+  DIGITS='{"url":"'"${VALUE}"'"'
   if [ -z "${DIGITS_SERVER_URL}" ]; then DIGITS_SERVER_URL="${VALUE}"; fi
-  VALUE=$(jq -r ".digits_jobid" "${CONFIG_PATH}")
+  VALUE=$(jq -r ".digits.jobid" "${CONFIG_PATH}")
   if [ ! -z "${VALUE}" ] && [ "${VALUE}" != "null" ]; then
     DIGITS_JOBIDS=$(echo "${VALUE}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
     echo "Using DIGITS at ${DIGITS_SERVER_URL} and ${DIGITS_JOBIDS}" >&2
@@ -128,7 +145,7 @@ fi
 if [ -n "${DIGITS}" ]; then
   JSON="${JSON}"',"digits":'"${DIGITS}"
 else
-  echo "DIGITS server URL not specified" >&2
+  echo "DIGITS not specified" >&2
   JSON="${JSON}"',"digits":null'
 fi
 
@@ -649,52 +666,61 @@ fi
 ### CLOUDANT
 ###
 
-URL=$(jq -r ".cloudant.url" "${CONFIG_PATH}")
-USERNAME=$(jq -r ".cloudant.username" "${CONFIG_PATH}")
-PASSWORD=$(jq -r ".cloudant.password" "${CONFIG_PATH}")
-if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "null" ] && [ ! -z "${URL}" ] && [ ! -z "${USERNAME}" ] && [ ! -z "${PASSWORD}" ]; then
-  echo "Testing CLOUDANT" >&2
-  OK=$(curl -s -q -f -L "${URL}" -u "${USERNAME}:${PASSWORD}" | jq -r '.couchdb')
-  if [ "${OK}" == "null" ] || [ -z "${OK}" ]; then
-    echo "Cloudant failed at ${URL} with ${USERNAME} and ${PASSWORD}; exiting" >&2
-    exit
-  else
-    export MOTION_CLOUDANT_URL="${URL%:*}"'://'"${USERNAME}"':'"${PASSWORD}"'@'"${USERNAME}"."${URL#*.}"
-  fi
-  URL="${MOTION_CLOUDANT_URL}/${MOTION_DEVICE_DB}"
-  DB=$(curl -s -q -f -L "${URL}" | jq -r '.db_name')
-  if [ "${DB}" != "${MOTION_DEVICE_DB}" ]; then
-    # create DB
-    OK=$(curl -s -q -f -L -X PUT "${URL}" | jq '.ok')
-    if [ "${OK}" != "true" ]; then
-      echo "Failed to create CLOUDANT DB ${MOTION_DEVICE_DB}" >&2
-      OFF=TRUE
-    else
-      echo "Created CLOUDANT DB motion" >&2
-    fi
-  else
-    echo "CLOUDANT DB motion exists" >&2
-  fi
-  if [ -s "${MOTION_JSON_FILE}" ] && [ -z "${OFF}" ]; then
-    URL="${URL}/${MOTION_DEVICE_NAME}"
-    REV=$(curl -s -q -f -L "${URL}" | jq -r '._rev')
-    if [ "${REV}" != "null" ] && [ ! -z "${REV}" ]; then
-      echo "Prior record exists ${REV}" >&2
-      URL="${URL}?rev=${REV}"
-    fi
-    OK=$(curl -s -q -f -L "${URL}" -X PUT -d "@${MOTION_JSON_FILE}" | jq '.ok')
-    if [ "${OK}" != "true" ]; then
-      echo "Failed to update ${URL}" $(jq -c '.' "${MOTION_JSON_FILE}") >&2
-      echo "Exiting" >&2; exit
-    else
-      echo "Configuration for ${MOTION_DEVICE_NAME} at ${MOTION_JSON_FILE}" $(jq -c '.' "${MOTION_JSON_FILE}") >&2
-    fi
-  else
-    echo "Failed; no DB or bad JSON" >&2
-    echo "Exiting" >&2; exit
-  fi
+CLD=$(jq -r ".cloudant" "${CONFIG_PATH}")
+if [ -z "${CLD}" || "${CLD}" == "null" || "${CLD}" == "[]" ]; then
+  echo "CLOUDANT NOT CONFIGURED" >&2
+  CLOUDANT="null"
 else
-  echo "Cloudant URL, username and/or password undefined" >&2
+  URL=$(jq -r ".cloudant.url" "${CONFIG_PATH}")
+  USERNAME=$(jq -r ".cloudant.username" "${CONFIG_PATH}")
+  PASSWORD=$(jq -r ".cloudant.password" "${CONFIG_PATH}")
+  if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "null" ] && [ ! -z "${URL}" ] && [ ! -z "${USERNAME}" ] && [ ! -z "${PASSWORD}" ]; then
+    echo "Testing CLOUDANT" >&2
+    OK=$(curl -s -q -f -L "${URL}" -u "${USERNAME}:${PASSWORD}" | jq -r '.couchdb')
+    if [ "${OK}" == "null" ] || [ -z "${OK}" ]; then
+      echo "Cloudant failed at ${URL} with ${USERNAME} and ${PASSWORD}; exiting" >&2
+      exit
+    else
+      export MOTION_CLOUDANT_URL="${URL%:*}"'://'"${USERNAME}"':'"${PASSWORD}"'@'"${USERNAME}"."${URL#*.}"
+    fi
+    URL="${MOTION_CLOUDANT_URL}/${MOTION_DEVICE_DB}"
+    DB=$(curl -s -q -f -L "${URL}" | jq -r '.db_name')
+    if [ "${DB}" != "${MOTION_DEVICE_DB}" ]; then
+      # create DB
+      OK=$(curl -s -q -f -L -X PUT "${URL}" | jq '.ok')
+      if [ "${OK}" != "true" ]; then
+	echo "Failed to create CLOUDANT DB ${MOTION_DEVICE_DB}" >&2
+	OFF=TRUE
+      else
+	echo "Created CLOUDANT DB motion" >&2
+      fi
+    else
+      echo "CLOUDANT DB motion exists" >&2
+    fi
+    if [ -s "${MOTION_JSON_FILE}" ] && [ -z "${OFF}" ]; then
+      URL="${URL}/${MOTION_DEVICE_NAME}"
+      REV=$(curl -s -q -f -L "${URL}" | jq -r '._rev')
+      if [ "${REV}" != "null" ] && [ ! -z "${REV}" ]; then
+	echo "Prior record exists ${REV}" >&2
+	URL="${URL}?rev=${REV}"
+      fi
+      OK=$(curl -s -q -f -L "${URL}" -X PUT -d "@${MOTION_JSON_FILE}" | jq '.ok')
+      if [ "${OK}" != "true" ]; then
+	echo "Failed to update ${URL}" $(jq -c '.' "${MOTION_JSON_FILE}") >&2
+	echo "Exiting" >&2; exit
+      else
+	echo "Configuration for ${MOTION_DEVICE_NAME} at ${MOTION_JSON_FILE}" $(jq -c '.' "${MOTION_JSON_FILE}") >&2
+      fi
+    else
+      echo "Failed; no DB or bad JSON" >&2
+      echo "Exiting" >&2; exit
+    fi
+  else
+    echo "Cloudant URL, username and/or password undefined" >&2
+  fi
+fi
+if [ -z "${MOTION_CLOUDANT_URL}" ]; then
+  echo "Cloudant NOT SPECIFIED" >&2
 fi
 
 # test hassio

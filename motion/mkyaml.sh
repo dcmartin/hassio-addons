@@ -9,6 +9,7 @@ if ($#argv) then
   set m = "$argv[$#argv]"
   set DATA_DIR = "$m:h"
 else
+  if ($?DEBUG) echo "$0:t $$ -- insufficient arguments: $0:t <full-path-to-options.json>" >& /dev/stderr
   exit 
 endif
 
@@ -21,8 +22,7 @@ endif
 
 ## process configuration
 if (-s "$m") then
-  set name = ( `jq -r ".name" "$m"` )
-  set q = '.options.cameras[]|.name'
+  set q = '.cameras[]|.name'
   set cameras = ( `jq -r "$q" $m | sort` )
   set unique = ( `jq -r "$q" $m | sort | uniq` )
   if ($#unique != $#cameras) then
@@ -41,12 +41,79 @@ if ($?VERBOSE) echo "$0:t $$ -- Found $#cameras cameras on device ${name}: $came
 
 set out = "$DATA_DIR/configuration.yaml"; rm -f "$out"
 
-echo "" >> "$out"
-echo "### MOTION add-on" >> "$out"
+set name = ( `jq -r ".name" "$m"` )
+set password = ( `jq -r ".password" "$m"` )
+set www = ( `jq -r ".www" "$m"` )
+set port = ( `jq -r ".port" "$m"` )
+set elevation = ( `jq -r ".elevation" "$m"` )
+set longitude = ( `jq -r ".longitude" "$m"` )
+set latitude = ( `jq -r ".latitude" "$m"` )
+set unit_system = ( `jq -r ".unit_system" "$m"` )
+set timezone = ( `jq -r ".timezone" "$m"` )
 
-## cameras for camera.motion_{last|host}_image*
+echo "### MOTION (auto-generated from $m for name $name)" >> "$out"
 echo "" >> "$out"
-echo "## cameras from last MQTT posted images (any host, any camera)" >> "$out"
+echo "## CORE" >> "$out"
+echo "homeassistant:" >> "$out"
+echo "  name: $name" >> "$out"
+echo "  latitude: $latitude" >> "$out"
+echo "  longitude: $longitude" >> "$out"
+echo "  elevation: $elevation" >> "$out"
+echo "  unit_system: $unit_system" >> "$out"
+echo "  time_zone: $timezone" >> "$out"
+echo "" >> "$out"
+echo "## FRONT-END" >> "$out"
+echo "http:" >> "$out"
+echo "  api_password: $password" >> "$out"
+echo "  trusted_networks:" >> "$out"
+echo "  base_url: http://${www}:${port}" >> "$out"
+echo "" >> "$out"
+echo "## PACKAGES" >> "$out"
+echo "hassio:" >> "$out"
+echo "frontend:" >> "$out"
+echo "config:" >> "$out"
+echo "discovery:" >> "$out"
+echo "updater:" >> "$out"
+echo "history:" >> "$out"
+echo "conversation:" >> "$out"
+echo "map:" >> "$out"
+echo "logbook:" >> "$out"
+echo "recorder:" >> "$out"
+echo "" >> "$out"
+echo "## SUN & SOLAR" >> "$out"
+echo "sun:" >> "$out"
+echo "  elevation: $elevation" >> "$out"
+echo "" >> "$out"
+echo "sensor solar:" >> "$out"
+echo "  platform: template" >> "$out"
+echo "  sensors:" >> "$out"
+echo "    solar_angle:" >> "$out"
+echo "      value_template: '{{ states.sun.sun.attributes.elevation }}'" >> "$out"
+echo "      unit_of_measurement: 'degrees'" >> "$out"
+echo "    sunrise:" >> "$out"
+echo "      value_template: '{{ as_timestamp(states.sun.sun.attributes.next_rising) | timestamp_custom("%I:%M %p") }}'" >> "$out"
+echo "    sunset:" >> "$out"
+echo "      value_template: '{{ as_timestamp(states.sun.sun.attributes.next_setting) | timestamp_custom("%I:%M %p") }}'" >> "$out"
+echo "" >> "$out"
+
+## MQTT
+set mqtt_host = ( `jq -r ".mqtt.host" "$m"` )
+set mqtt_port = ( `jq -r ".mqtt.port" "$m"` )
+set mqtt_prefix = ( `jq -r ".devicedb" "$m"` )
+
+echo "" >> "$out"
+echo "## MQTT" >> "$out"
+echo "mqtt:" >> "$out"
+echo "  discovery: true" >> "$out"
+echo "  discovery_prefix: $mqtt_prefix" >> "$out"
+echo "  broker: $mqtt_host" >> "$out"
+echo "  port: $mqtt_port" >> "$out"
+echo "  client_id: $name" >> "$out"
+echo "" >> "$out"
+
+## CAMERAS
+echo "" >> "$out"
+echo "## CAMERAS (any of the $#cameras) [$cameras]" >> "$out"
 echo "" >> "$out"
 echo "# last images from any host" >> "$out"
 echo "camera motion_last:" >> "$out"
@@ -130,7 +197,7 @@ set out = "$DATA_DIR/group.yaml"; rm -f "$out"
 
 ## group for motion animated cameras
 echo "" >> "$out"
-echo "### MOTION" >> "$out"
+echo "### MOTION (auto-generated from $m for name $name)" >> "$out"
 echo "motion_animated_view:" >> "$out"
 echo "  view: true" >> "$out"
 echo "  name: Motion Animated View" >> "$out"
@@ -151,7 +218,7 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 
 set out = "$DATA_DIR/input_boolean.yaml"; rm -f "$out"
 echo "" >> "$out"
-echo "### MOTION" >> "$out"
+echo "### MOTION (auto-generated from $m for name $name)" >> "$out"
 
 foreach c ( $cameras )
 echo "" >> "$out"
@@ -170,7 +237,7 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 set out = "$DATA_DIR/automation.yaml"; rm -f "$out"
 
 echo "" >> "$out"
-echo "### MOTION" >> "$out"
+echo "### MOTION (auto-generated from $m for name $name)" >> "$out"
 
 echo "- id: motion_notify_recognize" >> "$out"
 echo "  alias: motion_notify_recognize" >> "$out"
@@ -220,13 +287,14 @@ set out = "$DATA_DIR/script.yaml"; rm -f "$out"
 ####
 
 set out = "$DATA_DIR/ui-lovelace.yaml.base"; rm -f "$out"
-echo "name: Auto-generated Lovelace UI" >> "$out"
+echo "### MOTION (auto-generated from $m for name $name)" >> "$out"
+echo "name: $name" >> "$out"
 echo "" >> "$out"
 echo "views:" >> "$out"
 
 set out = "$DATA_DIR/ui-lovelace.yaml"; rm -f "$out"
 
-echo "### MOTION" >> "$out"
+echo "### MOTION (auto-generated from $m for name $name)" >> "$out"
 echo "  - icon: mdi:animation" >> "$out"
 echo "    title: ANIMATIONS" >> "$out"
 echo "    cards:" >> "$out"
