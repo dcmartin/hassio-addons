@@ -56,11 +56,11 @@ foreach rl ( $reload $core )
 
   set current = "$CONFIG/${rl}.yaml"
   set currents = "$CONFIG/${rl}s.yaml"
+  if (-e "$currents") set current = "$currents"
   set additional = "$DATA_DIR/${rl}.yaml"
   set base = "$DATA_DIR/${rl}.yaml.base"
-  set original = "$DATA_DIR/${rl}.yaml.orig"
+  set original = "$DATA_DIR/${current}.orig"
 
-  if (-e "$currents") set current = "$currents"
 
   echo "$0:t $$ -- [INFO] current $current additional $additional original $original" >& /dev/stderr
 
@@ -69,7 +69,7 @@ foreach rl ( $reload $core )
   endif
 
   if (-s "$additional") then
-    if ((! -e "$current" || (`jq -r '.==[]' "$current"` == "true")) && (! -s "$original")) then
+    if ((! -e "$current" || (`wc -c "$current" | awk '{print $1}'` <= 2)) && (! -s "$original")) then
       if (-s "$base") then
         echo "$0:t $$ -- [INFO] creating YAML ($current) from $base and $additional" >& /dev/stderr
         cat "$base" "$additional" >! "$current"

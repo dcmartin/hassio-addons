@@ -1,46 +1,39 @@
 #!/bin/tcsh 
 
+setenv DEBUG
+setenv VERBOSE
+
 echo "$0:t $$ -- START $*" >& /dev/stderr
 
-if ($?CONFIG_PATH == 0) then
-  set CONFIG_PATH = "$cwd/config.json"
-endif
-
-if ($#argv > 0) then
-  set m = "$1"
+if ($#argv) then
+  set m = "$argv[$#argv]"
+  set DATA_DIR = "$m:h"
 else
-  set m = $CONFIG_PATH
+  exit 
 endif
-
-set DATA_DIR = /data
 
 if ( ! -s "$m") then
-  echo "$0:t $$ -- Cannot find configuration JSON file; exiting" >& /dev/stderr
+  if ($?DEBUG) echo "$0:t $$ -- Cannot find configuration file ($m); exiting" >& /dev/stderr
   exit
 else
-  echo "$0:t $$ -- Found configuration JSON file: $m" >& /dev/stderr
+  if ($?VERBOSE) echo "$0:t $$ -- Found configuration JSON file: $m" >& /dev/stderr
 endif
 
 ## process configuration
 if (-s "$m") then
-  if ( "$m:t" != "config.json" ) then
-    # assume options only
-    set q = '.cameras[]|.name'
-  else
-    # assume full configuration
-    set q = '.options.cameras[]|.name'
-  endif
+  set name = ( `jq -r ".name" "$m"` )
+  set q = '.options.cameras[]|.name'
   set cameras = ( `jq -r "$q" $m | sort` )
   set unique = ( `jq -r "$q" $m | sort | uniq` )
   if ($#unique != $#cameras) then
-    echo "$0:t $$ -- Duplicate camera names ($#cameras vs $#unique); exiting" >& /dev/stderr
+    if ($?DEBUG) echo "$0:t $$ -- Duplicate camera names ($#cameras vs $#unique); exiting" >& /dev/stderr
     exit
   endif
 else
-  echo "$0:t $$ -- Unable to find configuration file: $m" >& /dev/stderr
+  if ($?DEBUG) echo "$0:t $$ -- Unable to find configuration file: $m" >& /dev/stderr
   exit
 endif
-echo "$0:t $$ -- Found $#cameras cameras" >& /dev/stderr
+if ($?VERBOSE) echo "$0:t $$ -- Found $#cameras cameras on device ${name}: $cameras" >& /dev/stderr
 
 ####
 #### CORE configuration.yaml
@@ -49,9 +42,7 @@ echo "$0:t $$ -- Found $#cameras cameras" >& /dev/stderr
 set out = "$DATA_DIR/configuration.yaml"; rm -f "$out"
 
 echo "" >> "$out"
-echo "###" >> "$out"
 echo "### MOTION add-on" >> "$out"
-echo "###" >> "$out"
 
 ## cameras for camera.motion_{last|host}_image*
 echo "" >> "$out"
@@ -159,10 +150,11 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 ####
 
 set out = "$DATA_DIR/input_boolean.yaml"; rm -f "$out"
+echo "" >> "$out"
+echo "### MOTION" >> "$out"
 
 foreach c ( $cameras )
 echo "" >> "$out"
-echo "### MOTION" >> "$out"
 echo "motion_notify_${c}:" >> "$out"
 echo "  name: motion_notify_${c}" >> "$out"
 echo "  initial: false" >> "$out"
@@ -179,6 +171,7 @@ set out = "$DATA_DIR/automation.yaml"; rm -f "$out"
 
 echo "" >> "$out"
 echo "### MOTION" >> "$out"
+
 echo "- id: motion_notify_recognize" >> "$out"
 echo "  alias: motion_notify_recognize" >> "$out"
 echo "  initial_state: on" >> "$out"

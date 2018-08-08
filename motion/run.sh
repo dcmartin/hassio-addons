@@ -709,7 +709,12 @@ ftp_notifywait.sh "${MOTION_JSON_FILE}"
 mkyaml.sh "${CONFIG_PATH}"
 
 # reload configuration
-rlyaml.sh "${HASSIO_TOKEN}"
+VALUE=$(jq -r ".reload" "${CONFIG_PATH}")
+if [ "${VALUE}" != "null" ] || [ ! -z "${VALUE}" ]; then 
+  echo "Reloading YAML (${VALUE})" >&2
+  JSON="${JSON}"',"reload":'"${VALUE}"
+  rlyaml.sh "${HASSIO_TOKEN}"
+fi
 
 ###
 ### START MOTION

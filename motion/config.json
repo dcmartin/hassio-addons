@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.3.49",
+  "version": "0.3.52",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -62,7 +62,7 @@
     "8119/tcp": 8119
   },
   "options": {
-    "name":"default-0.3.49",
+    "name":"default-0.3.51",
     "username": null,
     "password": null,
     "www":"hassio.local",
@@ -150,6 +150,7 @@
     "fps": "int?",
     "post_pictures": "str?",
     "minimum_animate": "int?",
+    "reload": "bool?",
     "target_dir": "str?",
     "share_dir": "str?"
   }
