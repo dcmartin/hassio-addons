@@ -224,59 +224,32 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 set out = "$DATA_DIR/group.yaml"; rm -f "$out"
 
 ## group for motion animated cameras
-echo "" >> "$out"
 echo "### MOTION (auto-generated from $m for name $name)" >> "$out"
 echo "default_view:" >> "$out"
 echo "  view: yes" >> "$out"
 echo "  icon: mdi:home" >> "$out"
 echo "  entities:" >> "$out"
-echo "    - camera.motion_animated" >> "$out"
-
-
-echo "motion_animated_view:" >> "$out"
-echo "  view: yes" >> "$out"
-echo "  name: Motion Animated View" >> "$out"
-echo "  icon: mdi:animation" >> "$out"
-echo "  entities:" >> "$out"
 foreach c ( $cameras )
-  # echo "    - camera.motion_${c}" >> "$out"
-  echo "    - camera.motion_${c}_animated" >> "$out"
-end
-echo "" >> "$out"
-
-## sensor(s)
-echo "motion_sensors:" >> "$out"
-echo "  view: yes" >> "$out"
-echo "  name: motion_sensors" >> "$out"
-echo "  icon: mdi:eye" >> "$out"
-echo "  entities:" >> "$out"
-foreach c ( $cameras )
+echo "    - camera.motion_${c}" >> "$out"
+echo "    - camera.motion_${c}_animated" >> "$out"
 echo "    - sensor.motion_${c}_entity_picture" >> "$out"
-end
-echo "" >> "$out"
-
-## binary_sensor(s)
-echo "motion_binary_sensors:" >> "$out"
-echo "  view: yes" >> "$out"
-echo "  name: motion_binary_sensors" >> "$out"
-echo "  icon: mdi:toggle-switch" >> "$out"
-echo "  entities:" >> "$out"
-foreach c ( $cameras )
 echo "    - binary_sensor.motion_notify_${c}" >> "$out"
-end
-echo "" >> "$out"
-
-## input_booleans(s)
-echo "motion_input_booleans:" >> "$out"
-echo "  view: yes" >> "$out"
-echo "  name: motion_input_booleans" >> "$out"
-echo "  icon: mdi:toggle-switch-outline" >> "$out"
-echo "  entities:" >> "$out"
-foreach c ( $cameras )
 echo "    - input_boolean.motion_notify_${c}" >> "$out"
 end
 echo "" >> "$out"
 
+echo "motion_last_view:" >> "$out"
+echo "  view: yes" >> "$out"
+echo "  name: Motion Animated View" >> "$out"
+echo "  icon: mdi:camera-timer" >> "$out"
+echo "  entities:" >> "$out"
+echo "    - camera.motion_last" >> "$out"
+echo "    - camera.motion_animated" >> "$out"
+echo "    - camera.motion_animated_mask" >> "$out"
+echo "    - camera.motion_composite" >> "$out"
+echo "    - camera.motion_average" >> "$out"
+echo "    - camera.motion_blend" >> "$out"
+echo "" >> "$out"
 
 echo "$0:t $$ -- processed $out" >& /dev/stderr
 
