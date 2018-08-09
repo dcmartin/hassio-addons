@@ -648,58 +648,52 @@ fi
 ### CLOUDANT
 ###
 
-CLD=$(jq -r ".cloudant" "${CONFIG_PATH}")
-if [ -z "${CLD}" || "${CLD}" == "null" || "${CLD}" == "[]" ]; then
-  echo "CLOUDANT NOT CONFIGURED" >&2
-  CLOUDANT="null"
-else
-  URL=$(jq -r ".cloudant.url" "${CONFIG_PATH}")
-  USERNAME=$(jq -r ".cloudant.username" "${CONFIG_PATH}")
-  PASSWORD=$(jq -r ".cloudant.password" "${CONFIG_PATH}")
-  if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "null" ] && [ ! -z "${URL}" ] && [ ! -z "${USERNAME}" ] && [ ! -z "${PASSWORD}" ]; then
-    echo "Testing CLOUDANT" >&2
-    OK=$(curl -s -q -f -L "${URL}" -u "${USERNAME}:${PASSWORD}" | jq -r '.couchdb')
-    if [ "${OK}" == "null" ] || [ -z "${OK}" ]; then
-      echo "Cloudant failed at ${URL} with ${USERNAME} and ${PASSWORD}; exiting" >&2
-      exit
+URL=$(jq -r ".cloudant.url" "${CONFIG_PATH}")
+USERNAME=$(jq -r ".cloudant.username" "${CONFIG_PATH}")
+PASSWORD=$(jq -r ".cloudant.password" "${CONFIG_PATH}")
+if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "null" ] && [ ! -z "${URL}" ] && [ ! -z "${USERNAME}" ] && [ ! -z "${PASSWORD}" ]; then
+  echo "Testing CLOUDANT" >&2
+  OK=$(curl -s -q -f -L "${URL}" -u "${USERNAME}:${PASSWORD}" | jq -r '.couchdb')
+  if [ "${OK}" == "null" ] || [ -z "${OK}" ]; then
+    echo "Cloudant failed at ${URL} with ${USERNAME} and ${PASSWORD}; exiting" >&2
+    exit
+  else
+    export MOTION_CLOUDANT_URL="${URL%:*}"'://'"${USERNAME}"':'"${PASSWORD}"'@'"${USERNAME}"."${URL#*.}"
+  fi
+  URL="${MOTION_CLOUDANT_URL}/${MOTION_DEVICE_DB}"
+  DB=$(curl -s -q -f -L "${URL}" | jq -r '.db_name')
+  if [ "${DB}" != "${MOTION_DEVICE_DB}" ]; then
+    # create DB
+    OK=$(curl -s -q -f -L -X PUT "${URL}" | jq '.ok')
+    if [ "${OK}" != "true" ]; then
+      echo "Failed to create CLOUDANT DB ${MOTION_DEVICE_DB}" >&2
+      OFF=TRUE
     else
-      export MOTION_CLOUDANT_URL="${URL%:*}"'://'"${USERNAME}"':'"${PASSWORD}"'@'"${USERNAME}"."${URL#*.}"
-    fi
-    URL="${MOTION_CLOUDANT_URL}/${MOTION_DEVICE_DB}"
-    DB=$(curl -s -q -f -L "${URL}" | jq -r '.db_name')
-    if [ "${DB}" != "${MOTION_DEVICE_DB}" ]; then
-      # create DB
-      OK=$(curl -s -q -f -L -X PUT "${URL}" | jq '.ok')
-      if [ "${OK}" != "true" ]; then
-	echo "Failed to create CLOUDANT DB ${MOTION_DEVICE_DB}" >&2
-	OFF=TRUE
-      else
-	echo "Created CLOUDANT DB motion" >&2
-      fi
-    else
-      echo "CLOUDANT DB motion exists" >&2
-    fi
-    if [ -s "${MOTION_JSON_FILE}" ] && [ -z "${OFF}" ]; then
-      URL="${URL}/${MOTION_DEVICE_NAME}"
-      REV=$(curl -s -q -f -L "${URL}" | jq -r '._rev')
-      if [ "${REV}" != "null" ] && [ ! -z "${REV}" ]; then
-	echo "Prior record exists ${REV}" >&2
-	URL="${URL}?rev=${REV}"
-      fi
-      OK=$(curl -s -q -f -L "${URL}" -X PUT -d "@${MOTION_JSON_FILE}" | jq '.ok')
-      if [ "${OK}" != "true" ]; then
-	echo "Failed to update ${URL}" $(jq -c '.' "${MOTION_JSON_FILE}") >&2
-	echo "Exiting" >&2; exit
-      else
-	echo "Configuration for ${MOTION_DEVICE_NAME} at ${MOTION_JSON_FILE}" $(jq -c '.' "${MOTION_JSON_FILE}") >&2
-      fi
-    else
-      echo "Failed; no DB or bad JSON" >&2
-      echo "Exiting" >&2; exit
+      echo "Created CLOUDANT DB motion" >&2
     fi
   else
-    echo "Cloudant URL, username and/or password undefined" >&2
+    echo "CLOUDANT DB motion exists" >&2
   fi
+  if [ -s "${MOTION_JSON_FILE}" ] && [ -z "${OFF}" ]; then
+    URL="${URL}/${MOTION_DEVICE_NAME}"
+    REV=$(curl -s -q -f -L "${URL}" | jq -r '._rev')
+    if [ "${REV}" != "null" ] && [ ! -z "${REV}" ]; then
+      echo "Prior record exists ${REV}" >&2
+      URL="${URL}?rev=${REV}"
+    fi
+    OK=$(curl -s -q -f -L "${URL}" -X PUT -d "@${MOTION_JSON_FILE}" | jq '.ok')
+    if [ "${OK}" != "true" ]; then
+      echo "Failed to update ${URL}" $(jq -c '.' "${MOTION_JSON_FILE}") >&2
+      echo "Exiting" >&2; exit
+    else
+      echo "Configuration for ${MOTION_DEVICE_NAME} at ${MOTION_JSON_FILE}" $(jq -c '.' "${MOTION_JSON_FILE}") >&2
+    fi
+  else
+    echo "Failed; no DB or bad JSON" >&2
+    echo "Exiting" >&2; exit
+  fi
+else
+  echo "Cloudant URL, username and/or password undefined" >&2
 fi
 if [ -z "${MOTION_CLOUDANT_URL}" ]; then
   echo "Cloudant NOT SPECIFIED" >&2
