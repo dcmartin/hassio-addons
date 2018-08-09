@@ -71,14 +71,8 @@ else
 fi
 
 # local MQTT server (hassio addon)
-MQT=$(jq -r ".mqtt" "${CONFIG_PATH}")
-if [ -z "${MQT}" || "${MQT}" == "null" || "${MQT}" == "[]" ]; then
-  echo "MQTT NOT CONFIGURED" >&2
-  MQTT="null"
-else
-  MQTT_HOST=$(jq -r ".mqtt.host" "${CONFIG_PATH}")
-  MQTT_PORT=$(jq -r ".mqtt.port" "${CONFIG_PATH}")
-fi
+MQTT_HOST=$(jq -r ".mqtt.host" "${CONFIG_PATH}")
+MQTT_PORT=$(jq -r ".mqtt.port" "${CONFIG_PATH}")
 if [ "${MQTT_PORT}" != "null" ] && [ "${MQTT_HOST}" != "null" ] && [ ! -z "${MQTT_HOST}" ]; then
   MQTT='{"host":"'"${MQTT_HOST}"'","port":'"${MQTT_PORT}"'}'
   echo "Using MQTT at ${MQTT}" >&2
@@ -89,32 +83,26 @@ else
 fi
 
 ## WATSON
-WVR=$(jq -r ".watson" "${CONFIG_PATH}")
-if [ -z "${WVR}" || "${WVR}" == "null" || "${WVR}" == "[]" ]; then
-  echo "Watson Visual Recognition NOT CONFIGURED" >&2
-  WATSON="null"
-else
-  WVR_URL=$(jq -r ".watson.url" "${CONFIG_PATH}")
-  WVR_APIKEY=$(jq -r ".watson.apikey" "${CONFIG_PATH}")
-  WVR_CLASSIFIER=$(jq -r ".watson.classifier" "${CONFIG_PATH}")
-  WVR_DATE=$(jq -r ".watson.date" "${CONFIG_PATH}")
-  WVR_VERSION=$(jq -r ".watson.version" "${CONFIG_PATH}")
-  if [ ! -z "${WVR_URL}" ] && [ ! -z "${WVR_APIKEY}" ] && [ ! -z "${WVR_DATE}" ] && [ ! -z "${WVR_VERSION}" ] && [ "${WVR_URL}" != "null" ] && [ "${WVR_APIKEY}" != "null" ] && [ "${WVR_DATE}" != "null" ] && [ "${WVR_VERSION}" != "null" ]; then
-    echo "Watson Visual Recognition at ${WVR_URL} date ${WVR_DATE} version ${WVR_VERSION}" >&2
-    WATSON='{"url":"'"${WVR_URL}"'","date":"'"${WVR_DATE}"'","version":"'"${WVR_VERSION}"'","models":['
-    if [ ! -z "${WVR_CLASSIFIER}" ] && [ "${WVR_CLASSIFIER}" != "null" ]; then
-      # quote the model names
-      CLASSIFIERS=$(echo "${WVR_CLASSIFIER}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
-      echo "Using classifiers(s): ${CLASSIFIERS}" >&2
-      WATSON="${WATSON}""${CLASSIFIERS}"
-    else
-      # add default iif none specified
-      WATSON="${WATSON}"'"default"'
-    fi
-    WATSON="${WATSON}"']}'
-    # make available
-    export MOTION_WATSON_APIKEY="${WVR_APIKEY}"
+WVR_URL=$(jq -r ".watson.url" "${CONFIG_PATH}")
+WVR_APIKEY=$(jq -r ".watson.apikey" "${CONFIG_PATH}")
+WVR_CLASSIFIER=$(jq -r ".watson.classifier" "${CONFIG_PATH}")
+WVR_DATE=$(jq -r ".watson.date" "${CONFIG_PATH}")
+WVR_VERSION=$(jq -r ".watson.version" "${CONFIG_PATH}")
+if [ ! -z "${WVR_URL}" ] && [ ! -z "${WVR_APIKEY}" ] && [ ! -z "${WVR_DATE}" ] && [ ! -z "${WVR_VERSION}" ] && [ "${WVR_URL}" != "null" ] && [ "${WVR_APIKEY}" != "null" ] && [ "${WVR_DATE}" != "null" ] && [ "${WVR_VERSION}" != "null" ]; then
+  echo "Watson Visual Recognition at ${WVR_URL} date ${WVR_DATE} version ${WVR_VERSION}" >&2
+  WATSON='{"url":"'"${WVR_URL}"'","date":"'"${WVR_DATE}"'","version":"'"${WVR_VERSION}"'","models":['
+  if [ ! -z "${WVR_CLASSIFIER}" ] && [ "${WVR_CLASSIFIER}" != "null" ]; then
+    # quote the model names
+    CLASSIFIERS=$(echo "${WVR_CLASSIFIER}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
+    echo "Using classifiers(s): ${CLASSIFIERS}" >&2
+    WATSON="${WATSON}""${CLASSIFIERS}"
+  else
+    # add default iif none specified
+    WATSON="${WATSON}"'"default"'
   fi
+  WATSON="${WATSON}"']}'
+  # make available
+  export MOTION_WATSON_APIKEY="${WVR_APIKEY}"
 fi
 if [ -n "${WATSON}" ]; then
   JSON="${JSON}"',"watson":'"${WATSON}"
@@ -124,12 +112,6 @@ else
 fi
 
 ## DIGITS
-DGS=$(jq -r ".digits" "${CONFIG_PATH}")
-if [ -z "${DGS}" || "${DGS}" == "null" || "${DGS}" == "[]" ]; then
-  echo "DIGITS NOT CONFIGURED" >&2
-  DIGITS="null"
-else
-# local nVidia DIGITS/Caffe image classification server
 VALUE=$(jq -r ".digits.url" "${CONFIG_PATH}")
 if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
   DIGITS='{"url":"'"${VALUE}"'"'
