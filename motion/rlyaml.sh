@@ -10,13 +10,26 @@ if ($?HASSIO_TOKEN == 0) then
   set HASSIO_PASSWORD = "${1}"
 endif
 
+## test iff reconfiguration
+if ($#argv > 1) set RECONFIG = "${2}"
+
 set CONFIG = /config
 set DATA_DIR = /data
 set TMPFS = /tmpfs
 
 # core modules require core reload
-# set all = ( `echo "$CONFIG/"*.yaml | sed "s|.*/\([^\.]*\).yaml|\1|"` )
-set all = ( group automation script configuration input_boolean input_text input_select ui-lovelace )
+## GET COMPONENTS
+set components = ( `jq -r ".components" "$m"` )
+if ($#components == 0 || "$components" == "null" || "$components" == "") then
+  set components = ( \
+    "automation" \
+    "binary_sensor" \
+    "group" \
+    "sensor" \
+    "input_boolean" )
+endif
+
+set all = ( $components "ui-lovelace" )
 
 # find which modules can be reloaded
 if ($?HASSIO_TOKEN) then
@@ -48,55 +61,36 @@ else
   end
 endif
 
-echo "$0:t $$ -- [INFO] Found $#core core components and $#reload reloadable component(s)" >& /dev/stderr
+echo "$0:t $$ -- [INFO] For $#all found $#core core components and $#reload reloadable component(s)" >& /dev/stderr
 
 @ i = 0
 foreach rl ( $reload $core )
   @ i++
 
   set current = "$CONFIG/${rl}.yaml"
-  set currents = "$CONFIG/${rl}s.yaml"
-  if (-e "$currents") set current = "$currents"
-  set additional = "$DATA_DIR/${rl}.yaml"
-  set base = "$DATA_DIR/${rl}.yaml.base"
-  set original = "$DATA_DIR/${current}.orig"
+  set reconfig = "$DATA_DIR/${rl}.yaml"
 
+  echo "$0:t $$ -- [INFO] current $current new $reconfig" >& /dev/stderr
 
-  echo "$0:t $$ -- [INFO] current $current additional $additional original $original" >& /dev/stderr
+  set currents = "$CONFIG/${rl}s.yaml"; if (-e "$currents") rm "$currents"
 
-  if (`egrep '### MOTION' "$current" | wc -c | awk '{ print $1 }'` > 0) then
+  if (-s "$reconfig") then
+    echo "$0:t $$ -- [INFO] creating YAML ($current) from $reconfig alone" >& /dev/stderr
+    cat "$reconfig" >! "$current"
+  else if (-s "$current") then
+    echo "$0:t $$ -- [INFO] no reconfig YAML: ${rl}; removing $current" >& /dev/stderr
     rm -f "$current"
-  endif
-
-  if (-s "$additional") then
-    if ((! -e "$current" || (`wc -c "$current" | awk '{print $1}'` <= 2)) && (! -s "$original")) then
-      if (-s "$base") then
-        echo "$0:t $$ -- [INFO] creating YAML ($current) from $base and $additional" >& /dev/stderr
-        cat "$base" "$additional" >! "$current"
-      else
-        echo "$0:t $$ -- [INFO] creating YAML ($current) from $additional alone" >& /dev/stderr
-        cat "$additional" >! "$current"
-      endif
-      continue
-    endif
-    if (! -e "$original") cp "$current" "$original"
-    cat "$original" "$additional" >! "$current"
-    if ( $i <= $#reload && $?HASSIO_TOKEN) then
-      echo -n "$0:t $$ -- [INFO] updating YAML: ${rl} ... "
-      curl -s -q -f -L -H "X-HA-ACCESS: ${HASSIO_TOKEN}" -X POST -H "Content-Type: application/json" "http://${HASSIO_HOST}/api/services/${rl}/reload" >& /dev/null
-      echo "done"
-    else
-      set reload_core
-    endif
   else
-    echo "$0:t $$ -- [INFO] no additional YAML: ${rl}"
+    echo "$0:t $$ -- [INFO] no YAML: ${rl}" >& /dev/stderr
   endif
 end
 
-if ($?reload_core && $?HASSIO_TOKEN) then
-  echo -n "$0:t $$ -- [INFO] Reloading core YAML configuration ... "
+if ($?HASSIO_TOKEN) then
+  echo -n "$0:t $$ -- [INFO] Reloading YAML configuration ... " >& /dev/stderr
   curl -s -q -f -L -H "X-HA-ACCESS: ${HASSIO_TOKEN}" -X POST -H "Content-Type: application/json" "http://${HASSIO_HOST}/api/services/homeassistant/reload_core_config" >& /dev/null
-  echo "done"
+  echo "done" >& /dev/stderr
+else
+    echo "$0:t $$ -- [ERROR] Failed to issue reload; no HASSIO_TOKEN" >& /dev/stderr
 endif
 
 echo "$0:t $$ -- FINISH" >& /dev/stderr

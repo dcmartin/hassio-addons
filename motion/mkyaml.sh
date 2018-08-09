@@ -20,7 +20,33 @@ else
   if ($?VERBOSE) echo "$0:t $$ -- Found configuration JSON file: $m" >& /dev/stderr
 endif
 
-## process configuration
+####
+#### CORE configuration.yaml
+####
+
+set devicedb = ( `jq -r ".devicedb" "$m"` )
+set name = ( `jq -r ".name" "$m"` )
+set password = ( `jq -r ".password" "$m"` )
+set www = ( `jq -r ".www" "$m"` )
+set port = ( `jq -r ".port" "$m"` )
+set elevation = ( `jq -r ".elevation" "$m"` )
+set longitude = ( `jq -r ".longitude" "$m"` )
+set latitude = ( `jq -r ".latitude" "$m"` )
+set unit_system = ( `jq -r ".unit_system" "$m"` )
+set timezone = ( `jq -r ".timezone" "$m"` )
+
+## GET COMPONENTS
+set components = ( `jq -r ".components" "$m"` )
+if ($#components == 0 || "$components" == "null" || "$components" == "") then
+  set components = ( \
+    "automation" \
+    "binary_sensor" \
+    "group" \
+    "sensor" \
+    "input_boolean" )
+endif
+
+## find cameras
 if (-s "$m") then
   set q = '.cameras[]|.name'
   set cameras = ( `jq -r "$q" $m | sort` )
@@ -36,23 +62,14 @@ endif
 if ($?VERBOSE) echo "$0:t $$ -- Found $#cameras cameras on device ${name}: $cameras" >& /dev/stderr
 
 ####
-#### CORE configuration.yaml
+#### configuration.yaml
 ####
 
 set out = "$DATA_DIR/configuration.yaml"; rm -f "$out"
-
-set name = ( `jq -r ".name" "$m"` )
-set password = ( `jq -r ".password" "$m"` )
-set www = ( `jq -r ".www" "$m"` )
-set port = ( `jq -r ".port" "$m"` )
-set elevation = ( `jq -r ".elevation" "$m"` )
-set longitude = ( `jq -r ".longitude" "$m"` )
-set latitude = ( `jq -r ".latitude" "$m"` )
-set unit_system = ( `jq -r ".unit_system" "$m"` )
-set timezone = ( `jq -r ".timezone" "$m"` )
-
 echo "### MOTION (auto-generated from $m for name $name)" >> "$out"
 echo "" >> "$out"
+
+## homeassistant
 echo "## CORE" >> "$out"
 echo "homeassistant:" >> "$out"
 echo "  name: $name" >> "$out"
@@ -62,60 +79,51 @@ echo "  elevation: $elevation" >> "$out"
 echo "  unit_system: $unit_system" >> "$out"
 echo "  time_zone: $timezone" >> "$out"
 echo "" >> "$out"
+## Web front-end
 echo "## FRONT-END" >> "$out"
 echo "http:" >> "$out"
 echo "  api_password: $password" >> "$out"
 echo "  trusted_networks:" >> "$out"
 echo "  base_url: http://${www}:${port}" >> "$out"
 echo "" >> "$out"
+## additional built-in packages
 echo "## PACKAGES" >> "$out"
 echo "hassio:" >> "$out"
 echo "frontend:" >> "$out"
 echo "config:" >> "$out"
-echo "discovery:" >> "$out"
-echo "updater:" >> "$out"
-echo "history:" >> "$out"
-echo "conversation:" >> "$out"
-echo "map:" >> "$out"
+# echo "discovery:" >> "$out"
+# echo "updater:" >> "$out"
+# echo "conversation:" >> "$out"
+# echo "map:" >> "$out"
 echo "logbook:" >> "$out"
 echo "recorder:" >> "$out"
 echo "" >> "$out"
-echo "## SUN & SOLAR" >> "$out"
+## solar
+echo "## SUN" >> "$out"
 echo "sun:" >> "$out"
 echo "  elevation: $elevation" >> "$out"
 echo "" >> "$out"
-echo "sensor solar:" >> "$out"
-echo "  platform: template" >> "$out"
-echo "  sensors:" >> "$out"
-echo "    solar_angle:" >> "$out"
-echo "      value_template: '{{ states.sun.sun.attributes.elevation }}'" >> "$out"
-echo "      unit_of_measurement: 'degrees'" >> "$out"
-echo "    sunrise:" >> "$out"
-echo "      value_template: '{{ as_timestamp(states.sun.sun.attributes.next_rising) | timestamp_custom("%I:%M %p") }}'" >> "$out"
-echo "    sunset:" >> "$out"
-echo "      value_template: '{{ as_timestamp(states.sun.sun.attributes.next_setting) | timestamp_custom("%I:%M %p") }}'" >> "$out"
-echo "" >> "$out"
-
-## MQTT
+## mqtt
 set mqtt_host = ( `jq -r ".mqtt.host" "$m"` )
 set mqtt_port = ( `jq -r ".mqtt.port" "$m"` )
-set mqtt_prefix = ( `jq -r ".devicedb" "$m"` )
-
 echo "" >> "$out"
 echo "## MQTT" >> "$out"
 echo "mqtt:" >> "$out"
-echo "  discovery: true" >> "$out"
-echo "  discovery_prefix: $mqtt_prefix" >> "$out"
 echo "  broker: $mqtt_host" >> "$out"
 echo "  port: $mqtt_port" >> "$out"
 echo "  client_id: $name" >> "$out"
+# echo "  discovery: true" >> "$out"
+# echo "  discovery_prefix: $devicedb" >> "$out"
 echo "" >> "$out"
 
-## CAMERAS
+###
+### camera(s) in configuration.yaml
+###
+
+## images from any device in $devicedb
 echo "" >> "$out"
-echo "## CAMERAS (any of the $#cameras) [$cameras]" >> "$out"
+echo "## CAMERAS ($#cameras) [$cameras]" >> "$out"
 echo "" >> "$out"
-echo "# last images from any host" >> "$out"
 echo "camera motion_last:" >> "$out"
 echo "  - platform: mqtt" >> "$out"
 echo "    name: motion_last" >> "$out"
@@ -147,9 +155,9 @@ echo "    name: motion_composite" >> "$out"
 echo "    topic: 'motion/+/+/image-composite'" >> "$out"
 echo "" >> "$out"
 
-## cameras
+## images from this device's cameras
 foreach c ( $cameras )
-  echo "# camera ${c}" >> "$out"
+  echo "# ${c}" >> "$out"
   echo "camera motion_${c}:" >> "$out"
   echo "  - platform: mqtt" >> "$out"
   echo "    name: motion_${c}" >> "$out"
@@ -162,35 +170,55 @@ foreach c ( $cameras )
   echo "" >> "$out"
 end
 
-## binary_sensor for input_boolean
-echo "" >> "$out"
-echo "binary_sensor motion_binary_sensor_template:" >> "$out"
-echo "  - platform: template" >> "$out"
-echo "    sensors:" >> "$out"
-foreach c ( $cameras )
-  echo "      motion_notify_${c}:" >> "$out"
-  echo "        entity_id:" >> "$out"
-  echo "          - input_boolean.motion_notify_${c}" >> "$out"
-  echo "        value_template: >" >> "$out"
-  echo "          {{ is_state('input_boolean.motion_notify_${c}','on') }}" >> "$out"
+## additional YAML components
+echo "## COMPONENTS" >> "$out"
+foreach x ( $components )
+  echo "${x}"': \!include '"${x}"'.yaml' >> "$out"
+  if ($?VERBOSE) echo "$0:t $$ -- initializing $DATA_DIR/${x}.yaml: []" >& /dev/stderr
+  echo '[]' >! "$DATA_DIR/${x}.yaml"
 end
-echo "" >> "$out"
+
+echo "$0:t $$ -- processed $out" >& /dev/stderr
+
+###
+### sensor
+###
+
+set out = "$DATA_DIR/sensor.yaml"; rm -f "$out"
 
 ## sensor for camera picture
-echo "" >> "$out"
-echo "sensor motion_entity_picture_template:" >> "$out"
 echo "  - platform: template" >> "$out"
 echo "    sensors:" >> "$out"
+# LOOP
 foreach c ( $cameras )
-  echo "      motion_${c}_entity_picture:" >> "$out"
-  echo "        value_template: '{{ states.camera.motion_${c}_animated.attributes.entity_picture }}'" >> "$out"
+echo "      motion_${c}_entity_picture:" >> "$out"
+echo "        value_template: '{{ states.camera.motion_${c}_animated.attributes.entity_picture }}'" >> "$out"
 end
-echo "" >> "$out"
+
+echo "$0:t $$ -- processed $out" >& /dev/stderr
+
+###
+### binary_sensor
+###
+
+set out = "$DATA_DIR/binary_sensor.yaml"; rm -f "$out"
+
+## binary_sensor for input_boolean
+echo "  - platform: template" >> "$out"
+echo "    sensors:" >> "$out"
+# LOOP
+foreach c ( $cameras )
+echo "      motion_notify_${c}:" >> "$out"
+echo "        entity_id:" >> "$out"
+echo "          - input_boolean.motion_notify_${c}" >> "$out"
+echo "        value_template: >" >> "$out"
+echo "          {{ is_state('input_boolean.motion_notify_${c}','on') }}" >> "$out"
+end
 
 echo "$0:t $$ -- processed $out" >& /dev/stderr
 
 ####
-#### GROUPS group.yaml
+#### group.yaml
 ####
 
 set out = "$DATA_DIR/group.yaml"; rm -f "$out"
@@ -198,17 +226,57 @@ set out = "$DATA_DIR/group.yaml"; rm -f "$out"
 ## group for motion animated cameras
 echo "" >> "$out"
 echo "### MOTION (auto-generated from $m for name $name)" >> "$out"
+echo "default_view:" >> "$out"
+echo "  view: yes" >> "$out"
+echo "  icon: mdi:home" >> "$out"
+echo "  entities:" >> "$out"
+echo "    - camera.motion_animated" >> "$out"
+
+
 echo "motion_animated_view:" >> "$out"
-echo "  view: true" >> "$out"
+echo "  view: yes" >> "$out"
 echo "  name: Motion Animated View" >> "$out"
 echo "  icon: mdi:animation" >> "$out"
 echo "  entities:" >> "$out"
-echo "    - camera.motion_animated" >> "$out"
 foreach c ( $cameras )
   # echo "    - camera.motion_${c}" >> "$out"
   echo "    - camera.motion_${c}_animated" >> "$out"
 end
 echo "" >> "$out"
+
+## sensor(s)
+echo "motion_sensors:" >> "$out"
+echo "  view: yes" >> "$out"
+echo "  name: motion_sensors" >> "$out"
+echo "  icon: mdi:eye" >> "$out"
+echo "  entities:" >> "$out"
+foreach c ( $cameras )
+echo "    - sensor.motion_${c}_entity_picture" >> "$out"
+end
+echo "" >> "$out"
+
+## binary_sensor(s)
+echo "motion_binary_sensors:" >> "$out"
+echo "  view: yes" >> "$out"
+echo "  name: motion_binary_sensors" >> "$out"
+echo "  icon: mdi:toggle-switch" >> "$out"
+echo "  entities:" >> "$out"
+foreach c ( $cameras )
+echo "    - binary_sensor.motion_notify_${c}" >> "$out"
+end
+echo "" >> "$out"
+
+## input_booleans(s)
+echo "motion_input_booleans:" >> "$out"
+echo "  view: yes" >> "$out"
+echo "  name: motion_input_booleans" >> "$out"
+echo "  icon: mdi:toggle-switch-outline" >> "$out"
+echo "  entities:" >> "$out"
+foreach c ( $cameras )
+echo "    - input_boolean.motion_notify_${c}" >> "$out"
+end
+echo "" >> "$out"
+
 
 echo "$0:t $$ -- processed $out" >& /dev/stderr
 
@@ -231,7 +299,7 @@ end
 echo "$0:t $$ -- processed $out" >& /dev/stderr
 
 ####
-#### AUTOMATIONS automation.yaml
+#### automation.yaml
 ####
 
 set out = "$DATA_DIR/automation.yaml"; rm -f "$out"
@@ -277,37 +345,28 @@ echo "" >> "$out"
 echo "$0:t $$ -- processed $out" >& /dev/stderr
 
 ####
-#### SCRIPTS script.yaml
-####
-
-set out = "$DATA_DIR/script.yaml"; rm -f "$out"
-
-####
 #### ui-lovelace.yaml
 ####
-
-set out = "$DATA_DIR/ui-lovelace.yaml.base"; rm -f "$out"
-echo "### MOTION (auto-generated from $m for name $name)" >> "$out"
-echo "name: $name" >> "$out"
-echo "" >> "$out"
-echo "views:" >> "$out"
 
 set out = "$DATA_DIR/ui-lovelace.yaml"; rm -f "$out"
 
 echo "### MOTION (auto-generated from $m for name $name)" >> "$out"
+echo "name: $name" >> "$out"
+echo "" >> "$out"
+echo "views:" >> "$out"
 echo "  - icon: mdi:animation" >> "$out"
 echo "    title: ANIMATIONS" >> "$out"
 echo "    cards:" >> "$out"
 foreach c ( $cameras )
-echo "    - type: picture-entity" >> "$out"
-echo "      entity: camera.motion_${c}_animated" >> "$out"
+  echo "    - type: picture-entity" >> "$out"
+  echo "      entity: camera.motion_${c}_animated" >> "$out"
 end
 echo "  - icon: mdi:webcam" >> "$out"
 echo "    title: CAMERAS" >> "$out"
 echo "    cards:" >> "$out"
 foreach c ( $cameras )
-echo "    - type: picture-entity" >> "$out"
-echo "      entity: camera.motion_${c}" >> "$out"
+  echo "    - type: picture-entity" >> "$out"
+  echo "      entity: camera.motion_${c}" >> "$out"
 end
 echo "  - icon: mdi:toggle-switch" >> "$out"
 echo "    title: SWITCHES" >> "$out"
@@ -316,7 +375,7 @@ echo "    - type: entities" >> "$out"
 echo "      title: Controls" >> "$out"
 echo "      entities:" >> "$out"
 foreach c ( $cameras )
-echo "        - input_boolean.motion_notify_${c}" >> "$out"
+  echo "        - input_boolean.motion_notify_${c}" >> "$out"
 end
 echo "" >> "$out"
 
