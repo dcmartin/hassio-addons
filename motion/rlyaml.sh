@@ -13,13 +13,11 @@ endif
 ## test iff reconfiguration
 if ($#argv > 1) set RECONFIG = "${2}"
 
-set CONFIG = /config
-set DATA_DIR = /data
-set TMPFS = /tmpfs
+set DATA_DIR = $CONFIG_PATH:h
 
 # core modules require core reload
 ## GET COMPONENTS
-set components = ( `echo $DATA_DIR/*.yaml | sed 's|'"$DATA_DIR"'/\(.*\).yaml|\1|'` )
+set components = ( `echo $DATA_DIR/*.yaml | sed 's|'"$DATA_DIR"'/\(.*\).yaml|\1|g'` )
 
 set all = ( $components "ui-lovelace" )
 
@@ -59,7 +57,7 @@ echo "$0:t $$ -- [INFO] For $#all found $#core core components and $#reload relo
 foreach rl ( $reload $core )
   @ i++
 
-  set current = "$CONFIG/${rl}.yaml"
+  set current = "/config/${rl}.yaml"
   set reconfig = "$DATA_DIR/${rl}.yaml"
 
   echo "$0:t $$ -- [INFO] current $current new $reconfig" >& /dev/stderr
@@ -67,7 +65,7 @@ foreach rl ( $reload $core )
   set currents = "$CONFIG/${rl}s.yaml"; if (-e "$currents") rm "$currents"
 
   if (-s "$reconfig") then
-    echo "$0:t $$ -- [INFO] creating YAML ($current) from $reconfig alone" >& /dev/stderr
+    echo "$0:t $$ -- [INFO] creating YAML ($current) from $reconfig" >& /dev/stderr
     cat "$reconfig" >! "$current"
   else if (-s "$current") then
     echo "$0:t $$ -- [INFO] no reconfig YAML: ${rl}; removing $current" >& /dev/stderr
