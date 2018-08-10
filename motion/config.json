@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.3.61",
+  "version": "0.3.62",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -13,7 +13,8 @@
     "i386"
   ],
   "devices": [
-    "/dev/video0:/dev/video0:rwm"  
+    "/dev/video0:/dev/video0:rwm",
+    "/dev/video1:/dev/video1:rwm"  
   ],
   "hassio_api": true,
   "homeassistant_api": true,
