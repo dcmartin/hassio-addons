@@ -10,9 +10,6 @@ if ($?HASSIO_TOKEN == 0) then
   set HASSIO_PASSWORD = "${1}"
 endif
 
-## test iff reconfiguration
-if ($#argv > 1) set RECONFIG = "${2}"
-
 set DATA_DIR = $CONFIG_PATH:h
 
 # core modules require core reload
@@ -62,7 +59,7 @@ foreach rl ( $reload $core )
 
   echo "$0:t $$ -- [INFO] current $current new $reconfig" >& /dev/stderr
 
-  set currents = "$CONFIG/${rl}s.yaml"; if (-e "$currents") rm "$currents"
+  set currents = "/config/${rl}s.yaml"; if (-e "$currents") rm "$currents"
 
   if (-s "$reconfig") then
     echo "$0:t $$ -- [INFO] creating YAML ($current) from $reconfig" >& /dev/stderr
