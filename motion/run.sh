@@ -454,7 +454,7 @@ for (( i=0; i<ncamera ; i++)) ; do
 
   CAMERAS="${CAMERAS}"'{"id":'${i}
 
-  ## SPECIAL CASES
+  ## TOP-LEVEL
 
   # name
   VALUE=$(jq -r '.cameras['${i}'].name' "${CONFIG_PATH}")
@@ -470,34 +470,6 @@ for (( i=0; i<ncamera ; i++)) ; do
   echo "camera_id ${CNUM}" > "${CAMERA_CONF}"
   echo "camera_name ${VALUE}" >> "${CAMERA_CONF}"
 
-  # process camera type; only wcv80n
-  VALUE=$(jq -r '.type' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then 
-    VALUE=$(jq -r '.cameras['${i}'].type' "${CONFIG_PATH}")
-    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="wcv80n"; fi
-  fi
-  echo "Set type to ${VALUE}" >&2
-  CAMERAS="${CAMERAS}"',"type":"'"${VALUE}"'"'
-
-  # process camera fov; WCV80n is 61.5 (62); 56 or 75 degrees for PS3 Eye camera
-  VALUE=$(jq -r '.fov' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then 
-    VALUE=$(jq -r '.cameras['${i}'].fov' "${CONFIG_PATH}")
-    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=62; fi
-  fi
-  echo "Set fov to ${VALUE}" >&2
-
-  # process camera fps; set on wcv80n web GUI; default 6
-  VALUE=$(jq -r '.fps' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then 
-    VALUE=$(jq -r '.cameras['${i}'].fps' "${CONFIG_PATH}")
-    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=6; fi
-  fi
-  echo "Set fps to ${VALUE}" >&2
-  CAMERAS="${CAMERAS}"',"fps":'"${VALUE}"
-
-  ## MOTION attributes
-
   # target_dir 
   VALUE=$(jq -r '.cameras['${i}'].target_dir' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.target_dir'); VALUE="${VALUE}/${CNAME}"; fi
@@ -506,6 +478,33 @@ for (( i=0; i<ncamera ; i++)) ; do
   if [ ! -d "${VALUE}" ]; then mkdir -p "${VALUE}"; fi
   CAMERAS="${CAMERAS}"',"target_dir":"'"${VALUE}"'"'
 
+  # process camera fov; WCV80n is 61.5 (62); 56 or 75 degrees for PS3 Eye camera
+  VALUE=$(jq -r '.cameras['${i}'].fov' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then 
+    VALUE=$(jq -r '.fov' "${CONFIG_PATH}")
+    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=62; fi
+  fi
+  echo "Set fov to ${VALUE}" >&2
+  CAMERAS="${CAMERAS}"',"fov":'"${VALUE}"
+
+  # process camera fps; set on wcv80n web GUI; default 6
+  VALUE=$(jq -r '.cameras['${i}'].fps' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then 
+    VALUE=$(jq -r '.fps' "${CONFIG_PATH}")
+    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=5; fi
+  fi
+  echo "Set fps to ${VALUE}" >&2
+  CAMERAS="${CAMERAS}"',"fps":'"${VALUE}"
+
+  # process camera type; wcv80n, ps3eye, panasonic
+  VALUE=$(jq -r '.cameras['${i}'].type' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then 
+    VALUE=$(jq -r '.type' "${CONFIG_PATH}")
+    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="wcv80n"; fi
+  fi
+  echo "Set type to ${VALUE}" >&2
+  CAMERAS="${CAMERAS}"',"type":"'"${VALUE}"'"'
+
   # stream_port 
   VALUE=$(jq -r '.cameras['${i}'].port' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.stream_port'); VALUE=$((VALUE + i)); fi
@@ -513,33 +512,43 @@ for (( i=0; i<ncamera ; i++)) ; do
   echo "stream_port ${VALUE}" >> "${CAMERA_CONF}"
   CAMERAS="${CAMERAS}"',"port":"'"${VALUE}"'"'
 
-  # netcam_url
-  VALUE=$(jq -r '.cameras['${i}'].url' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_url'); fi
-  # test if file designation for directory
-  if [[ "${VALUE}" == file* ]]; then
-    # file which motion package will poll and will be created
-    VALUE="${VALUE%*/}.jpg"
+  # process videodevice; only "/dev/video0" enabled in config.json
+  VALUE=$(jq -r '.cameras['${i}'].device' "${CONFIG_PATH}")
+  if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then 
+    ## HANDLE DEVICE CAMERA
+    echo "Set device to ${VALUE}" >&2
+    CAMERAS="${CAMERAS}"',"device":"'"${VALUE}"'"'
+    echo "videodevice ${VALUE}" >> "${CAMERA_CONF}"
+    VALUE=$(jq -r '.cameras['${i}'].palette' "${CONFIG_PATH}")
+    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="17"; fi
+    echo "Set palette to ${VALUE}" >&2
+    CAMERAS="${CAMERAS}"',"device":"'"${VALUE}"'"'
+    echo "v412_palette ${VALUE}" >> "${CAMERA_CONF}"
+  else
+    # HANDLE NETCAM
+    VALUE=$(jq -r '.cameras['${i}'].url' "${CONFIG_PATH}")
+    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_url'); fi
+    # test if file designation for directory
+    if [[ "${VALUE}" == file* ]]; then
+      # file which motion package will poll and will be created
+      VALUE="${VALUE%*/}.jpg"
+    fi
+    echo "Set netcam_url to ${VALUE}" >&2
+    echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
+    CAMERAS="${CAMERAS}"',"netcam_url":"'"${VALUE}"'"'
+    # keepalive 
+    VALUE=$(jq -r '.cameras['${i}'].keepalive' "${CONFIG_PATH}")
+    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_keepalive'); fi
+    echo "Set netcam_keepalive to ${VALUE}" >&2
+    echo "netcam_keepalive ${VALUE}" >> "${CAMERA_CONF}"
+    CAMERAS="${CAMERAS}"',"keepalive":"'"${VALUE}"'"'
+    # userpass 
+    VALUE=$(jq -r '.cameras['${i}'].userpass' "${CONFIG_PATH}")
+    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="${NETCAM_USERPASS}"; fi
+    echo "Set netcam_userpass to ${VALUE}" >&2
+    echo "netcam_userpass ${VALUE}" >> "${CAMERA_CONF}"
+    # DO NOT RECORD; CAMERAS="${CAMERAS}"',"userpass":"'"${VALUE}"'"'
   fi
-  echo "Set netcam_url to ${VALUE}" >&2
-  echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
-  CAMERAS="${CAMERAS}"',"netcam_url":"'"${VALUE}"'"'
-
-  # keepalive 
-  VALUE=$(jq -r '.cameras['${i}'].keepalive' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_keepalive'); fi
-  echo "Set netcam_keepalive to ${VALUE}" >&2
-  echo "netcam_keepalive ${VALUE}" >> "${CAMERA_CONF}"
-  CAMERAS="${CAMERAS}"',"keepalive":"'"${VALUE}"'"'
-
-  # userpass 
-  VALUE=$(jq -r '.cameras['${i}'].userpass' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="${NETCAM_USERPASS}"; fi
-  echo "Set netcam_userpass to ${VALUE}" >&2
-  echo "netcam_userpass ${VALUE}" >> "${CAMERA_CONF}"
-  # DO NOT RECORD; CAMERAS="${CAMERAS}"',"userpass":"'"${VALUE}"'"'
-
-  ## numeric VALUE
 
   # stream_quality 
   VALUE=$(jq -r '.cameras['${i}'].stream_quality' "${CONFIG_PATH}")

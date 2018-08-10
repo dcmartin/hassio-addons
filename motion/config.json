@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.3.60",
+  "version": "0.3.61",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -11,6 +11,9 @@
     "amd64",
     "armhf",
     "i386"
+  ],
+  "devices": [
+    "/dev/video0:/dev/video0:rwm"  
   ],
   "hassio_api": true,
   "homeassistant_api": true,
@@ -95,6 +98,8 @@
     "cameras": [
       {
         "name": "str",
+	"device": "str?",
+	"palette": "int?",
         "url": "str?",
 	"type": "str?",
 	"fov": "int?",
