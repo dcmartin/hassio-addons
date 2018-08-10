@@ -19,15 +19,7 @@ set TMPFS = /tmpfs
 
 # core modules require core reload
 ## GET COMPONENTS
-set components = ( `jq -r ".components" "$m"` )
-if ($#components == 0 || "$components" == "null" || "$components" == "") then
-  set components = ( \
-    "automation" \
-    "binary_sensor" \
-    "group" \
-    "sensor" \
-    "input_boolean" )
-endif
+set components = ( `echo $DATA_DIR/*.yaml | sed 's|'"$DATA_DIR"'/\(.*\).yaml|\1|'` )
 
 set all = ( $components "ui-lovelace" )
 
