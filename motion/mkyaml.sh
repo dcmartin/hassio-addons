@@ -258,7 +258,7 @@ echo "" >> "$out"
 
 echo "## COMPONENTS" >> "$out"
 foreach x ( $components )
-  if ($?VERBOSE) echo "$0:t $$ -- including ${x}.yaml: []" >& /dev/stderr
+  if ($?VERBOSE) echo "$0:t $$ -- including ${x}.yaml" >& /dev/stderr
   echo "${x}"': \!include '"${x}"'.yaml' >> "$out"
 end
 
