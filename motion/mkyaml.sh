@@ -226,7 +226,7 @@ echo "  base_url: http://${www}:${port}" >> "$out"
 echo "" >> "$out"
 ## additional built-in packages
 echo "## PACKAGES" >> "$out"
-echo "hassio:" >> "$out"
+# echo "hassio:" >> "$out"
 echo "frontend:" >> "$out"
 echo "config:" >> "$out"
 echo "logbook:" >> "$out"
