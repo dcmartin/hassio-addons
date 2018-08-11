@@ -342,6 +342,7 @@ end
 ## MAKE ALL CAMERAS
 ##
 
+set allcameras = ()
 set json = "/tmp/$0:t.$$.json"
 curl -s -q -f -L "$MOTION_CLOUDANT_URL/${MOTION_DEVICE_DB}/_all_docs?include_docs=true" -o $json
 if (-s "$json") then
@@ -359,6 +360,7 @@ if (-s "$json") then
 	echo "    name: motion_${c}_animated" >> "$out"
 	echo "    topic: '$MOTION_DEVICE_DB/${d}/${c}/image-animated'" >> "$out"
 	echo "" >> "$out"
+        set allcameras = ( $allcameras $c )
       end
     else
       # handle legacy ageathome cameras
@@ -369,6 +371,7 @@ if (-s "$json") then
       echo "    name: motion_${c}_animated" >> "$out"
       echo "    topic: 'image-animated/"${c}"'" >> "$out"
       echo "" >> "$out"
+      set allcameras = ( $allcameras $c )
     endif
   end
 else
@@ -391,21 +394,21 @@ echo "views:" >> "$out"
 echo "  - icon: mdi:animation" >> "$out"
 echo "    title: ANIMATIONS" >> "$out"
 echo "    cards:" >> "$out"
-foreach c ( $cameras )
+foreach c ( $allcameras )
 echo "    - type: picture-entity" >> "$out"
 echo "      entity: camera.motion_${c}_animated" >> "$out"
 end
 echo "  - icon: mdi:webcam" >> "$out"
 echo "    title: IMAGES" >> "$out"
 echo "    cards:" >> "$out"
-foreach c ( $cameras )
+foreach c ( $allcameras )
 echo "    - type: picture-entity" >> "$out"
 echo "      entity: camera.motion_${c}_image" >> "$out"
 end
 echo "  - icon: mdi:video" >> "$out"
 echo "    title: LIVE" >> "$out"
 echo "    cards:" >> "$out"
-foreach c ( $cameras )
+foreach c ( $allcameras )
 echo "    - type: picture-entity" >> "$out"
 echo "      entity: camera.motion_${c}_live" >> "$out"
 end
@@ -415,11 +418,11 @@ echo "    cards:" >> "$out"
 echo "    - type: entities" >> "$out"
 echo "      title: Controls" >> "$out"
 echo "      entities:" >> "$out"
-foreach c ( $cameras )
+foreach c ( $allcameras )
 echo "        - input_boolean.motion_notify_${c}" >> "$out"
 end
 echo "" >> "$out"
-foreach c ( $cameras )
+foreach c ( $allcameras )
 echo "motion_notify_${c}:" >> "$out"
 echo "  name: motion_notify_${c}" >> "$out"
 echo "  initial: false" >> "$out"
