@@ -5,12 +5,6 @@ setenv VERBOSE
 
 echo "$0:t $$ -- START $*" >& /dev/stderr
 
-if ($?CONFIG_PATH == 0 && $#argv) then
-  set CONFIG_PATH = "$argv[$#argv]"
-else
-  if ($?DEBUG) echo "$0:t $$ -- insufficient arguments: $0:t <full-path-to-options.json>" >& /dev/stderr
-  exit 
-endif
 set DATA_DIR = "$CONFIG_PATH:h"
 
 if ( ! -s "$CONFIG_PATH") then
