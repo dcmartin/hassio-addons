@@ -52,7 +52,7 @@ if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":
 echo '{"device":"'${MOTION_DEVICE_NAME}'","camera":"'${CN}'","event":"'${EN}'","start":'$NOW'}' >! "${EJ}"
 
 if ($?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then
-  set MQTT_TOPIC = "motion/${MOTION_DEVICE_NAME}/${CN}/event/start"
+  set MQTT_TOPIC = "$MOTION_DEVICE_DB/${MOTION_DEVICE_NAME}/${CN}/event/start"
   mosquitto_pub -i "$MOTION_DEVICE_NAME" -h "$MOTION_MQTT_HOST" -p "$MOTION_MQTT_PORT" -t "$MQTT_TOPIC" -f "$EJ"
 endif
 

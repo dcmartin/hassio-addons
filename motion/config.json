@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.3.65",
+  "version": "0.3.66",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -65,6 +65,7 @@
     "8119/tcp": 8119
   },
   "options": {
+    "devicedb":"motion",
     "name":"default",
     "username": null,
     "password": null,
@@ -83,12 +84,12 @@
     ]
   },
   "schema": {
+    "devicedb":"str",
+    "name":"str",
     "elevation":"int?",
     "latitude":"float?",
     "longitude":"float?",
     "unit_system":"str?",
-    "devicedb":"str?",
-    "name":"str?",
     "username": "str?",
     "password": "str?",
     "www": "str?",

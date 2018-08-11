@@ -91,7 +91,7 @@ foreach f ( $jpgs )
     mv -f "$f" "${output}"
   else
     set seqid = `echo "$seqno" | awk '{ printf("%02d",$1) }'`
-    set output = "/share/motion/$camera/${datetime}-${evtid}-${seqid}.$format"
+    set output = "$MOTION_SHARE_DIR/$camera/${datetime}-${evtid}-${seqid}.$format"
     set diffs = ( $diffs $frames[$i]:r.$format)
 
     # calculate difference (try next, then previous, then same image)

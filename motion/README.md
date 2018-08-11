@@ -19,44 +19,75 @@ comparison to installing any other Hass.io add-on.
 
 **Note**: _Remember to SAVE and then restart the add-on when the configuration is changed._
 
-## Example WebUI
+#### USE
 
-![Example](example.png)
+Specify the host and port for sending MQTT messages.  All topics begin with the `devicedb` specified, which defaults to "motion".
 
-## Configuration
+1. `<devicedb>/{name}/{camera}` -- JSON payload of motion detected
+1. `<devicedb>/{name}/{camera}/lost` -- JSON payload of motion detected
+1. `<devicedb>/{name}/{camera}/event/start` -- JSON payload of motion detected
+1. `<devicedb>/{name}/{camera}/event/end` -- JSON payload of motion detected
+1. `<devicedb>/{name}/{camera}/image` -- JPEG payload of image (**see** `post_pictures`)
+1. `<devicedb>/{name}/{camera}/image-average` -- JPEG payload of average event 
+1. `<devicedb>/{name}/{camera}/image-blend` -- JPEG payload of blended event (50%)
+1. `<devicedb>/{name}/{camera}/image-composite` --  JPEG payload of composite event
+1. `<devicedb>/{name}/{camera}/image-animated` -- GIF payload of event
+1. `<devicedb>/{name}/{camera}/image-animated-mask` -- GIF payload of event (as B/W mask)
 
-The configuration for this add-on includes configuration for the [Motion package][motionpkg], 
-but also for utilization of various services from the IBM Cloud, including [Watson Visual Recognition][watsonvr]
+### CONFIGURATION
 
-#### Option: `name`
+### Options
 
-The top-level `name` option controls the identification of the device running the Motion software.
-Providing a name will consistently identify the configuration utilized during operation.
-Defaults to the HOSTNAME environment from Hass.io.  
+This addon supports multiple installations across mutliple devices (e.g. RaspberryPi3 w/ USB PS3 Eye camera and LINUX PC w/ Wifi network cameras.  The options include `devicedb` specifying a shared group of devices; it is also used as MQTT discovery prefix.  The `name` identifies the logical host of the camera(s), and `www` identifies the primary web server for the group; typically this is the same as the `name` with domain appended (e.g. `.local`).  For example:
+
+```json
+options: {
+..
+    "devicedb": "motion",
+    "name": "kitchen",
+    "www": "kitchen-pi.local",
+    "mqtt": {"host":"hassio.local"},
+..
+}
+```
 
 #### Options: `username` `password`
 
 The `username` and `password` options are optional, but restrict access to the WebUI.  Specify
 a username and password to utilize the WebUI.
 
-#### Option: `fps`
+#### Option: `cameras`
 
-This option specifies the estimate frames-per-second that are processed to create the event GIF animations
+Motion configuration options (see below) are defaults for _all_ cameras.  Each camera must also defined, for example:
 
-#### Option: `mqtt_host` `mqtt_port`
+```json
+options: {
+..
+    "cameras": [ 
+     {"device":"/dev/video0","type":"ps3eye","fps":10},
+     {"url":"mjpeg://192.168.1.165:80","type":"wcv80n","fps":5}
+    ],
+..
+}
+```
 
-Specify the host and port for sending MQTT messages.  All topics begin with `motion`.
+Options which can be specified on a per camera basis are:
 
-1. `motion/{name}/{camera}` -- JSON payload of motion detected
-1. `motion/{name}/{camera}/lost` -- JSON payload of motion detected
-1. `motion/{name}/{camera}/event/start` -- JSON payload of motion detected
-1. `motion/{name}/{camera}/event/end` -- JSON payload of motion detected
-1. `motion/{name}/{camera}/image` -- JPEG payload of image (**see** `post_pictures`)
-1. `motion/{name}/{camera}/image-average` -- JPEG payload of average event 
-1. `motion/{name}/{camera}/image-blend` -- JPEG payload of blended event (50%)
-1. `motion/{name}/{camera}/image-composite` --  JPEG payload of composite event
-1. `motion/{name}/{camera}/image-animated` -- GIF payload of event
-1. `motion/{name}/{camera}/image-animated-mask` -- GIF payload of event (as B/W mask)
+1. name (string, non-optional)
+1. device (string, optional; only /dev/video0 is enabled in the config.json)
+1. url (string, optional; ignored if device is specified)
+1. userpass (string, optional; only applicable with url; format "user:pass"; defaults to netcam_userpass)
+1. keepalive (string, optional; only applicable with url; valid {"1.1","1.0","force"}; defaults to netcam_keepalive)
+1. port (streaming output port, optional; will be calculated from stream_port)
+1. quality \[of captured JPEG image\] (int, optional; valid \[0,100); default 80)
+1. type (string, optional; valid { wcv80n, ps3eye, kinect, c920 }; default wcv80n)
+1. fps (int, optional; valid \[0,100); defaults to framerate, default 5)
+1. fov (int, optional; valid \[0,360); defaults from camera type iff specified)
+1. width (int, optional; default 640; defaults from camera type iff specified)
+1. height (int, optional; default 480; defaults from camera type iff specified)
+1. rotate (int, optional; valid (0,360); default 0)
+1. threshold \[of pixels changed to detect motion\] (int, optional; valid (0,10000); default 5000)
+1. models \[for visual recognition\] (string, optional; format "\[wvr|digits\]:modelname,<model2>,..")
 
 #### Option: `post_pictures`
 
@@ -77,39 +108,10 @@ The minimum number of images captured during an event that should be animated as
 
 The maximum time in seconds that will comprise an event; measured backward from the event of the event.  Optional. Default 0; indicating no maximum.
 
-### Motion Configuration
+### Additional Options: Motion
 
 The Motion package has extensive [documentation][motiondoc] on available parameters.  Almost all parameters are avsailable.
 The JSON configuration options are provided using the same name as in the Motion documentation.
-
-For example the Motion parameters for `location_motion_mode` and `location_motion_style` would be indicated in the configuration as follows:
-
-```json
-options: {
-..
-    "locate_motion_mode":"on",
-    "locate_motion_style":"box",
-..
-}
-```
-
-#### Option: `cameras`
-
-Motion configuration options are for _all_ cameras, as in the example above.  Each camera must also be defined with a minimum set of characteristics.
-
-Options which can be specified on a per camera basis are:
-
-1. name (string, non-optional)
-1. url (string, non-optional)
-1. userpass (string, optional; format "user:pass")
-1. keepalive (string, optional; valid {"1.1","1.0","force")
-1. port (port, optional; will be calculated)
-1. quality \[of captured JPEG image\] (int, optional; valid \[0,100); default 80)
-1. width (int, optional; default 640)
-1. height (int, optional; default 480)
-1. rotate (int, optional; valid (0,360); default 0)
-1. threshold \[of pixels changed to detect motion\] (int, optional; valid (0,10000); default 5000)
-1. models \[for visual recognition\] (string, optional; format "\[wvr|digits\]:modelname,<model2>,..")
 
 ## Changelog & Releases
 

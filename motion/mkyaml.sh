@@ -26,14 +26,15 @@ endif
 
 set devicedb = ( `jq -r ".devicedb" "$CONFIG_PATH"` )
 set name = ( `jq -r ".name" "$CONFIG_PATH"` )
-set password = ( `jq -r ".password" "$CONFIG_PATH"` )
-set www = ( `jq -r ".www" "$CONFIG_PATH"` )
-set port = ( `jq -r ".port" "$CONFIG_PATH"` )
 set elevation = ( `jq -r ".elevation" "$CONFIG_PATH"` )
-set longitude = ( `jq -r ".longitude" "$CONFIG_PATH"` )
 set latitude = ( `jq -r ".latitude" "$CONFIG_PATH"` )
-set unit_system = ( `jq -r ".unit_system" "$CONFIG_PATH"` )
+set longitude = ( `jq -r ".longitude" "$CONFIG_PATH"` )
+set password = ( `jq -r ".password" "$CONFIG_PATH"` )
+set port = ( `jq -r ".port" "$CONFIG_PATH"` )
 set timezone = ( `jq -r ".timezone" "$CONFIG_PATH"` )
+set unit_system = ( `jq -r ".unit_system" "$CONFIG_PATH"` )
+set username = ( `jq -r ".username" "$CONFIG_PATH"` )
+set www = ( `jq -r ".www" "$CONFIG_PATH"` )
 
 ## initialize components to !include at the end
 set components = ()
@@ -169,7 +170,7 @@ echo "  alias: motion_notify_recognize" >> "$out"
 echo "  initial_state: on" >> "$out"
 echo "  trigger:" >> "$out"
 echo "    - platform: mqtt" >> "$out"
-echo "      topic: 'motion/+/+/event/recognize'" >> "$out"
+echo "      topic: '$MOTION_DEVICE_DB'/+/+/event/recognize'" >> "$out"
 echo "  condition:" >> "$out"
 echo "    condition: and" >> "$out"
 echo "    conditions:" >> "$out"
@@ -251,13 +252,19 @@ echo "mqtt:" >> "$out"
 echo "  broker: $mqtt_host" >> "$out"
 echo "  port: $mqtt_port" >> "$out"
 echo "  client_id: $name" >> "$out"
+echo "  keepalive: 60" >> "$out"
 echo "" >> "$out"
+#echo "mqtt:" >> "$out"
+#echo "  discovery: true" >> "$out"
+#echo "  discovery_prefix: $devicedb" >> "$out"
+#echo "" >> "$out"
 
 ###
 ### additional YAML components 
 ###
 
-echo "## COMPONENTS" >> "$out"
+echo "" >> "$out"
+echo "## include'd components" >> "$out"
 foreach x ( $components )
   if ($?VERBOSE) echo "$0:t $$ -- including ${x}.yaml" >& /dev/stderr
   echo "${x}"': \!include '"${x}"'.yaml' >> "$out"
@@ -274,32 +281,32 @@ echo "" >> "$out"
 echo "camera motion_last:" >> "$out"
 echo "  - platform: mqtt" >> "$out"
 echo "    name: motion_last" >> "$out"
-echo "    topic: 'motion/+/+/image'" >> "$out"
+echo "    topic: '$MOTION_DEVICE_DB/+/+/image'" >> "$out"
 echo "" >> "$out"
 echo "camera motion_animated:" >> "$out"
 echo "  - platform: mqtt" >> "$out"
 echo "    name: motion_animated" >> "$out"
-echo "    topic: 'motion/+/+/image-animated'" >> "$out"
+echo "    topic: '$MOTION_DEVICE_DB/+/+/image-animated'" >> "$out"
 echo "" >> "$out"
 echo "camera motion_average:" >> "$out"
 echo "  - platform: mqtt" >> "$out"
 echo "    name: motion_average" >> "$out"
-echo "    topic: 'motion/+/+/image-average'" >> "$out"
+echo "    topic: '$MOTION_DEVICE_DB/+/+/image-average'" >> "$out"
 echo "" >> "$out"
 echo "camera motion_blend:" >> "$out"
 echo "  - platform: mqtt" >> "$out"
 echo "    name: motion_blend" >> "$out"
-echo "    topic: 'motion/+/+/image-blend'" >> "$out"
+echo "    topic: '$MOTION_DEVICE_DB/+/+/image-blend'" >> "$out"
 echo "" >> "$out"
 echo "camera motion_animated_mask:" >> "$out"
 echo "  - platform: mqtt" >> "$out"
 echo "    name: motion_animated_mask" >> "$out"
-echo "    topic: 'motion/+/+/image-animated-mask'" >> "$out"
+echo "    topic: '$MOTION_DEVICE_DB/+/+/image-animated-mask'" >> "$out"
 echo "" >> "$out"
 echo "camera motion_composite:" >> "$out"
 echo "  - platform: mqtt" >> "$out"
 echo "    name: motion_composite" >> "$out"
-echo "    topic: 'motion/+/+/image-composite'" >> "$out"
+echo "    topic: '$MOTION_DEVICE_DB/+/+/image-composite'" >> "$out"
 echo "" >> "$out"
 
 ## images from this device's cameras
@@ -311,6 +318,9 @@ if ($?MOTION_JSON_FILE) then
   echo "  - platform: mjpeg" >> "$out"
   echo "    name: motion_${c}_live" >> "$out"
   echo "    mjpeg_url: http://${www}:${port}" >> "$out"
+  echo "    authentication: basic" >> "$out"
+  echo "    username: $username" >> "$out"
+  echo "    password: $password" >> "$out"
   echo "" >> "$out"
 else
   if ($?DEBUG) echo "$0:t $$ -- MOTION_JSON_FILE environment undefined; skipping live camera" >& /dev/stderr
@@ -319,14 +329,52 @@ endif
   echo "camera motion_${c}_image:" >> "$out"
   echo "  - platform: mqtt" >> "$out"
   echo "    name: motion_${c}" >> "$out"
-  echo "    topic: 'motion/+/${c}/image'" >> "$out"
+  echo "    topic: '$MOTION_DEVICE_DB/+/${c}/image'" >> "$out"
   echo "" >> "$out"
   echo "camera motion_${c}_animated:" >> "$out"
   echo "  - platform: mqtt" >> "$out"
   echo "    name: motion_${c}_animated" >> "$out"
-  echo "    topic: 'motion/+/${c}/image-animated'" >> "$out"
+  echo "    topic: '$MOTION_DEVICE_DB/+/${c}/image-animated'" >> "$out"
   echo "" >> "$out"
 end
+
+##
+## MAKE ALL CAMERAS
+##
+
+set json = "/tmp/$0:t.$$.json"
+curl -s -q -f -L "$MOTION_CLOUDANT_URL/${MOTION_DEVICE_DB}/_all_docs?include_docs=true" -o $json
+if (-s "$json") then
+  set devices = ( `jq -r '.rows[].doc.name' "$json"` )
+  if ($?VERBOSE) echo "$0:t $$ -- Found $#devices devices for ${MOTION_DEVICE_DB}" >& /dev/stderr
+  foreach d ( $devices )
+    set nocams = ( `jq -r '.rows[]?|select(.doc.name=="'${d}'").doc.cameras?==null' "$json"` )
+    if ($nocams == "false") then
+      set devcams = ( `jq -r '.rows[]?|select(.doc.name=="'${d}'").doc.cameras[]?.name' "$json"` )
+      if ($?VERBOSE) echo "$0:t $$ -- Found $#devcams cameras for device $d" >& /dev/stderr
+      foreach c ( $devcams )
+        if ($?VERBOSE) echo "$0:t $$ -- Motion device ${d} at location $c" >& /dev/stderr
+	echo "camera motion_${c}_animated:" >> "$out"
+	echo "  - platform: mqtt" >> "$out"
+	echo "    name: motion_${c}_animated" >> "$out"
+	echo "    topic: '$MOTION_DEVICE_DB/${d}/${c}/image-animated'" >> "$out"
+	echo "" >> "$out"
+      end
+    else
+      # handle legacy ageathome cameras
+      set c = ( `jq -r '.rows[]?|select(.doc.name=="'${d}'").doc.location' "$json"` )
+      if ($?VERBOSE) echo "$0:t $$ -- Legacy device ${d} at location $c" >& /dev/stderr
+      echo "camera motion_${c}_animated:" >> "$out"
+      echo "  - platform: mqtt" >> "$out"
+      echo "    name: motion_${c}_animated" >> "$out"
+      echo "    topic: 'image-animated/"${c}"'" >> "$out"
+      echo "" >> "$out"
+    endif
+  end
+else
+  if ($?DEBUG) echo "$0:t $$ -- No devices for ${MOTION_DEVICE_DB}" >& /dev/stderr
+endif
+rm -f "$json"
 
 echo "$0:t $$ -- processed $out" >& /dev/stderr
 

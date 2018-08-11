@@ -27,7 +27,7 @@ export MOTION_DEVICE_NAME="${VALUE}"
 ## device db name
 ##
 VALUE=$(jq -r ".device_db" "${CONFIG_PATH}")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="devices"; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="motion"; fi
 echo "Setting device_db ${VALUE} [MOTION_DEVICE_DB]" >&2
 JSON="${JSON}"',"device_db":"'"${VALUE}"'"'
 export MOTION_DEVICE_DB="${VALUE}"
@@ -280,7 +280,7 @@ MOTION="${MOTION}"',"height":'"${VALUE}"
 
 # set framerate
 VALUE=$(jq -r ".framerate" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=100; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=5; fi
 echo "Set framerate to ${VALUE}" >&2
 sed -i "s/.*framerate\s[0-9]\+/framerate ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"framerate":'"${VALUE}"
@@ -490,10 +490,11 @@ for (( i=0; i<ncamera ; i++)) ; do
   # process camera fps; set on wcv80n web GUI; default 6
   VALUE=$(jq -r '.cameras['${i}'].fps' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then 
-    VALUE=$(jq -r '.fps' "${CONFIG_PATH}")
+    VALUE=$(jq -r '.framerate' "${CONFIG_PATH}")
     if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=5; fi
   fi
   echo "Set fps to ${VALUE}" >&2
+  echo "framerate ${VALUE}" >> "${CAMERA_CONF}"
   CAMERAS="${CAMERAS}"',"fps":'"${VALUE}"
 
   # process camera type; wcv80n, ps3eye, panasonic
@@ -653,7 +654,7 @@ JSON="${JSON}"',"post_pictures":"'"${VALUE}"'"'
 
 # MOTION_SHARE_DIR defined for all cameras base path
 VALUE=$(jq -r ".share_dir" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="/share/motion"; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="/share/$MOTION_DEVICE_DB"; fi
 if [ ! -z ${MOTION_SHARE_DIR} ]; then echo "*** MOTION_SHARE_DIR *** ${MOTION_SHARE_DIR}"; VALUE="${MOTION_SHARE_DIR}"; else export MOTION_SHARE_DIR="${VALUE}"; fi
 echo "Set share_dir to ${VALUE}" >&2
 JSON="${JSON}"',"share_dir":"'"${VALUE}"'"'

@@ -137,7 +137,7 @@ endif
 
 ## do MQTT
 if ($?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then
-  set MQTT_TOPIC = "motion/${MOTION_DEVICE_NAME}/${CN}/event/end"
+  set MQTT_TOPIC = "$MOTION_DEVICE_DB/${MOTION_DEVICE_NAME}/${CN}/event/end"
   mosquitto_pub -r -i "$MOTION_DEVICE_NAME" -h "$MOTION_MQTT_HOST" -p "$MOTION_MQTT_PORT" -t "$MQTT_TOPIC" -f "$lastjson"
   if ($?VERBOSE) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"topic":"'$MQTT_TOPIC'","JSON":"'"$lastjson"'"}'
 endif
@@ -207,7 +207,7 @@ else
 endif
 
 if ($?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then
-  set MQTT_TOPIC = "motion/${MOTION_DEVICE_NAME}/${CN}/image-average"
+  set MQTT_TOPIC = "$MOTION_DEVICE_DB/${MOTION_DEVICE_NAME}/${CN}/image-average"
   mosquitto_pub -r -i "${MOTION_DEVICE_NAME}" -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "$MQTT_TOPIC" -f "$average"
   if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"topic":"'"$MQTT_TOPIC"'"}'
 endif
@@ -292,7 +292,7 @@ switch ( "$post_pictures" )
 endsw
 
 if ($#IF && -s "$IF" && $?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then
-  set MQTT_TOPIC = "motion/$MOTION_DEVICE_NAME/$CN/image"
+  set MQTT_TOPIC = "$MOTION_DEVICE_DB/$MOTION_DEVICE_NAME/$CN/image"
   mosquitto_pub -r -i "$MOTION_DEVICE_NAME" -h "$MOTION_MQTT_HOST" -p "$MOTION_MQTT_PORT" -t "$MQTT_TOPIC" -f "$IF"
   if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"topic":"'"$MQTT_TOPIC"'","image":"'${IF}'"}'
 else
@@ -334,7 +334,7 @@ end
 if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"composite":"'"$composite"'"}'
 
 if ($?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then
-  set MQTT_TOPIC = "motion/${MOTION_DEVICE_NAME}/${CN}/image-composite"
+  set MQTT_TOPIC = "$MOTION_DEVICE_DB/${MOTION_DEVICE_NAME}/${CN}/image-composite"
   mosquitto_pub -r -i "$MOTION_DEVICE_NAME" -h "$MOTION_MQTT_HOST" -p "${MOTION_MQTT_PORT}" -t "$MQTT_TOPIC" -f "$composite"
   if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"topic":"'"$MQTT_TOPIC"'"}'
 endif
@@ -363,7 +363,7 @@ convert -loop 0 -delay $ms $jpgs $gif
 if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"gif":"'"$gif"'"}'
 
 if ($?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then
-  set MQTT_TOPIC = "motion/${MOTION_DEVICE_NAME}/${CN}/image-animated"
+  set MQTT_TOPIC = "$MOTION_DEVICE_DB/${MOTION_DEVICE_NAME}/${CN}/image-animated"
   mosquitto_pub -r -i "$MOTION_DEVICE_NAME" -h "$MOTION_MQTT_HOST" -p "${MOTION_MQTT_PORT}" -t "$MQTT_TOPIC" -f "$gif"
   if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"topic":"'"$MQTT_TOPIC"'"}'
 endif
@@ -376,7 +376,7 @@ popd
 if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"mask":"'"$mask"'"}'
 
 if ($?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then
-  set MQTT_TOPIC = "motion/${MOTION_DEVICE_NAME}/${CN}/image-animated-mask"
+  set MQTT_TOPIC = "$MOTION_DEVICE_DB/${MOTION_DEVICE_NAME}/${CN}/image-animated-mask"
   mosquitto_pub -r -i "$MOTION_DEVICE_NAME" -h "$MOTION_MQTT_HOST" -p "${MOTION_MQTT_PORT}" -t "$MQTT_TOPIC" -f "$mask"
   if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"topic":"'"$MQTT_TOPIC"'"}'
 endif
@@ -394,7 +394,7 @@ else
 endif
 
 if ($?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then
-  set MQTT_TOPIC = "motion/${MOTION_DEVICE_NAME}/${CN}/image-blend"
+  set MQTT_TOPIC = "$MOTION_DEVICE_DB/${MOTION_DEVICE_NAME}/${CN}/image-blend"
   mosquitto_pub -r -i "$MOTION_DEVICE_NAME" -h "$MOTION_MQTT_HOST" -p "${MOTION_MQTT_PORT}" -t "$MQTT_TOPIC" -f "$blend"
   if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"topic":"'"$MQTT_TOPIC"'"}'
 endif
