@@ -35,12 +35,12 @@ export MOTION_DEVICE_DB="${VALUE}"
 ##
 ## time zone
 ##
-TIMEZONE=$(jq -r ".timezone" "${CONFIG_PATH}")
+VALUE=$(jq -r ".timezone" "${CONFIG_PATH}")
 # Set the correct timezone
-if [ ! -z "${TIMEZONE}" ] && [ "${TIMEZONE}" != "null" ]; then
-  echo "Setting TIMEZONE ${TIMEZONE}" >&2
-  cp /usr/share/zoneinfo/${TIMEZONE} /etc/localtime
-  JSON="${JSON}"',"timezone":"'"${TIMEZONE}"'"'
+if [ ! -z "${VALUE}" ] && [ "${VALUE}" != "null" ]; then
+  echo "Setting TIMEZONE ${VALUE}" >&2
+  cp /usr/share/zoneinfo/${VALUE} /etc/localtime
+  JSON="${JSON}"',"timezone":"'"${VALUE}"'"'
 else
   echo "Time zone not set; continuing" >&2
 fi
@@ -613,6 +613,24 @@ done
 if [ -n "${CAMERAS}" ]; then 
   JSON="${JSON}"',"cameras":'"${CAMERAS}"']'
 fi
+
+# set latitude for events
+VALUE=$(jq -r '.latitude' "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
+echo "Set latitude to ${VALUE}" >&2
+JSON="${JSON}"',"latitude":'"${VALUE}"
+
+# set longitude for events
+VALUE=$(jq -r '.longitude' "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
+echo "Set longitude to ${VALUE}" >&2
+JSON="${JSON}"',"longitude":'"${VALUE}"
+
+# set elevation for events
+VALUE=$(jq -r '.elevation' "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
+echo "Set elevation to ${VALUE}" >&2
+JSON="${JSON}"',"elevation":'"${VALUE}"
 
 # set interval for events
 VALUE=$(jq -r '.interval' "${CONFIG_PATH}")

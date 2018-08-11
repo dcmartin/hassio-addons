@@ -5,13 +5,13 @@ setenv VERBOSE
 
 echo "$0:t $$ -- START $*" >& /dev/stderr
 
-if ($#argv) then
+if ($?CONFIG_PATH == 0 && $#argv) then
   set CONFIG_PATH = "$argv[$#argv]"
-  set DATA_DIR = "$CONFIG_PATH:h"
 else
   if ($?DEBUG) echo "$0:t $$ -- insufficient arguments: $0:t <full-path-to-options.json>" >& /dev/stderr
   exit 
 endif
+set DATA_DIR = "$CONFIG_PATH:h"
 
 if ( ! -s "$CONFIG_PATH") then
   if ($?DEBUG) echo "$0:t $$ -- Cannot find configuration file ($CONFIG_PATH); exiting" >& /dev/stderr
@@ -113,7 +113,8 @@ echo "  view: yes" >> "$out"
 echo "  icon: mdi:home" >> "$out"
 echo "  entities:" >> "$out"
 foreach c ( $cameras )
-echo "    - camera.motion_${c}" >> "$out"
+echo "    - camera.motion_${c}_live" >> "$out"
+echo "    - camera.motion_${c}_image" >> "$out"
 echo "    - camera.motion_${c}_animated" >> "$out"
 echo "    - sensor.motion_${c}_entity_picture" >> "$out"
 echo "    - binary_sensor.motion_notify_${c}" >> "$out"
@@ -303,7 +304,19 @@ echo "" >> "$out"
 
 ## images from this device's cameras
 foreach c ( $cameras )
-  echo "camera motion_${c}:" >> "$out"
+
+if ($?MOTION_JSON_FILE) then
+  set port = ( `jq -r '.cameras[]|select(.name=="'${c}'").port' "$MOTION_JSON_FILE"` )
+  echo "camera motion_${c}_live:" >> "$out"
+  echo "  - platform: mjpeg" >> "$out"
+  echo "    name: motion_${c}_live" >> "$out"
+  echo "    mjpeg_url: http://${www}:${port}" >> "$out"
+  echo "" >> "$out"
+else
+  if ($?DEBUG) echo "$0:t $$ -- MOTION_JSON_FILE environment undefined; skipping live camera" >& /dev/stderr
+endif
+
+  echo "camera motion_${c}_image:" >> "$out"
   echo "  - platform: mqtt" >> "$out"
   echo "    name: motion_${c}" >> "$out"
   echo "    topic: 'motion/+/${c}/image'" >> "$out"
@@ -335,11 +348,18 @@ echo "    - type: picture-entity" >> "$out"
 echo "      entity: camera.motion_${c}_animated" >> "$out"
 end
 echo "  - icon: mdi:webcam" >> "$out"
-echo "    title: CAMERAS" >> "$out"
+echo "    title: IMAGES" >> "$out"
 echo "    cards:" >> "$out"
 foreach c ( $cameras )
 echo "    - type: picture-entity" >> "$out"
-echo "      entity: camera.motion_${c}" >> "$out"
+echo "      entity: camera.motion_${c}_image" >> "$out"
+end
+echo "  - icon: mdi:video" >> "$out"
+echo "    title: LIVE" >> "$out"
+echo "    cards:" >> "$out"
+foreach c ( $cameras )
+echo "    - type: picture-entity" >> "$out"
+echo "      entity: camera.motion_${c}_live" >> "$out"
 end
 echo "  - icon: mdi:toggle-switch" >> "$out"
 echo "    title: SWITCHES" >> "$out"
@@ -351,7 +371,6 @@ foreach c ( $cameras )
 echo "        - input_boolean.motion_notify_${c}" >> "$out"
 end
 echo "" >> "$out"
-
 foreach c ( $cameras )
 echo "motion_notify_${c}:" >> "$out"
 echo "  name: motion_notify_${c}" >> "$out"
