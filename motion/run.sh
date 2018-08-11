@@ -26,10 +26,10 @@ export MOTION_DEVICE_NAME="${VALUE}"
 ##
 ## device db name
 ##
-VALUE=$(jq -r ".device_db" "${CONFIG_PATH}")
+VALUE=$(jq -r ".devicedb" "${CONFIG_PATH}")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="motion"; fi
-echo "Setting device_db ${VALUE} [MOTION_DEVICE_DB]" >&2
-JSON="${JSON}"',"device_db":"'"${VALUE}"'"'
+echo "Setting devicedb ${VALUE} [MOTION_DEVICE_DB]" >&2
+JSON="${JSON}"',"devicedb":"'"${VALUE}"'"'
 export MOTION_DEVICE_DB="${VALUE}"
 
 ##
@@ -697,10 +697,10 @@ if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "
       echo "Failed to create CLOUDANT DB ${MOTION_DEVICE_DB}" >&2
       OFF=TRUE
     else
-      echo "Created CLOUDANT DB motion" >&2
+      echo "Created CLOUDANT DB ${MOTION_DEVICE_DB}" >&2
     fi
   else
-    echo "CLOUDANT DB motion exists" >&2
+    echo "CLOUDANT DB ${MOTION_DEVICE_DB} exists" >&2
   fi
   if [ -s "${MOTION_JSON_FILE}" ] && [ -z "${OFF}" ]; then
     URL="${URL}/${MOTION_DEVICE_NAME}"
