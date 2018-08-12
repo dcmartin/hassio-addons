@@ -740,10 +740,11 @@ mkyaml.sh "${CONFIG_PATH}"
 
 # reload configuration
 VALUE=$(jq -r ".reload" "${CONFIG_PATH}")
-if [ "${VALUE}" == "true" ]; then 
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="false"; fi
+if [ "${VALUE}" != "false" ]; then 
   echo "Re-defining configuration YAML (${VALUE})" >&2
   JSON="${JSON}"',"reload":'"${VALUE}"
-  rlyaml.sh "${HASSIO_TOKEN}" "${VALUE}"
+  rlyaml.sh "${VALUE}"
 else
   echo "Not re-defining configuration YAML (${VALUE})" >&2
 fi

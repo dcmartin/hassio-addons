@@ -2,82 +2,109 @@
 
 echo "$0:t $$ -- START $*" >& /dev/stderr
 
+## TEST ENVIRONMENT
+if ($?CONFIG_PATH == 0) then
+  echo "$0:t $$ -- [ERROR] no CONFIG_PATH environment; exiting" >& /dev/stderr
+  goto done
+endif
+setenv CONFIG_DIR /config
+
 if ($?HASSIO_TOKEN == 0) then
-  if ("${1}" == "") then
-    echo "$0:t $$ -- [ERROR] No HASSIO_TOKEN; please specify home-assistant password on command line; exiting"
-    exit
+  if ($#argv > 1) then
+    set HASSIO_PASSWORD = "$argv[2]"
+  else
+    echo "$0:t $$ -- [WARN] No HASSIO_TOKEN; no HASSIO_PASSWORD specified on command line" >& /dev/stderr
   endif
-  set HASSIO_PASSWORD = "${1}"
 endif
 
-set DATA_DIR = $CONFIG_PATH:h
+## HANDLE ARGS
+if ($#argv) then
+  set RELOAD = ( $argv )
+endif
+if ($?RELOAD == 0) then
+  echo "$0:t $$ -- [ERROR] insufficient arguments; please specify reload (true, false, lovelace); exiting" >& /dev/stderr
+  goto done
+endif
 
-# core modules require core reload
 ## GET COMPONENTS
-set components = ( `echo $DATA_DIR/*.yaml | sed 's|'"$DATA_DIR"'/\([^\.]*\).yaml|\1|g'` )
+set DATA_DIR = $CONFIG_PATH:h
+set all = ( `echo $DATA_DIR/*.yaml | sed 's|'"$DATA_DIR"'/\([^\.]*\).yaml|\1|g'` )
+if ($#all == 0) then
+  echo "$0:t $$ -- [ERROR] no YAML files found in $DATA_DIR; exiting" >& /dev/stderr
+  goto done
+end
 
-set all = ( $components )
-
-# find which modules can be reloaded
-if ($?HASSIO_TOKEN) then
-  set HASSIO_HOST = "hassio/homeassistant"
-  set reload = ( `curl -s -q -f -L -H "X-HA-ACCESS: ${HASSIO_TOKEN}" "http://${HASSIO_HOST}/api/services" | jq -r '.[]|select(.services.reload.description != null)|.domain'` )
-else if ($#argv) then
-  set HASSIO_HOST = "localhost:8123"
-  set reload = ( `curl -s -q -f -L -H "X-HA-ACCESS: ${HASSIO_PASSWORD}" "http://${HASSIO_HOST}/api/services" | jq -r '.[]|select(.services.reload.description != null)|.domain'` )
-endif
-
-if ($#reload == 0) then
-  echo "$0:t $$ -- [ERROR] Cannot determine modules for reload" >& /dev/stderr
-  set reload = ()
-  set core = ( $all )
+## RELOAD WHAT?
+if ($#RELOAD == 1) then
+  if ($RELOAD == "false") then
+    echo "$0:t $$ -- [INFO] reload is $RELOAD; exiting" >& /dev/stderr
+    goto done
+  else if ($RELOAD == "true" || $RELOAD == "all") then
+    set reload = ( $all )
+  endif
 else
-  set core = ()
-  foreach yf ( $all )
+  set reload = ()
+  foreach rl ( $RELOAD )
     unset found
-    @ i = 1
-    while ($i <= $#reload)
-      if ($yf == $reload[$i]) then
-        set found
+    foreach c ( $components )
+      if ("$rl" == "$c") then
+	set found
 	break
       endif
-      @ i++
     end
-    if ($?found) continue
-    set core = ( $core $yf )
+    if ($?found) then
+      set yf = "$DATA_DIR/${rl}.yaml"
+      if (-e "$yf") then
+        set reload = ( "$rl" $components )
+      else
+        echo "$0:t $$ -- [ERROR] did not find YAML: $yf" >& /dev/stderr
+      endif
+    else 
+      echo "$0:t $$ -- [WARN] no YAML for reload component: $rl" >& /dev/stderr
+    endif
   end
 endif
 
-echo "$0:t $$ -- [INFO] For $#all found $#core core components and $#reload reloadable component(s)" >& /dev/stderr
+echo "$0:t $$ -- [INFO] $#components YAML; requested $#RELOAD; $#reload to reload" >& /dev/stderr
 
+## PROCESS RELOAD
 @ i = 0
-foreach rl ( $reload $core )
+foreach rl ( $reload )
   @ i++
 
-  set current = "/config/${rl}.yaml"
+  set current = "$CONFIG_DIR/${rl}.yaml"
   set reconfig = "$DATA_DIR/${rl}.yaml"
 
-  echo "$0:t $$ -- [INFO] current $current new $reconfig" >& /dev/stderr
+  # remove legacy/extraneous yaml
+  set currents = "$CONFIG_DIR/${rl}s.yaml"; if (-e "$currents") rm "$currents"
 
-  set currents = "/config/${rl}s.yaml"; if (-e "$currents") rm "$currents"
-
-  if (-s "$reconfig") then
-    echo "$0:t $$ -- [INFO] creating YAML ($current) from $reconfig" >& /dev/stderr
-    cat "$reconfig" >! "$current"
-  else if (-s "$current") then
-    echo "$0:t $$ -- [INFO] no reconfig YAML: ${rl}; removing $current" >& /dev/stderr
-    rm -f "$current"
-  else
-    echo "$0:t $$ -- [INFO] no YAML: ${rl}" >& /dev/stderr
-  endif
+  echo -n "$0:t $$ -- [INFO] over-writing $current with $reconfig" >& /dev/stderr
+  cat "$reconfig" >! "$current"
 end
 
-if ($?HASSIO_TOKEN) then
-  echo -n "$0:t $$ -- [INFO] Reloading YAML configuration ... " >& /dev/stderr
-  curl -s -q -f -L -H "X-HA-ACCESS: ${HASSIO_TOKEN}" -X POST -H "Content-Type: application/json" "http://${HASSIO_HOST}/api/services/homeassistant/reload_core_config" >& /dev/null
-  echo "done" >& /dev/stderr
+if ($#reload) then
+  # find which modules can be reloaded
+  if ($?HASSIO_TOKEN) then
+    set HASSIO_HOST = "hassio/homeassistant"
+    set reloadable = ( `curl -s -q -f -L -H "X-HA-ACCESS: ${HASSIO_TOKEN}" "http://${HASSIO_HOST}/api/services" | jq -r '.[]|select(.services.reload.description != null)|.domain'` )
+  else if ($?HASSIO_PASSWORD) then
+    set HASSIO_HOST = "localhost:8123"
+    set reloadable = ( `curl -s -q -f -L -H "X-HA-ACCESS: ${HASSIO_PASSWORD}" "http://${HASSIO_HOST}/api/services" | jq -r '.[]|select(.services.reload.description != null)|.domain'` )
+  else
+    echo "$0:t $$ -- [WARN] no access to HASSIO_HOST; missing environment; no reloadable components" >& /dev/stderr
+  endif
+
+  if ($?HASSIO_TOKEN) then
+    echo -n "$0:t $$ -- [INFO] Reloading core configuration for $HASSIO_HOST ... " >& /dev/stderr
+    curl -s -q -f -L -H "X-HA-ACCESS: ${HASSIO_TOKEN}" -X POST -H "Content-Type: application/json" "http://${HASSIO_HOST}/api/services/homeassistant/reload_core_config" >& /dev/null
+    echo "done" >& /dev/stderr
+  else
+    echo "$0:t $$ -- [WARN] Did not issue reload; no HASSIO_TOKEN" >& /dev/stderr
+  endif
 else
-    echo "$0:t $$ -- [ERROR] Failed to issue reload; no HASSIO_TOKEN" >& /dev/stderr
+  echo "$0:t $$ -- [INFO] Nothing to reload" >& /dev/stderr
 endif
+
+done:
 
 echo "$0:t $$ -- FINISH" >& /dev/stderr
