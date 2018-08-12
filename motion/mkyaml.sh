@@ -55,7 +55,7 @@ if ($?VERBOSE) echo "$0:t $$ -- Found $#cameras cameras on device ${name}: $came
 set c = "sensor"
 set components = ( $components "$c" )
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
-echo "### MOTION $c (auto-generated from $CONFIG_PATH for name $name)" >> "$out"
+echo "### MOTION $c (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
 
 ## sensor for camera picture
 echo "  - platform: template" >> "$out"
@@ -75,7 +75,7 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 set c = "binary_sensor"
 set components = ( $components "$c" )
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
-echo "### MOTION $c (auto-generated from $CONFIG_PATH for name $name)" >> "$out"
+echo "### MOTION $c (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
 
 ## binary_sensor for input_boolean
 echo "- platform: template" >> "$out"
@@ -99,7 +99,7 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 set c = "input_boolean"
 set components = ( $components "$c" )
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
-echo "### MOTION $c (auto-generated from $CONFIG_PATH for name $name)" >> "$out"
+echo "### MOTION $c (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
 
 foreach c ( $cameras )
 echo "motion_notify_${c}:" >> "$out"
@@ -118,7 +118,7 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 set c = "automation"
 set components = ( $components "$c" )
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
-echo "### MOTION $c (auto-generated from $CONFIG_PATH for name $name)" >> "$out"
+echo "### MOTION $c (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
 echo "- id: motion_notify_recognize" >> "$out"
 echo "  alias: motion_notify_recognize" >> "$out"
 echo "  initial_state: on" >> "$out"
@@ -162,7 +162,7 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 
 set c = "configuration"
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
-echo "### MOTION $c (auto-generated from $CONFIG_PATH for name $name)" >> "$out"
+echo "### MOTION $c (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
 ## homeassistant
 echo "homeassistant:" >> "$out"
 echo "  name: $name" >> "$out"
@@ -263,35 +263,6 @@ echo "    name: motion_composite" >> "$out"
 echo "    topic: '"$MOTION_DEVICE_DB"/+/+/image-composite'" >> "$out"
 echo "" >> "$out"
 
-## images from this device's cameras
-# foreach c ( $cameras )
-# 
-# if ($?MOTION_JSON_FILE) then
-#   set port = ( `jq -r '.cameras[]|select(.name=="'${c}'").port' "$MOTION_JSON_FILE"` )
-#   echo "camera motion_${c}_live:" >> "$out"
-#   echo "  - platform: mjpeg" >> "$out"
-#   echo "    name: motion_${c}_live" >> "$out"
-#   echo "    mjpeg_url: http://${www}:${port}" >> "$out"
-#   echo "    authentication: basic" >> "$out"
-#   echo "    username: $username" >> "$out"
-#   echo "    password: $password" >> "$out"
-#   echo "" >> "$out"
-# else
-#   if ($?DEBUG) echo "$0:t $$ -- MOTION_JSON_FILE environment undefined; skipping live camera" >& /dev/stderr
-# endif
-# 
-#   echo "camera motion_${c}_image:" >> "$out"
-#   echo "  - platform: mqtt" >> "$out"
-#   echo "    name: motion_${c}" >> "$out"
-#   echo "    topic: '$MOTION_DEVICE_DB/+/${c}/image'" >> "$out"
-#   echo "" >> "$out"
-#   echo "camera motion_${c}_animated:" >> "$out"
-#   echo "  - platform: mqtt" >> "$out"
-#   echo "    name: motion_${c}_animated" >> "$out"
-#   echo "    topic: '$MOTION_DEVICE_DB/+/${c}/image-animated'" >> "$out"
-#   echo "" >> "$out"
-# end
-
 ##
 ## MAKE ALL CAMERAS
 ##
@@ -342,25 +313,26 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 set c = "group"
 set components = ( $components "$c" )
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
-echo "### MOTION $c (auto-generated from $CONFIG_PATH for name $name)" >> "$out"
+echo "### MOTION $c (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
 
 ## group for motion animated cameras
-echo "### MOTION (auto-generated from $CONFIG_PATH for name $name)" >> "$out"
 echo "default_view:" >> "$out"
 echo "  view: yes" >> "$out"
 echo "  name: Home" >> "$out"
 echo "  control: hidden" >> "$out"
 echo "  icon: mdi:home" >> "$out"
 echo "  entities:" >> "$out"
-echo "    - group.input_boolean" >> "$out"
-foreach c ( $allcameras )
+echo "    - camera.motion_animated" >> "$out"
+foreach c ( $cameras )
+echo "    - input_boolean.motion_notify_${c}" >> "$out"
 echo "    - camera.motion_${c}_image" >> "$out"
+echo "    - camera.motion_${c}_animated" >> "$out"
 end
 echo "" >> "$out"
 
-echo "input_boolean:" >> "$out"
-echo "  view: no" >> "$out"
-echo "  name: input_boolean" >> "$out"
+echo "motion_onoff:" >> "$out"
+echo "  view: yes" >> "$out"
+echo "  name: motion_onoff" >> "$out"
 echo "  control: hidden" >> "$out"
 echo "  entities:" >> "$out"
 foreach c ( $allcameras )
@@ -368,9 +340,9 @@ echo "    - input_boolean.motion_notify_${c}" >> "$out"
 end
 echo "" >> "$out"
 
-echo "animated_view:" >> "$out"
+echo "motion_animated_view:" >> "$out"
 echo "  view: yes" >> "$out"
-echo "  name: animated_view" >> "$out"
+echo "  name: motion_animated_view" >> "$out"
 echo "  control: hidden" >> "$out"
 echo "  icon: mdi:animated" >> "$out"
 echo "  entities:" >> "$out"
@@ -379,9 +351,9 @@ echo "    - camera.motion_${c}_animated" >> "$out"
 end
 echo "" >> "$out"
 
-echo "live_view:" >> "$out"
+echo "motion_live_view:" >> "$out"
 echo "  view: yes" >> "$out"
-echo "  name: live_view" >> "$out"
+echo "  name: motion_live_view" >> "$out"
 echo "  control: hidden" >> "$out"
 echo "  icon: mdi:camera-timer" >> "$out"
 echo "  entities:" >> "$out"
@@ -398,7 +370,7 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 
 set out = "$DATA_DIR/ui-lovelace.yaml"; rm -f "$out"
 
-echo "### MOTION (auto-generated from $CONFIG_PATH for name $name)" >> "$out"
+echo "### MOTION (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
 echo "name: $name" >> "$out"
 echo "" >> "$out"
 echo "views:" >> "$out"
