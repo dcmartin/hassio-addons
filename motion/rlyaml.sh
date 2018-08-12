@@ -14,9 +14,9 @@ set DATA_DIR = $CONFIG_PATH:h
 
 # core modules require core reload
 ## GET COMPONENTS
-set components = ( `echo $DATA_DIR/*.yaml | sed 's|'"$DATA_DIR"'/\(.*\).yaml|\1|g'` )
+set components = ( `echo $DATA_DIR/*.yaml | sed 's|'"$DATA_DIR"'/\([^\.]*\).yaml|\1|g'` )
 
-set all = ( $components "ui-lovelace" )
+set all = ( $components )
 
 # find which modules can be reloaded
 if ($?HASSIO_TOKEN) then
