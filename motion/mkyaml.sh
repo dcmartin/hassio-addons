@@ -93,46 +93,6 @@ echo "" >> "$out"
 echo "$0:t $$ -- processed $out" >& /dev/stderr
 
 ####
-#### group.yaml
-####
-
-set c = "group"
-set components = ( $components "$c" )
-set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
-echo "### MOTION $c (auto-generated from $CONFIG_PATH for name $name)" >> "$out"
-
-## group for motion animated cameras
-echo "### MOTION (auto-generated from $CONFIG_PATH for name $name)" >> "$out"
-echo "default_view:" >> "$out"
-echo "  view: yes" >> "$out"
-echo "  icon: mdi:home" >> "$out"
-echo "  entities:" >> "$out"
-foreach c ( $cameras )
-echo "    - camera.motion_${c}_live" >> "$out"
-echo "    - camera.motion_${c}_image" >> "$out"
-echo "    - camera.motion_${c}_animated" >> "$out"
-echo "    - sensor.motion_${c}_entity_picture" >> "$out"
-echo "    - binary_sensor.motion_notify_${c}" >> "$out"
-echo "    - input_boolean.motion_notify_${c}" >> "$out"
-end
-echo "" >> "$out"
-
-echo "motion_last_view:" >> "$out"
-echo "  view: yes" >> "$out"
-echo "  name: Motion Animated View" >> "$out"
-echo "  icon: mdi:camera-timer" >> "$out"
-echo "  entities:" >> "$out"
-echo "    - camera.motion_last" >> "$out"
-echo "    - camera.motion_animated" >> "$out"
-echo "    - camera.motion_animated_mask" >> "$out"
-echo "    - camera.motion_composite" >> "$out"
-echo "    - camera.motion_average" >> "$out"
-echo "    - camera.motion_blend" >> "$out"
-echo "" >> "$out"
-
-echo "$0:t $$ -- processed $out" >& /dev/stderr
-
-####
 #### input_boolean.yaml
 ####
 
@@ -164,7 +124,7 @@ echo "  alias: motion_notify_recognize" >> "$out"
 echo "  initial_state: on" >> "$out"
 echo "  trigger:" >> "$out"
 echo "    - platform: mqtt" >> "$out"
-echo "      topic: '$MOTION_DEVICE_DB'/+/+/event/recognize'" >> "$out"
+echo "      topic: '"$MOTION_DEVICE_DB"/+/+/event/recognize'" >> "$out"
 echo "  condition:" >> "$out"
 echo "    condition: and" >> "$out"
 echo "    conditions:" >> "$out"
@@ -275,62 +235,62 @@ echo "" >> "$out"
 echo "camera motion_last:" >> "$out"
 echo "  - platform: mqtt" >> "$out"
 echo "    name: motion_last" >> "$out"
-echo "    topic: '$MOTION_DEVICE_DB/+/+/image'" >> "$out"
+echo "    topic: '"$MOTION_DEVICE_DB"/+/+/image'" >> "$out"
 echo "" >> "$out"
 echo "camera motion_animated:" >> "$out"
 echo "  - platform: mqtt" >> "$out"
 echo "    name: motion_animated" >> "$out"
-echo "    topic: '$MOTION_DEVICE_DB/+/+/image-animated'" >> "$out"
+echo "    topic: '"$MOTION_DEVICE_DB"/+/+/image-animated'" >> "$out"
 echo "" >> "$out"
 echo "camera motion_average:" >> "$out"
 echo "  - platform: mqtt" >> "$out"
 echo "    name: motion_average" >> "$out"
-echo "    topic: '$MOTION_DEVICE_DB/+/+/image-average'" >> "$out"
+echo "    topic: '"$MOTION_DEVICE_DB"/+/+/image-average'" >> "$out"
 echo "" >> "$out"
 echo "camera motion_blend:" >> "$out"
 echo "  - platform: mqtt" >> "$out"
 echo "    name: motion_blend" >> "$out"
-echo "    topic: '$MOTION_DEVICE_DB/+/+/image-blend'" >> "$out"
+echo "    topic: '"$MOTION_DEVICE_DB"/+/+/image-blend'" >> "$out"
 echo "" >> "$out"
 echo "camera motion_animated_mask:" >> "$out"
 echo "  - platform: mqtt" >> "$out"
 echo "    name: motion_animated_mask" >> "$out"
-echo "    topic: '$MOTION_DEVICE_DB/+/+/image-animated-mask'" >> "$out"
+echo "    topic: '"$MOTION_DEVICE_DB"/+/+/image-animated-mask'" >> "$out"
 echo "" >> "$out"
 echo "camera motion_composite:" >> "$out"
 echo "  - platform: mqtt" >> "$out"
 echo "    name: motion_composite" >> "$out"
-echo "    topic: '$MOTION_DEVICE_DB/+/+/image-composite'" >> "$out"
+echo "    topic: '"$MOTION_DEVICE_DB"/+/+/image-composite'" >> "$out"
 echo "" >> "$out"
 
 ## images from this device's cameras
-foreach c ( $cameras )
-
-if ($?MOTION_JSON_FILE) then
-  set port = ( `jq -r '.cameras[]|select(.name=="'${c}'").port' "$MOTION_JSON_FILE"` )
-  echo "camera motion_${c}_live:" >> "$out"
-  echo "  - platform: mjpeg" >> "$out"
-  echo "    name: motion_${c}_live" >> "$out"
-  echo "    mjpeg_url: http://${www}:${port}" >> "$out"
-  echo "    authentication: basic" >> "$out"
-  echo "    username: $username" >> "$out"
-  echo "    password: $password" >> "$out"
-  echo "" >> "$out"
-else
-  if ($?DEBUG) echo "$0:t $$ -- MOTION_JSON_FILE environment undefined; skipping live camera" >& /dev/stderr
-endif
-
-  echo "camera motion_${c}_image:" >> "$out"
-  echo "  - platform: mqtt" >> "$out"
-  echo "    name: motion_${c}" >> "$out"
-  echo "    topic: '$MOTION_DEVICE_DB/+/${c}/image'" >> "$out"
-  echo "" >> "$out"
-  echo "camera motion_${c}_animated:" >> "$out"
-  echo "  - platform: mqtt" >> "$out"
-  echo "    name: motion_${c}_animated" >> "$out"
-  echo "    topic: '$MOTION_DEVICE_DB/+/${c}/image-animated'" >> "$out"
-  echo "" >> "$out"
-end
+# foreach c ( $cameras )
+# 
+# if ($?MOTION_JSON_FILE) then
+#   set port = ( `jq -r '.cameras[]|select(.name=="'${c}'").port' "$MOTION_JSON_FILE"` )
+#   echo "camera motion_${c}_live:" >> "$out"
+#   echo "  - platform: mjpeg" >> "$out"
+#   echo "    name: motion_${c}_live" >> "$out"
+#   echo "    mjpeg_url: http://${www}:${port}" >> "$out"
+#   echo "    authentication: basic" >> "$out"
+#   echo "    username: $username" >> "$out"
+#   echo "    password: $password" >> "$out"
+#   echo "" >> "$out"
+# else
+#   if ($?DEBUG) echo "$0:t $$ -- MOTION_JSON_FILE environment undefined; skipping live camera" >& /dev/stderr
+# endif
+# 
+#   echo "camera motion_${c}_image:" >> "$out"
+#   echo "  - platform: mqtt" >> "$out"
+#   echo "    name: motion_${c}" >> "$out"
+#   echo "    topic: '$MOTION_DEVICE_DB/+/${c}/image'" >> "$out"
+#   echo "" >> "$out"
+#   echo "camera motion_${c}_animated:" >> "$out"
+#   echo "  - platform: mqtt" >> "$out"
+#   echo "    name: motion_${c}_animated" >> "$out"
+#   echo "    topic: '$MOTION_DEVICE_DB/+/${c}/image-animated'" >> "$out"
+#   echo "" >> "$out"
+# end
 
 ##
 ## MAKE ALL CAMERAS
@@ -352,7 +312,7 @@ if (-s "$json") then
 	echo "camera motion_${c}_animated:" >> "$out"
 	echo "  - platform: mqtt" >> "$out"
 	echo "    name: motion_${c}_animated" >> "$out"
-	echo "    topic: '$MOTION_DEVICE_DB/${d}/${c}/image-animated'" >> "$out"
+	echo "    topic: '"$MOTION_DEVICE_DB/${d}/${c}"/image-animated'" >> "$out"
 	echo "" >> "$out"
         set allcameras = ( $allcameras $c )
       end
@@ -372,6 +332,63 @@ else
   if ($?DEBUG) echo "$0:t $$ -- No devices for ${MOTION_DEVICE_DB}" >& /dev/stderr
 endif
 rm -f "$json"
+
+echo "$0:t $$ -- processed $out" >& /dev/stderr
+
+####
+#### group.yaml
+####
+
+set c = "group"
+set components = ( $components "$c" )
+set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
+echo "### MOTION $c (auto-generated from $CONFIG_PATH for name $name)" >> "$out"
+
+## group for motion animated cameras
+echo "### MOTION (auto-generated from $CONFIG_PATH for name $name)" >> "$out"
+echo "default_view:" >> "$out"
+echo "  view: yes" >> "$out"
+echo "  name: Home" >> "$out"
+echo "  control: hidden" >> "$out"
+echo "  icon: mdi:home" >> "$out"
+echo "  entities:" >> "$out"
+echo "    - group.input_boolean" >> "$out"
+foreach c ( $allcameras )
+echo "    - camera.motion_${c}_image" >> "$out"
+end
+echo "" >> "$out"
+
+echo "input_boolean:" >> "$out"
+echo "  view: no" >> "$out"
+echo "  name: input_boolean" >> "$out"
+echo "  control: hidden" >> "$out"
+echo "  entities:" >> "$out"
+foreach c ( $allcameras )
+echo "    - input_boolean.motion_notify_${c}" >> "$out"
+end
+echo "" >> "$out"
+
+echo "animated_view:" >> "$out"
+echo "  view: yes" >> "$out"
+echo "  name: animated_view" >> "$out"
+echo "  control: hidden" >> "$out"
+echo "  icon: mdi:animated" >> "$out"
+echo "  entities:" >> "$out"
+foreach c ( $allcameras )
+echo "    - camera.motion_${c}_animated" >> "$out"
+end
+echo "" >> "$out"
+
+echo "live_view:" >> "$out"
+echo "  view: yes" >> "$out"
+echo "  name: live_view" >> "$out"
+echo "  control: hidden" >> "$out"
+echo "  icon: mdi:camera-timer" >> "$out"
+echo "  entities:" >> "$out"
+foreach c ( $allcameras )
+echo "    - camera.motion_${c}_live" >> "$out"
+end
+echo "" >> "$out"
 
 echo "$0:t $$ -- processed $out" >& /dev/stderr
 
