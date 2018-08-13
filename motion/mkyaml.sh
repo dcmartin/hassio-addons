@@ -181,7 +181,7 @@ echo "  base_url: http://${www}:${port}" >> "$out"
 echo "" >> "$out"
 ## additional built-in packages
 echo "## PACKAGES" >> "$out"
- echo "hassio:" >> "$out"
+echo "hassio:" >> "$out"
 echo "frontend:" >> "$out"
 echo "config:" >> "$out"
 echo "history:" >> "$out"
@@ -310,7 +310,6 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 group:
 
 set c = "group"
-set components = ( $components "$c" )
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
 echo "### MOTION $c (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
 
