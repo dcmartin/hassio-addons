@@ -31,7 +31,7 @@ set username = ( `jq -r ".username" "$CONFIG_PATH"` )
 set www = ( `jq -r ".www" "$CONFIG_PATH"` )
 
 ## initialize components to !include at the end
-set components = ()
+set components =  ( "group" )
 
 ## find cameras
 if (-s "$CONFIG_PATH") then
@@ -253,6 +253,8 @@ echo "" >> "$out"
 ##
 
 set allcameras = ()
+if ($?MOTION_CLOUDANT_URL == 0) goto group
+
 set json = "/tmp/$0:t.$$.json"
 curl -s -q -f -L "$MOTION_CLOUDANT_URL/${MOTION_DEVICE_DB}/_all_docs?include_docs=true" -o $json
 if (-s "$json") then
@@ -294,6 +296,8 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 ####
 #### group.yaml
 ####
+
+group:
 
 set c = "group"
 set components = ( $components "$c" )
