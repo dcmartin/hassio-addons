@@ -220,13 +220,13 @@ echo "Set log_level to ${VALUE}" >&2
 sed -i "s/.*log_level\s[0-9]\+/log_level ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"log_level":'"${VALUE}"
 
-# set v412_pallette
-VALUE=$(jq -r ".v412_pallette" "${CONFIG_PATH}")
+# set v4l2_pallette
+VALUE=$(jq -r ".v4l2_pallette" "${CONFIG_PATH}")
 if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
-  echo "Set v412_pallette to ${VALUE}" >&2
-  sed -i "s/.*v412_pallette\s[0-9]\+/v412_pallette ${VALUE}/" "${MOTION_CONF}"
+  echo "Set v4l2_pallette to ${VALUE}" >&2
+  sed -i "s/.*v4l2_pallette\s[0-9]\+/v4l2_pallette ${VALUE}/" "${MOTION_CONF}"
 fi
-MOTION="${MOTION}"',"v412_pallette":'"${VALUE}"
+MOTION="${MOTION}"',"v4l2_pallette":'"${VALUE}"
 
 # set pre_capture
 VALUE=$(jq -r ".pre_capture" "${CONFIG_PATH}")
@@ -523,7 +523,7 @@ for (( i=0; i<ncamera ; i++)) ; do
     if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="17"; fi
     echo "Set palette to ${VALUE}" >&2
     CAMERAS="${CAMERAS}"',"device":"'"${VALUE}"'"'
-    echo "v412_palette ${VALUE}" >> "${CAMERA_CONF}"
+    echo "v4l2_palette ${VALUE}" >> "${CAMERA_CONF}"
   else
     # HANDLE NETCAM
     VALUE=$(jq -r '.cameras['${i}'].url' "${CONFIG_PATH}")
