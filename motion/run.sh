@@ -4,7 +4,6 @@ echo $(date) "$0 $*" >&2
 
 if [ ! -s "${CONFIG_PATH}" ]; then
   echo "Cannot find options ${CONFIG_PATH}; exiting" >&2
-  ls -al /data >&2
   exit
 fi
 

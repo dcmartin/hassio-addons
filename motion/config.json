@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.3.74",
+  "version": "0.3.75",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -74,7 +74,7 @@
     "email":"root@hassio.local",
     "timezone": "America/Los_Angeles",
     "unit_system":"imperial",
-    "reload": false,
+    "reload": "false",
     "cloudant":{ "url": "", "username": "", "password": "" },
     "watson": {"url": "", "apikey": "", "classifier": "", "date": "", "version": ""},
     "digits": {"url": "","jobid": ""},
@@ -159,7 +159,7 @@
     "interval": "int?",
     "post_pictures": "str?",
     "minimum_animate": "int?",
-    "reload": "bool?",
+    "reload": "str?",
     "target_dir": "str?",
     "share_dir": "str?"
   }
