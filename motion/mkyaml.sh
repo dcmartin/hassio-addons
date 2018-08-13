@@ -272,6 +272,11 @@ if (-s "$json") then
 	echo "    name: motion_${c}_animated" >> "$out"
 	echo "    topic: '"$MOTION_DEVICE_DB/${d}/${c}"/image-animated'" >> "$out"
 	echo "" >> "$out"
+	echo "camera motion_${c}_image:" >> "$out"
+	echo "  - platform: mqtt" >> "$out"
+	echo "    name: motion_${c}_image" >> "$out"
+	echo "    topic: '"$MOTION_DEVICE_DB/${d}/${c}"/image'" >> "$out"
+	echo "" >> "$out"
         set allcameras = ( $allcameras $c )
       end
     else
@@ -282,6 +287,11 @@ if (-s "$json") then
       echo "  - platform: mqtt" >> "$out"
       echo "    name: motion_${c}_animated" >> "$out"
       echo "    topic: 'image-animated/"${c}"'" >> "$out"
+      echo "" >> "$out"
+      echo "camera motion_${c}_image:" >> "$out"
+      echo "  - platform: mqtt" >> "$out"
+      echo "    name: motion_${c}_image" >> "$out"
+      echo "    topic: 'image/"${c}"'" >> "$out"
       echo "" >> "$out"
       set allcameras = ( $allcameras $c )
     endif
