@@ -22,6 +22,12 @@ echo "Setting name ${VALUE} [MOTION_DEVICE_NAME]" >&2
 JSON="${JSON}"'"name":"'"${VALUE}"'","date":'$(/bin/date +%s)
 export MOTION_DEVICE_NAME="${VALUE}"
 
+## web
+VALUE=$(jq -r ".www" "${CONFIG_PATH}")
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="${MOTION_DEVICE_NAME}.local"; fi
+echo "Setting www ${VALUE}" >&2
+JSON="${JSON}"',"www":"'"${VALUE}"'"'
+
 ##
 ## device db name
 ##
