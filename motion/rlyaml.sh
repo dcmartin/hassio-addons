@@ -35,35 +35,36 @@ if ($#all == 0) then
 endif
 
 ## RELOAD WHAT?
+set reload = ()
 if ($#RELOAD == 1) then
   if ($RELOAD == "false") then
     echo "$0:t $$ -- [INFO] reload is $RELOAD; exiting" >& /dev/stderr
     goto done
   else if ($RELOAD == "true" || $RELOAD == "all") then
-    set reload = ( $all )
+    set RELOAD = ( $all )
+  else
+    echo "$0:t $$ -- [INFO] reload is $RELOAD; continuing" >& /dev/stderr
   endif
-else
-  set reload = ()
-  foreach rl ( $RELOAD )
-    unset found
-    foreach c ( $all )
-      if ("$rl" == "$c") then
-	set found
-	break
-      endif
-    end
-    if ($?found) then
-      set yf = "$DATA_DIR/${rl}.yaml"
-      if (-e "$yf") then
-        set reload = ( "$rl" $reload )
-      else
-        echo "$0:t $$ -- [ERROR] did not find YAML: $yf" >& /dev/stderr
-      endif
-    else 
-      echo "$0:t $$ -- [WARN] no YAML for reload component: $rl" >& /dev/stderr
+endif
+foreach rl ( $RELOAD )
+  unset found
+  foreach c ( $all )
+    if ("$rl" == "$c") then
+      set found
+      break
     endif
   end
-endif
+  if ($?found) then
+    set yf = "$DATA_DIR/${rl}.yaml"
+    if (-e "$yf") then
+      set reload = ( "$rl" $reload )
+    else
+      echo "$0:t $$ -- [ERROR] did not find YAML: $yf" >& /dev/stderr
+    endif
+  else 
+    echo "$0:t $$ -- [WARN] no YAML for reload component: $rl" >& /dev/stderr
+  endif
+end
 
 echo "$0:t $$ -- [INFO] $#all YAML; requested $#RELOAD; reloading $#reload components" >& /dev/stderr
 
