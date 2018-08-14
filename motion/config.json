@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.3.89",
+  "version": "0.3.90",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -69,7 +69,7 @@
     "name":"default",
     "username": null,
     "password": null,
-    "www":"hassio.local",
+    "www":"homeassistant",
     "port":7999,
     "email":"root@hassio.local",
     "timezone": "America/Los_Angeles",
