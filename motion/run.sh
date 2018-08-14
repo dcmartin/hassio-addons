@@ -621,7 +621,7 @@ fi
 VALUE=$(jq -r '.unit_system' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="imperial"; fi
 echo "Set unit_system to ${VALUE}" >&2
-JSON="${JSON}"',"unit_system":'"${VALUE}"
+JSON="${JSON}"',"unit_system":"'"${VALUE}"'"'
 
 # set latitude for events
 VALUE=$(jq -r '.latitude' "${CONFIG_PATH}")
