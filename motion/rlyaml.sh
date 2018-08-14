@@ -46,7 +46,7 @@ else
   set reload = ()
   foreach rl ( $RELOAD )
     unset found
-    foreach c ( $components )
+    foreach c ( $all )
       if ("$rl" == "$c") then
 	set found
 	break
@@ -55,7 +55,7 @@ else
     if ($?found) then
       set yf = "$DATA_DIR/${rl}.yaml"
       if (-e "$yf") then
-        set reload = ( "$rl" $components )
+        set reload = ( "$rl" $reload )
       else
         echo "$0:t $$ -- [ERROR] did not find YAML: $yf" >& /dev/stderr
       endif
@@ -65,7 +65,7 @@ else
   end
 endif
 
-echo "$0:t $$ -- [INFO] $#components YAML; requested $#RELOAD; $#reload to reload" >& /dev/stderr
+echo "$0:t $$ -- [INFO] $#all YAML; requested $#RELOAD; reloading $#reload components" >& /dev/stderr
 
 ## PROCESS RELOAD
 @ i = 0
