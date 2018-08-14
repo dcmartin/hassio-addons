@@ -55,7 +55,7 @@ if ($?VERBOSE) echo "$0:t $$ -- Found $#cameras cameras on device ${name}: $came
 set c = "sensor"
 set components = ( $components "$c" )
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
-echo "### MOTION $c (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
+echo "### MOTION $c ["`date`"] (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
 
 ## sensor for camera picture
 echo "  - platform: template" >> "$out"
@@ -75,7 +75,7 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 set c = "binary_sensor"
 set components = ( $components "$c" )
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
-echo "### MOTION $c (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
+echo "### MOTION $c ["`date`"] (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
 
 ## binary_sensor for input_boolean
 echo "- platform: template" >> "$out"
@@ -99,7 +99,7 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 set c = "input_boolean"
 set components = ( $components "$c" )
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
-echo "### MOTION $c (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
+echo "### MOTION $c ["`date`"] (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
 
 foreach c ( $cameras )
 echo "motion_notify_${c}:" >> "$out"
@@ -118,7 +118,7 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 set c = "automation"
 set components = ( $components "$c" )
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
-echo "### MOTION $c (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
+echo "### MOTION $c ["`date`"] (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
 echo "- id: motion_notify_recognize" >> "$out"
 echo "  alias: motion_notify_recognize" >> "$out"
 echo "  initial_state: on" >> "$out"
@@ -162,7 +162,7 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 
 set c = "configuration"
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
-echo "### MOTION $c (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
+echo "### MOTION $c ["`date`"] (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
 ## homeassistant
 echo "homeassistant:" >> "$out"
 echo "  name: $name" >> "$out"
@@ -311,7 +311,7 @@ group:
 
 set c = "group"
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
-echo "### MOTION $c (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
+echo "### MOTION $c ["`date`"] (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
 
 ## group for motion animated cameras
 echo "default_view:" >> "$out"
@@ -356,7 +356,7 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 
 set out = "$DATA_DIR/ui-lovelace.yaml"; rm -f "$out"
 
-echo "### MOTION (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
+echo "### MOTION $c ["`date`"] (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
 echo "name: $name" >> "$out"
 echo "" >> "$out"
 echo "views:" >> "$out"
