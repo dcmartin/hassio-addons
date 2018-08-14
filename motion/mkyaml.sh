@@ -268,7 +268,7 @@ if (-s "$json") then
       foreach c ( $devcams )
         if ($?VERBOSE) echo "$0:t $$ -- Motion device ${d} at location $c" >& /dev/stderr
         set www = ( `jq -r '.rows[]?|select(.doc.name=="'${d}'").doc.www' "$json"` )
-        set port = ( `jq -r '.rows[]?|select(.doc.name=="'${d}'").doc.cameras[]?.port' "$json"` )
+        set port = ( `jq -r '.rows[]?|select(.doc.name=="'${d}'").doc.cameras[]?|select(.name=="'${c}'").port' "$json"` )
 	echo "camera motion_${c}_animated:" >> "$out"
 	echo "  - platform: mqtt" >> "$out"
 	echo "    name: motion_${c}_animated" >> "$out"
