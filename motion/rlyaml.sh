@@ -78,7 +78,7 @@ foreach rl ( $reload )
   # remove legacy/extraneous yaml
   set currents = "$CONFIG_DIR/${rl}s.yaml"; if (-e "$currents") rm "$currents"
 
-  echo -n "$0:t $$ -- [INFO] over-writing $current with $reconfig" >& /dev/stderr
+  echo "$0:t $$ -- [INFO] over-writing $current with $reconfig" >& /dev/stderr
   cat "$reconfig" >! "$current"
 end
 
