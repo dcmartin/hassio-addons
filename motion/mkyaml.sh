@@ -267,6 +267,7 @@ if (-s "$json") then
       if ($?VERBOSE) echo "$0:t $$ -- Found $#devcams cameras for device $d" >& /dev/stderr
       foreach c ( $devcams )
         if ($?VERBOSE) echo "$0:t $$ -- Motion device ${d} at location $c" >& /dev/stderr
+        set port = ( `jq -r '.rows[]?|select(.doc.name=="'${d}'").doc.cameras[]?.port' "$json"` )
 	echo "camera motion_${c}_animated:" >> "$out"
 	echo "  - platform: mqtt" >> "$out"
 	echo "    name: motion_${c}_animated" >> "$out"
@@ -276,6 +277,13 @@ if (-s "$json") then
 	echo "  - platform: mqtt" >> "$out"
 	echo "    name: motion_${c}_image" >> "$out"
 	echo "    topic: '"$MOTION_DEVICE_DB/${d}/${c}"/image'" >> "$out"
+	echo "" >> "$out"
+	echo "camera motion_${c}_live:" >> "$out"
+	echo "  - platform: mjpeg" >> "$out"
+	echo "    name: motion_${c}_live" >> "$out"
+	echo "    mjpeg_url: http://'"${www}:${port}" >> "$out"
+	echo "    username: $username" >> "$out"
+	echo "    password: $password" >> "$out"
 	echo "" >> "$out"
         set allcameras = ( $allcameras $c )
       end
@@ -332,14 +340,14 @@ echo "  view: yes" >> "$out"
 echo "  name: motion_onoff" >> "$out"
 echo "  control: hidden" >> "$out"
 echo "  entities:" >> "$out"
-foreach c ( $allcameras )
+foreach c ( $cameras )
 echo "    - input_boolean.motion_notify_${c}" >> "$out"
 end
 echo "" >> "$out"
 
-echo "motion_animated_view:" >> "$out"
+echo "motion_animated:" >> "$out"
 echo "  view: yes" >> "$out"
-echo "  name: motion_animated_view" >> "$out"
+echo "  name: motion_animated" >> "$out"
 echo "  control: hidden" >> "$out"
 echo "  icon: mdi:animated" >> "$out"
 echo "  entities:" >> "$out"
@@ -363,21 +371,21 @@ echo "views:" >> "$out"
 echo "  - icon: mdi:animation" >> "$out"
 echo "    title: ANIMATIONS" >> "$out"
 echo "    cards:" >> "$out"
-foreach c ( $allcameras )
+foreach c ( $cameras )
 echo "    - type: picture-entity" >> "$out"
 echo "      entity: camera.motion_${c}_animated" >> "$out"
 end
 echo "  - icon: mdi:webcam" >> "$out"
 echo "    title: IMAGES" >> "$out"
 echo "    cards:" >> "$out"
-foreach c ( $allcameras )
+foreach c ( $cameras )
 echo "    - type: picture-entity" >> "$out"
 echo "      entity: camera.motion_${c}_image" >> "$out"
 end
 echo "  - icon: mdi:video" >> "$out"
 echo "    title: LIVE" >> "$out"
 echo "    cards:" >> "$out"
-foreach c ( $allcameras )
+foreach c ( $cameras )
 echo "    - type: picture-entity" >> "$out"
 echo "      entity: camera.motion_${c}_live" >> "$out"
 end
@@ -387,11 +395,11 @@ echo "    cards:" >> "$out"
 echo "    - type: entities" >> "$out"
 echo "      title: Controls" >> "$out"
 echo "      entities:" >> "$out"
-foreach c ( $allcameras )
+foreach c ( $cameras )
 echo "        - input_boolean.motion_notify_${c}" >> "$out"
 end
 echo "" >> "$out"
-foreach c ( $allcameras )
+foreach c ( $cameras )
 echo "motion_notify_${c}:" >> "$out"
 echo "  name: motion_notify_${c}" >> "$out"
 echo "  initial: false" >> "$out"
