@@ -29,6 +29,8 @@ set timezone = ( `jq -r ".timezone" "$CONFIG_PATH"` )
 set unit_system = ( `jq -r ".unit_system" "$CONFIG_PATH"` )
 set username = ( `jq -r ".username" "$CONFIG_PATH"` )
 set www = ( `jq -r ".www" "$CONFIG_PATH"` )
+set mqtt_host = ( `jq -r ".mqtt.host" "$CONFIG_PATH"` )
+set mqtt_port = ( `jq -r ".mqtt.port" "$CONFIG_PATH"` )
 
 ## initialize components to !include at the end
 set components =  ( "group" )
@@ -165,10 +167,10 @@ echo "### MOTION $c ["`date`"] (auto-generated from $CONFIG_PATH for name $name;
 ## homeassistant
 echo "homeassistant:" >> "$out"
 echo "  name: $name" >> "$out"
-if ($#latitude && $latitude != "null") echo "  latitude: $latitude" >> "$out"
-if ($#longitude && $longitude != "null") echo "  longitude: $longitude" >> "$out"
-if ($#elevation && $elevation != "null") echo "  elevation: $elevation" >> "$out"
-if ($#unit_system && $unit_system != "null") echo "  unit_system: $unit_system" >> "$out"
+echo "  latitude: $latitude" >> "$out"
+echo "  longitude: $longitude" >> "$out"
+echo "  elevation: $elevation" >> "$out"
+echo "  unit_system: $unit_system" >> "$out"
 echo "  time_zone: $timezone" >> "$out"
 echo "" >> "$out"
 ## Web front-end
@@ -194,11 +196,9 @@ echo "" >> "$out"
 ## solar
 echo "## SUN" >> "$out"
 echo "sun:" >> "$out"
-if ($#elevation && $elevation != "null") echo "  elevation: $elevation" >> "$out"
+echo "  elevation: $elevation" >> "$out"
 echo "" >> "$out"
 ## mqtt
-set mqtt_host = ( `jq -r ".mqtt.host" "$CONFIG_PATH"` )
-set mqtt_port = ( `jq -r ".mqtt.port" "$CONFIG_PATH"` )
 echo "" >> "$out"
 echo "## MQTT" >> "$out"
 echo "mqtt:" >> "$out"
@@ -278,10 +278,16 @@ if (-s "$json") then
 	echo "    name: motion_${c}_image" >> "$out"
 	echo "    topic: '"$MOTION_DEVICE_DB/${d}/${c}"/image'" >> "$out"
 	echo "" >> "$out"
+        if ("$d" == "$name") then
+	  set mjpeg_url = "http://homeassistant:${port}"
+	else
+	  set mjpeg_url = "http://${www}:${port}"
+	endif
+        if ($?VERBOSE) echo "$0:t $$ -- Live camera URL for device ${d} camera ${c}: $mjpeg_url" >& /dev/stderr
 	echo "camera motion_${c}_live:" >> "$out"
 	echo "  - platform: mjpeg" >> "$out"
 	echo "    name: motion_${c}_live" >> "$out"
-	echo "    mjpeg_url: http://${www}:${port}" >> "$out"
+	echo "    mjpeg_url: $mjpeg_url" >> "$out"
 	echo "    username: $username" >> "$out"
 	echo "    password: $password" >> "$out"
 	echo "" >> "$out"

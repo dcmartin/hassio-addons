@@ -42,13 +42,10 @@ export MOTION_DEVICE_DB="${VALUE}"
 ##
 VALUE=$(jq -r ".timezone" "${CONFIG_PATH}")
 # Set the correct timezone
-if [ ! -z "${VALUE}" ] && [ "${VALUE}" != "null" ]; then
-  echo "Setting TIMEZONE ${VALUE}" >&2
-  cp /usr/share/zoneinfo/${VALUE} /etc/localtime
-  JSON="${JSON}"',"timezone":"'"${VALUE}"'"'
-else
-  echo "Time zone not set; continuing" >&2
-fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="GMT"; fi
+echo "Setting TIMEZONE ${VALUE}" >&2
+cp /usr/share/zoneinfo/${VALUE} /etc/localtime
+JSON="${JSON}"',"timezone":"'"${VALUE}"'"'
 
 ## MQTT
 # local MQTT server (hassio addon)
@@ -619,6 +616,12 @@ done
 if [ -n "${CAMERAS}" ]; then 
   JSON="${JSON}"',"cameras":'"${CAMERAS}"']'
 fi
+
+# set unit_system for events
+VALUE=$(jq -r '.unit_system' "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="imperial"; fi
+echo "Set unit_system to ${VALUE}" >&2
+JSON="${JSON}"',"unit_system":'"${VALUE}"
 
 # set latitude for events
 VALUE=$(jq -r '.latitude' "${CONFIG_PATH}")
