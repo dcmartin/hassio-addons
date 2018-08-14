@@ -32,7 +32,7 @@ set all = ( `echo $DATA_DIR/*.yaml | sed 's|'"$DATA_DIR"'/\([^\.]*\).yaml|\1|g'`
 if ($#all == 0) then
   echo "$0:t $$ -- [ERROR] no YAML files found in $DATA_DIR; exiting" >& /dev/stderr
   goto done
-end
+endif
 
 ## RELOAD WHAT?
 if ($#RELOAD == 1) then
