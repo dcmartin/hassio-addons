@@ -622,13 +622,13 @@ fi
 
 # set latitude for events
 VALUE=$(jq -r '.latitude' "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0.0; fi
 echo "Set latitude to ${VALUE}" >&2
 JSON="${JSON}"',"latitude":'"${VALUE}"
 
 # set longitude for events
 VALUE=$(jq -r '.longitude' "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0.0; fi
 echo "Set longitude to ${VALUE}" >&2
 JSON="${JSON}"',"longitude":'"${VALUE}"
 
