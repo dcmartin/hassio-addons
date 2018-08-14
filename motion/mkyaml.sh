@@ -105,7 +105,6 @@ foreach c ( $cameras )
 echo "motion_notify_${c}:" >> "$out"
 echo "  name: motion_notify_${c}" >> "$out"
 echo "  initial: false" >> "$out"
-echo "  icon: mdi:${c}" >> "$out"
 echo "" >> "$out"
 end
 
@@ -195,7 +194,7 @@ echo "" >> "$out"
 ## solar
 echo "## SUN" >> "$out"
 echo "sun:" >> "$out"
-echo "  elevation: $elevation" >> "$out"
+if ($#elevation && $elevation != "null") echo "  elevation: $elevation" >> "$out"
 echo "" >> "$out"
 ## mqtt
 set mqtt_host = ( `jq -r ".mqtt.host" "$CONFIG_PATH"` )
@@ -329,16 +328,14 @@ echo "  name: Home" >> "$out"
 echo "  control: hidden" >> "$out"
 echo "  icon: mdi:home" >> "$out"
 echo "  entities:" >> "$out"
-echo "    - camera.motion_image" >> "$out"
-echo "    - camera.motion_animated" >> "$out"
 foreach c ( $cameras )
 echo "    - camera.motion_${c}_animated" >> "$out"
 end
 echo "" >> "$out"
 
-echo "motion_onoff:" >> "$out"
+echo "onoff:" >> "$out"
 echo "  view: yes" >> "$out"
-echo "  name: motion_onoff" >> "$out"
+echo "  name: onoff" >> "$out"
 echo "  control: hidden" >> "$out"
 echo "  entities:" >> "$out"
 foreach c ( $cameras )
@@ -346,11 +343,20 @@ echo "    - input_boolean.motion_notify_${c}" >> "$out"
 end
 echo "" >> "$out"
 
-echo "motion_animated:" >> "$out"
+echo "latest:" >> "$out"
 echo "  view: yes" >> "$out"
-echo "  name: motion_animated" >> "$out"
+echo "  name: latest" >> "$out"
 echo "  control: hidden" >> "$out"
-echo "  icon: mdi:animated" >> "$out"
+echo "  entities:" >> "$out"
+echo "    - camera.motion_image" >> "$out"
+echo "    - camera.motion_animated" >> "$out"
+echo "    - camera.motion_image_animated" >> "$out"
+echo "" >> "$out"
+
+echo "animated:" >> "$out"
+echo "  view: yes" >> "$out"
+echo "  name: animated" >> "$out"
+echo "  control: hidden" >> "$out"
 echo "  entities:" >> "$out"
 foreach c ( $allcameras )
 echo "    - camera.motion_${c}_animated" >> "$out"
@@ -372,14 +378,14 @@ echo "views:" >> "$out"
 echo "  - icon: mdi:animation" >> "$out"
 echo "    title: ANIMATIONS" >> "$out"
 echo "    cards:" >> "$out"
-foreach c ( $cameras )
+foreach c ( $allcameras )
 echo "    - type: picture-entity" >> "$out"
 echo "      entity: camera.motion_${c}_animated" >> "$out"
 end
 echo "  - icon: mdi:webcam" >> "$out"
 echo "    title: IMAGES" >> "$out"
 echo "    cards:" >> "$out"
-foreach c ( $cameras )
+foreach c ( $allcameras )
 echo "    - type: picture-entity" >> "$out"
 echo "      entity: camera.motion_${c}_image" >> "$out"
 end
