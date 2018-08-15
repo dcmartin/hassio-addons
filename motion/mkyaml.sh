@@ -7,45 +7,45 @@ echo "$0:t $$ -- START $*" >& /dev/stderr
 
 set DATA_DIR = "$CONFIG_PATH:h"
 
-if ( ! -s "$CONFIG_PATH") then
-  if ($?DEBUG) echo "$0:t $$ -- Cannot find configuration file ($CONFIG_PATH); exiting" >& /dev/stderr
+if ( ! -s "$MOTION_JSON_FILE") then
+  if ($?DEBUG) echo "$0:t $$ -- Cannot find configuration file ($MOTION_JSON_FILE); exiting" >& /dev/stderr
   exit
 else
-  if ($?VERBOSE) echo "$0:t $$ -- Found configuration JSON file: $CONFIG_PATH" >& /dev/stderr
+  if ($?VERBOSE) echo "$0:t $$ -- Found configuration JSON file: $MOTION_JSON_FILE" >& /dev/stderr
 endif
 
 ####
 #### CORE configuration.yaml
 ####
 
-set devicedb = ( `jq -r ".devicedb" "$CONFIG_PATH"` )
-set name = ( `jq -r ".name" "$CONFIG_PATH"` )
-set elevation = ( `jq -r ".elevation" "$CONFIG_PATH"` )
-set latitude = ( `jq -r ".latitude" "$CONFIG_PATH"` )
-set longitude = ( `jq -r ".longitude" "$CONFIG_PATH"` )
-set password = ( `jq -r ".password" "$CONFIG_PATH"` )
-set port = ( `jq -r ".port" "$CONFIG_PATH"` )
-set timezone = ( `jq -r ".timezone" "$CONFIG_PATH"` )
-set unit_system = ( `jq -r ".unit_system" "$CONFIG_PATH"` )
-set username = ( `jq -r ".username" "$CONFIG_PATH"` )
-set www = ( `jq -r ".www" "$CONFIG_PATH"` )
-set mqtt_host = ( `jq -r ".mqtt.host" "$CONFIG_PATH"` )
-set mqtt_port = ( `jq -r ".mqtt.port" "$CONFIG_PATH"` )
+set devicedb = ( `jq -r ".devicedb" "$MOTION_JSON_FILE"` )
+set name = ( `jq -r ".name" "$MOTION_JSON_FILE"` )
+set elevation = ( `jq -r ".elevation" "$MOTION_JSON_FILE"` )
+set latitude = ( `jq -r ".latitude" "$MOTION_JSON_FILE"` )
+set longitude = ( `jq -r ".longitude" "$MOTION_JSON_FILE"` )
+set password = ( `jq -r ".password" "$MOTION_JSON_FILE"` )
+set port = ( `jq -r ".port" "$MOTION_JSON_FILE"` )
+set timezone = ( `jq -r ".timezone" "$MOTION_JSON_FILE"` )
+set unit_system = ( `jq -r ".unit_system" "$MOTION_JSON_FILE"` )
+set username = ( `jq -r ".username" "$MOTION_JSON_FILE"` )
+set www = ( `jq -r ".www" "$MOTION_JSON_FILE"` )
+set mqtt_host = ( `jq -r ".mqtt.host" "$MOTION_JSON_FILE"` )
+set mqtt_port = ( `jq -r ".mqtt.port" "$MOTION_JSON_FILE"` )
 
 ## initialize components to !include at the end
 set components =  ( "group" )
 
 ## find cameras
-if (-s "$CONFIG_PATH") then
+if (-s "$MOTION_JSON_FILE") then
   set q = '.cameras[]|.name'
-  set cameras = ( `jq -r "$q" $CONFIG_PATH | sort` )
-  set unique = ( `jq -r "$q" $CONFIG_PATH | sort | uniq` )
+  set cameras = ( `jq -r "$q" $MOTION_JSON_FILE | sort` )
+  set unique = ( `jq -r "$q" $MOTION_JSON_FILE | sort | uniq` )
   if ($#unique != $#cameras) then
     if ($?DEBUG) echo "$0:t $$ -- Duplicate camera names ($#cameras vs $#unique); exiting" >& /dev/stderr
     exit
   endif
 else
-  if ($?DEBUG) echo "$0:t $$ -- Unable to find configuration file: $CONFIG_PATH" >& /dev/stderr
+  if ($?DEBUG) echo "$0:t $$ -- Unable to find configuration file: $MOTION_JSON_FILE" >& /dev/stderr
   exit
 endif
 if ($?VERBOSE) echo "$0:t $$ -- Found $#cameras cameras on device ${name}: $cameras" >& /dev/stderr
@@ -57,7 +57,7 @@ if ($?VERBOSE) echo "$0:t $$ -- Found $#cameras cameras on device ${name}: $came
 set c = "sensor"
 set components = ( $components "$c" )
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
-echo "### MOTION $c ["`date`"] (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
+echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; devicedb $devicedb)" >> "$out"
 
 ## sensor for camera picture
 echo "  - platform: template" >> "$out"
@@ -77,7 +77,7 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 set c = "binary_sensor"
 set components = ( $components "$c" )
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
-echo "### MOTION $c ["`date`"] (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
+echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; devicedb $devicedb)" >> "$out"
 
 ## binary_sensor for input_boolean
 echo "- platform: template" >> "$out"
@@ -101,7 +101,7 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 set c = "input_boolean"
 set components = ( $components "$c" )
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
-echo "### MOTION $c ["`date`"] (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
+echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; devicedb $devicedb)" >> "$out"
 
 foreach c ( $cameras )
 echo "motion_notify_${c}:" >> "$out"
@@ -119,7 +119,7 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 set c = "automation"
 set components = ( $components "$c" )
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
-echo "### MOTION $c ["`date`"] (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
+echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; devicedb $devicedb)" >> "$out"
 echo "- id: motion_notify_recognize" >> "$out"
 echo "  alias: motion_notify_recognize" >> "$out"
 echo "  initial_state: on" >> "$out"
@@ -163,7 +163,7 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 
 set c = "configuration"
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
-echo "### MOTION $c ["`date`"] (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
+echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; devicedb $devicedb)" >> "$out"
 ## homeassistant
 echo "homeassistant:" >> "$out"
 echo "  name: $name" >> "$out"
@@ -325,7 +325,7 @@ group:
 
 set c = "group"
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
-echo "### MOTION $c ["`date`"] (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
+echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; devicedb $devicedb)" >> "$out"
 
 ## group for motion animated cameras
 echo "default_view:" >> "$out"
@@ -377,7 +377,7 @@ echo "$0:t $$ -- processed $out" >& /dev/stderr
 
 set out = "$DATA_DIR/ui-lovelace.yaml"; rm -f "$out"
 
-echo "### MOTION $c ["`date`"] (auto-generated from $CONFIG_PATH for name $name; devicedb $devicedb)" >> "$out"
+echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; devicedb $devicedb)" >> "$out"
 echo "name: $name" >> "$out"
 echo "" >> "$out"
 echo "views:" >> "$out"
