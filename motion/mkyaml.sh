@@ -295,20 +295,18 @@ if (-s "$json") then
 	echo "    name: motion_${c}_image" >> "$out"
 	echo "    topic: '"$MOTION_DEVICE_DB/${d}/${c}"/image'" >> "$out"
 	echo "" >> "$out"
-        if ("$d" == "$name") then
+        if ("$d" == "$name" || $?MOTION_CAMERAS_LIVE_ALL) then
 	  set mjpeg_url = "http://${www}:${port}"
-	else
-	  set mjpeg_url = "http://${www}:${port}"
+          if ($?VERBOSE) echo "$0:t $$ -- Live camera URL for device ${d} camera ${c}: $mjpeg_url" >& /dev/stderr
+	  echo "camera motion_${c}_live:" >> "$out"
+	  echo "  - platform: mjpeg" >> "$out"
+	  echo "    name: motion_${c}_live" >> "$out"
+	  echo "    mjpeg_url: $mjpeg_url" >> "$out"
+	  echo "    username: $username" >> "$out"
+	  echo "    password: $password" >> "$out"
+	  echo "" >> "$out"
 	endif
-        if ($?VERBOSE) echo "$0:t $$ -- Live camera URL for device ${d} camera ${c}: $mjpeg_url" >& /dev/stderr
-	echo "camera motion_${c}_live:" >> "$out"
-	echo "  - platform: mjpeg" >> "$out"
-	echo "    name: motion_${c}_live" >> "$out"
-	echo "    mjpeg_url: $mjpeg_url" >> "$out"
-	echo "    username: $username" >> "$out"
-	echo "    password: $password" >> "$out"
-	echo "" >> "$out"
-        set allcameras = ( $allcameras $c )
+	set allcameras = ( $allcameras $c )
       end
     else
       # handle legacy ageathome cameras
