@@ -5,29 +5,46 @@ setenv VERBOSE
 
 echo "$0:t $$ -- START $*" >& /dev/stderr
 
-set DATA_DIR = "$CONFIG_PATH:h"
-
-if ( ! -s "$MOTION_JSON_FILE") then
-  if ($?DEBUG) echo "$0:t $$ -- Cannot find configuration file ($MOTION_JSON_FILE); exiting" >& /dev/stderr
+if ($?CONFIG_PATH == 0) then
+  echo "Environment variable unset: CONFIG_PATH"
   exit
-else
-  if ($?VERBOSE) echo "$0:t $$ -- Found configuration JSON file: $MOTION_JSON_FILE" >& /dev/stderr
 endif
+
+if ($?MOTION_JSON_FILE == 0) then
+  echo "Environment variable unset: MOTION_JSON_FILE"
+  exit
+endif
+
+if ( -s "$MOTION_JSON_FILE") then
+  if ($?VERBOSE) echo "$0:t $$ -- Found configuration JSON file: $MOTION_JSON_FILE" >& /dev/stderr
+  if (-s "$CONFIG_PATH") then
+    if ($?VERBOSE) echo "$0:t $$ -- Found options JSON file: $CONFIG_PATH" >& /dev/stderr
+  else
+    if ($?DEBUG) echo "$0:t $$ -- Cannot find configuration file: $CONFIG_PATH; exiting" >& /dev/stderr
+    exit
+  endif
+else
+  if ($?DEBUG) echo "$0:t $$ -- Cannot find configuration file: $MOTION_JSON_FILE; exiting" >& /dev/stderr
+  exit
+endif
+
+set DATA_DIR = "$CONFIG_PATH:h"
 
 ####
 #### CORE configuration.yaml
 ####
+
+set username = ( `jq -r ".username" "$CONFIG_PATH"` )
+set password = ( `jq -r ".password" "$CONFIG_PATH"` )
 
 set devicedb = ( `jq -r ".devicedb" "$MOTION_JSON_FILE"` )
 set name = ( `jq -r ".name" "$MOTION_JSON_FILE"` )
 set elevation = ( `jq -r ".elevation" "$MOTION_JSON_FILE"` )
 set latitude = ( `jq -r ".latitude" "$MOTION_JSON_FILE"` )
 set longitude = ( `jq -r ".longitude" "$MOTION_JSON_FILE"` )
-set password = ( `jq -r ".password" "$MOTION_JSON_FILE"` )
 set port = ( `jq -r ".port" "$MOTION_JSON_FILE"` )
 set timezone = ( `jq -r ".timezone" "$MOTION_JSON_FILE"` )
 set unit_system = ( `jq -r ".unit_system" "$MOTION_JSON_FILE"` )
-set username = ( `jq -r ".username" "$MOTION_JSON_FILE"` )
 set www = ( `jq -r ".www" "$MOTION_JSON_FILE"` )
 set mqtt_host = ( `jq -r ".mqtt.host" "$MOTION_JSON_FILE"` )
 set mqtt_port = ( `jq -r ".mqtt.port" "$MOTION_JSON_FILE"` )
