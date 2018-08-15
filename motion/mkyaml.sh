@@ -36,13 +36,13 @@ set DATA_DIR = "$CONFIG_PATH:h"
 
 set username = ( `jq -r ".username" "$CONFIG_PATH"` )
 set password = ( `jq -r ".password" "$CONFIG_PATH"` )
+set port = ( `jq -r ".port" "$CONFIG_PATH"` )
 
 set devicedb = ( `jq -r ".devicedb" "$MOTION_JSON_FILE"` )
 set name = ( `jq -r ".name" "$MOTION_JSON_FILE"` )
 set elevation = ( `jq -r ".elevation" "$MOTION_JSON_FILE"` )
 set latitude = ( `jq -r ".latitude" "$MOTION_JSON_FILE"` )
 set longitude = ( `jq -r ".longitude" "$MOTION_JSON_FILE"` )
-set port = ( `jq -r ".port" "$MOTION_JSON_FILE"` )
 set timezone = ( `jq -r ".timezone" "$MOTION_JSON_FILE"` )
 set unit_system = ( `jq -r ".unit_system" "$MOTION_JSON_FILE"` )
 set www = ( `jq -r ".www" "$MOTION_JSON_FILE"` )
