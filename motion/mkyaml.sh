@@ -195,7 +195,7 @@ echo "## FRONT-END" >> "$out"
 echo "http:" >> "$out"
 echo "  api_password: $password" >> "$out"
 # echo "  trusted_networks:" >> "$out"
-echo "  base_url: http://${www}:${port}" >> "$out"
+# echo "  base_url: http://${www}:8123" >> "$out"
 echo "" >> "$out"
 ## additional built-in packages
 echo "## PACKAGES" >> "$out"
@@ -296,7 +296,7 @@ if (-s "$json") then
 	echo "    topic: '"$MOTION_DEVICE_DB/${d}/${c}"/image'" >> "$out"
 	echo "" >> "$out"
         if ("$d" == "$name") then
-	  set mjpeg_url = "http://homeassistant:${port}"
+	  set mjpeg_url = "http://${www}:${port}"
 	else
 	  set mjpeg_url = "http://${www}:${port}"
 	endif
