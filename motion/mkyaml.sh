@@ -38,16 +38,17 @@ set username = ( `jq -r ".username" "$CONFIG_PATH"` )
 set password = ( `jq -r ".password" "$CONFIG_PATH"` )
 set port = ( `jq -r ".port" "$CONFIG_PATH"` )
 
-set devicedb = ( `jq -r ".devicedb" "$MOTION_JSON_FILE"` )
+set www = ( `jq -r ".www" "$MOTION_JSON_FILE"` )
 set name = ( `jq -r ".name" "$MOTION_JSON_FILE"` )
-set elevation = ( `jq -r ".elevation" "$MOTION_JSON_FILE"` )
+set host = ( `jq -r ".host" "$MOTION_JSON_FILE"` )
+set devicedb = ( `jq -r ".devicedb" "$MOTION_JSON_FILE"` )
+set timezone = ( `jq -r ".timezone" "$MOTION_JSON_FILE"` )
 set latitude = ( `jq -r ".latitude" "$MOTION_JSON_FILE"` )
 set longitude = ( `jq -r ".longitude" "$MOTION_JSON_FILE"` )
-set timezone = ( `jq -r ".timezone" "$MOTION_JSON_FILE"` )
-set unit_system = ( `jq -r ".unit_system" "$MOTION_JSON_FILE"` )
-set www = ( `jq -r ".www" "$MOTION_JSON_FILE"` )
+set elevation = ( `jq -r ".elevation" "$MOTION_JSON_FILE"` )
 set mqtt_host = ( `jq -r ".mqtt.host" "$MOTION_JSON_FILE"` )
 set mqtt_port = ( `jq -r ".mqtt.port" "$MOTION_JSON_FILE"` )
+set unit_system = ( `jq -r ".unit_system" "$MOTION_JSON_FILE"` )
 
 ## initialize components to !include at the end
 set components =  ( "group" )
@@ -142,7 +143,7 @@ echo "  alias: motion_notify_recognize" >> "$out"
 echo "  initial_state: on" >> "$out"
 echo "  trigger:" >> "$out"
 echo "    - platform: mqtt" >> "$out"
-echo "      topic: '"$MOTION_DEVICE_DB"/+/+/event/recognize'" >> "$out"
+echo '      topic: "'"$devicedb/$name"'/+/event/recognize"' >> "$out"
 echo "  condition:" >> "$out"
 echo "    condition: and" >> "$out"
 echo "    conditions:" >> "$out"
@@ -155,7 +156,7 @@ echo "        value_template: >" >> "$out"
 echo "          {{ ((now().timestamp()|int) - trigger.payload_json.date) < 60 }}" >> "$out"
 echo "      - condition: template" >> "$out"
 echo "        value_template: >" >> "$out"
-echo "          {{ states(("binary_sensor.motion_notify_",trigger.payload_json.location)|join|lower) == 'on' }}" >> "$out"
+echo '          {{ states(("binary_sensor.motion_notify_",trigger.payload_json.location)|join|lower) == "on" }}' >> "$out"
 echo "  action:" >> "$out"
 echo "    - service: notify.notify" >> "$out"
 echo "      data_template:" >> "$out"
@@ -167,7 +168,7 @@ echo '          AT {{ trigger.payload_json.date|int|timestamp_custom("%a %b %d @
 echo "          [ {{ trigger.payload_json.model }} {{ trigger.payload_json.score|float }} {{ trigger.payload_json.size }} {{ trigger.payload_json.id }} ]" >> "$out"
 echo "        data:" >> "$out"
 echo "          attachment:" >> "$out"
-echo '            url: http://homeassistant.dcmartin.com:8123{{- states(("sensor.motion_",trigger.payload_json.location,"_entity_picture")|join|lower) -}}' >> "$out"
+echo '            url: http://'"${www}"':8123{{- states(("sensor.motion_",trigger.payload_json.location,"_entity_picture")|join|lower) -}}' >> "$out"
 echo "            content-type: gif" >> "$out"
 echo "            hide-thumbnail: false" >> "$out"
 echo "" >> "$out"
@@ -251,12 +252,12 @@ echo "" >> "$out"
 echo "camera motion_image:" >> "$out"
 echo "  - platform: mqtt" >> "$out"
 echo "    name: motion_image" >> "$out"
-echo "    topic: '"$MOTION_DEVICE_DB"/+/+/image'" >> "$out"
+echo '    topic: "'$devicedb'/+/+/image"' >> "$out"
 echo "" >> "$out"
 echo "camera motion_animated:" >> "$out"
 echo "  - platform: mqtt" >> "$out"
 echo "    name: motion_animated" >> "$out"
-echo "    topic: '"$MOTION_DEVICE_DB"/+/+/image-animated'" >> "$out"
+echo '    topic: "'$devicedb'/+/+/image-animated"' >> "$out"
 echo "" >> "$out"
 echo "camera motion_image_animated:" >> "$out"
 echo "  - platform: mqtt" >> "$out"
@@ -272,10 +273,10 @@ set allcameras = ()
 if ($?MOTION_CLOUDANT_URL == 0) goto group
 
 set json = "/tmp/$0:t.$$.json"
-curl -s -q -f -L "$MOTION_CLOUDANT_URL/${MOTION_DEVICE_DB}/_all_docs?include_docs=true" -o $json
+curl -s -q -f -L "$MOTION_CLOUDANT_URL/${devicedb}/_all_docs?include_docs=true" -o $json
 if (-s "$json") then
   set devices = ( `jq -r '.rows[].doc.name' "$json"` )
-  if ($?VERBOSE) echo "$0:t $$ -- Found $#devices devices for ${MOTION_DEVICE_DB}" >& /dev/stderr
+  if ($?VERBOSE) echo "$0:t $$ -- Found $#devices devices for ${devicedb}" >& /dev/stderr
   foreach d ( $devices )
     set nocams = ( `jq -r '.rows[]?|select(.doc.name=="'${d}'").doc.cameras?==null' "$json"` )
     if ($nocams == "false") then
@@ -288,15 +289,21 @@ if (-s "$json") then
 	echo "camera motion_${c}_animated:" >> "$out"
 	echo "  - platform: mqtt" >> "$out"
 	echo "    name: motion_${c}_animated" >> "$out"
-	echo "    topic: '"$MOTION_DEVICE_DB/${d}/${c}"/image-animated'" >> "$out"
+	echo '    topic: "'$devicedb/${d}/${c}'/image-animated"' >> "$out"
 	echo "" >> "$out"
 	echo "camera motion_${c}_image:" >> "$out"
 	echo "  - platform: mqtt" >> "$out"
 	echo "    name: motion_${c}_image" >> "$out"
-	echo "    topic: '"$MOTION_DEVICE_DB/${d}/${c}"/image'" >> "$out"
+	echo '    topic: "'$devicedb/${d}/${c}'/image"' >> "$out"
 	echo "" >> "$out"
         if ("$d" == "$name" || $?MOTION_CAMERAS_LIVE_ALL) then
-	  set mjpeg_url = "http://${www}:${port}"
+	  if ($?MOTION_HOMEASSISTANT_LANDNS) then
+	    # DNS works for local LAN
+	    set mjpeg_url = "http://${www}:${port}"
+          else
+	    # DNS works for HASSIO addons
+	    set mjpeg_url = "http://homeassistant:${port}"
+	  endif
           if ($?VERBOSE) echo "$0:t $$ -- Live camera URL for device ${d} camera ${c}: $mjpeg_url" >& /dev/stderr
 	  echo "camera motion_${c}_live:" >> "$out"
 	  echo "  - platform: mjpeg" >> "$out"
@@ -326,7 +333,7 @@ if (-s "$json") then
     endif
   end
 else
-  if ($?DEBUG) echo "$0:t $$ -- No devices for ${MOTION_DEVICE_DB}" >& /dev/stderr
+  if ($?DEBUG) echo "$0:t $$ -- No devices for ${devicedb}" >& /dev/stderr
 endif
 rm -f "$json"
 

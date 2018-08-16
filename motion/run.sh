@@ -19,7 +19,7 @@ VALUE=$(jq -r ".name" "${CONFIG_PATH}")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="${HOSTNAME}"; fi
 echo "Setting name ${VALUE} [MOTION_DEVICE_NAME]" >&2
 # FIRST ITEM NO COMMA
-JSON="${JSON}"'"name":"'"${VALUE}"'","date":'$(/bin/date +%s)
+JSON="${JSON}"'"name":"'"${VALUE}"'","host":"'"${HOSTNAME}"'","date":'$(/bin/date +%s)
 export MOTION_DEVICE_NAME="${VALUE}"
 
 ## web
