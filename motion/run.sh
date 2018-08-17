@@ -146,17 +146,15 @@ VALUE=$(jq -r ".daemon" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="on"; fi
 echo "Set daemon to ${VALUE}" >&2
 sed -i "s/^daemon\s.*/daemon ${VALUE}/" "${MOTION_CONF}"
-
-## alphanumeric values
+MOTION="${MOTION}"'"daemon":"'"${VALUE}"'"'
 
 # set videodevice
 VALUE=$(jq -r ".videodevice" "${CONFIG_PATH}")
 if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then 
   echo "Set videodevice to ${VALUE}" >&2
   sed -i "s|.*videodevice .*|videodevice ${VALUE}|" "${MOTION_CONF}"
+  MOTION="${MOTION}"',"videodevice":"'"${VALUE}"'"'
 fi
-# FIRST ITEM NO COMMA
-MOTION="${MOTION}"'"videodevice":"'"${VALUE}"'"'
 
 # set log_type
 VALUE=$(jq -r ".log_type" "${CONFIG_PATH}")
@@ -228,8 +226,8 @@ VALUE=$(jq -r ".v4l2_pallette" "${CONFIG_PATH}")
 if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
   echo "Set v4l2_pallette to ${VALUE}" >&2
   sed -i "s/.*v4l2_pallette\s[0-9]\+/v4l2_pallette ${VALUE}/" "${MOTION_CONF}"
+  MOTION="${MOTION}"',"v4l2_pallette":'"${VALUE}"
 fi
-MOTION="${MOTION}"',"v4l2_pallette":'"${VALUE}"
 
 # set pre_capture
 VALUE=$(jq -r ".pre_capture" "${CONFIG_PATH}")
@@ -525,7 +523,7 @@ for (( i=0; i<ncamera ; i++)) ; do
     VALUE=$(jq -r '.cameras['${i}'].palette' "${CONFIG_PATH}")
     if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="17"; fi
     echo "Set palette to ${VALUE}" >&2
-    CAMERAS="${CAMERAS}"',"device":"'"${VALUE}"'"'
+    CAMERAS="${CAMERAS}"',"palette":"'"${VALUE}"'"'
     echo "v4l2_palette ${VALUE}" >> "${CAMERA_CONF}"
   else
     # HANDLE NETCAM
