@@ -296,23 +296,19 @@ if (-s "$json") then
 	echo "    name: motion_${c}_image" >> "$out"
 	echo '    topic: "'$devicedb/${d}/${c}'/image"' >> "$out"
 	echo "" >> "$out"
-        if ("$d" == "$name" || $?MOTION_CAMERAS_LIVE_ALL) then
-	  if ($?MOTION_HOMEASSISTANT_LANDNS) then
-	    # DNS works for local LAN
-	    set mjpeg_url = "http://${www}:${port}"
-          else
-	    # DNS works for HASSIO addons
-	    set mjpeg_url = "http://homeassistant:${port}"
-	  endif
-          if ($?VERBOSE) echo "$0:t $$ -- Live camera URL for device ${d} camera ${c}: $mjpeg_url" >& /dev/stderr
-	  echo "camera motion_${c}_live:" >> "$out"
-	  echo "  - platform: mjpeg" >> "$out"
-	  echo "    name: motion_${c}_live" >> "$out"
-	  echo "    mjpeg_url: $mjpeg_url" >> "$out"
-	  echo "    username: $username" >> "$out"
-	  echo "    password: $password" >> "$out"
-	  echo "" >> "$out"
+        if ("$d" == "$name") then
+	  set mjpeg_url = "http://${host}:${port}"
+        else 
+	  set mjpeg_url = "http://${www}:${port}"
 	endif
+        if ($?VERBOSE) echo "$0:t $$ -- Live camera URL for device ${d} camera ${c}: $mjpeg_url" >& /dev/stderr
+	echo "camera motion_${c}_live:" >> "$out"
+	echo "  - platform: mjpeg" >> "$out"
+	echo "    name: motion_${c}_live" >> "$out"
+	echo "    mjpeg_url: $mjpeg_url" >> "$out"
+	echo "    username: $username" >> "$out"
+	echo "    password: $password" >> "$out"
+	echo "" >> "$out"
 	set allcameras = ( $allcameras $c )
       end
     else
