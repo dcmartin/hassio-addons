@@ -12,6 +12,7 @@ foreach name ( $names )
   set url = `echo "$CAMERAS" | jq -r '.[]|select(.name=="'"$name"'").url'`
   if ($#url && $url =~ 'file://*') then
     set input = `echo "$url" | sed "s/.*:\/\///"`
+    mkdir -p "$input"
     set output = $input:h.jpg
     echo "$0:t $$ -- waiting on $input to create $output" >& /dev/stderr
     cp -f /etc/motion/sample.jpg "$output"
