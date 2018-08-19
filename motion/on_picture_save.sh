@@ -59,7 +59,7 @@ set JSON = '{"device":"'$MOTION_DEVICE_NAME'","camera":"'"$CN"'","type":"jpeg","
 
 echo "$JSON" > "$IJ"
 
-if ($?VERBOSE) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","json":"'"$IJ"'","image":'"$JSON"'}'; fi
+if ($?VERBOSE) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","json":"'"$IJ"'","image":'"$JSON"'}'
 
 ## do MQTT
 if ($?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then

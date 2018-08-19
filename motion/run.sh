@@ -529,13 +529,13 @@ for (( i=0; i<ncamera ; i++)) ; do
     # HANDLE NETCAM
     VALUE=$(jq -r '.cameras['${i}'].url' "${CONFIG_PATH}")
     if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_url'); fi
-    # capture specified
-    CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
     # test if file designation for directory
     if [[ "${VALUE}" == ftpd* ]]; then
+      VALUE="${VALUE%*/}.jpg"
+      # capture specified
+      CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
       VALUE=$(echo "${VALUE}" | sed "s/^ftpd/file/")
       # file which motion package will poll and will be created
-      VALUE="${VALUE%*/}.jpg"
     fi
     echo "Set netcam_url to ${VALUE}" >&2
     echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"

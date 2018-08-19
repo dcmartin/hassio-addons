@@ -61,12 +61,15 @@ else
 endif
 # keep track
 echo "$event" >! "$last"
+# image identity
+set event_id = `echo "$event" | awk '{ printf("%02d",$1) }'`
 
 if ($?MOTION_FILE_NORMAL == 0) then
   # on_motion_detect.sh %$ %v %Y %m %d %H %M %S
-  on_motion_detect.sh $camera $event $dateattr
+  on_motion_detect.sh $camera $event_id $dateattr
   # on_event_start.sh %$ %v %Y %m %d %H %M %S
-  on_event_start.sh $camera $event $dateattr
+  if ($?VERBOSE) echo "$0:t $$ -- Calling on_event_start.sh $camera $event_id $dateattr" >& /dev/stderr
+  on_event_start.sh $camera $event_id $dateattr
 endif
 
 ### breakdown video into frames
@@ -82,8 +85,6 @@ set jpgs = ( `echo "${tmpdir}/${input}"-*.$format` )
 # count frames
 @ seqno = 0
 set frames = ()
-# image identity
-set evtid = `echo "$event" | awk '{ printf("%02d",$1) }'`
 
 # camera specifications should be calculated; defaults for now
 set filetype = 0
@@ -106,26 +107,28 @@ foreach f ( $jpgs )
     @ seqno++
   endif
 
-  set frames = ( $frames $f:t:r )
   if ($?MOTION_FILE_NORMAL) then
     if ($?VERBOSE) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "debug" -m '{"INFO":"'$0:t'","pid":"'$$'","info":"moving '$f' to '$output'"}'
     echo "$0:t $$ -- Moving $f to $output" >& /dev/stderr
+    set frames = ( $frames $f:t:r )
     mv -f "$f" "${output}"
     continue
   endif
   set seqid = `echo "$seqno" | awk '{ printf("%02d",$1) }'`
-  set output = "$target_dir/${datetime}-${evtid}-${seqid}.$format"
+  set output = "$target_dir/${datetime}-${event_id}-${seqid}.$format"
+  set frames = ( $frames $output:t )
   mv -f "$f" "${output}"
   # on_picture_save %$ %v %f %n %K %L %i %J %D %N
-  on_picture_save.sh $camera $evtid $output $filetype $mx $my $mw $mh 10000 0
-  @ seqno++
+  if ($?VERBOSE) echo "$0:t $$ -- Calling on_picture_save.sh $camera $event_id $output $filetype $mx $my $mw $mh 10000 0" >& /dev/stderr
+  on_picture_save.sh $camera $event_id $output $filetype $mx $my $mw $mh 10000 0
 end
 if ($#frames) set frames = ( `echo "$frames" | sed 's/ /,/g' | sed 's/\([^,]*\)/"\1"/g'` )
 rm -fr "$tmpdir"
 
 if ($?MOTION_FILE_NORMAL == 0) then
   # on_event_end.sh %$ %v %Y %m %d %H %M %S
-  on_event_end.sh $camera $event $dateattr
+  if ($?VERBOSE) echo "$0:t $$ -- Calling on_event_end.sh $camera $event_id $dateattr" >& /dev/stderr
+  on_event_end.sh $camera $event_id $dateattr
 endif
 
 # document
