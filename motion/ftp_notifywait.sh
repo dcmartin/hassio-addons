@@ -13,9 +13,9 @@ set names = ( `echo "$CAMERAS" | jq -r '.[]|.name'` )
 echo "$0:t $$ -- CAMERAS: $CAMERAS"
 
 foreach name ( $names )
-  set url = `echo "$CAMERAS" | jq -r '.[]|select(.name=="'"$name"'").netcam_url'`
-  echo "$0:t $$ -- camera $name at netcam URL $url"
-  if ($#url && $url =~ 'file://*') then
+  set url = `echo "$CAMERAS" | jq -r '.[]|select(.name=="'"$name"'").url'`
+  echo "$0:t $$ -- camera $name at URL $url"
+  if ($#url && $url =~ 'ftpd://*') then
     set input = `echo "$url" | sed "s/.*:\/\///"`
     set output = $input
     set input = $input:r

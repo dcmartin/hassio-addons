@@ -529,14 +529,16 @@ for (( i=0; i<ncamera ; i++)) ; do
     # HANDLE NETCAM
     VALUE=$(jq -r '.cameras['${i}'].url' "${CONFIG_PATH}")
     if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_url'); fi
+    # capture specified
+    CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
     # test if file designation for directory
-    if [[ "${VALUE}" == file* ]]; then
+    if [[ "${VALUE}" == ftpd* ]]; then
+      VALUE=$(echo "${VALUE}" | sed "s/^ftpd/file/")
       # file which motion package will poll and will be created
       VALUE="${VALUE%*/}.jpg"
     fi
     echo "Set netcam_url to ${VALUE}" >&2
     echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
-    CAMERAS="${CAMERAS}"',"netcam_url":"'"${VALUE}"'"'
     # keepalive 
     VALUE=$(jq -r '.cameras['${i}'].keepalive' "${CONFIG_PATH}")
     if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_keepalive'); fi
@@ -738,7 +740,7 @@ echo "Testing hassio ..." $(curl -s -q -f -L -H "X-HASSIO-KEY: ${HASSIO_TOKEN}" 
 # test homeassistant
 echo "Testing homeassistant ..." $(curl -s -q -f -L -u ":${HASSIO_TOKEN}" "http://hassio/homeassistant/api/states" | jq -c '.|length') "states" >&2
 
-# start ftp_notifywait for all file:// cameras (uses environment MOTION_JSON_FILE)
+# start ftp_notifywait for all ftpd:// cameras (uses environment MOTION_JSON_FILE)
 ftp_notifywait.sh "${MOTION_JSON_FILE}"
 
 # build new yaml
