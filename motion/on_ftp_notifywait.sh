@@ -6,7 +6,7 @@ setenv VERBOSE
 
 if ($#argv == 2) then
   set file = "$argv[1]"
-  set output = "$argv[$#argv]"
+  set output = "$argv[2]"
   switch ("$file:e")
     case "3gp":
       on_new_3gp.sh "$file" "$output"

@@ -3,6 +3,7 @@ echo "$0:t $$ -- START" `date` >& /dev/stderr
 
 setenv DEBUG
 setenv VERBOSE
+# setenv MOTION_FILE_NORMAL
 
 ## REQUIRES date utilities
 if ( -e /usr/bin/dateutils.dconv ) then
@@ -18,7 +19,7 @@ endif
 
 if ($#argv == 2) then
   set video = "$argv[1]"
-  set output = "$argv[$#argv]" 
+  set output = "$argv[2]" 
   if ($?VERBOSE) echo "$0:t $$ -- $video" >& /dev/stderr
 else
   echo "USAGE: $0:t <3gp>" >& /dev/stderr
@@ -30,8 +31,16 @@ set json = "${output:r}/$input.json"
 set camera = "$output:t:r"
 set format = "$output:e"
 
-## get fps from configuration fpor this camera
-set fps = ( `jq '.cameras[]|select(.name=="'"$camera"'").fps' "$MOTION_JSON_FILE"` )
+# %Y - time of last data modification, seconds since Epoch
+set mtime = `stat -c "%Y" $video`
+set dateattr = ( `$dateconv -f '%Y %m %d %H %M %S' -i "%s" "$mtime"` )
+set datetime = "${dateattr[1]}${dateattr[2]}${dateattr[3]}${dateattr[4]}${dateattr[5]}${dateattr[6]}"
+
+## get configuration for this camera
+set fps = ( `jq -r '.cameras[]|select(.name=="'"$camera"'").fps' "$MOTION_JSON_FILE"` )
+set width = ( `jq -r '.cameras[]|select(.name=="'"$camera"'").width' "$MOTION_JSON_FILE"` )
+set height = ( `jq -r '.cameras[]|select(.name=="'"$camera"'").height' "$MOTION_JSON_FILE"` )
+set target_dir = ( `jq -r '.cameras[]|select(.name=="'"$camera"'").target_dir' "$MOTION_JSON_FILE"` )
 
 if ($?MOTION_VIDEO_DIRECT2MJPEG) then
   # convert directly from 3gp to MJPEG
@@ -53,6 +62,13 @@ endif
 # keep track
 echo "$event" >! "$last"
 
+if ($?MOTION_FILE_NORMAL == 0) then
+  # on_motion_detect.sh %$ %v %Y %m %d %H %M %S
+  on_motion_detect.sh $camera $event $dateattr
+  # on_event_start.sh %$ %v %Y %m %d %H %M %S
+  on_event_start.sh $camera $event $dateattr
+endif
+
 ### breakdown video into frames
 set tmpdir = "/tmpfs/$0:t/$$"
 set pattern = "${tmpdir}/${input}-%03d.$format"
@@ -67,60 +83,53 @@ set jpgs = ( `echo "${tmpdir}/${input}"-*.$format` )
 @ seqno = 0
 set frames = ()
 # image identity
-set mtime = `stat -c "%Y" $input` # %Y - time of last data modification, seconds since Epoch
-set datetime = `$dateconv -f '%Y%m%d%H%M%S' -i "%s" "$mtime"`
 set evtid = `echo "$event" | awk '{ printf("%02d",$1) }'`
-# calculate frame-to-frame changes
-@ t = 0
-@ i = 1
-set ps = ()
-set diffs = ()
-# motion
+
+# camera specifications should be calculated; defaults for now
 set filetype = 0
 @ mx = 320
 @ my = 240
 @ mw = 100
 @ mh = 100
-@ fuzz = 5
-@ noise = $fuzz
-## process all frames
-foreach f ( $jpgs )
-  set frames = ( $frames $f:t:r )
-  if ($?MOTION_VIDEO_ANALYZE == 0) then
-    if ($?VERBOSE) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "debug" -m '{"INFO":"'$0:t'","pid":"'$$'","info":"moving '$f' to '$output'"}'
-    mv -f "$f" "${output}"
-  else
-    set seqid = `echo "$seqno" | awk '{ printf("%02d",$1) }'`
-    set output = "$MOTION_SHARE_DIR/$camera/${datetime}-${evtid}-${seqid}.$format"
-    set diffs = ( $diffs $frames[$i]:r.$format)
 
-    # calculate difference (try next, then previous, then same image)
-    @ j = $i + 1
-    if ($i == $#jpgs && $#jpgs > 2) then
-      @ j = $i - 1
-    else if ($i <= $#jpgs) then
-      @ j = $i + 1
-    else
-      @ j = $i
-    endif
-    set p = ( `compare -metric fuzz -fuzz "$fuzz"'%' $frames[$i] $frames[$j] -compose src -highlight-color white -lowlight-color black $diffs[$#diffs] |& awk '{ print $1 }'` )
-    if ($?VERBOSE) echo "$0:t $$ -- $diffs[$#diffs] change = $p" >& /dev/stderr
-    # keep track of differences
-    set ps = ( $ps $p:r )
-    @ t += $ps[$#ps]
-    @ i++
-    mv -f "$f" "${output}"
-    # on_picture_save /usr/local/bin/on_picture_save.sh %$ %v %f %n %K %L %i %J %D %N
-    on_picture_save.sh "$camera" "$evtid" "$output" $filetype $mx $my $mw $mh $p $noise
+## process all frames
+@ i = 0
+echo "$0:t $$ -- Found $#jpgs JPEG" >& /dev/stderr
+foreach f ( $jpgs )
+  @ i++
+  if ($i % $fps == 0) then
+    set seqno = 0
+    @ mtime++
+    set dateattr = ( `$dateconv -f '%Y %m %d %H %M %S' -i "%s" "$mtime"` )
+    set datetime = "${dateattr[1]}${dateattr[2]}${dateattr[3]}${dateattr[4]}${dateattr[5]}${dateattr[6]}"
+  else
+    @ seqno++
   endif
+
+  set frames = ( $frames $f:t:r )
+  if ($?MOTION_FILE_NORMAL) then
+    if ($?VERBOSE) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "debug" -m '{"INFO":"'$0:t'","pid":"'$$'","info":"moving '$f' to '$output'"}'
+    echo "$0:t $$ -- Moving $f to $output" >& /dev/stderr
+    mv -f "$f" "${output}"
+    continue
+  endif
+  set seqid = `echo "$seqno" | awk '{ printf("%02d",$1) }'`
+  set output = "$target_dir/${datetime}-${evtid}-${seqid}.$format"
+  mv -f "$f" "${output}"
+  # on_picture_save %$ %v %f %n %K %L %i %J %D %N
+  on_picture_save.sh $camera $evtid $output $filetype $mx $my $mw $mh 10000 0
   @ seqno++
-  sleep "${ms}"
 end
 if ($#frames) set frames = ( `echo "$frames" | sed 's/ /,/g' | sed 's/\([^,]*\)/"\1"/g'` )
-rm -f "$tmpdir"
+rm -fr "$tmpdir"
+
+if ($?MOTION_FILE_NORMAL == 0) then
+  # on_event_end.sh %$ %v %Y %m %d %H %M %S
+  on_event_end.sh $camera $event $dateattr
+endif
 
 # document
-if ($?MOTION_VIDEO_JSON) then
+if ($?MOTION_VIDEO_NOJSON == 0) then
   # identify original video
   identify -verbose -moments -unique "$video" | convert rose: json:- | jq '.[]|.image.name="'"${input}"'"|.frames=['"$frames"']' >! "$json"
   if ($?VERBOSE) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "debug" -f "$json"
