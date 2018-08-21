@@ -6,6 +6,7 @@ ENV LANG C.UTF-8
 
 RUN echo "@testing http://nl.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
 RUN echo "@community http://nl.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
+#RUN echo "@edge http://nl.alpinelinux.org/alpine/edge/edge" >> /etc/apk/repositories
 RUN apk update
 
 RUN apk add --no-cache \
@@ -23,7 +24,13 @@ RUN apk add --no-cache \
   mosquitto-clients \
   motion@testing \
   python3 \
-  tcsh@community
+  tcsh@community \
+  git
+
+# RUN apk add ffmpeg-dev autoconf automake pkgconf libtool libjpeg jpeg-dev alpine-sdk build-base libzip-dev gettext libmicrohttpd-dev inotify-tools-dev 
+# ENV MOTION_INOTIFY true
+# RUN git clone https://github.com/dcmartin/motion.git
+# RUN cd motion && autoreconf -fiv && ./configure && make && make install
 
 RUN apk add --update \
     python \
