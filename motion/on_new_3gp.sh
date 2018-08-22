@@ -45,7 +45,6 @@ if ($?MOTION_VIDEO_DIRECT2MJPEG) then
   # convert directly from 3gp to MJPEG
   ffmpeg -y -r "$fps" -i "$video" -vcodec mjpeg "$output:r.mjpeg"
   mv -f "$output:r.mjpeg" "$output"
-  rm -f "$video"
   goto done
 endif
 
@@ -113,6 +112,7 @@ foreach f ( $jpgs )
     mv -f "$f" "${output}"
     continue
   endif
+  # manually execute sequence
   set seqid = `echo "$seqno" | awk '{ printf("%02d",$1) }'`
   set output = "$target_dir/${datetime}-${event_id}-${seqid}.$format"
   if ($?json == 0) set json = "$target_dir/${datetime}-${event_id}.json"
@@ -140,3 +140,4 @@ endif
 
 ## ALL DONE
 done:
+  rm -f "${video}"

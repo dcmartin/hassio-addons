@@ -4,6 +4,13 @@ echo "$0:t $$ -- START" `date` >& /dev/stderr
 setenv DEBUG
 # setenv VERBOSE
 
+if ($?MOTION_DATA_DIR == 0) exit
+if ($?MOTION_MQTT_HOST == 0) exit
+if ($?MOTION_MQTT_PORT == 0) exit
+if ($?MOTION_DEVICE_NAME == 0) exit
+if ($?MOTION_JSON_FILE == 0) exit
+if ($?MOTION_POST_PICTURES == 0) exit
+
 ## REQUIRES date utilities
 if ( -e /usr/bin/dateutils.dconv ) then
    set dateconv = /usr/bin/dateutils.dconv
