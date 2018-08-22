@@ -27,7 +27,6 @@ else
 endif
 
 set input = "$video:t:r"
-set json = "${output:r}/$input.json"
 set camera = "$output:t:r"
 set format = "$output:e"
 
@@ -116,6 +115,7 @@ foreach f ( $jpgs )
   endif
   set seqid = `echo "$seqno" | awk '{ printf("%02d",$1) }'`
   set output = "$target_dir/${datetime}-${event_id}-${seqid}.$format"
+  if ($?json == 0) set json = "$target_dir/${datetime}-${event_id}.json"
   set frames = ( $frames $output:t )
   mv -f "$f" "${output}"
   # on_picture_save %$ %v %f %n %K %L %i %J %D %N
@@ -132,7 +132,7 @@ if ($?MOTION_FILE_NORMAL == 0) then
 endif
 
 # document
-if ($?MOTION_VIDEO_NOJSON == 0) then
+if ($?json) then
   # identify original video
   identify -verbose -moments -unique "$video" | convert rose: json:- | jq '.[]|.image.name="'"${input}"'"|.frames=['"$frames"']' >! "$json"
   if ($?VERBOSE) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "debug" -f "$json"
