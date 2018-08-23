@@ -1,9 +1,9 @@
 #!/bin/tcsh 
 
 setenv DEBUG
-# setenv VERBOSE
+unsetenv VERBOSE
 
-echo "$0:t $$ -- START $*" >& /dev/stderr
+if ($?VERBOSE) echo "$0:t $$ -- START $*" >& /dev/stderr
 
 if ($?CONFIG_PATH == 0) then
   echo "Environment variable unset: CONFIG_PATH"
@@ -86,7 +86,7 @@ echo "      motion_${c}_entity_picture:" >> "$out"
 echo "        value_template: '{{ states.camera.motion_${c}_animated.attributes.entity_picture }}'" >> "$out"
 end
 
-echo "$0:t $$ -- processed $out" >& /dev/stderr
+if ($?VERBOSE) echo "$0:t $$ -- processed $out" >& /dev/stderr
 
 ###
 ### binary_sensor
@@ -110,7 +110,7 @@ echo "        {{ is_state('input_boolean.motion_notify_${c}','on') }}" >> "$out"
 end
 echo "" >> "$out"
 
-echo "$0:t $$ -- processed $out" >& /dev/stderr
+if ($?VERBOSE) echo "$0:t $$ -- processed $out" >& /dev/stderr
 
 ####
 #### input_boolean.yaml
@@ -128,7 +128,7 @@ echo "  initial: false" >> "$out"
 echo "" >> "$out"
 end
 
-echo "$0:t $$ -- processed $out" >& /dev/stderr
+if ($?VERBOSE) echo "$0:t $$ -- processed $out" >& /dev/stderr
 
 ####
 #### automation.yaml
@@ -173,7 +173,7 @@ echo "            content-type: gif" >> "$out"
 echo "            hide-thumbnail: false" >> "$out"
 echo "" >> "$out"
 
-echo "$0:t $$ -- processed $out" >& /dev/stderr
+if ($?VERBOSE) echo "$0:t $$ -- processed $out" >& /dev/stderr
 
 ####
 #### configuration.yaml
@@ -333,7 +333,7 @@ else
 endif
 rm -f "$json"
 
-echo "$0:t $$ -- processed $out" >& /dev/stderr
+if ($?VERBOSE) echo "$0:t $$ -- processed $out" >& /dev/stderr
 
 ####
 #### group.yaml
@@ -389,7 +389,7 @@ echo "    - camera.motion_${c}_animated" >> "$out"
 end
 echo "" >> "$out"
 
-echo "$0:t $$ -- processed $out" >& /dev/stderr
+if ($?VERBOSE) echo "$0:t $$ -- processed $out" >& /dev/stderr
 
 ####
 #### ui-lovelace.yaml
@@ -438,8 +438,8 @@ echo "  name: motion_notify_${c}" >> "$out"
 echo "  initial: false" >> "$out"
 end
 
-echo "$0:t $$ -- processed $out" >& /dev/stderr
+if ($?VERBOSE) echo "$0:t $$ -- processed $out" >& /dev/stderr
 
 ##
 
-echo "$0:t $$ -- finished processing" >& /dev/stderr
+if ($?VERBOSE) echo "$0:t $$ -- finished processing" >& /dev/stderr

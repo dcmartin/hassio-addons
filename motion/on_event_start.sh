@@ -1,8 +1,8 @@
 #!/bin/tcsh
-echo "$0:t $$ -- START" `date` >& /dev/stderr
-
 setenv DEBUG
-# setenv VERBOSE
+unsetenv VERBOSE
+
+if ($?VERBOSE) echo "$0:t $$ -- START" `date` >& /dev/stderr
 
 ## REQUIRES date utilities
 if ( -e /usr/bin/dateutils.dconv ) then
@@ -58,4 +58,4 @@ endif
 
 done:
 
-echo "$0:t $$ -- END" `date` >& /dev/stderr
+if ($?VERBOSE) echo "$0:t $$ -- END" `date` >& /dev/stderr

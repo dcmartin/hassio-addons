@@ -1,9 +1,9 @@
 #!/bin/tcsh
-echo "$0:t $$ -- START" `date` >& /dev/stderr
-
 setenv DEBUG
-# setenv VERBOSE
+setenv VERBOSE
 # setenv MOTION_FILE_NORMAL
+
+if ($?VERBOSE) echo "$0:t $$ -- START $*" `date` >& /dev/stderr
 
 ## REQUIRES date utilities
 if ( -e /usr/bin/dateutils.dconv ) then
@@ -20,7 +20,6 @@ endif
 if ($#argv == 2) then
   set video = "$argv[1]"
   set output = "$argv[2]" 
-  if ($?VERBOSE) echo "$0:t $$ -- $video" >& /dev/stderr
 else
   echo "USAGE: $0:t <3gp>" >& /dev/stderr
   exit
@@ -153,4 +152,5 @@ endif
 
 ## ALL DONE
 done:
-  # rm -f "${video}"
+  if ($?VERBOSE) echo "$0:t $$ -- FINISHED" >& /dev/stderr
+  rm -f "${video}"

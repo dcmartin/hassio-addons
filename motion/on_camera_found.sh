@@ -1,8 +1,8 @@
 #!/bin/tcsh
-echo "$0:t $$ -- START" `date` >& /dev/stderr
-
 setenv DEBUG true
-# setenv VERBOSE true
+unsetenv VERBOSE true
+
+if ($?VERBOSE) echo "$0:t $$ -- START" `date` >& /dev/stderr
 
 ## REQUIRES date utilities
 if ( -e /usr/bin/dateutils.dconv ) then
@@ -58,6 +58,6 @@ endif
 ##
 
 done:
-  echo "$0:t $$ -- END" `date` >& /dev/stderr
+  if ($?VERBOSE) echo "$0:t $$ -- END" `date` >& /dev/stderr
   if ($?VERBOSE) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","info":"END"}'
   exit

@@ -1,14 +1,8 @@
 #!/bin/tcsh
-echo "$0:t $$ -- START" `date` >& /dev/stderr
-
 setenv DEBUG
-# setenv VERBOSE
+unsetenv VERBOSE
 
-if ($?MOTION_DATA_DIR == 0) exit
-if ($?MOTION_MQTT_HOST == 0) exit
-if ($?MOTION_MQTT_PORT == 0) exit
-if ($?MOTION_DEVICE_NAME == 0) exit
-if ($?MOTION_JSON_FILE == 0) exit
+if ($?VERBOSE) echo "$0:t $$ -- START" `date` >& /dev/stderr
 
 ## REQUIRES date utilities
 if ( -e /usr/bin/dateutils.dconv ) then
@@ -177,7 +171,7 @@ foreach f ( $frames )
   if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"jpg":"'"$jpg"'","info":'"${info}"'}'
   if ($?VERBOSE) echo "$0:t $$ -- Identified $jpg as $info" >& /dev/stderr
   if (-e "$jpg:r.json") then
-    if ($?DEBUG) echo "$0:t $$ -- Found JSON $jpg:r.json; updating with $info" >& /dev/stderr
+    if ($?VERBOSE) echo "$0:t $$ -- Found JSON $jpg:r.json; updating with $info" >& /dev/stderr
     jq '.info='"$info"'|.end='"${NOW}" "$jpg:r.json" >! /tmp/$0:t.$$.json
     if (-s /tmp/$0:t.$$.json) then
       mv /tmp/$0:t.$$.json "$jpg:r.json"
@@ -420,6 +414,6 @@ done:
   if ($?tmpdir) then
     rm -fr $tmpdir
   endif
-  echo "$0:t $$ -- END" `date` >& /dev/stderr
+  if ($?VERBOSE) echo "$0:t $$ -- END" `date` >& /dev/stderr
   if ($?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"info":"END"}'
   exit

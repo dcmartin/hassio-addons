@@ -15,5 +15,5 @@ endif
 
 if ($?VERBOSE) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "debug" -m '{"INFO":"'$0:t'","pid":"'$$'","info":"moving '$image' to '$output'"}'
 
-echo "$0:t moving $image to $output" >& /dev/stderr
+if ($?VERBOSE) echo "$0:t moving $image to $output" >& /dev/stderr
 mv -f "$image" "$output"
