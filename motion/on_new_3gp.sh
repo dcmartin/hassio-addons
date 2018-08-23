@@ -2,7 +2,7 @@
 echo "$0:t $$ -- START" `date` >& /dev/stderr
 
 setenv DEBUG
-setenv VERBOSE
+# setenv VERBOSE
 # setenv MOTION_FILE_NORMAL
 
 ## REQUIRES date utilities
@@ -64,6 +64,7 @@ set event_id = `echo "$event" | awk '{ printf("%02d",$1) }'`
 
 if ($?MOTION_FILE_NORMAL == 0) then
   # on_motion_detect.sh %$ %v %Y %m %d %H %M %S
+  if ($?VERBOSE) echo "$0:t $$ -- Calling on_motion_detect.sh $camera $event_id $dateattr" >& /dev/stderr
   on_motion_detect.sh $camera $event_id $dateattr
   # on_event_start.sh %$ %v %Y %m %d %H %M %S
   if ($?VERBOSE) echo "$0:t $$ -- Calling on_event_start.sh $camera $event_id $dateattr" >& /dev/stderr
@@ -72,13 +73,24 @@ endif
 
 ### breakdown video into frames
 set tmpdir = "/tmpfs/$0:t/$$"
-set pattern = "${tmpdir}/${input}-%03d.$format"
+set pattern = "${input}-%03d.$format"
 mkdir -p "$tmpdir"
 # make all frames
-ffmpeg -r "$fps" -i $video "$pattern" >&! /dev/null
+pushd "$tmpdir" >& /dev/null
+if ($?VERBOSE) echo "$0:t $$ -- Converting video $video into JPEG in directory $tmpdir using pattern $pattern at FPS $fps" >& /dev/stderr
+ffmpeg -r "$fps" -i $video "$pattern" >&! /tmp/$0:t.$$.txt
 # move each image in order to output
-set ms = `echo "1 / $fps" | bc -l`
-set jpgs = ( `echo "${tmpdir}/${input}"-*.$format` )
+set jpgs = ( `echo *."$format"` )
+popd >& /dev/null
+if ($#jpgs == 0) then
+  if ($?DEBUG) echo "$0:t $$ -- Failed to convert video $video into pattern $pattern; exiting" >& /dev/stderr
+  cat "/tmp/$0:t.$$.txt"
+  rm -fr "$tmpdir"
+  exit
+else
+  if ($?VERBOSE) echo "$0:t $$ -- Found $#jpgs JPEG in video $video at FPS $fps ($jpgs)" >& /dev/stderr
+  rm -f "/tmp/$0:t.$$.txt"
+endif
 
 # count frames
 @ seqno = 0
@@ -93,8 +105,8 @@ set filetype = 0
 
 ## process all frames
 @ i = 0
-echo "$0:t $$ -- Found $#jpgs JPEG" >& /dev/stderr
-foreach f ( $jpgs )
+foreach j ( $jpgs )
+  set f = "$tmpdir/$j"
   @ i++
   if ($i % $fps == 0) then
     set seqno = 0
@@ -117,6 +129,7 @@ foreach f ( $jpgs )
   set output = "$target_dir/${datetime}-${event_id}-${seqid}.$format"
   if ($?json == 0) set json = "$target_dir/${datetime}-${event_id}.json"
   set frames = ( $frames $output:t )
+  if ($?VERBOSE) echo "$0:t $$ -- Moving extracted JPEG $f to $output" >& /dev/stderr
   mv -f "$f" "${output}"
   # on_picture_save %$ %v %f %n %K %L %i %J %D %N
   if ($?VERBOSE) echo "$0:t $$ -- Calling on_picture_save.sh $camera $event_id $output $filetype $mx $my $mw $mh 10000 0" >& /dev/stderr
@@ -140,4 +153,4 @@ endif
 
 ## ALL DONE
 done:
-  rm -f "${video}"
+  # rm -f "${video}"

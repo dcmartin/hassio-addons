@@ -2,7 +2,7 @@
 echo "$0:t $$ -- START" `date` >& /dev/stderr
 
 setenv DEBUG
-setenv VERBOSE
+# setenv VERBOSE
 
 if ($#argv == 2) then
   set image = "$argv[1]"

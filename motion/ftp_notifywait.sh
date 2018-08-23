@@ -16,7 +16,7 @@ foreach name ( $names )
   set url = `echo "$CAMERAS" | jq -r '.[]|select(.name=="'"$name"'").url'`
   echo "$0:t $$ -- camera $name at URL $url"
   if ($#url && $url =~ 'ftpd://*') then
-    set input = `echo "$url" | sed "s/.*:\/\///"`
+    set input = `echo "$url" | sed "s|ftpd://||"`
     set output = $input
     set input = $input:r
     mkdir -p "$input"

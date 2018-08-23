@@ -2,7 +2,7 @@
 echo "$0:t $$ -- START" `date` >& /dev/stderr
 
 setenv DEBUG
-setenv VERBOSE
+# setenv VERBOSE
 
 if ($?MOTION_DATA_DIR == 0) exit
 if ($?MOTION_MQTT_HOST == 0) exit
