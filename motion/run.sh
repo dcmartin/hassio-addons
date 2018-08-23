@@ -654,11 +654,12 @@ if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=2; fi
 echo "Set minimum_animate to ${VALUE}" >&2
 JSON="${JSON}"',"minimum_animate":'"${VALUE}"
 
-# set post_pictures; enumerated [center,first,last,best,most]
+# set post_pictures; enumerated [on,center,first,last,best,most]
 VALUE=$(jq -r '.post_pictures' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="center"; fi
 echo "Set post_pictures to ${VALUE}" >&2
 JSON="${JSON}"',"post_pictures":"'"${VALUE}"'"'
+export MOTION_POST_PICTURES="${VALUE}"
 
 # MOTION_SHARE_DIR defined for all cameras base path
 VALUE=$(jq -r ".share_dir" "${CONFIG_PATH}")
