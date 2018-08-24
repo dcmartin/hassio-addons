@@ -9,7 +9,7 @@ VAL="${2}"
 
 touch "${VAL}"
 
-inotifywait -m -r -e close --format '%w%f' "${DIR}" | while read FULLPATH
+inotifywait -m -r -e close_write --format '%w%f' "${DIR}" | while read FULLPATH
 do
   on_ftp_notifywait.sh "${FULLPATH}" "${VAL}"
 done

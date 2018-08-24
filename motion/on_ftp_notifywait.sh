@@ -1,8 +1,8 @@
 #!/bin/tcsh
-echo "$0:t $$ -- START $*" `date` >& /dev/stderr
-
 setenv DEBUG
-# setenv VERBOSE
+unsetenv VERBOSE
+
+if ($?VERBOSE) echo "$0:t $$ -- START $*" `date` >& /dev/stderr
 
 if ($#argv == 2) then
   set file = "$argv[1]"
@@ -16,7 +16,7 @@ if ($#argv == 2) then
 	on_new_jpg.sh "$file" "$output"
 	breaksw
       default:
-	echo "$0:t $$ -- $file:e unimplemented" >& /dev/stderr
+	if ($?DEBUG) echo "$0:t $$ -- $file:e unimplemented" >& /dev/stderr
 	breaksw
     endsw
   else
@@ -25,3 +25,6 @@ if ($#argv == 2) then
 else
   echo "$0:t $$ -- invalid arguments $*" >& /dev/stderr
 endif
+
+done:
+  if ($?VERBOSE) echo "$0:t $$ -- FINISH" `date` >& /dev/stderr

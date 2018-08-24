@@ -1,8 +1,9 @@
 #!/bin/tcsh
-echo "$0:t $$ -- START" `date` >& /dev/stderr
-
 setenv DEBUG
-# setenv VERBOSE
+unsetenv VERBOSE
+unsetenv USE_MQTT
+
+if ($?VERBOSE) echo "$0:t $$ -- START" `date` >& /dev/stderr
 
 if ($#argv == 2) then
   set image = "$argv[1]"
@@ -13,7 +14,10 @@ else
   exit
 endif
 
-if ($?VERBOSE) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "debug" -m '{"INFO":"'$0:t'","pid":"'$$'","info":"moving '$image' to '$output'"}'
+if ($?VERBOSE && $?USE_MQTT) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "debug" -m '{"INFO":"'$0:t'","pid":"'$$'","info":"moving '$image' to '$output'"}'
 
 if ($?VERBOSE) echo "$0:t moving $image to $output" >& /dev/stderr
+
 mv -f "$image" "$output"
+
+if ($?VERBOSE) echo "$0:t $$ -- FINISH" `date` >& /dev/stderr
