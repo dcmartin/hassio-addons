@@ -125,6 +125,9 @@ foreach j ( $jpgs )
     set frames = ( $frames $f:t:r )
     mv -f "$f" "${output}"
     continue
+  else
+    # motion will probably miss most
+    cp -f "$f" "${output}"
   endif
   # manually execute sequence
   set seqid = `echo "$seqno" | awk '{ printf("%02d",$1) }'`
