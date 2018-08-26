@@ -777,6 +777,29 @@ else
 fi
 
 ###
+### CUSTOMIZE MQTT BROKER
+###
+
+mqttconf="/share/motion/mosquitto/mosquitto.conf"
+mkdir -p "${mqttconf%/*}"
+echo "NOTIFY -- Change Hass.io Mosquitto add-on configuration to include: $mqttconf" >&2
+echo '  "customize": {' >&2
+echo '    "active": true,' >&2
+echo '    "folder": "motion/mosquitto"' >&2
+echo '  }' >&2
+echo "NOTIFY -- Re-start MQTT add-on" >&2
+# change configuration
+echo "max_connections -1" >> /share/motion/mosquitto/mosquitto.conf
+echo "max_inflight_messages 0" >> /share/motion/mosquitto/mosquitto.conf
+echo "max_queued_messages 1000" >> /share/motion/mosquitto/mosquitto.conf
+
+###
+### initialize camera(s)
+###
+ 
+initcams.sh "${MOTION_JSON_FILE}"
+
+###
 ### START HTTPD
 ###
 if [ -s "${MOTION_APACHE_CONF}" ]; then

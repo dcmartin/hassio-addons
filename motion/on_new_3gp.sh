@@ -1,7 +1,10 @@
 #!/bin/tcsh
 setenv DEBUG
 setenv VERBOSE
-# setenv MOTION_FILE_NORMAL
+unsetenv USE_MQTT
+
+# legacy
+unsetenv MOTION_FILE_NORMAL
 
 if ($?VERBOSE) echo "$0:t $$ -- START $*" `date` >& /dev/stderr
 
@@ -13,7 +16,7 @@ else if ( -e /usr/bin/dateconv ) then
 else if ( -e /usr/local/bin/dateconv ) then
    set dateconv = /usr/local/bin/dateconv
 else
-  if ($?DEBUG) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "debug" -m '{"ERROR":"'$0:t'","pid":"'$$'","error":"no date converter; install dateutils"}'
+  if ($?DEBUG && $?USE_MQTT) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "debug" -m '{"ERROR":"'$0:t'","pid":"'$$'","error":"no date converter; install dateutils"}'
   goto done
 endif
 
@@ -117,7 +120,7 @@ foreach j ( $jpgs )
   endif
 
   if ($?MOTION_FILE_NORMAL) then
-    if ($?VERBOSE) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "debug" -m '{"INFO":"'$0:t'","pid":"'$$'","info":"moving '$f' to '$output'"}'
+    if ($?VERBOSE && $?USE_MQTT) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "debug" -m '{"INFO":"'$0:t'","pid":"'$$'","info":"moving '$f' to '$output'"}'
     echo "$0:t $$ -- Moving $f to $output" >& /dev/stderr
     set frames = ( $frames $f:t:r )
     mv -f "$f" "${output}"
@@ -147,7 +150,7 @@ endif
 if ($?json) then
   # identify original video
   identify -verbose -moments -unique "$video" | convert rose: json:- | jq '.[]|.image.name="'"${input}"'"|.frames=['"$frames"']' >! "$json"
-  if ($?VERBOSE) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "debug" -f "$json"
+  if ($?VERBOSE && $?USE_MQTT) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "debug" -f "$json"
 endif
 
 ## ALL DONE

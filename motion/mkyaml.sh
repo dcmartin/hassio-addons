@@ -203,7 +203,7 @@ echo "## PACKAGES" >> "$out"
 echo "hassio:" >> "$out"
 echo "frontend:" >> "$out"
 echo "config:" >> "$out"
-echo "history:" >> "$out"
+# echo "history:" >> "$out"
 # echo "logbook:" >> "$out"
 # echo "discovery:" >> "$out"
 # echo "updater:" >> "$out"
@@ -277,6 +277,11 @@ curl -s -q -f -L "$MOTION_CLOUDANT_URL/${devicedb}/_all_docs?include_docs=true" 
 if (-s "$json") then
   set devices = ( `jq -r '.rows[].doc.name' "$json"` )
   if ($?VERBOSE) echo "$0:t $$ -- Found $#devices devices for ${devicedb}" >& /dev/stderr
+  # control whether local device shows all cameras; leaning toward no (obviously)
+  if ($?do_allcameras == 0) then
+    if ($?DEBUG) echo "$0:t $$ -- INFO -- local cameras only for this device: $name" >& /dev/stderr
+    set devices = ( "$name" )
+  endif
   foreach d ( $devices )
     set nocams = ( `jq -r '.rows[]?|select(.doc.name=="'${d}'").doc.cameras?==null' "$json"` )
     if ($nocams == "false") then
@@ -312,7 +317,7 @@ if (-s "$json") then
 	set allcameras = ( $allcameras $c )
       end
     else
-      # handle legacy ageathome cameras
+      # legacy ageathome cameras have no JSON camera attribute
       set c = ( `jq -r '.rows[]?|select(.doc.name=="'${d}'").doc.location' "$json"` )
       if ($?VERBOSE) echo "$0:t $$ -- Legacy device ${d} at location $c" >& /dev/stderr
       echo "camera motion_${c}_animated:" >> "$out"
