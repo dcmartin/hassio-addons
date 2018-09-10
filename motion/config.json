@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.3.113",
+  "version": "0.3.115",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -12,9 +12,9 @@
     "armhf",
     "i386"
   ],
-  "devices": [
-    "/dev/video0:/dev/video0:rwm"
-  ],
+  "full_access": true,
+  "audio": true,
+  "devices": [ "/dev/video0:/dev/video0:rwm" ],
   "hassio_api": true,
   "homeassistant_api": true,
   "privileged": [

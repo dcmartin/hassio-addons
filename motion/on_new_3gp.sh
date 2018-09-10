@@ -126,8 +126,8 @@ foreach j ( $jpgs )
     mv -f "$f" "${output}"
     continue
   else
-    # motion will probably miss most
-    cp -f "$f" "${output}"
+    # would probably screw things up
+    # cp -f "$f" "${output}"
   endif
   # manually execute sequence
   set seqid = `echo "$seqno" | awk '{ printf("%02d",$1) }'`
