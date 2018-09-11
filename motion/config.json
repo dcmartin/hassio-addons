@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.3.116",
+  "version": "0.3.117",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -13,7 +13,9 @@
     "i386"
   ],
   "audio": true,
-  "devices": [ "/dev/video0:/dev/video0:rwm" ],
+  "devices": [
+    "/dev/video0:/dev/video0:rwm"
+  ],
   "hassio_api": true,
   "homeassistant_api": true,
   "privileged": [
@@ -64,47 +66,70 @@
     "8119/tcp": 8119
   },
   "options": {
-    "devicedb":"motion",
-    "name":"default",
+    "devicedb": "motion",
+    "name": "default",
     "username": null,
     "password": null,
-    "www":"hassio.local",
-    "port":7999,
-    "email":"root@hassio.local",
+    "www": "hassio.local",
+    "port": 7999,
+    "email": "root@hassio.local",
     "timezone": "America/Los_Angeles",
-    "unit_system":"imperial",
+    "unit_system": "imperial",
     "reload": "false",
-    "cloudant":{ "url": "", "username": "", "password": "" },
-    "watson": {"url": "", "apikey": "", "classifier": "", "date": "", "version": ""},
-    "digits": {"url": "","jobid": ""},
-    "mqtt": {"host": "" },
+    "cloudant": {
+      "url": "",
+      "username": "",
+      "password": ""
+    },
+    "watson": {
+      "url": "",
+      "apikey": "",
+      "classifier": "",
+      "date": "",
+      "version": ""
+    },
+    "digits": {
+      "url": "",
+      "jobid": ""
+    },
+    "mqtt": {
+      "host": ""
+    },
     "cameras": [
-      { "name": "kelispond", "url": "mjpeg://dcmartin.dyndns.org:8897/img/video.mjpeg" }
+    {
+      "name": "sample",
+      "device": "/dev/video0",
+      "type": "ps3eye",
+      "palette": 15,
+      "fov": 75,
+      "width": 640,
+      "height": 480,
+      "fps": 5
+    }
     ]
   },
   "schema": {
-    "devicedb":"str",
-    "name":"str",
-    "elevation":"int?",
-    "latitude":"float?",
-    "longitude":"float?",
-    "unit_system":"str?",
+    "devicedb": "str",
+    "name": "str",
+    "elevation": "int?",
+    "latitude": "float?",
+    "longitude": "float?",
+    "unit_system": "str?",
     "username": "str?",
     "password": "str?",
     "www": "str?",
     "port": "port?",
-    "email":"email?",
+    "email": "email?",
     "timezone": "str?",
     "cameras": [
       {
         "name": "str",
-	"device": "str?",
-	"palette": "int?",
-        "url": "str?",
-	"type": "str?",
-	"fov": "int?",
-	"fps": "int?",
         "device": "str?",
+        "palette": "int?",
+        "url": "str?",
+        "type": "str?",
+        "fov": "int?",
+        "fps": "int?",
         "userpass": "str?",
         "keepalive": "str?",
         "port": "port?",
@@ -113,6 +138,11 @@
         "height": "int?",
         "rotate": "int?",
         "threshold": "int?",
+        "event_gap": "int?",
+        "brightness": "int?",
+        "contrast": "int?",
+        "saturation": "int?",
+        "lightswitch": "int?",
         "models": "str?"
       }
     ],
@@ -150,10 +180,28 @@
     "netcam_url": "str?",
     "netcam_userpass": "str?",
     "netcam_keepalive": "str?",
-    "watson":{"url": "str?", "apikey": "str?", "classifier": "str?", "date": "str?", "version": "str?"},
-    "digits":{"jobid": "str?","url": "str?"},
-    "mqtt": {"host": "str?","port": "port?","username":"str?","password":"str?"},
-    "cloudant":{ "url": "str?", "username": "str?", "password": "str?" },
+    "watson": {
+      "url": "str?",
+      "apikey": "str?",
+      "classifier": "str?",
+      "date": "str?",
+      "version": "str?"
+    },
+    "digits": {
+      "jobid": "str?",
+      "url": "str?"
+    },
+    "mqtt": {
+      "host": "str?",
+      "port": "port?",
+      "username": "str?",
+      "password": "str?"
+    },
+    "cloudant": {
+      "url": "str?",
+      "username": "str?",
+      "password": "str?"
+    },
     "daemon": "str?",
     "interval": "int?",
     "post_pictures": "str?",
