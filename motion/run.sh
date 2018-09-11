@@ -523,7 +523,7 @@ for (( i=0; i<ncamera ; i++)) ; do
     VALUE=$(jq -r '.cameras['${i}'].palette' "${CONFIG_PATH}")
     if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="17"; fi
     echo "Set palette to ${VALUE}" >&2
-    CAMERAS="${CAMERAS}"',"palette":"'"${VALUE}"'"'
+    CAMERAS="${CAMERAS}"',"palette":'"${VALUE}"
     echo "v4l2_palette ${VALUE}" >> "${CAMERA_CONF}"
   else
     # HANDLE NETCAM
