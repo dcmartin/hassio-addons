@@ -413,6 +413,12 @@ endif
 ##
 
 done:
+  if ($?jsons) then
+    rm -f "$jsons"
+  endif
+  if ($?jpgs) then
+    rm -f "$jpgs"
+  endif
   if ($?tmpdir) then
     rm -fr $tmpdir
   endif

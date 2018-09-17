@@ -57,7 +57,7 @@ if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
 fi
 
 if [ -n "${MQTT}" ]; then
-  VALUE=$(jq -r ".mqtt.port" "${CONFIG_PATH}")
+  VALUE=$(jq -r ".mqtt.port?" "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1883; fi
   echo "Using MQTT port: ${VALUE}" >&2
   MQTT="${MQTT}"',"port":'"${VALUE}"'}'

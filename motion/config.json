@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.3.117",
+  "version": "0.3.118",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -93,7 +93,8 @@
       "jobid": ""
     },
     "mqtt": {
-      "host": ""
+      "host": "",
+      "port": 1883
     },
     "cameras": [
     {
