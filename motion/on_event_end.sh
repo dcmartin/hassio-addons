@@ -52,8 +52,8 @@ endif
 
 set dir = "${MOTION_DATA_DIR}/${CN}"
 
-if ($?USE_MQTT && $?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"dir":"'${dir}'","camera":"'$CN'","event":"'$EN'","time":'$NOW'}'
-if ($?VERBOSE) echo "$0:t $$ -- processing $dir for camera $CN event $EN time $NOW" >& /dev/stderr
+if ($?USE_MQTT && $?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"dir":"'${dir}'","camera":"'$CN'","event":"'$EN'","date":'$NOW'}'
+if ($?VERBOSE) echo "$0:t $$ -- processing $dir for camera $CN event $EN date $NOW" >& /dev/stderr
 
 ##
 ## find all images during event
@@ -75,7 +75,7 @@ if ($#jsons) then
   else
     set START = `jq -r '.start' $lastjson`
     if ($?USE_MQTT && $?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"dir":"'${dir}'","camera":"'$CN'","event":"'$EN'","start":'$START'}'
-    if ($?VERBOSE) echo "$0:t $$ -- Identified start time $START for JSON $lastjson" >& /dev/stderr
+    if ($?VERBOSE) echo "$0:t $$ -- Identified start date $START for JSON $lastjson" >& /dev/stderr
   endif
   set jpgs = ( `echo "${dir}"/*"-${EN}-"*.jpg` )
 else
@@ -120,13 +120,13 @@ if ($#jpgs) then
     @ i--
   end
 else
-  if ($?USE_MQTT && $?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"DEBUG":"'$0:t'","pid":'$$',"camera":"'$CN'","time":'$NOW',"error":"no jpgs"}'
-  if ($?DEBUG) echo "$0:t $$ -- No candidate images ($#jpgs) found for camera $CN from time $NOW; exiting" >& /dev/stderr
+  if ($?USE_MQTT && $?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"DEBUG":"'$0:t'","pid":'$$',"camera":"'$CN'","date":'$NOW',"error":"no jpgs"}'
+  if ($?DEBUG) echo "$0:t $$ -- No candidate images ($#jpgs) found for camera $CN from date $NOW; exiting" >& /dev/stderr
   goto done
 endif
 
-if ($?USE_MQTT && $?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"camera":"'$CN'","time":'$NOW',"frames":'$#frames',"elapsed":'$elapsed'}'
-if ($?VERBOSE) echo "$0:t $$ -- Found $#frames frames for camera $CN at time $NOW elapsed $elapsed" >& /dev/stderr
+if ($?USE_MQTT && $?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"camera":"'$CN'","date":'$NOW',"frames":'$#frames',"elapsed":'$elapsed'}'
+if ($?VERBOSE) echo "$0:t $$ -- Found $#frames frames for camera $CN at date $NOW elapsed $elapsed" >& /dev/stderr
 
 if ($#frames) then
   set images = `echo "$frames" | sed 's/ /,/g' | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g'`
