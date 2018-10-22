@@ -108,13 +108,21 @@ if [ -e "/run/systemd/resolve/resolv.conf" ]; then
 fi
 
 # install pre-requisites
-for CMD in jq curl ssh docker kafkacat; do
+for CMD in jq curl ssh kafkacat; do
   C=$(command -v $CMD)
   if [ -z "${C}" ]; then
     echo "+++ INFO: Installing ${CMD}"
     apt-get install -y ${CMD}
   fi
 done
+
+# check docker
+CMD=$(command -v docker)
+if [ -z "${CMD}" ]; then
+  echo "*** WARN: Installing docker"
+  curl -fsSL "get.docker.com" | bash -s
+  exit
+fi
 
 ###
 ### HORIZON
