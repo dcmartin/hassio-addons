@@ -120,7 +120,7 @@ done
 CMD=$(command -v docker)
 if [ -z "${CMD}" ]; then
   echo "*** WARN: Installing docker"
-  curl -fsSL "get.docker.com" | bash -s
+  curl -fsSL "get.docker.com" | sh
   exit
 fi
 
