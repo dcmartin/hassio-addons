@@ -153,12 +153,12 @@ if [ -z "${HZN}" ]; then
   echo "deb [arch=${BUILD_ARCH}] http://pkg.bluehorizon.network/linux/ubuntu xenial-${HZN_APT_REPO} main" >> "${HZN_APT_LIST}"
   echo "deb-src [arch=${BUILD_ARCH}] http://pkg.bluehorizon.network/linux/ubuntu xenial-${HZN_APT_REPO} main" >> "${HZN_APT_LIST}"
   apt-get update -y
-  apt-get install -y horizon
+  apt-get install -y horizon bluehorizon
 fi
 
 if [[ $(hzn node list | jq '.id?=="'"${HZN_DEVICE_ID}"'"') == false ]]; then
   echo "+++ INFO: Registering ${HZN_DEVICE_ID}" $(date)
-  hzn register -n "${HZN_DEVICE_ID}:${HZN_DEVICE_TOKEN}" "${HZN_ORG_ID}" "${PATTERN_ORG_ID}/${PATTERN}" -f "${INPUT}"
+  hzn register -n "${HZN_DEVICE_ID}:${HZN_DEVICE_TOKEN}" "${HZN_ORG_ID}" "${HZN_PATTERN_ORG_ID}/${HZN_PATTERN_ID}" -f "${INPUT}"
 fi
 
 # {
