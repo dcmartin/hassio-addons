@@ -12,13 +12,23 @@ if [ $(whoami) != "root" ]; then
   exit
 fi
 
-ACTIVE=$(systemctl is-active horizon.service)
-if [ $ACTIVE != "active" ]; then
-  echo "+++ INFO: The horizon.service is not active ($ACTIVE)"
+## CREDENTIAL REQUIRED
+
+KAFKA_CREDS="kafkacreds.json"
+if [ -n "${1}" ] && [ -s "${1}" ]; then
+  KAFKA_CREDS="${1}"
+  echo "+++ INFO: Using IBM MessageHub credentials ${KAFKA_CREDS}"
+elif [ ! -n "${1}" ] && [ -e "${KAFKA_CREDS}" ]; then
+  echo "+++ INFO: Using IBM MessageHub credentials ${KAFKA_CREDS}"
 else
-  echo "!!! ERROR: The horizon.service is already active ($ACTIVE); exiting"
+  echo "Specify credentials file copied from MessageHub for $HZN_ORG_ID, e.g. $* ./kafkacreds.json; exiting"
   exit
 fi
+if [ -z "${KAFKA_CREDS}" ]; then
+  echo "Empty ${KAFKA_CREDS}; exiting"
+  exit
+fi
+
 
 # Specify the hardware architecture of this Edge Node
 
@@ -49,16 +59,16 @@ fi
 
 echo "+++ INFO: Using architecture: ${ARCH}"
 
-# fix DNS
-if [ -e "/run/systemd/resolve/resolv.conf" ]; then
-  echo "*** WARN: Check your /etc/resolv.conf for link to /run/systemd/resolve/resolv.conf under Ubuntu 18.04"
-fi
-
 # check apt
 CMD=$(command -v apt)
 if [ -z "${CMD}" ]; then
   echo "!!! ERROR: No apt(1) package installation; are you using Alpine; exiting"
   exit
+fi
+
+# warn about DNS
+if [ -e "/run/systemd/resolve/resolv.conf" ]; then
+  echo "*** WARN: Check your /etc/resolv.conf for link to /run/systemd/resolve/resolv.conf under Ubuntu 18.04"
 fi
 
 # update
@@ -152,8 +162,14 @@ else
     echo "!!! ERROR: Failed to install horizon; exiting"
     exit
   fi
-  echo "+++ INFO: Starting horizon"
-  systemctl start horizon.service
+
+  HZN_SERVICE_ACTIVE=$(systemctl is-active horizon.service)
+  if [ $HZN_SERVICE_ACTIVE != "active" ]; then
+    echo "+++ INFO: The horizon.service is not active ($HZN_SERVICE_ACTIVE); starting"
+    systemctl start horizon.service
+  else
+    echo "*** WARN: The horizon.service is already active ($HZN_SERVICE_ACTIVE)"
+  fi
 fi
 
 if [ -s "${HZN_LOG_CONF}" ]; then
@@ -176,23 +192,6 @@ fi
 ###
 ### MESSAGE HUB (run.sh)
 ###
-
-## KAFKA +++ INFORMATION (from ORG credentials)
-
-KAFKA_CREDS="kafkacreds.json"
-if [ -n "${1}" ] && [ -s "${1}" ]; then
-  KAFKA_CREDS="jq -c '.' ${1}"
-elif [ ! -n "${1}" ] && [ ! -e "${KAFKA_CREDS}" ]; then
-  echo "Specify credentials file copied from MessageHub for $HZN_ORG_ID, e.g. $* ./kafkacreds.json; exiting"
-  exit
-elif [ -n ${CONFIG_PATH} ] && [ -s ${CONFIG_PATH} ]; then
-  jq '.kafka' ${CONFIG_PATH} > kafkacreds.json
-fi
-
-if [ -z "${KAFKA_CREDS}" ]; then
-  echo "Empty ${KAFKA_CREDS}; exiting"
-  exit
-fi
 
 echo "+++ INFO: KAFKA MESSAGE HUB"
 
@@ -228,9 +227,10 @@ HZN_PATTERN_ORG_ID="IBM"
 HZN_PATTERN_ID="cpu2msghub"
 HZN_PATTERN_URL="https://github.com/open-horizon/examples/wiki/service-cpu2msghub"
 MSGHUB_TOPIC=$(echo "${HZN_ORG_ID}.${HZN_PATTERN_ORG_ID}_${HZN_PATTERN_ID}" | sed 's/@/_/g')
+
 echo "### TOPIC SELECTED == ${MSGHUB_TOPIC}"
   
-MAC=$(ip addr | egrep -v NO-CARRIER | egrep -A 1 BROADCAST | egrep -v BROADCAST | sed "s/.*ether \([^ ]*\) .*/\1/g" | sed "s/://g")
+MAC=$(ip addr | egrep -v NO-CARRIER | egrep -A 1 BROADCAST | egrep -v BROADCAST | sed "s/.*ether \([^ ]*\) .*/\1/g" | sed "s/://g" | head -1)
 
 HZN_DEVICE_ID="$(hostname)-${MAC}"
 HZN_DEVICE_TOKEN='whocares'
