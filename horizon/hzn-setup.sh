@@ -243,12 +243,12 @@ echo "+++ INFO: HZN_DEVICE_ID = ${HZN_DEVICE_ID}"
 echo "+++ INFO: HZN_DEVICE_TOKEN = ${HZN_DEVICE_TOKEN}"
 
 ## try to get topics
-TOPICS=$(curl -L -s -q -H "X-Auth-Token: $MSGHUB_API_KEY" $MSGHUB_ADMIN_URL/admin/topics | jq -c '.')
+TOPICS=$(curl -fsSL -H "X-Auth-Token: $MSGHUB_API_KEY" $MSGHUB_ADMIN_URL/admin/topics | jq -c '.')
 TOPIC_NAMES=$(echo "${TOPICS}" | jq -j '.[]|.name," "')
 echo "### FOUND TOPICS: ${TOPIC_NAMES}"
 
 # attempt to create a new topic
-JSON=$(curl -H "X-Auth-Token: $MSGHUB_API_KEY" -d "{ \"name\": \"$MSGHUB_TOPIC\", \"partitions\": 2 }" $MSGHUB_ADMIN_URL/admin/topics | jq -c '.')
+JSON=$(curl -fsSL -H "X-Auth-Token: $MSGHUB_API_KEY" -d "{ \"name\": \"$MSGHUB_TOPIC\", \"partitions\": 2 }" $MSGHUB_ADMIN_URL/admin/topics | jq -c '.')
 echo "### TOPIC RESPONSE: ${JSON}"
 
 
