@@ -55,8 +55,11 @@ if [ -n "${2}" ] && [ -s "${2}" ]; then
 elif [ ! -n "${2}" ] && [ -e "${KAFKA_CREDS}" ]; then
   echo "+++ INFO: Using IBM MessageHub credentials ${KAFKA_CREDS}"
 else
-  echo "Specify credentials file copied from MessageHub for $HZN_ORG_ID, e.g. $0 $* ./kafkacreds.json; exiting"
-  exit
+  echo "Copy credentials JSON structure from from IBM Cloud $HZN_ORG_ID; and PASTE (Control-V) and then type Control-D"
+  rm -f "${KAFKA_CREDS}"
+  while read -r; do
+    printf "%s\n" "$REPLY" >> "${KAFKA_CREDS}"
+  done
 fi
 if [ ! -s "${KAFKA_CREDS}" ]; then
   echo "Empty ${KAFKA_CREDS}; exiting"
@@ -123,10 +126,10 @@ if [ ! -z "${CMD}" ]; then
   echo "*** WARN: Open Horizon already installed as ${CMD}; skipping"
 else
   # update
-  echo "+++ INFO: Updating via apt"
-  apt-get update -y
-  echo "+++ INFO: Upgrading via apt"
-  apt-get upgrade -y
+  # echo "+++ INFO: Updating via apt"
+  # apt-get update -y
+  # echo "+++ INFO: Upgrading via apt"
+  # apt-get upgrade -y
 
   if [ ! -n "${HZN_APT_REPO}" ]; then
     HZN_APT_REPO=testing
