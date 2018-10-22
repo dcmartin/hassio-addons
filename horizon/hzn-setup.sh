@@ -12,13 +12,47 @@ if [ $(whoami) != "root" ]; then
   exit
 fi
 
-## CREDENTIAL REQUIRED
+## EXCHANGE
+
+if [ -z "${HZN_ORG_ID}" ]; then
+  HZN_ORG_ID='cgiroua@us.ibm.com'
+  echo "*** WARN: Using default HZN_ORG_ID=${HZN_ORG_ID}"
+else
+  echo "+++ INFO: Using existing HZN_ORG_ID=${HZN_ORG_ID}"
+fi
+
+if [ -z "${HZN_EXCHANGE_URL}" ]; then
+  HZN_EXCHANGE_URL="https://stg-edge-cluster.us-south.containers.appdomain.cloud/v1"
+  echo "*** WARN: Using default HZN_EXCHANGE_URL=${HZN_EXCHANGE_URL}"
+else 
+  echo "*** WARN: Using existing HZN_EXCHANGE_URL=${HZN_EXCHANGE_URL}"
+fi
+export HZN_EXCHANGE_URL
+
+if [ -n "${HZN_EXCHANGE_USER_AUTH}" ]; then
+  echo "*** WARN: Using existing HZN_EXCHANGE_USER_AUTH=${HZN_EXCHANGE_USER_AUTH}"
+elif [ -n "${1}" ]; then
+  HZN_EXCHANGE_USER_AUTH="${1}"
+else
+  while [ -z "${HZN_EXCHANGE_USER_AUTH}" ]; do
+    read -p "${HZN_ORG_ID} username: " UN
+    read -sp "Password: " PW
+    if [ ! -z "${UN}" ] && [ ! -z "${PW}" ]; then 
+      HZN_EXCHANGE_USER_AUTH="${UN}:${PW}"
+    fi
+  done
+fi
+echo "*** WARN: Using existing HZN_EXCHANGE_USER_AUTH=${HZN_EXCHANGE_USER_AUTH}"
+export HZN_EXCHANGE_USER_AUTH
+
+
+## KAFKA
 
 KAFKA_CREDS="kafkacreds.json"
-if [ -n "${1}" ] && [ -s "${1}" ]; then
-  KAFKA_CREDS="${1}"
+if [ -n "${2}" ] && [ -s "${2}" ]; then
+  KAFKA_CREDS="${2}"
   echo "+++ INFO: Using IBM MessageHub credentials ${KAFKA_CREDS}"
-elif [ ! -n "${1}" ] && [ -e "${KAFKA_CREDS}" ]; then
+elif [ ! -n "${2}" ] && [ -e "${KAFKA_CREDS}" ]; then
   echo "+++ INFO: Using IBM MessageHub credentials ${KAFKA_CREDS}"
 else
   echo "Specify credentials file copied from MessageHub for $HZN_ORG_ID, e.g. $* ./kafkacreds.json; exiting"
@@ -70,67 +104,30 @@ if [ -e "/run/systemd/resolve/resolv.conf" ]; then
   echo "*** WARN: Check your /etc/resolv.conf for link to /run/systemd/resolve/resolv.conf under Ubuntu 18.04"
 fi
 
-# update
-echo "+++ INFO: Updating via apt"
-apt-get update -y
-
-echo "+++ INFO: Upgrading via apt"
-apt-get upgrade -y
-
-# install jq
-CMD=$(command -v jq)
-if [ -z "${CMD}" ]; then
-  echo "+++ INFO: Installing jq"
-  apt-get install -y jq
-fi
-
-# install curl
-CMD=$(command -v curl)
-if [ -z "${CMD}" ]; then
-  echo "+++ INFO: Installing curl"
-  apt-get install -y curl
-fi
-
-# install kafkacat
-CMD=$(command -v kafkacat)
-if [ -z "${CMD}" ]; then
-  echo "+++ INFO: Installing kafkacat"
-  apt-get install -y kafkacat
-fi
-
-# install ssh
-CMD=$(command -v ssh)
-if [ -z "${CMD}" ]; then
-  echo "+++ INFO: Installing ssh"
-  apt-get install -y ssh
-fi
-
-# install docker
-CMD=$(command -v docker)
-if [ -z "${CMD}" ]; then
-  echo "+++ INFO: Installing docker"
-  curl -fsSL get.docker.com | sh
-fi
+# install pre-requisites
+for CMD in jq curl ssh docker kafkacat; do
+  C=$(command -v $CMD)
+  if [ -z "${C}" ]; then
+    echo "+++ INFO: Installing ${CMD}"
+    apt-get install -y ${CMD}
+  fi
+done
 
 ###
 ### HORIZON
 ###
 
-# must register and get access to exchange
-
-if [ ! -n "${HZN_ORG_ID}" ]; then
-  HZN_ORG_ID='cgiroua@us.ibm.com'
-  echo "*** WARN: Using default HZN_ORG_ID = ${HZN_ORG_ID}"
-else
-  echo "+++ INFO: Using HZN_ORG_ID from environment"
-fi
-
-# CHECK REPOSITORY
-
+# CLI
 CMD=$(command -v hzn)
 if [ ! -z "${CMD}" ]; then
   echo "*** WARN: Open Horizon already installed as ${CMD}; skipping"
 else
+  # update
+  echo "+++ INFO: Updating via apt"
+  apt-get update -y
+  echo "+++ INFO: Upgrading via apt"
+  apt-get upgrade -y
+
   if [ ! -n "${HZN_APT_REPO}" ]; then
     HZN_APT_REPO=testing
     echo "*** WARN: Using default HZN_APT_REPO = ${HZN_APT_REPO}"
@@ -165,6 +162,7 @@ else
   fi
 fi
 
+# LOGGING
 if [ ! -n "${HZN_LOG_CONF}" ]; then
   HZN_LOG_CONF=/etc/rsyslog.d/10-horizon-docker.conf
   echo "*** WARN: Using default HZN_LOG_CONF = ${HZN_LOG_CONF}"
@@ -186,6 +184,7 @@ else
   service rsyslog restart
 fi
 
+# SERVICE ACTIVATION
 HZN_SERVICE_ACTIVE=$(systemctl is-active horizon.service)
 if [ $HZN_SERVICE_ACTIVE != "active" ]; then
   echo "+++ INFO: The horizon.service is not active ($HZN_SERVICE_ACTIVE); starting"
@@ -195,10 +194,8 @@ else
 fi
 
 ###
-### MESSAGE HUB (run.sh)
+### KAFKA CONFIGURATION (kafkacreds.json)
 ###
-
-echo "+++ INFO: KAFKA MESSAGE HUB"
 
 MSGHUB_BROKER_URL=$(jq -r '.kafka_brokers_sasl[]' "${KAFKA_CREDS}" | fmt -1024 | sed "s/ /,/g")
 if [ ! -z "${MSGHUB_BROKER_URL}" ]; then
@@ -207,7 +204,6 @@ else
   echo "!!! ERROR: MSGHUB_BROKER_URL is not defined; exiting"
   exit
 fi
-
 MSGHUB_ADMIN_URL=$(jq -r '.kafka_admin_url' "${KAFKA_CREDS}")
 if [ ! -z "${MSGHUB_ADMIN_URL}" ]; then
   echo "+++ INFO: MSGHUB_ADMIN_URL = ${MSGHUB_ADMIN_URL}"
@@ -215,7 +211,6 @@ else
   echo "!!! ERROR: MSGHUB_ADMIN_URL is not defined; exiting"
   exit
 fi
-
 MSGHUB_API_KEY=$(jq -r '.api_key' "${KAFKA_CREDS}")
 if [ ! -z "${MSGHUB_API_KEY}" ]; then
   echo "+++ INFO: MSGHUB_API_KEY = ${MSGHUB_API_KEY}"
@@ -225,37 +220,45 @@ else
 fi
 
 ##
-## PATTERN SETUP
+## HORIZON PATTERN SETUP
 ##
 
 HZN_PATTERN_ORG_ID="IBM"
 HZN_PATTERN_ID="cpu2msghub"
 HZN_PATTERN_URL="https://github.com/open-horizon/examples/wiki/service-cpu2msghub"
+
+# TOPIC
 MSGHUB_TOPIC=$(echo "${HZN_ORG_ID}.${HZN_PATTERN_ORG_ID}_${HZN_PATTERN_ID}" | sed 's/@/_/g')
 
-echo "### TOPIC SELECTED == ${MSGHUB_TOPIC}"
-  
-MAC=$(ip addr | egrep -v NO-CARRIER | egrep -A 1 BROADCAST | egrep -v BROADCAST | sed "s/.*ether \([^ ]*\) .*/\1/g" | sed "s/://g" | head -1)
+# get the mac address (uniqueness)  
+DEVICE_MAC=$(ip addr | egrep -v NO-CARRIER | egrep -A 1 BROADCAST | egrep -v BROADCAST | sed "s/.*ether \([^ ]*\) .*/\1/g" | sed "s/://g" | head -1)
+DEVICE_ID="$(hostname)-${DEVICE_MAC}"
+DEVICE_TOKEN=$(echo "${HZN_EXCHANGE_USER_AUTH}" | sed 's/.*://')
 
-HZN_DEVICE_ID="$(hostname)-${MAC}"
-HZN_DEVICE_TOKEN='whocares'
-echo "+++ INFO: HZN_DEVICE_ID = ${HZN_DEVICE_ID}"
-echo "+++ INFO: HZN_DEVICE_TOKEN = ${HZN_DEVICE_TOKEN}"
+echo "+++ INFO: DEVICE_ID=${DEVICE_ID}; DEVICE_TOKEN=${DEVICE_TOKEN}"
 
-## try to get topics
-TOPICS=$(curl -fsSL -H "X-Auth-Token: $MSGHUB_API_KEY" $MSGHUB_ADMIN_URL/admin/topics | jq -c '.')
+# list topics
+TOPICS=$(curl -fsSL -H "X-Auth-Token: $MSGHUB_API_KEY" $MSGHUB_ADMIN_URL/admin/topics | jq '.')
 TOPIC_NAMES=$(echo "${TOPICS}" | jq -j '.[]|.name," "')
-echo "### FOUND TOPICS: ${TOPIC_NAMES}"
+echo "+++ INFO: Topics availble:"
+for TN in ${TOPIC_NAMES}; do
+  echo -n " ${TN}"
+  if [ ${TN} == "${MSGHUB_TOPIC}" ]; then
+    FOUND=true
+  fi
+done
 
-# attempt to create a new topic
-JSON=$(curl -fsSL -H "X-Auth-Token: $MSGHUB_API_KEY" -d "{ \"name\": \"$MSGHUB_TOPIC\", \"partitions\": 2 }" $MSGHUB_ADMIN_URL/admin/topics | jq -c '.')
-echo "### TOPIC RESPONSE: ${JSON}"
+if [ -z ${FOUND} ]; then
+  # attempt to create a new topic
+  curl -fsSL -H "X-Auth-Token: $MSGHUB_API_KEY" -d "{ \"name\": \"$MSGHUB_TOPIC\", \"partitions\": 2 }" $MSGHUB_ADMIN_URL/admin/topics
+else
+  echo "+++ INFO: Topic found: ${MSGHUB_TOPIC}"
+fi
 
-
-if [[ $(hzn node list | jq '.id?=="'"${HZN_DEVICE_ID}"'"') == false ]]; then
+if [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; then
   INPUT="${MSGHUB_TOPIC}.json"
   if [ -s "${INPUT}" ]; then
-    echo -n "*** WARN: Existing services registration file found: ${INPUT}; deleting"
+    echo "*** WARN: Existing services registration file found: ${INPUT}; deleting"
     rm -f "${INPUT}"
   fi
   echo '{' >> "${INPUT}"
@@ -271,11 +274,11 @@ if [[ $(hzn node list | jq '.id?=="'"${HZN_DEVICE_ID}"'"') == false ]]; then
   echo '  ]' >> "${INPUT}"
   echo '}' >> "${INPUT}"
 
-  echo "### REGISTERING as ${HZN_DEVICE_ID} organization ${HZN_ORG_ID}) with pattern " $(jq -c '.' "${INPUT}")
-  hzn register -n "${HZN_DEVICE_ID}:${HZN_DEVICE_TOKEN}" "${HZN_ORG_ID}" "${HZN_PATTERN_ORG_ID}/${HZN_PATTERN_ID}" -f "${INPUT}"
+  echo "### REGISTERING as ${DEVICE_ID} organization ${HZN_ORG_ID}) with pattern " $(jq -c '.' "${INPUT}")
+  hzn register -n "${DEVICE_ID}:${DEVICE_TOKEN}" "${HZN_ORG_ID}" "${HZN_PATTERN_ORG_ID}/${HZN_PATTERN_ID}" -f "${INPUT}"
 fi
 
-while [[ $(hzn node list | jq '.id?=="'"${HZN_DEVICE_ID}"'"') == false ]]; do echo "--- WAIT: On registration (60)" $(date); sleep 60; done
+while [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; do echo "--- WAIT: On registration (60)" $(date); sleep 60; done
 echo "+++ INFO: Registration complete" $(date)
 
 while [[ $(hzn node list | jq '.connectivity."firmware.bluehorizon.network"?==true') == false ]]; do echo "--- WAIT: On firmware (60)" $(date); sleep 60; done
@@ -292,13 +295,12 @@ echo "+++ INFO: Pattern complete" $(date)
 
 while [[ $(hzn node list | jq '.configstate.last_update_time?!=null') == false ]]; do echo "--- WAIT: On update (60)" $(date); sleep 60; done
 echo "+++ INFO: Update received" $(date)
+  
+echo "+++ INFO: OPERATIONAL at " $(date) $(hzn node list | jq -c '.')
 
 while [[ $(hzn node list | jq '.token_valid?!=true') == false ]]; do 
-  echo "+++ INFO: Nodes at " $(date) $(hzn node list | jq -c '.')
+  # wait on kafkacat death and re-start as long as token is valid
   kafkacat -C -q -o end -f "%t/%p/%o/%k: %s\n" -b $MSGHUB_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${MSGHUB_API_KEY:0:16}" -X "sasl.password=${MSGHUB_API_KEY:16}" -t "$MSGHUB_TOPIC"
-
-  echo "--- WAIT: On invalid token (300)"
-  sleep 300
 done
 
 exit
