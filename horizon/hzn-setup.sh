@@ -8,7 +8,7 @@ if [ "${VENDOR}" == "apple" ] || [ "${OSTYPE}" == "darwin" ]; then
 fi
 
 if [ $(whoami) != "root" ]; then
-  echo "!!! ERROR: Please run as root, e.g. sudo $*"
+  echo "!!! ERROR: Please run as root, e.g. sudo $0 $*"
   exit
 fi
 
@@ -55,7 +55,7 @@ if [ -n "${2}" ] && [ -s "${2}" ]; then
 elif [ ! -n "${2}" ] && [ -e "${KAFKA_CREDS}" ]; then
   echo "+++ INFO: Using IBM MessageHub credentials ${KAFKA_CREDS}"
 else
-  echo "Specify credentials file copied from MessageHub for $HZN_ORG_ID, e.g. $* ./kafkacreds.json; exiting"
+  echo "Specify credentials file copied from MessageHub for $HZN_ORG_ID, e.g. $0 $* ./kafkacreds.json; exiting"
   exit
 fi
 if [ ! -s "${KAFKA_CREDS}" ]; then
