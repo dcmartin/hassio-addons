@@ -102,12 +102,6 @@ fi
 
 # must register and get access to exchange
 
-if [ ! -n "${HZN_EXCHANGE_URL}" ]; then
-  HZN_EXCHANGE_URL='https://stg-edge-cluster.us-south.containers.appdomain.cloud/v1'
-  echo "*** WARN: Using default HZN_EXCHANGE_URL = ${HZN_EXCHANGE_URL}"
-else
-  echo "+++ INFO: Using HZN_EXCHANGE_URL from environment"
-fi
 if [ ! -n "${HZN_ORG_ID}" ]; then
   HZN_ORG_ID='cgiroua@us.ibm.com'
   echo "*** WARN: Using default HZN_ORG_ID = ${HZN_ORG_ID}"
@@ -224,18 +218,6 @@ if [ ! -z "${MSGHUB_API_KEY}" ]; then
 else
   echo "!!! ERROR: No MessageHub API key = ${MSGHUB_API_KEY}"
   exit
-fi
-
-# USERNAME and PASSWORD
-
-if [ ! -n "${HZN_EXCHANGE_USER_AUTH}" ]; then
-  echo "### Enter username for organization ${HZN_ORG_ID} to access exchange: ${HZN_EXCHANGE_URL}"
-  # get login information
-  read -p 'Username: ' HZN_EXCHANGE_USERNAME
-  read -sp 'Password: ' HZN_EXCHANGE_PASSWORD
-  HZN_EXCHANGE_USER_AUTH="${HZN_EXCHANGE_USERNAME}:${HZN_EXCHANGE_PASSWORD}"
-else
-  echo "+++ INFO: Using HZN_EXCHANGE_USER_AUTH from environment"
 fi
 
 ##
