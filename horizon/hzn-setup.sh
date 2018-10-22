@@ -24,11 +24,10 @@ else
   echo "Specify credentials file copied from MessageHub for $HZN_ORG_ID, e.g. $* ./kafkacreds.json; exiting"
   exit
 fi
-if [ -z "${KAFKA_CREDS}" ]; then
+if [ ! -s "${KAFKA_CREDS}" ]; then
   echo "Empty ${KAFKA_CREDS}; exiting"
   exit
 fi
-
 
 # Specify the hardware architecture of this Edge Node
 
@@ -121,32 +120,26 @@ fi
 
 # CHECK REPOSITORY
 
-if [ ! -n "${HZN_APT_REPO}" ]; then
-  HZN_APT_REPO=testing
-  echo "*** WARN: Using default HZN_APT_REPO = ${HZN_APT_REPO}"
-fi
-if [ ! -n "${HZN_APT_LIST}" ]; then
-  HZN_APT_LIST=/etc/apt/sources.list.d/bluehorizon.list
-  echo "*** WARN: Using default HZN_APT_LIST = ${HZN_APT_LIST}"
-fi
-if [ ! -n "${HZN_LOG_CONF}" ]; then
-  HZN_LOG_CONF=/etc/rsyslog.d/10-horizon-docker.conf
-  echo "*** WARN: Using default HZN_LOG_CONF = ${HZN_LOG_CONF}"
-fi
-if [ ! -n "${HZN_PUBLICKEY_URL}" ]; then
-  HZN_PUBLICKEY_URL=http://pkg.bluehorizon.network/bluehorizon.network-public.key
-  echo "*** WARN: Using default HZN_PUBLICKEY_URL = ${HZN_PUBLICKEY_URL}"
-fi
-
-if [ -s "${HZN_APT_LIST}" ]; then
-  echo "*** WARN: Existing Open Horizon ${HZN_APT_LIST}; deleting"
-  rm -f "${HZN_APT_LIST}"
-fi
-
 CMD=$(command -v hzn)
 if [ ! -z "${CMD}" ]; then
   echo "*** WARN: Open Horizon already installed as ${CMD}; skipping"
 else
+  if [ ! -n "${HZN_APT_REPO}" ]; then
+    HZN_APT_REPO=testing
+    echo "*** WARN: Using default HZN_APT_REPO = ${HZN_APT_REPO}"
+  fi
+  if [ ! -n "${HZN_APT_LIST}" ]; then
+    HZN_APT_LIST=/etc/apt/sources.list.d/bluehorizon.list
+    echo "*** WARN: Using default HZN_APT_LIST = ${HZN_APT_LIST}"
+  fi
+  if [ ! -n "${HZN_PUBLICKEY_URL}" ]; then
+    HZN_PUBLICKEY_URL=http://pkg.bluehorizon.network/bluehorizon.network-public.key
+    echo "*** WARN: Using default HZN_PUBLICKEY_URL = ${HZN_PUBLICKEY_URL}"
+  fi
+  if [ -s "${HZN_APT_LIST}" ]; then
+    echo "*** WARN: Existing Open Horizon ${HZN_APT_LIST}; deleting"
+    rm -f "${HZN_APT_LIST}"
+  fi
   # get public key and install
   echo "+++ INFO: Adding key for Open Horizon from ${HZN_PUBLICKEY_URL}"
   curl -fsSL "${HZN_PUBLICKEY_URL}" | apt-key add -
@@ -158,20 +151,17 @@ else
   apt-get update -y
   echo "+++ INFO: Installing Open Horizon"
   apt-get install -y horizon bluehorizon
+  # confirm installation
   if [ -z $(command -v hzn) ]; then
     echo "!!! ERROR: Failed to install horizon; exiting"
     exit
   fi
-
-  HZN_SERVICE_ACTIVE=$(systemctl is-active horizon.service)
-  if [ $HZN_SERVICE_ACTIVE != "active" ]; then
-    echo "+++ INFO: The horizon.service is not active ($HZN_SERVICE_ACTIVE); starting"
-    systemctl start horizon.service
-  else
-    echo "*** WARN: The horizon.service is already active ($HZN_SERVICE_ACTIVE)"
-  fi
 fi
 
+if [ ! -n "${HZN_LOG_CONF}" ]; then
+  HZN_LOG_CONF=/etc/rsyslog.d/10-horizon-docker.conf
+  echo "*** WARN: Using default HZN_LOG_CONF = ${HZN_LOG_CONF}"
+fi
 if [ -s "${HZN_LOG_CONF}" ]; then
   echo "*** WARN: Existing logging configuration: ${HZN_LOG_CONF}; skipping"
 else
@@ -187,6 +177,14 @@ else
   echo '& stop' >> "${HZN_LOG_CONF}"
   echo "+++ INFO: Restarting rsyslog(8)"
   service rsyslog restart
+fi
+
+HZN_SERVICE_ACTIVE=$(systemctl is-active horizon.service)
+if [ $HZN_SERVICE_ACTIVE != "active" ]; then
+  echo "+++ INFO: The horizon.service is not active ($HZN_SERVICE_ACTIVE); starting"
+  systemctl start horizon.service
+else
+  echo "*** WARN: The horizon.service is already active ($HZN_SERVICE_ACTIVE)"
 fi
 
 ###
