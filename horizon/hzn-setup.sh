@@ -92,6 +92,13 @@ if [ -z "${CMD}" ]; then
   apt-get install -y curl
 fi
 
+# install kafkacat
+CMD=$(command -v kafkacat)
+if [ -z "${CMD}" ]; then
+  echo "+++ INFO: Installing kafkacat"
+  apt-get install -y kafkacat
+fi
+
 # install ssh
 CMD=$(command -v ssh)
 if [ -z "${CMD}" ]; then
