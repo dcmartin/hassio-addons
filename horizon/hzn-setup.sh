@@ -54,8 +54,8 @@ if [ -n "${2}" ] && [ -s "${2}" ]; then
 elif [ ! -n "${2}" ] && [ -e "${KAFKA_CREDS}" ]; then
   echo "+++ INFO: Using IBM MessageHub credentials ${KAFKA_CREDS}"
 else
-  echo "Copy credentials JSON structure from from IBM Cloud $ORGID; and PASTE (Control-V) and then type Control-D"
-  echo "https://console.bluemix.net/services/messagehub/b5f8df99-d3f6-47b8-b1dc-12806d63ae61/?paneId=credentials&new=true&env_id=ibm:yp:us-south&org=51aea963-6924-4a71-81d5-5f8c313328bd&space=f965a097-fcb8-4768-953e-5e86ea2d66b4"
+  echo "OPEN LINK: https://console.bluemix.net/services/messagehub/b5f8df99-d3f6-47b8-b1dc-12806d63ae61/?paneId=credentials&new=true&env_id=ibm:yp:us-south&org=51aea963-6924-4a71-81d5-5f8c313328bd&space=f965a097-fcb8-4768-953e-5e86ea2d66b4"
+  echo "COPY credentials JSON structure from from IBM Cloud $ORGID; and PASTE and then type Control-D"
   rm -f "${KAFKA_CREDS}"
   while read -r; do
     printf "%s\n" "$REPLY" >> "${KAFKA_CREDS}"
@@ -275,7 +275,7 @@ if [ -n "${NODE_LIST}" ]; then
   DEVICE_REG=$(echo "${NODE_LIST}" | jq '.id?=="'"${DEVICE_ID}"'"')
 fi
 if [ "${DEVICE_REG}" == "true" ]; then
-    echo "### ALREADY REGISTERED as ${DEVICE_ID} organization ${ORGID}")
+    echo "### ALREADY REGISTERED as ${DEVICE_ID} organization ${ORGID}"
 else
   INPUT="${KAFKA_TOPIC}.json"
   if [ -s "${INPUT}" ]; then
@@ -332,7 +332,7 @@ while read -r -n 1 -s answer; do
     break
   fi
 done
-if [ $reval == 1 ]; then
+if [[ $reval == 1 ]]; then
 while [[ $(hzn node list | jq '.token_valid?!=true') == false ]]; do 
   # wait on kafkacat death and re-start as long as token is valid
   kafkacat -C -q -o end -f "%t/%p/%o/%k: %s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC"
@@ -351,7 +351,7 @@ while read -r -n 1 -s answer; do
     break
   fi
 done
-if [ $reval == 1 ]; then
+if [[ $retval == 1 ]]; then
   # install hassio
   curl -fsSL https://raw.githubusercontent.com/home-assistant/hassio-build/master/install/hassio_install | bash -s
 fi
