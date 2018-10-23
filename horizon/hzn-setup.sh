@@ -270,7 +270,8 @@ echo "+++ INFO: DEVICE_ID=${DEVICE_ID}; DEVICE_TOKEN=${DEVICE_TOKEN}"
 ### REGISTRATION
 ###
 
-if [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; then
+NODE_LIST=$(hzn node list)
+if [[ NODE_LIST=$(hzn node list) ]] && [[ $(echo "${NODE_LIST}" | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; then
   INPUT="${KAFKA_TOPIC}.json"
   if [ -s "${INPUT}" ]; then
     echo "*** WARN: Existing services registration file found: ${INPUT}; deleting"
