@@ -283,7 +283,7 @@ if [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; then
   echo '      "url": "'"${PATTERN_URL}"'",' >> "${INPUT}"
   echo '      "versionRange": "[0.0.0,INFINITY)",' >> "${INPUT}"
   echo '      "variables": {' >> "${INPUT}"
-  echo '        "KAFKA_API_KEY": "'"${KAFKA_API_KEY}"'"' >> "${INPUT}"
+  echo '        "MSGHUB_API_KEY": "'"${KAFKA_API_KEY}"'"' >> "${INPUT}"
   echo '      }' >> "${INPUT}"
   echo '    }' >> "${INPUT}"
   echo '  ]' >> "${INPUT}"
