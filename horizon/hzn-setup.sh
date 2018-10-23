@@ -324,7 +324,7 @@ echo "SUCCESS at $(date) for $(hzn node list | jq -c '.id')"
 ### KAFKACAT
 ###
 
-echo -n "Run KafkaCat and (w)ait forever on messages (W/n)? "
+echo -n "(W)ait forever on KafkaCat messages (W/n)? "
 while read -r -n 1 -s answer; do
   if [[ $answer = [NnWw] ]]; then
     [[ $answer = [Nn] ]] && retval=0
@@ -333,25 +333,30 @@ while read -r -n 1 -s answer; do
   fi
 done
 if [[ $reval == 1 ]]; then
-while [[ $(hzn node list | jq '.token_valid?!=true') == false ]]; do 
-  # wait on kafkacat death and re-start as long as token is valid
-  kafkacat -C -q -o end -f "%t/%p/%o/%k: %s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC"
-done
+  while [[ $(hzn node list | jq '.token_valid?!=true') == false ]]; do 
+    # wait on kafkacat death and re-start as long as token is valid
+    kafkacat -C -q -o end -f "%t/%p/%o/%k: %s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC"
+  done
+  echo ""
 fi
 
 ###
 ### HOME ASSISTANT
 ###
 
-echo -n "(I)nstall HomeAssistant or (E)xit (I/E)? "
+echo -n "(I)nstall HomeAssistant (I/n)? "
 while read -r -n 1 -s answer; do
-  if [[ $answer = [EeIi] ]]; then
-    [[ $answer = [Ee] ]] && retval=0
+  if [[ $answer = [NnIi] ]]; then
+    [[ $answer = [Nn] ]] && retval=0
     [[ $answer = [Ii] ]] && retval=1
     break
   fi
 done
+echo ""
 if [[ $retval == 1 ]]; then
   # install hassio
   curl -fsSL https://raw.githubusercontent.com/home-assistant/hassio-build/master/install/hassio_install | bash -s
+  echo "HomeAssistant installation running in background"
+  DEVICE_IP=$(ip addr | egrep -A 2 BROADCAST | egrep inet | sed 's|.*inet \(.*\)/.*|\1|' | head -1)
+  echo "HomeAssistant setting up at http://${DEVICE_IP}:8123/ or http://$(hostname).local:8123/"
 fi
