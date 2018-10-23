@@ -77,15 +77,13 @@ fi
 if [ "${ARCH}" == "aarch64" ]; then
   ARCH="arm64"
 elif [ "${ARCH}" == "x86_64" ]; then
-  IBM_CLI_SUPPORTED=true
   ARCH="amd64"
 elif [ "${ARCH}" == "armv71" ]; then
-  IBM_CLI_SUPPORTED=true
   ARCH="arm"
 else
   echo "Cannot automagically identify architecture (${ARCH}); options are: arm, arm64, amd64, ppc64el"
   read -p 'Architecture: ' ARCH
-  if [ ! -z "${ARCH}" ]; then
+  if [ -n "${ARCH}" ]; then
     echo "+++ INFO: Specified ${ARCH}"
   else
     echo "!!! ERROR: No architecture defined; exiting"
@@ -202,32 +200,6 @@ else
   echo "*** WARN: The horizon.service is already active"
 fi
 
-###
-### KAFKA CONFIGURATION (kafkacreds.json)
-###
-
-MSGHUB_BROKER_URL=$(jq -r '.kafka_brokers_sasl[]' "${KAFKA_CREDS}" | fmt -1024 | sed "s/ /,/g")
-if [ ! -z "${MSGHUB_BROKER_URL}" ]; then
-  echo "+++ INFO: MSGHUB_BROKER_URL = ${MSGHUB_BROKER_URL}"
-else
-  echo "!!! ERROR: MSGHUB_BROKER_URL is not defined; exiting"
-  exit
-fi
-MSGHUB_ADMIN_URL=$(jq -r '.kafka_admin_url' "${KAFKA_CREDS}")
-if [ ! -z "${MSGHUB_ADMIN_URL}" ]; then
-  echo "+++ INFO: MSGHUB_ADMIN_URL = ${MSGHUB_ADMIN_URL}"
-else
-  echo "!!! ERROR: MSGHUB_ADMIN_URL is not defined; exiting"
-  exit
-fi
-MSGHUB_API_KEY=$(jq -r '.api_key' "${KAFKA_CREDS}")
-if [ ! -z "${MSGHUB_API_KEY}" ]; then
-  echo "+++ INFO: MSGHUB_API_KEY = ${MSGHUB_API_KEY}"
-else
-  echo "!!! ERROR: No MessageHub API key = ${MSGHUB_API_KEY}"
-  exit
-fi
-
 ##
 ## HORIZON PATTERN SETUP
 ##
@@ -237,35 +209,69 @@ PATTERN_ID="cpu2msghub"
 PATTERN_URL="https://github.com/open-horizon/examples/wiki/service-cpu2msghub"
 
 # TOPIC
-MSGHUB_TOPIC=$(echo "${ORGID}.${PATTERN_ORG}_${PATTERN_ID}" | sed 's/@/_/g')
+KAFKA_TOPIC=$(echo "${ORGID}.${PATTERN_ORG}_${PATTERN_ID}" | sed 's/@/_/g')
 
-# get the mac address (uniqueness)  
-DEVICE_MAC=$(ip addr | egrep -v NO-CARRIER | egrep -A 1 BROADCAST | egrep -v BROADCAST | sed "s/.*ether \([^ ]*\) .*/\1/g" | sed "s/://g" | head -1)
-DEVICE_ID="$(hostname)-${DEVICE_MAC}"
-DEVICE_TOKEN=$(echo "${HZN_EXCHANGE_USER_AUTH}" | sed 's/.*://')
+###
+### KAFKA CONFIGURATION (kafkacreds.json)
+###
 
-echo "+++ INFO: DEVICE_ID=${DEVICE_ID}; DEVICE_TOKEN=${DEVICE_TOKEN}"
+KAFKA_BROKER_URL=$(jq -r '.kafka_brokers_sasl[]' "${KAFKA_CREDS}" | fmt -1024 | sed "s/ /,/g")
+if [ ! -z "${KAFKA_BROKER_URL}" ]; then
+  echo "+++ INFO: KAFKA_BROKER_URL = ${KAFKA_BROKER_URL}"
+else
+  echo "!!! ERROR: KAFKA_BROKER_URL is not defined; exiting"
+  exit
+fi
+KAFKA_ADMIN_URL=$(jq -r '.kafka_admin_url' "${KAFKA_CREDS}")
+if [ ! -z "${KAFKA_ADMIN_URL}" ]; then
+  echo "+++ INFO: KAFKA_ADMIN_URL = ${KAFKA_ADMIN_URL}"
+else
+  echo "!!! ERROR: KAFKA_ADMIN_URL is not defined; exiting"
+  exit
+fi
+KAFKA_API_KEY=$(jq -r '.api_key' "${KAFKA_CREDS}")
+if [ ! -z "${KAFKA_API_KEY}" ]; then
+  echo "+++ INFO: KAFKA_API_KEY = ${KAFKA_API_KEY}"
+else
+  echo "!!! ERROR: No MessageHub API key = ${KAFKA_API_KEY}"
+  exit
+fi
 
 # list topics
-TOPICS=$(curl -fsSL -H "X-Auth-Token: $MSGHUB_API_KEY" $MSGHUB_ADMIN_URL/admin/topics | jq '.')
+TOPICS=$(curl -fsSL -H "X-Auth-Token: $KAFKA_API_KEY" $KAFKA_ADMIN_URL/admin/topics | jq '.')
 TOPIC_NAMES=$(echo "${TOPICS}" | jq -j '.[]|.name," "')
 echo "+++ INFO: Topics availble:"
 for TN in ${TOPIC_NAMES}; do
   echo -n " ${TN}"
-  if [ ${TN} == "${MSGHUB_TOPIC}" ]; then
+  if [ ${TN} == "${KAFKA_TOPIC}" ]; then
     FOUND=true
   fi
 done
 
 if [ -z ${FOUND} ]; then
   # attempt to create a new topic
-  curl -fsSL -H "X-Auth-Token: $MSGHUB_API_KEY" -d "{ \"name\": \"$MSGHUB_TOPIC\", \"partitions\": 2 }" $MSGHUB_ADMIN_URL/admin/topics
+  curl -fsSL -H "X-Auth-Token: $KAFKA_API_KEY" -d "{ \"name\": \"$KAFKA_TOPIC\", \"partitions\": 2 }" $KAFKA_ADMIN_URL/admin/topics
 else
-  echo "+++ INFO: Topic found: ${MSGHUB_TOPIC}"
+  echo "+++ INFO: Topic found: ${KAFKA_TOPIC}"
 fi
 
+## DEVICE IDENTIFICATION & AUTHENTICATION
+
+# MAC address of first operational ethernet
+DEVICE_MAC=$(ip addr | egrep -v NO-CARRIER | egrep -A 1 BROADCAST | egrep -v BROADCAST | sed "s/.*ether \([^ ]*\) .*/\1/g" | sed "s/://g" | head -1)
+# Unique identifier for this device (hopefully)
+DEVICE_ID="$(hostname)-${DEVICE_MAC}"
+# Re-use of password from exchange user authentication "<username>:<password>"
+DEVICE_TOKEN=$(echo "${HZN_EXCHANGE_USER_AUTH}" | sed 's/.*://')
+
+echo "+++ INFO: DEVICE_ID=${DEVICE_ID}; DEVICE_TOKEN=${DEVICE_TOKEN}"
+
+###
+### REGISTRATION
+###
+
 if [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; then
-  INPUT="${MSGHUB_TOPIC}.json"
+  INPUT="${KAFKA_TOPIC}.json"
   if [ -s "${INPUT}" ]; then
     echo "*** WARN: Existing services registration file found: ${INPUT}; deleting"
     rm -f "${INPUT}"
@@ -277,7 +283,7 @@ if [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; then
   echo '      "url": "'"${PATTERN_URL}"'",' >> "${INPUT}"
   echo '      "versionRange": "[0.0.0,INFINITY)",' >> "${INPUT}"
   echo '      "variables": {' >> "${INPUT}"
-  echo '        "MSGHUB_API_KEY": "'"${MSGHUB_API_KEY}"'"' >> "${INPUT}"
+  echo '        "KAFKA_API_KEY": "'"${KAFKA_API_KEY}"'"' >> "${INPUT}"
   echo '      }' >> "${INPUT}"
   echo '    }' >> "${INPUT}"
   echo '  ]' >> "${INPUT}"
@@ -285,6 +291,8 @@ if [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; then
 
   echo "### REGISTERING as ${DEVICE_ID} organization ${ORGID}) with pattern " $(jq -c '.' "${INPUT}")
   hzn register -n "${DEVICE_ID}:${DEVICE_TOKEN}" "${ORGID}" "${PATTERN_ORG}/${PATTERN_ID}" -f "${INPUT}"
+else
+  echo "### ALREADY REGISTERED as ${DEVICE_ID} organization ${ORGID}) with pattern " $(jq -c '.' "${INPUT}")
 fi
 
 while [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; do echo "--- WAIT: On registration (60)" $(date); sleep 60; done
@@ -305,11 +313,41 @@ echo "+++ INFO: Pattern complete" $(date)
 while [[ $(hzn node list | jq '.configstate.last_update_time?!=null') == false ]]; do echo "--- WAIT: On update (60)" $(date); sleep 60; done
 echo "+++ INFO: Update received" $(date)
   
-echo "+++ INFO: OPERATIONAL at " $(date) $(hzn node list | jq -c '.')
 
+echo "SUCCESS at $(date) for $(hzn node list | jq -c '.id')"
+
+###
+### KAFKACAT
+###
+
+echo -n "Run KafkaCat and (w)ait forever on messages (W/n)? "
+while read -r -n 1 -s answer; do
+  if [[ $answer = [NnWw] ]]; then
+    [[ $answer = [Nn] ]] && retval=0
+    [[ $answer = [Ww] ]] && retval=1
+    break
+  fi
+done
+if [ $reval == 1 ]; then
 while [[ $(hzn node list | jq '.token_valid?!=true') == false ]]; do 
   # wait on kafkacat death and re-start as long as token is valid
-  kafkacat -C -q -o end -f "%t/%p/%o/%k: %s\n" -b $MSGHUB_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${MSGHUB_API_KEY:0:16}" -X "sasl.password=${MSGHUB_API_KEY:16}" -t "$MSGHUB_TOPIC"
+  kafkacat -C -q -o end -f "%t/%p/%o/%k: %s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC"
 done
+fi
 
-exit
+###
+### HOME ASSISTANT
+###
+
+echo -n "(I)nstall HomeAssistant or (E)xit (I/E)? "
+while read -r -n 1 -s answer; do
+  if [[ $answer = [EeIi] ]]; then
+    [[ $answer = [Ee] ]] && retval=0
+    [[ $answer = [Ii] ]] && retval=1
+    break
+  fi
+done
+if [ $reval == 1 ]; then
+  # install hassio
+  curl -fsSL https://raw.githubusercontent.com/home-assistant/hassio-build/master/install/hassio_install | bash -s
+fi
