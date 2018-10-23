@@ -55,6 +55,7 @@ elif [ ! -n "${2}" ] && [ -e "${KAFKA_CREDS}" ]; then
   echo "+++ INFO: Using IBM MessageHub credentials ${KAFKA_CREDS}"
 else
   echo "Copy credentials JSON structure from from IBM Cloud $ORGID; and PASTE (Control-V) and then type Control-D"
+  echo "https://console.bluemix.net/services/messagehub/b5f8df99-d3f6-47b8-b1dc-12806d63ae61/?paneId=credentials&new=true&env_id=ibm:yp:us-south&org=51aea963-6924-4a71-81d5-5f8c313328bd&space=f965a097-fcb8-4768-953e-5e86ea2d66b4"
   rm -f "${KAFKA_CREDS}"
   while read -r; do
     printf "%s\n" "$REPLY" >> "${KAFKA_CREDS}"
