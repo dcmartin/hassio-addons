@@ -344,7 +344,7 @@ fi
 ### HOME ASSISTANT
 ###
 
-echo -n "(I)nstall HomeAssistant (I/n)? "
+echo -n "(I)nstall Home-Assistant (I/n)? "
 while read -r -n 1 -s answer; do
   if [[ $answer = [NnIi] ]]; then
     [[ $answer = [Nn] ]] && retval=0
@@ -356,7 +356,7 @@ echo ""
 if [[ $retval == 1 ]]; then
   # install hassio
   curl -fsSL https://raw.githubusercontent.com/home-assistant/hassio-build/master/install/hassio_install | bash -s
-  echo "HomeAssistant installation running in background"
+  echo "Home-Assistant installation running in background"
   DEVICE_IP=$(ip addr | egrep -A 2 BROADCAST | egrep inet | sed 's|.*inet \(.*\)/.*|\1|' | head -1)
-  echo "HomeAssistant setting up at http://${DEVICE_IP}:8123/ or http://$(hostname).local:8123/"
+  echo "Home Assistant setting up; http://127.0.0.1:8123/, http://${DEVICE_IP}:8123/ or http://$(hostname).local:8123/"
 fi
