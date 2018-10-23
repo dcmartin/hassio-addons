@@ -14,11 +14,11 @@ fi
 
 ## EXCHANGE
 
-if [ -z "${HZN_ORG_ID}" ]; then
-  HZN_ORG_ID='cgiroua@us.ibm.com'
-  echo "*** WARN: Using default HZN_ORG_ID=${HZN_ORG_ID}"
+if [ -z "${ORGID}" ]; then
+  ORGID='cgiroua@us.ibm.com'
+  echo "*** WARN: Using default ORGID=${ORGID}"
 else
-  echo "+++ INFO: Using existing HZN_ORG_ID=${HZN_ORG_ID}"
+  echo "+++ INFO: Using existing ORGID=${ORGID}"
 fi
 
 if [ -z "${HZN_EXCHANGE_URL}" ]; then
@@ -35,7 +35,7 @@ elif [ -n "${1}" ]; then
   HZN_EXCHANGE_USER_AUTH="${1}"
 else
   while [ -z "${HZN_EXCHANGE_USER_AUTH}" ]; do
-    read -p "${HZN_ORG_ID} username: " UN
+    read -p "${ORGID} username: " UN
     read -sp "Password: " PW
     if [ ! -z "${UN}" ] && [ ! -z "${PW}" ]; then 
       HZN_EXCHANGE_USER_AUTH="${UN}:${PW}"
@@ -44,7 +44,6 @@ else
 fi
 echo "*** WARN: Using existing HZN_EXCHANGE_USER_AUTH=${HZN_EXCHANGE_USER_AUTH}"
 export HZN_EXCHANGE_USER_AUTH
-
 
 ## KAFKA
 
@@ -55,7 +54,7 @@ if [ -n "${2}" ] && [ -s "${2}" ]; then
 elif [ ! -n "${2}" ] && [ -e "${KAFKA_CREDS}" ]; then
   echo "+++ INFO: Using IBM MessageHub credentials ${KAFKA_CREDS}"
 else
-  echo "Copy credentials JSON structure from from IBM Cloud $HZN_ORG_ID; and PASTE (Control-V) and then type Control-D"
+  echo "Copy credentials JSON structure from from IBM Cloud $ORGID; and PASTE (Control-V) and then type Control-D"
   rm -f "${KAFKA_CREDS}"
   while read -r; do
     printf "%s\n" "$REPLY" >> "${KAFKA_CREDS}"
@@ -139,29 +138,29 @@ else
   # echo "+++ INFO: Upgrading via apt"
   # apt-get upgrade -y
 
-  if [ ! -n "${HZN_APT_REPO}" ]; then
-    HZN_APT_REPO=testing
-    echo "*** WARN: Using default HZN_APT_REPO = ${HZN_APT_REPO}"
+  if [ ! -n "${APT_REPO}" ]; then
+    APT_REPO=testing
+    echo "*** WARN: Using default APT_REPO = ${APT_REPO}"
   fi
-  if [ ! -n "${HZN_APT_LIST}" ]; then
-    HZN_APT_LIST=/etc/apt/sources.list.d/bluehorizon.list
-    echo "*** WARN: Using default HZN_APT_LIST = ${HZN_APT_LIST}"
+  if [ ! -n "${APT_LIST}" ]; then
+    APT_LIST=/etc/apt/sources.list.d/bluehorizon.list
+    echo "*** WARN: Using default APT_LIST = ${APT_LIST}"
   fi
-  if [ ! -n "${HZN_PUBLICKEY_URL}" ]; then
-    HZN_PUBLICKEY_URL=http://pkg.bluehorizon.network/bluehorizon.network-public.key
-    echo "*** WARN: Using default HZN_PUBLICKEY_URL = ${HZN_PUBLICKEY_URL}"
+  if [ ! -n "${PUBLICKEY_URL}" ]; then
+    PUBLICKEY_URL=http://pkg.bluehorizon.network/bluehorizon.network-public.key
+    echo "*** WARN: Using default PUBLICKEY_URL = ${PUBLICKEY_URL}"
   fi
-  if [ -s "${HZN_APT_LIST}" ]; then
-    echo "*** WARN: Existing Open Horizon ${HZN_APT_LIST}; deleting"
-    rm -f "${HZN_APT_LIST}"
+  if [ -s "${APT_LIST}" ]; then
+    echo "*** WARN: Existing Open Horizon ${APT_LIST}; deleting"
+    rm -f "${APT_LIST}"
   fi
   # get public key and install
-  echo "+++ INFO: Adding key for Open Horizon from ${HZN_PUBLICKEY_URL}"
-  curl -fsSL "${HZN_PUBLICKEY_URL}" | apt-key add -
-  echo "+++ INFO: Configuring Open Horizon repository ${HZN_APT_REPO} for ${ARCH}"
+  echo "+++ INFO: Adding key for Open Horizon from ${PUBLICKEY_URL}"
+  curl -fsSL "${PUBLICKEY_URL}" | apt-key add -
+  echo "+++ INFO: Configuring Open Horizon repository ${APT_REPO} for ${ARCH}"
   # create repository entry 
-  echo "deb [arch=${ARCH}] http://pkg.bluehorizon.network/linux/ubuntu xenial-${HZN_APT_REPO} main" >> "${HZN_APT_LIST}"
-  echo "deb-src [arch=${ARCH}] http://pkg.bluehorizon.network/linux/ubuntu xenial-${HZN_APT_REPO} main" >> "${HZN_APT_LIST}"
+  echo "deb [arch=${ARCH}] http://pkg.bluehorizon.network/linux/ubuntu xenial-${APT_REPO} main" >> "${APT_LIST}"
+  echo "deb-src [arch=${ARCH}] http://pkg.bluehorizon.network/linux/ubuntu xenial-${APT_REPO} main" >> "${APT_LIST}"
   echo "+++ INFO: Updating apt(1)"
   apt-get update -y
   echo "+++ INFO: Installing Open Horizon"
@@ -174,34 +173,33 @@ else
 fi
 
 # LOGGING
-if [ ! -n "${HZN_LOG_CONF}" ]; then
-  HZN_LOG_CONF=/etc/rsyslog.d/10-horizon-docker.conf
-  echo "*** WARN: Using default HZN_LOG_CONF = ${HZN_LOG_CONF}"
+if [ -z "${LOG_CONF}" ]; then
+  LOG_CONF=/etc/rsyslog.d/10-horizon-docker.conf
+  echo "*** WARN: Using default LOG_CONF = ${LOG_CONF}"
 fi
-if [ -s "${HZN_LOG_CONF}" ]; then
-  echo "*** WARN: Existing logging configuration: ${HZN_LOG_CONF}; skipping"
+if [ -s "${LOG_CONF}" ]; then
+  echo "*** WARN: Existing logging configuration: ${LOG_CONF}; skipping"
 else
-  echo "+++ INFO: Configuring logging: ${HZN_LOG_CONF}"
-  rm -f "${HZN_LOG_CONF}"
-  echo '$template DynamicWorkloadFile,"/var/log/workload/%syslogtag:R,ERE,1,DFLT:.*workload-([^\[]+)--end%.log"' >> "${HZN_LOG_CONF}"
-  echo '' >> "${HZN_LOG_CONF}"
-  echo ':syslogtag, startswith, "workload-" -?DynamicWorkloadFile' >> "${HZN_LOG_CONF}"
-  echo '& stop' >> "${HZN_LOG_CONF}"
-  echo ':syslogtag, startswith, "docker/" -/var/log/docker_containers.log' >> "${HZN_LOG_CONF}"
-  echo '& stop' >> "${HZN_LOG_CONF}"
-  echo ':syslogtag, startswith, "docker" -/var/log/docker.log' >> "${HZN_LOG_CONF}"
-  echo '& stop' >> "${HZN_LOG_CONF}"
+  echo "+++ INFO: Configuring logging: ${LOG_CONF}"
+  rm -f "${LOG_CONF}"
+  echo '$template DynamicWorkloadFile,"/var/log/workload/%syslogtag:R,ERE,1,DFLT:.*workload-([^\[]+)--end%.log"' >> "${LOG_CONF}"
+  echo '' >> "${LOG_CONF}"
+  echo ':syslogtag, startswith, "workload-" -?DynamicWorkloadFile' >> "${LOG_CONF}"
+  echo '& stop' >> "${LOG_CONF}"
+  echo ':syslogtag, startswith, "docker/" -/var/log/docker_containers.log' >> "${LOG_CONF}"
+  echo '& stop' >> "${LOG_CONF}"
+  echo ':syslogtag, startswith, "docker" -/var/log/docker.log' >> "${LOG_CONF}"
+  echo '& stop' >> "${LOG_CONF}"
   echo "+++ INFO: Restarting rsyslog(8)"
   service rsyslog restart
 fi
 
 # SERVICE ACTIVATION
-HZN_SERVICE_ACTIVE=$(systemctl is-active horizon.service)
-if [ $HZN_SERVICE_ACTIVE != "active" ]; then
-  echo "+++ INFO: The horizon.service is not active ($HZN_SERVICE_ACTIVE); starting"
+if [ $(systemctl is-active horizon.service) != "active" ]; then
+  echo "+++ INFO: The horizon.service is not active; starting"
   systemctl start horizon.service
 else
-  echo "*** WARN: The horizon.service is already active ($HZN_SERVICE_ACTIVE)"
+  echo "*** WARN: The horizon.service is already active"
 fi
 
 ###
@@ -234,12 +232,12 @@ fi
 ## HORIZON PATTERN SETUP
 ##
 
-HZN_PATTERN_ORG_ID="IBM"
-HZN_PATTERN_ID="cpu2msghub"
-HZN_PATTERN_URL="https://github.com/open-horizon/examples/wiki/service-cpu2msghub"
+PATTERN_ORG="IBM"
+PATTERN_ID="cpu2msghub"
+PATTERN_URL="https://github.com/open-horizon/examples/wiki/service-cpu2msghub"
 
 # TOPIC
-MSGHUB_TOPIC=$(echo "${HZN_ORG_ID}.${HZN_PATTERN_ORG_ID}_${HZN_PATTERN_ID}" | sed 's/@/_/g')
+MSGHUB_TOPIC=$(echo "${ORGID}.${PATTERN_ORG}_${PATTERN_ID}" | sed 's/@/_/g')
 
 # get the mac address (uniqueness)  
 DEVICE_MAC=$(ip addr | egrep -v NO-CARRIER | egrep -A 1 BROADCAST | egrep -v BROADCAST | sed "s/.*ether \([^ ]*\) .*/\1/g" | sed "s/://g" | head -1)
@@ -275,8 +273,8 @@ if [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; then
   echo '{' >> "${INPUT}"
   echo '  "services": [' >> "${INPUT}"
   echo '    {' >> "${INPUT}"
-  echo '      "org": "'"${HZN_PATTERN_ORG_ID}"'",' >> "${INPUT}"
-  echo '      "url": "'"${HZN_PATTERN_URL}"'",' >> "${INPUT}"
+  echo '      "org": "'"${PATTERN_ORG}"'",' >> "${INPUT}"
+  echo '      "url": "'"${PATTERN_URL}"'",' >> "${INPUT}"
   echo '      "versionRange": "[0.0.0,INFINITY)",' >> "${INPUT}"
   echo '      "variables": {' >> "${INPUT}"
   echo '        "MSGHUB_API_KEY": "'"${MSGHUB_API_KEY}"'"' >> "${INPUT}"
@@ -285,8 +283,8 @@ if [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; then
   echo '  ]' >> "${INPUT}"
   echo '}' >> "${INPUT}"
 
-  echo "### REGISTERING as ${DEVICE_ID} organization ${HZN_ORG_ID}) with pattern " $(jq -c '.' "${INPUT}")
-  hzn register -n "${DEVICE_ID}:${DEVICE_TOKEN}" "${HZN_ORG_ID}" "${HZN_PATTERN_ORG_ID}/${HZN_PATTERN_ID}" -f "${INPUT}"
+  echo "### REGISTERING as ${DEVICE_ID} organization ${ORGID}) with pattern " $(jq -c '.' "${INPUT}")
+  hzn register -n "${DEVICE_ID}:${DEVICE_TOKEN}" "${ORGID}" "${PATTERN_ORG}/${PATTERN_ID}" -f "${INPUT}"
 fi
 
 while [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; do echo "--- WAIT: On registration (60)" $(date); sleep 60; done
@@ -301,7 +299,7 @@ echo "+++ INFO: Images complete" $(date)
 while [[ $(hzn node list | jq '.configstate.state?=="configured"') == false ]]; do echo "--- WAIT: On configstate (60)" $(date); sleep 60; done
 echo "+++ INFO: Configuration complete" $(date)
 
-while [[ $(hzn node list | jq '.pattern?=="'"${HZN_PATTERN_ORG_ID}/${HZN_PATTERN_ID}"'"') == false ]]; do echo "--- WAIT: On pattern (60)" $(date); sleep 60; done
+while [[ $(hzn node list | jq '.pattern?=="'"${PATTERN_ORG}/${PATTERN_ID}"'"') == false ]]; do echo "--- WAIT: On pattern (60)" $(date); sleep 60; done
 echo "+++ INFO: Pattern complete" $(date)
 
 while [[ $(hzn node list | jq '.configstate.last_update_time?!=null') == false ]]; do echo "--- WAIT: On update (60)" $(date); sleep 60; done
