@@ -271,7 +271,12 @@ echo "+++ INFO: DEVICE_ID=${DEVICE_ID}; DEVICE_TOKEN=${DEVICE_TOKEN}"
 ###
 
 NODE_LIST=$(hzn node list)
-if [[ NODE_LIST=$(hzn node list) ]] && [[ $(echo "${NODE_LIST}" | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; then
+if [ -n "${NODE_LIST}" ]; then
+  DEVICE_REG=$(echo "${NODE_LIST}" | jq '.id?=="'"${DEVICE_ID}"'"')
+fi
+if [ "${DEVICE_REG}" == "true" ]; then
+    echo "### ALREADY REGISTERED as ${DEVICE_ID} organization ${ORGID}")
+else
   INPUT="${KAFKA_TOPIC}.json"
   if [ -s "${INPUT}" ]; then
     echo "*** WARN: Existing services registration file found: ${INPUT}; deleting"
@@ -292,8 +297,6 @@ if [[ NODE_LIST=$(hzn node list) ]] && [[ $(echo "${NODE_LIST}" | jq '.id?=="'"$
 
   echo "### REGISTERING as ${DEVICE_ID} organization ${ORGID}) with pattern " $(jq -c '.' "${INPUT}")
   hzn register -n "${DEVICE_ID}:${DEVICE_TOKEN}" "${ORGID}" "${PATTERN_ORG}/${PATTERN_ID}" -f "${INPUT}"
-else
-  echo "### ALREADY REGISTERED as ${DEVICE_ID} organization ${ORGID}) with pattern " $(jq -c '.' "${INPUT}")
 fi
 
 while [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; do echo "--- WAIT: On registration (60)" $(date); sleep 60; done
