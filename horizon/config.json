@@ -1,7 +1,7 @@
 {
   "name": "Shared CPU Agent (IBM)",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "slug": "hznibmcpu",
   "description": "Example Horizon addon for sharing CPU load average",
   "startup": "before",
@@ -35,6 +35,7 @@
     "kafka": {}
   },
   "schema": {
+    "pattern":"str?",
     "timezone": "str?",
     "horizon": {
       "device": "str",
