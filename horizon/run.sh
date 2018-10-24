@@ -97,7 +97,7 @@ JSON="${JSON}"'}'
 ## KAFKA OPTIONS
 ##
 
-JSON="${JSON}"',"kafka":{"instance_id":"'$(jq -r '.kafka.instance_id')'"'
+JSON="${JSON}"',"kafka":{"id":"'$(jq -r '.kafka.instance_id')'"'
 # BROKERS_SASL
 VALUE=$(jq -r '.kafka.kafka_brokers_sasl' "${CONFIG_PATH}")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then echo "No kafka kafka_brokers_sasl"; exit; fi
