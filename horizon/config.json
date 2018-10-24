@@ -1,8 +1,8 @@
 {
   "name": "Shared CPU Agent (IBM)",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.0.2",
-  "slug": "hznibmcpu",
+  "version": "0.0.5",
+  "slug": "cpu2msghub",
   "description": "Example Horizon addon for sharing CPU load average",
   "startup": "before",
   "boot": "auto",

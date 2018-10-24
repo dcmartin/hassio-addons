@@ -4,12 +4,9 @@ FROM $BUILD_FROM
 
 ENV LANG C.UTF-8
 
-RUN apt-get install -y \
-  mosquitto-clients \
-  coreutils \
-  apt \
-  curl \
-  jq
+RUN apt install -y apt curl
+
+#\ coreutils \ apt \ curl \ jq
 
 # args
 ARG LOCAL_BIN=/usr/local/bin
@@ -57,7 +54,7 @@ ARG BUILD_VERSION
 
 # Labels
 LABEL \
-    io.hass.name="IBM_cpu2msghub" \
+    io.hass.name="cpu2msghub" \
     io.hass.description="Example open horizon addon to share CPU && GPS" \ 
     io.hass.arch="${BUILD_ARCH}" \
     io.hass.type="addon" \

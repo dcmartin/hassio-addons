@@ -47,17 +47,6 @@ JSON="${JSON}"',"timezone":"'"${VALUE}"'"'
 ## HORIZON 
 ##
 
-## STATIC FROM DOCKERFILE (over-ride is experimental)
-VALUE=$(jq -r ".horizon.pattern" "${CONFIG_PATH}")
-if [ ! -z "${VALUE}" ] || [ "${VALUE}" != "null" ]; then 
-  HZN_PATTERN="${VALUE}"
-fi
-if [ -z "${HZN_PATTERN}" ]; then
-  echo "!!! ERROR: No pattern defined"
-  exit
-fi
-echo "Horizon pattern: ${HZN_PATTERN}"
-
 # START JSON
 
 JSON="${JSON}"',"horizon":{"pattern":'"${HZN_PATTERN}"
@@ -108,12 +97,12 @@ JSON="${JSON}"'}'
 ## KAFKA OPTIONS
 ##
 
-JSON="${JSON}"',"kafka":{'
+JSON="${JSON}"',"kafka":{"instance_id":"'$(jq -r '.kafka.instance_id')'"'
 # BROKERS_SASL
 VALUE=$(jq -r '.kafka.kafka_brokers_sasl' "${CONFIG_PATH}")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then echo "No kafka kafka_brokers_sasl"; exit; fi
 echo "Kafka brokers: ${VALUE}"
-JSON="${JSON}"',"brokers":"'"${VALUE}"'"'
+JSON="${JSON}"',"brokers":'"${VALUE}"
 # ADMIN_URL
 VALUE=$(jq -r '.kafka.kafka_admin_url' "${CONFIG_PATH}")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then echo "No kafka kafka_admin_url"; exit; fi
@@ -127,6 +116,8 @@ JSON="${JSON}"',"api_key":"'"${VALUE}"'"}'
 
 ## DONE w/ kakfa
 JSON="${JSON}"'}'
+
+echo "${JSON}"
 
 ###
 ### REVIEW
@@ -153,7 +144,7 @@ echo "+++ INFO: HORIZON device ${DEVICE_ID} in ${HZN_ORG_ID} using pattern ${HZN
 KAFKA_TOPIC=$(echo "${DEVICE_ORG}.${HZN_PATTERN_ORG}_${HZN_PATTERN_ID}" | sed 's/@/_/g')
 
 # FIND TOPICS
-TOPIC_NAMES=$(curl -fsSL -H "X-Auth-Token: $KAFKA_API_KEY" $KAFKA_ADMIN_URL/admin/topics | | jq -j '.[]|.name," "')
+TOPIC_NAMES=$(curl -fsSL -H "X-Auth-Token: $KAFKA_API_KEY" $KAFKA_ADMIN_URL/admin/topics | jq -j '.[]|.name," "')
 echo "+++ INFO: Topics availble:"
 for TN in ${TOPIC_NAMES}; do
   echo -n " ${TN}"
