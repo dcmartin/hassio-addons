@@ -332,12 +332,12 @@ while read -r -n 1 -s answer; do
     break
   fi
 done
+echo ""
 if [[ $reval == 1 ]]; then
   while [[ $(hzn node list | jq '.token_valid?!=true') == false ]]; do 
     # wait on kafkacat death and re-start as long as token is valid
     kafkacat -C -q -o end -f "%t/%p/%o/%k: %s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC"
   done
-  echo ""
 fi
 
 ###
