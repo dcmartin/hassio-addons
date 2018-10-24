@@ -317,46 +317,4 @@ echo "+++ INFO: Pattern complete" $(date)
 while [[ $(hzn node list | jq '.configstate.last_update_time?!=null') == false ]]; do echo "--- WAIT: On update (60)" $(date); sleep 60; done
 echo "+++ INFO: Update received" $(date)
   
-
 echo "SUCCESS at $(date) for $(hzn node list | jq -c '.id')"
-
-###
-### KAFKACAT
-###
-
-echo -n "(W)ait forever on KafkaCat messages (W/n)? "
-while read -r -n 1 -s answer; do
-  if [[ $answer = [NnWw] ]]; then
-    [[ $answer = [Nn] ]] && retval=0
-    [[ $answer = [Ww] ]] && retval=1
-    break
-  fi
-done
-echo ""
-if [[ $reval == 1 ]]; then
-  while [[ $(hzn node list | jq '.token_valid?!=true') == false ]]; do 
-    # wait on kafkacat death and re-start as long as token is valid
-    kafkacat -C -q -o end -f "%t/%p/%o/%k: %s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC"
-  done
-fi
-
-###
-### HOME ASSISTANT
-###
-
-echo -n "(I)nstall Home-Assistant (I/n)? "
-while read -r -n 1 -s answer; do
-  if [[ $answer = [NnIi] ]]; then
-    [[ $answer = [Nn] ]] && retval=0
-    [[ $answer = [Ii] ]] && retval=1
-    break
-  fi
-done
-echo ""
-if [[ $retval == 1 ]]; then
-  # install hassio
-  curl -fsSL https://raw.githubusercontent.com/home-assistant/hassio-build/master/install/hassio_install | bash -s
-  echo "Home-Assistant installation running in background"
-  DEVICE_IP=$(ip addr | egrep -A 2 BROADCAST | egrep inet | sed 's|.*inet \(.*\)/.*|\1|' | head -1)
-  echo "Home Assistant setting up; http://127.0.0.1:8123/, http://${DEVICE_IP}:8123/ or http://$(hostname).local:8123/"
-fi
