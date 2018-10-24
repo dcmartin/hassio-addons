@@ -4,7 +4,8 @@ FROM $BUILD_FROM
 
 ENV LANG C.UTF-8
 
-RUN apt-get update && apt-get install -y apt-utils coreutils gnupg
+RUN apt-get update -y
+RUN apt-get install -y apt-utils coreutils gnupg
 
 # args
 ARG LOCAL_BIN=/usr/local/bin
