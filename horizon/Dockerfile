@@ -8,19 +8,11 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # setup base system
 ARG BUILD_ARCH=amd64
 
-ENV LANG C.UTF-8
-
 ENV HZN_APT_REPO=testing
 ENV HZN_APT_LIST=/etc/apt/sources.list.d/bluehorizon.list
 ENV HZN_PUBLICKEY_URL=http://pkg.bluehorizon.network/bluehorizon.network-public.key
 
-# Copy root filesystem
-COPY rootfs /
-
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends \
-      jq \
-      curl \
   \
   && ARCH="${BUILD_ARCH}" \
   && if [ "${BUILD_ARCH}" = "aarch64" ]; then ARCH="arm64"; fi \
@@ -35,6 +27,16 @@ RUN apt-get update \
 
 # the pattern we expect to run
 ENV HZN_PATTERN='{"id":"cpu2msghub","org":"IBM","url":"https://github.com/open-horizon/examples/wiki/service-cpu2msghub","services":[{"id":"cpu2msghub","org":"IBM","url":"https://github.com/open-horizon/examples/wiki/service-cpu"},{"id":"gps2msghub","org":"IBM","url":"https://github.com/open-horizon/examples/wiki/service-gps"}]}'
+
+# Copy root filesystem
+
+ARG LOCAL_BIN=/usr/local/bin
+RUN mkdir -p "${LOCAL_BIN}"
+COPY *.sh "${LOCAL_BIN}"/
+RUN chmod 755 "${LOCAL_BIN}"/*.sh
+CMD ["/usr/local/bin/run.sh"]
+
+# COPY rootfs /
 
 # Build arguments
 ARG BUILD_DATE
@@ -51,10 +53,10 @@ LABEL \
     maintainer="David C Martin <github@dcmartin.com>" \
     org.label-schema.description="Example Horizon based addon" \
     org.label-schema.build-date=${BUILD_DATE} \
-    org.label-schema.name="Example" \
+    org.label-schema.name="cpu2msghub" \
     org.label-schema.schema-version="1.0" \
     org.label-schema.url="https://addons.community" \
-    org.label-schema.usage="https://github.com/hassio-addons/addon-example/tree/master/README.md" \
+    org.label-schema.usage="https://github.com/dcmartin/hassio-addons/horizon/tree/master/README.md" \
     org.label-schema.vcs-ref=${BUILD_REF} \
     org.label-schema.vcs-url="https://github.com/dcmartin/hassio-addons/horizon" \
     org.label-schema.vendor="DCMARTIN"

@@ -2,6 +2,7 @@
 
 echo $(date) "$0 $*" >&2
 
+if [ -z "${CONFIG_PATH}" ]; then CONFIG_PATH=/data/options.json; fi
 if [ ! -s "${CONFIG_PATH}" ]; then
   echo "Cannot find options ${CONFIG_PATH}; exiting" >&2
   exit
