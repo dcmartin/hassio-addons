@@ -48,4 +48,13 @@ LABEL \
     io.hass.arch="${BUILD_ARCH}" \
     io.hass.type="addon" \
     io.hass.version=${BUILD_VERSION} \
-    maintainer="David C Martin <github@dcmartin.com>"
+    maintainer="David C Martin <github@dcmartin.com>" \
+    org.label-schema.description="Example Horizon based addon" \
+    org.label-schema.build-date=${BUILD_DATE} \
+    org.label-schema.name="Example" \
+    org.label-schema.schema-version="1.0" \
+    org.label-schema.url="https://addons.community" \
+    org.label-schema.usage="https://github.com/hassio-addons/addon-example/tree/master/README.md" \
+    org.label-schema.vcs-ref=${BUILD_REF} \
+    org.label-schema.vcs-url="https://github.com/dcmartin/hassio-addons/horizon" \
+    org.label-schema.vendor="DCMARTIN"
