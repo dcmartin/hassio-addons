@@ -8,17 +8,16 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # setup base system
 ARG BUILD_ARCH=amd64
 
-ENV HZN_APT_REPO=testing
-ENV HZN_APT_LIST=/etc/apt/sources.list.d/bluehorizon.list
-ENV HZN_PUBLICKEY_URL=http://pkg.bluehorizon.network/bluehorizon.network-public.key
-
 RUN apt-get update \
+  && apt-get install -y kafkacat mosquitto-clients \
   \
   && ARCH="${BUILD_ARCH}" \
   && if [ "${BUILD_ARCH}" = "aarch64" ]; then ARCH="arm64"; fi \
   \
-  && HORIZON_CLI="2.18.1" \
-  && curl -fsSL -o /tmp/horizon-cli.deb "http://pkg.bluehorizon.network/linux/ubuntu/pool/main/h/horizon/horizon-cli_${HORIZON_CLI}~ppa~ubuntu.xenial_${ARCH}.deb" \
+  && HORIZON_CLI="2.19.0" \
+  && HORIZON_URL="http://pkg.bluehorizon.network/linux/ubuntu/pool/main/h/horizon/horizon-cli" \
+  && HORIZON_PKG="${HORIZON_URL}_${HORIZON_CLI}~ppa~ubuntu.xenial_${ARCH}.deb" \
+  && curl -fsSL -o /tmp/horizon-cli.deb  "${HORIZON_PKG}" \
   && dpkg --install /tmp/horizon-cli.deb \
   && rm -fr \
       /tmp/* \
@@ -26,17 +25,15 @@ RUN apt-get update \
       /var/lib/apt/lists/*
 
 # the pattern we expect to run
-ENV HZN_PATTERN='{"id":"cpu2msghub","org":"IBM","url":"https://github.com/open-horizon/examples/wiki/service-cpu2msghub","services":[{"id":"cpu2msghub","org":"IBM","url":"https://github.com/open-horizon/examples/wiki/service-cpu"},{"id":"gps2msghub","org":"IBM","url":"https://github.com/open-horizon/examples/wiki/service-gps"}]}'
+ENV HORIZON_PATTERN='{"id":"cpu2msghub","org":"IBM","url":"https://github.com/open-horizon/examples/wiki/service-cpu2msghub","services":[{"id":"cpu2msghub","org":"IBM","url":"https://github.com/open-horizon/examples/wiki/service-cpu"},{"id":"gps2msghub","org":"IBM","url":"https://github.com/open-horizon/examples/wiki/service-gps"}]}'
 
 # Copy root filesystem
+COPY rootfs /
 
-ARG LOCAL_BIN=/usr/local/bin
-RUN mkdir -p "${LOCAL_BIN}"
-COPY *.sh "${LOCAL_BIN}"/
-RUN chmod 755 "${LOCAL_BIN}"/*.sh
-CMD ["/usr/local/bin/run.sh"]
+COPY "run.sh" "/usr/bin"
+RUN chmod 755 "/usr/bin/run.sh"
 
-# COPY rootfs /
+CMD ["/usr/bin/run.sh"]
 
 # Build arguments
 ARG BUILD_DATE

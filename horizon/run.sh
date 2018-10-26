@@ -50,7 +50,7 @@ JSON="${JSON}"',"timezone":"'"${VALUE}"'"'
 
 # START JSON
 
-JSON="${JSON}"',"horizon":{"pattern":'"${HZN_PATTERN}"
+JSON="${JSON}"',"horizon":{"pattern":'"${HORIZON_PATTERN}"
 
 ## OPTIONS that need to be set
 
@@ -64,6 +64,7 @@ JSON="${JSON}"',"exchange":"'"${VALUE}"'"'
 VALUE=$(jq -r ".horizon.username" "${CONFIG_PATH}")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then echo "No exchange username"; exit; fi
 JSON="${JSON}"',"username":"'"${VALUE}"'"'
+HZN_EXCHANGE_USER_AUTH="${VALUE}"
 # PASSWORD
 VALUE=$(jq -r ".horizon.password" "${CONFIG_PATH}")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then echo "No exchange password"; exit; fi
@@ -124,9 +125,9 @@ echo "${JSON}"
 ### REVIEW
 ###
 
-HZN_PATTERN_ORG=$(echo "$JSON" | jq -r '.horizon.pattern.org?')
-HZN_PATTERN_ID=$(echo "$JSON" | jq -r '.horizon.pattern.id?')
-HZN_PATTERN_URL=$(echo "$JSON" | jq -r '.horizon.pattern.url?')
+PATTERN_ORG=$(echo "$JSON" | jq -r '.horizon.pattern.org?')
+PATTERN_ID=$(echo "$JSON" | jq -r '.horizon.pattern.id?')
+PATTERN_URL=$(echo "$JSON" | jq -r '.horizon.pattern.url?')
 
 KAFKA_BROKER_URL=$(echo "$JSON" | jq -j '.kafka.brokers[]?|.,","')
 KAFKA_ADMIN_URL=$(echo "$JSON" | jq -r '.kafka.admin_url?')
@@ -136,13 +137,13 @@ DEVICE_ID=$(echo "$JSON" | jq -r '.horizon.device?' )
 DEVICE_TOKEN=$(echo "$JSON" | jq -r '.horizon.token?')
 DEVICE_ORG=$(echo "$JSON" | jq -r '.horizon.organization?')
 
-echo "+++ INFO: HORIZON device ${DEVICE_ID} in ${HZN_ORG_ID} using pattern ${HZN_PATTERN_ORG}/${HZN_PATTERN_ID} @ ${HZN_PATTERN_URL}"
+echo "+++ INFO: HORIZON device ${DEVICE_ID} in ${DEVICE_ORG} using pattern ${PATTERN_ORG}/${PATTERN_ID} @ ${PATTERN_URL}"
 
 ###
 ### CHECK KAKFA
 ###
 
-KAFKA_TOPIC=$(echo "${DEVICE_ORG}.${HZN_PATTERN_ORG}_${HZN_PATTERN_ID}" | sed 's/@/_/g')
+KAFKA_TOPIC=$(echo "${DEVICE_ORG}.${PATTERN_ORG}_${PATTERN_ID}" | sed 's/@/_/g')
 
 # FIND TOPICS
 TOPIC_NAMES=$(curl -fsSL -H "X-Auth-Token: $KAFKA_API_KEY" $KAFKA_ADMIN_URL/admin/topics | jq -j '.[]|.name," "')
@@ -153,6 +154,7 @@ for TN in ${TOPIC_NAMES}; do
     FOUND=true
   fi
 done
+echo ""
 if [ -z ${FOUND} ]; then
   # attempt to create a new topic
   curl -fsSL -H "X-Auth-Token: $KAFKA_API_KEY" -d "{ \"name\": \"$KAFKA_TOPIC\", \"partitions\": 2 }" $KAFKA_ADMIN_URL/admin/topics
@@ -160,16 +162,8 @@ else
   echo "+++ INFO: Topic found: ${KAFKA_TOPIC}"
 fi
 
-### INSTALL HORIZON 
-
-curl -fsSL "${HZN_PUBLICKEY_URL}" | apt-key add -
-echo "deb [arch=${ARCH}] http://pkg.bluehorizon.network/linux/ubuntu xenial-${HZN_APT_REPO} main" >> "${HZN_APT_LIST}"
-echo "deb-src [arch=${ARCH}] http://pkg.bluehorizon.network/linux/ubuntu xenial-${HZN_APT_REPO} main" >> "${HZN_APT_LIST}"
-apt-get update -y
-apt-get install -y horizon-cli
-
 HZN=$(command -v hzn)
-if [ ! -z "${HZN}" ]; then
+if [ -z "${HZN}" ]; then
   echo "!!! ERROR: Failure to install horizon CLI"
   exit
 fi
@@ -181,7 +175,7 @@ if [ -n "${NODE_LIST}" ]; then
   DEVICE_REG=$(echo "${NODE_LIST}" | jq '.id?=="'"${DEVICE_ID}"'"')
 fi
 if [ "${DEVICE_REG}" == "true" ]; then
-    echo "### ALREADY REGISTERED as ${DEVICE_ID} organization ${DEVICE_ORG}"
+  echo "### ALREADY REGISTERED as ${DEVICE_ID} organization ${DEVICE_ORG}" $(echo "${NODE_LIST}" | jq -c '.')
 else
   INPUT="${KAFKA_TOPIC}.json"
   if [ -s "${INPUT}" ]; then
@@ -201,40 +195,55 @@ else
   echo '  ]' >> "${INPUT}"
   echo '}' >> "${INPUT}"
 
-  echo "### REGISTERING device ${DEVICE_ID} organization ${DEVICE_ORG}) with pattern ${PATTERN_ORG}/${PATTERN_ID} using input " $(jq -c '.' "${INPUT}")
+  echo "### REGISTERING device ${DEVICE_ID} organization ${DEVICE_ORG} with pattern ${PATTERN_ORG}/${PATTERN_ID} using input " $(jq -c '.' "${INPUT}")
   hzn register -n "${DEVICE_ID}:${DEVICE_TOKEN}" "${DEVICE_ORG}" "${PATTERN_ORG}/${PATTERN_ID}" -f "${INPUT}"
+
+  while [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; do echo "--- WAIT: On registration (60)" $(date); sleep 60; done
+  echo "+++ INFO: Registration complete" $(date)
+  while [[ $(hzn node list | jq '.pattern?=="'"${PATTERN_ORG}/${PATTERN_ID}"'"') == false ]]; do echo "--- WAIT: On pattern (60)" $(date); sleep 60; done
+  echo "+++ INFO: Pattern complete" $(date)
+
 fi
 
-###
-### POST REGISTRATION WAITING
-###
+# [
+#   {
+#     "name": "Policy for service-cpu merged with Policy for service-gps merged with cpu2msghub_github.com-open-horizon-examples-wiki-service-cpu2msghub_IBM_amd64",
+#     "current_agreement_id": "7079621a2e80f579b4a29b654f781783b1339f7f8e65947afd7575b8dc5aef01",
+#     "consumer_id": "IBM/stg-edge-cluster.us-south.containers.appdomain.cloud",
+#     "agreement_creation_time": "2018-10-26 08:57:13 -0700 PDT",
+#     "agreement_accepted_time": "2018-10-26 08:57:22 -0700 PDT",
+#     "agreement_finalized_time": "2018-10-26 08:57:26 -0700 PDT",
+#     "agreement_execution_start_time": "2018-10-26 08:57:37 -0700 PDT",
+#     "agreement_data_received_time": "",
+#     "agreement_protocol": "Basic",
+#     "workload_to_run": {
+#       "url": "https://github.com/open-horizon/examples/wiki/service-cpu2msghub",
+#       "org": "IBM",
+#       "version": "1.2.5",
+#       "arch": "amd64"
+#     }
+#   }
+# ]
 
-while [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; do echo "--- WAIT: On registration (60)" $(date); sleep 60; done
-echo "+++ INFO: Registration complete" $(date)
-
-while [[ $(hzn node list | jq '.connectivity."firmware.bluehorizon.network"?==true') == false ]]; do echo "--- WAIT: On firmware (60)" $(date); sleep 60; done
-echo "+++ INFO: Firmware complete" $(date)
-
-while [[ $(hzn node list | jq '.connectivity."images.bluehorizon.network"?==true') == false ]]; do echo "--- WAIT: On images (60)" $(date); sleep 60; done
-echo "+++ INFO: Images complete" $(date)
-
-while [[ $(hzn node list | jq '.configstate.state?=="configured"') == false ]]; do echo "--- WAIT: On configstate (60)" $(date); sleep 60; done
-echo "+++ INFO: Configuration complete" $(date)
-
-while [[ $(hzn node list | jq '.pattern?=="'"${PATTERN_ORG}/${PATTERN_ID}"'"') == false ]]; do echo "--- WAIT: On pattern (60)" $(date); sleep 60; done
-echo "+++ INFO: Pattern complete" $(date)
-
-while [[ $(hzn node list | jq '.configstate.last_update_time?!=null') == false ]]; do echo "--- WAIT: On update (60)" $(date); sleep 60; done
-echo "+++ INFO: Update received" $(date)
-  
-echo "SUCCESS at $(date) for $(hzn node list | jq -c '.id')"
+## WAIT ON AGREEMENT
+while [[ $(hzn agreement list | jq '.?==[]') == true ]]; do echo "--- WAIT: On agreement (10)" $(date); sleep 10; done
 
 ###
 ### KAFKACAT
 ###
 
-while [[ $(hzn node list | jq '.token_valid?!=true') == false ]]; do 
+MQTT_HOST="192.168.1.40"
+MQTT_PORT=1883
+
+HAL=$(hzn agreement list | jq -r '.[]|.workload_to_run.url')
+if [ $HAL == "${PATTERN_URL}" ]; then
+  echo "--- INFO: Agreement pattern ${PATTERN_URL}" $(date)
   # wait on kafkacat death and re-start as long as token is valid
-  echo '+++ INFO: Waiting on kafkacat -u -C -q -o end -f "%s\n" -b '$KAFKA_BROKER_URL' -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username='${KAFKA_API_KEY:0:16}'" -X "sasl.password='${KAFKA_API_KEY:16}'" -t "'$KAFKA_TOPIC'" | jq .'
-  kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC" | mosquitto_pub -l -h "core-mosquitto" -t "kafka/${KAFKA_TOPIC}"
-done
+  echo "+++ INFO: Routing KAFKA to MQTT topic kafka/${KAFKA_TOPIC} at host ${MQTT_HOST} on port ${MQTT_PORT}"
+  echo 'kafkacat -u -C -q -o end -f "%s\n" -b '$KAFKA_BROKER_URL' -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username='${KAFKA_API_KEY:0:16}'" -X "sasl.password='${KAFKA_API_KEY:16}'" -t "'$KAFKA_TOPIC'"'
+  kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC" | mosquitto_pub -l -h "${MQTT_HOST}" -p ${MQTT_PORT} -t "kafka/${KAFKA_TOPIC}"
+else
+  echo "!!! ERROR: Unable to find agreement for ${PATTERN_URL}"
+fi
+
+exit
