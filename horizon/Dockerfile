@@ -30,9 +30,6 @@ ENV HORIZON_PATTERN='{"id":"cpu2msghub","org":"IBM","url":"https://github.com/op
 # Copy root filesystem
 COPY rootfs /
 
-COPY "run.sh" "/usr/bin"
-RUN chmod 755 "/usr/bin/run.sh"
-
 CMD ["/usr/bin/run.sh"]
 
 # Build arguments

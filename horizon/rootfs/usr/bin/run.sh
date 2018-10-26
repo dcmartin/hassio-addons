@@ -41,7 +41,7 @@ hass.log.info "Using architecture: ${ARCH}"
 
 JSON='{"host":"'"$(hostname)"'","arch":"'"${ARCH}"'","date":'$(/bin/date +%s)
 # time zone
-VALUE=$(jq -r ".timezone" "${CONFIG_PATH}")
+VALUE=$(hass.config.get "timezone")
 # Set the correct timezone
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="GMT"; fi
 hass.log.debug "Setting TIMEZONE ${VALUE}" >&2
@@ -59,29 +59,29 @@ JSON="${JSON}"',"horizon":{"pattern":'"${HORIZON_PATTERN}"
 ## OPTIONS that need to be set
 
 # URL
-VALUE=$(jq -r ".horizon.exchange" "${CONFIG_PATH}")
+VALUE=$(hass.config.get "horizon.exchange")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No exchange URL"; exit; fi
 export HZN_EXCHANGE_URL="${VALUE}"
 hass.log.info "Setting HZN_EXCHANGE_URL to ${VALUE}" >&2
 JSON="${JSON}"',"exchange":"'"${VALUE}"'"'
 # USERNAME
-VALUE=$(jq -r ".horizon.username" "${CONFIG_PATH}")
+VALUE=$(hass.config.get "horizon.username")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No exchange username"; exit; fi
 JSON="${JSON}"',"username":"'"${VALUE}"'"'
 HZN_EXCHANGE_USER_AUTH="${VALUE}"
 # PASSWORD
-VALUE=$(jq -r ".horizon.password" "${CONFIG_PATH}")
+VALUE=$(hass.config.get "horizon.password")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No exchange password"; exit; fi
 JSON="${JSON}"',"password":"'"${VALUE}"'"'
 export HZN_EXCHANGE_USER_AUTH="${HZN_EXCHANGE_USER_AUTH}:${VALUE}"
 hass.log.info "Setting HZN_EXCHANGE_USER_AUTH ${HZN_EXCHANGE_USER_AUTH}" >&2
 
 # ORGANIZATION
-VALUE=$(jq -r ".horizon.organization" "${CONFIG_PATH}")
+VALUE=$(hass.config.get "horizon.organization")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No horizon organization"; exit; fi
 JSON="${JSON}"',"organization":"'"${VALUE}"'"'
 # DEVICE
-VALUE=$(jq -r ".horizon.device" "${CONFIG_PATH}")
+VALUE=$(hass.config.get "horizon.device")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then
   VALUE=$(ip addr | egrep -v NO-CARRIER | egrep -A 1 BROADCAST | egrep -v BROADCAST | sed "s/.*ether \([^ ]*\) .*/\1/g" | sed "s/://g" | head -1)
   VALUE="$(hostname)-${VALUE}"
@@ -89,7 +89,7 @@ fi
 JSON="${JSON}"',"device":"'"${VALUE}"'"'
 hass.log.info "DEVICE_ID ${VALUE}" >&2
 # TOKEN
-VALUE=$(jq -r ".horizon.token" "${CONFIG_PATH}")
+VALUE=$(hass.config.get "horizon.token")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then
   VALUE==$(echo "${HZN_EXCHANGE_USER_AUTH}" | sed 's/.*://')
 fi
@@ -103,20 +103,20 @@ JSON="${JSON}"'}'
 ## KAFKA OPTIONS
 ##
 
-JSON="${JSON}"',"kafka":{"id":"'$(jq -r '.kafka.instance_id')'"'
+JSON="${JSON}"',"kafka":{"id":"'$(jq -r '.kafka.instance_id' "/data/options.json")'"'
 # BROKERS_SASL
-VALUE=$(jq -r '.kafka.kafka_brokers_sasl' "${CONFIG_PATH}")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka kafka_brokers_sasl"; exit; fi
+VALUE=$(jq -r '.kafka.kafka_brokers_sasl' "/data/options.json")
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.kafka_brokers_sasl"; exit; fi
 hass.log.info "Kafka brokers: ${VALUE}"
 JSON="${JSON}"',"brokers":'"${VALUE}"
 # ADMIN_URL
-VALUE=$(jq -r '.kafka.kafka_admin_url' "${CONFIG_PATH}")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka kafka_admin_url"; exit; fi
+VALUE=$(hass.config.get "kafka.kafka_admin_url")
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.kafka_admin_url"; exit; fi
 hass.log.info "Kafka admin URL: ${VALUE}"
 JSON="${JSON}"',"admin_url":"'"${VALUE}"'"'
 # API_KEY
-VALUE=$(jq -r '.kafka.api_key' "${CONFIG_PATH}")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka api_key"; exit; fi
+VALUE=$(hass.config.get "kafka.api_key")
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.api_key"; exit; fi
 hass.log.info "Kafka API key: ${VALUE}"
 JSON="${JSON}"',"api_key":"'"${VALUE}"'"}'
 
