@@ -202,6 +202,7 @@ else
 
   while [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; do hass.log.info "--- WAIT: On registration (60)"; sleep 60; done
   hass.log.info "Registration complete" $(date)
+
   while [[ $(hzn node list | jq '.pattern?=="'"${PATTERN_ORG}/${PATTERN_ID}"'"') == false ]]; do hass.log.info "--- WAIT: On pattern (60)"; sleep 60; done
   hass.log.info "Pattern complete" $(date)
 
@@ -236,8 +237,17 @@ while [[ $(hzn agreement list | jq '.?==[]') == true ]]; do hass.log.info "--- W
 ### KAFKACAT
 ###
 
-MQTT_HOST="192.168.1.40"
-MQTT_PORT=1883
+MQTT_HOST=$(hass.config.get "mqtt.host")
+MQTT_PORT=$(hass.config.get "mqtt.port")
+MQTT_USERNAME=$(hass.config.get "mqtt.username")
+MQTT_PASSWORD=$(hass.config.get "mqtt.password")
+MQTT_TOPIC="kafka/${KAFKA_TOPIC}"
+
+MQTT="mosquitto_pub -l -h ${MQTT_HOST} -p ${MQTT_PORT} -t ${MQTT_TOPIC}"
+
+if [ -n "${MQTT_USERNAME}" && -n "${MQTT_PASSWORD}" ]; then
+  MQTT="${MQTT} -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD}"
+fi
 
 HAL=$(hzn agreement list | jq -r '.[]|.workload_to_run.url')
 if [ $HAL == "${PATTERN_URL}" ]; then
@@ -245,7 +255,7 @@ if [ $HAL == "${PATTERN_URL}" ]; then
   # wait on kafkacat death and re-start as long as token is valid
   hass.log.info "Routing KAFKA to MQTT topic kafka/${KAFKA_TOPIC} at host ${MQTT_HOST} on port ${MQTT_PORT}"
   echo 'kafkacat -u -C -q -o end -f "%s\n" -b '$KAFKA_BROKER_URL' -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username='${KAFKA_API_KEY:0:16}'" -X "sasl.password='${KAFKA_API_KEY:16}'" -t "'$KAFKA_TOPIC'"'
-  kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC" | mosquitto_pub -l -h "${MQTT_HOST}" -p ${MQTT_PORT} -t "kafka/${KAFKA_TOPIC}"
+  kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC" | ${MQTT}
 else
   hass.log.fatal "Unable to find agreement for ${PATTERN_URL}"
   exit

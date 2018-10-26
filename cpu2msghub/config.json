@@ -1,7 +1,7 @@
 {
   "name": "Open Horizon Shared CPU and GPS",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "slug": "cpu2msghub",
   "description": "Example addon for sharing CPU and GPS data using the Open Horizon edge fabric and Kafka",
   "startup": "before",
@@ -39,6 +39,10 @@
       "exchange": "",
       "organization": ""
     },
+    "mqtt": {
+      "host": "",
+      "port": 1883
+    },
     "kafka": {}
   },
   "schema": {
@@ -52,6 +56,12 @@
       "password": "str",
       "exchange": "url",
       "organization": "str"
+    },
+    "mqtt": {
+      "host": "str?",
+      "port": "port?",
+      "username": "str?",
+      "password": "str?"
     },
     "kafka": {
       "user": "str",
