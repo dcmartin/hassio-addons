@@ -103,7 +103,7 @@ JSON="${JSON}"'}'
 ## KAFKA OPTIONS
 ##
 
-JSON="${JSON}"',"kafka":{"id":"'$(jq -r '.kafka.instance_id' "/data/options.json")'"'
+JSON="${JSON}"',"kafka":{"id":"'$(hass.config.get 'kafka.instance_id')'"'
 # BROKERS_SASL
 VALUE=$(jq -r '.kafka.kafka_brokers_sasl' "/data/options.json")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.kafka_brokers_sasl"; exit; fi
@@ -172,18 +172,42 @@ fi
 
 ### REGISTER DEVICE WITH PATTERN
 
+# SAMPLE hzn node list
+# {
+#   "id": "add-on-test",
+#   "organization": "cgiroua@us.ibm.com",
+#   "pattern": "IBM/cpu2msghub",
+#   "name": "add-on-test",
+#   "token_last_valid_time": "2018-10-26 12:35:41 -0700 PDT",
+#   "token_valid": true,
+#   "ha": false,
+#   "configstate": {
+#     "state": "configured",
+#     "last_update_time": "2018-10-26 12:35:44 -0700 PDT"
+#   },
+#   "configuration": {
+#     "exchange_api": "https://stg-edge-cluster.us-south.containers.appdomain.cloud/v1/",
+#     "exchange_version": "1.61.0",
+#     "required_minimum_exchange_version": "1.61.0",
+#     "preferred_exchange_version": "1.61.0",
+#     "architecture": "amd64",
+#     "horizon_version": "2.19.0"
+#   },
+#   "connectivity": {
+#     "firmware.bluehorizon.network": true,
+#     "images.bluehorizon.network": true
+#   }
+# }
+
+# get information about this node
 NODE_LIST=$(hzn node list)
 if [ -n "${NODE_LIST}" ]; then
   DEVICE_REG=$(echo "${NODE_LIST}" | jq '.id?=="'"${DEVICE_ID}"'"')
 fi
-if [ "${DEVICE_REG}" == "true" ]; then
-  hass.log.notice "ALREADY REGISTERED as ${DEVICE_ID} organization ${DEVICE_ORG}" $(echo "${NODE_LIST}" | jq -c '.')
-else
+if [ "${DEVICE_REG}" != "true" ]; then
   INPUT="${KAFKA_TOPIC}.json"
-  if [ -s "${INPUT}" ]; then
-    hass.log.warning "Existing services registration file found: ${INPUT}; deleting"
-    rm -f "${INPUT}"
-  fi
+  rm -f "${INPUT}"
+
   echo '{' >> "${INPUT}"
   echo '  "services": [' >> "${INPUT}"
   echo '    {' >> "${INPUT}"
@@ -197,16 +221,17 @@ else
   echo '  ]' >> "${INPUT}"
   echo '}' >> "${INPUT}"
 
-  hass.log.info "REGISTERING device ${DEVICE_ID} organization ${DEVICE_ORG} with pattern ${PATTERN_ORG}/${PATTERN_ID} using input " $(jq -c '.' "${INPUT}")
+  hass.log.info "Registering device ${DEVICE_ID} organization ${DEVICE_ORG} with pattern ${PATTERN_ORG}/${PATTERN_ID} using input " $(jq -c '.' "${INPUT}")
+
   hzn register -n "${DEVICE_ID}:${DEVICE_TOKEN}" "${DEVICE_ORG}" "${PATTERN_ORG}/${PATTERN_ID}" -f "${INPUT}"
 
+  # wait for registration
   while [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; do hass.log.info "--- WAIT: On registration (60)"; sleep 60; done
+
   hass.log.info "Registration complete" $(date)
-
-  while [[ $(hzn node list | jq '.pattern?=="'"${PATTERN_ORG}/${PATTERN_ID}"'"') == false ]]; do hass.log.info "--- WAIT: On pattern (60)"; sleep 60; done
-  hass.log.info "Pattern complete" $(date)
-
 fi
+
+hass.log.notice "Registered ${DEVICE_ORG}/${DEVICE_ID} for ${PATTERN_ORG}/${PATTERN_ID}" 
 
 #
 # SAMPLE AGREEEMENT
@@ -233,33 +258,40 @@ fi
 ## WAIT ON AGREEMENT
 while [[ $(hzn agreement list | jq '.?==[]') == true ]]; do hass.log.info "--- WAIT: On agreement (10)"; sleep 10; done
 
+# confirm agreement
+if [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_URL}" ]]; then
+  hass.log.fatal "Unable to find agreement for ${PATTERN_URL}"
+  exit
+fi
+
+hass.log.info "Agreement pattern ${PATTERN_URL}"
+
 ###
-### KAFKACAT
+### ADD ON LOGIC
 ###
 
+# configuration for MQTT transfer
 MQTT_HOST=$(hass.config.get "mqtt.host")
 MQTT_PORT=$(hass.config.get "mqtt.port")
 MQTT_USERNAME=$(hass.config.get "mqtt.username")
 MQTT_PASSWORD=$(hass.config.get "mqtt.password")
 MQTT_TOPIC="kafka/${KAFKA_TOPIC}"
-
+# specify MQTT command
 MQTT="mosquitto_pub -l -h ${MQTT_HOST} -p ${MQTT_PORT} -t ${MQTT_TOPIC}"
-
-if [ -n "${MQTT_USERNAME}" && -n "${MQTT_PASSWORD}" ]; then
+if [[ -n "${MQTT_USERNAME}" && -n "${MQTT_PASSWORD}" ]]; then
   MQTT="${MQTT} -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD}"
 fi
 
-HAL=$(hzn agreement list | jq -r '.[]|.workload_to_run.url')
-if [ $HAL == "${PATTERN_URL}" ]; then
-  hass.log.info "Agreement pattern ${PATTERN_URL}" $(date)
-  # wait on kafkacat death and re-start as long as token is valid
-  hass.log.info "Routing KAFKA to MQTT topic kafka/${KAFKA_TOPIC} at host ${MQTT_HOST} on port ${MQTT_PORT}"
-  echo 'kafkacat -u -C -q -o end -f "%s\n" -b '$KAFKA_BROKER_URL' -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username='${KAFKA_API_KEY:0:16}'" -X "sasl.password='${KAFKA_API_KEY:16}'" -t "'$KAFKA_TOPIC'"'
-  kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC" | ${MQTT}
-else
-  hass.log.fatal "Unable to find agreement for ${PATTERN_URL}"
-  exit
-fi
+# configuration for JQ tranformation
+JQ='{"name":.nodeID,"altitude":.gps.alt,"longitude":.gps.lon,"latitude":.gps.lat,"cpu":.cpu}'
+
+
+hass.log.info "Starting main loop; routing ${KAFKA_TOPIC} to ${MQTT_TOPIC} at host ${MQTT_HOST} on port ${MQTT_PORT}"
+
+# wait on kafkacat death and re-start as long as token is valid
+kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC" | jq --unbuffered -c "${JQ}" | ${MQTT}
+
+hass.log.fatal "Unexpected failure of kafkacat"
 
 }
 
