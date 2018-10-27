@@ -1,9 +1,9 @@
 {
-  "name": "Open Horizon Shared CPU and GPS",
+  "name": "Test addon for horizon",
   "url": "https://github.com/dcmartin/hassio-addons",
   "version": "dev",
   "slug": "horizon",
-  "description": "Example addon for sharing CPU and GPS data using the Open Horizon edge fabric and Kafka",
+  "description": "Test addon for horizon",
   "startup": "before",
   "boot": "auto",
   "arch": [
