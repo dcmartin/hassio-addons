@@ -259,7 +259,7 @@ hass.log.notice "Registered ${DEVICE_ORG}/${DEVICE_ID} for ${PATTERN_ORG}/${PATT
 while [[ $(hzn agreement list | jq '.?==[]') == true ]]; do hass.log.info "--- WAIT: On agreement (10)"; sleep 10; done
 
 # confirm agreement
-if [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_URL}" ]]; then
+if [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') != "${PATTERN_URL}" ]]; then
   hass.log.fatal "Unable to find agreement for ${PATTERN_URL}"
   exit
 fi
