@@ -12,60 +12,6 @@ if [ $(whoami) != "root" ]; then
   exit
 fi
 
-## EXCHANGE
-
-if [ -z "${ORGID}" ]; then
-  ORGID='cgiroua@us.ibm.com'
-  echo "*** WARN: Using default ORGID=${ORGID}"
-else
-  echo "+++ INFO: Using existing ORGID=${ORGID}"
-fi
-
-if [ -z "${HZN_EXCHANGE_URL}" ]; then
-  HZN_EXCHANGE_URL="https://stg-edge-cluster.us-south.containers.appdomain.cloud/v1"
-  echo "*** WARN: Using default HZN_EXCHANGE_URL=${HZN_EXCHANGE_URL}"
-else 
-  echo "*** WARN: Using existing HZN_EXCHANGE_URL=${HZN_EXCHANGE_URL}"
-fi
-export HZN_EXCHANGE_URL
-
-if [ -n "${HZN_EXCHANGE_USER_AUTH}" ]; then
-  echo "*** WARN: Using existing HZN_EXCHANGE_USER_AUTH=${HZN_EXCHANGE_USER_AUTH}"
-elif [ -n "${1}" ]; then
-  HZN_EXCHANGE_USER_AUTH="${1}"
-else
-  while [ -z "${HZN_EXCHANGE_USER_AUTH}" ]; do
-    read -p "${ORGID} username: " UN
-    read -sp "Password: " PW
-    if [ ! -z "${UN}" ] && [ ! -z "${PW}" ]; then 
-      HZN_EXCHANGE_USER_AUTH="${UN}:${PW}"
-    fi
-  done
-fi
-echo "*** WARN: Using existing HZN_EXCHANGE_USER_AUTH=${HZN_EXCHANGE_USER_AUTH}"
-export HZN_EXCHANGE_USER_AUTH
-
-## KAFKA
-
-KAFKA_CREDS="kafkacreds.json"
-if [ -n "${2}" ] && [ -s "${2}" ]; then
-  KAFKA_CREDS="${2}"
-  echo "+++ INFO: Using IBM MessageHub credentials ${KAFKA_CREDS}"
-elif [ ! -n "${2}" ] && [ -e "${KAFKA_CREDS}" ]; then
-  echo "+++ INFO: Using IBM MessageHub credentials ${KAFKA_CREDS}"
-else
-  echo "OPEN LINK: https://console.bluemix.net/services/messagehub/b5f8df99-d3f6-47b8-b1dc-12806d63ae61/?paneId=credentials&new=true&env_id=ibm:yp:us-south&org=51aea963-6924-4a71-81d5-5f8c313328bd&space=f965a097-fcb8-4768-953e-5e86ea2d66b4"
-  echo "COPY credentials JSON structure from from IBM Cloud $ORGID; and PASTE and then type Control-D"
-  rm -f "${KAFKA_CREDS}"
-  while read -r; do
-    printf "%s\n" "$REPLY" >> "${KAFKA_CREDS}"
-  done
-fi
-if [ ! -s "${KAFKA_CREDS}" ]; then
-  echo "Empty ${KAFKA_CREDS}; exiting"
-  exit
-fi
-
 # Specify the hardware architecture of this Edge Node
 
 ARCH=$(arch)
@@ -204,9 +150,63 @@ fi
 ## HORIZON PATTERN SETUP
 ##
 
+## EXCHANGE
+
+if [ -z "${ORGID}" ]; then
+  ORGID='cgiroua@us.ibm.com'
+  echo "*** WARN: Using default ORGID=${ORGID}"
+else
+  echo "+++ INFO: Using existing ORGID=${ORGID}"
+fi
+
+if [ -z "${HZN_EXCHANGE_URL}" ]; then
+  HZN_EXCHANGE_URL="https://stg-edge-cluster.us-south.containers.appdomain.cloud/v1"
+  echo "*** WARN: Using default HZN_EXCHANGE_URL=${HZN_EXCHANGE_URL}"
+else 
+  echo "*** WARN: Using existing HZN_EXCHANGE_URL=${HZN_EXCHANGE_URL}"
+fi
+export HZN_EXCHANGE_URL
+
+if [ -n "${HZN_EXCHANGE_USER_AUTH}" ]; then
+  echo "*** WARN: Using existing HZN_EXCHANGE_USER_AUTH=${HZN_EXCHANGE_USER_AUTH}"
+elif [ -n "${1}" ]; then
+  HZN_EXCHANGE_USER_AUTH="${1}"
+else
+  while [ -z "${HZN_EXCHANGE_USER_AUTH}" ]; do
+    read -p "${ORGID} username: " UN
+    read -sp "Password: " PW
+    if [ ! -z "${UN}" ] && [ ! -z "${PW}" ]; then 
+      HZN_EXCHANGE_USER_AUTH="${UN}:${PW}"
+    fi
+  done
+fi
+echo "*** WARN: Using existing HZN_EXCHANGE_USER_AUTH=${HZN_EXCHANGE_USER_AUTH}"
+export HZN_EXCHANGE_USER_AUTH
+
+## KAFKA
+
 PATTERN_ORG="IBM"
 PATTERN_ID="cpu2msghub"
 PATTERN_URL="https://github.com/open-horizon/examples/wiki/service-cpu2msghub"
+
+KAFKA_CREDS="kafkacreds.json"
+if [ -n "${2}" ] && [ -s "${2}" ]; then
+  KAFKA_CREDS="${2}"
+  echo "+++ INFO: Using IBM MessageHub credentials ${KAFKA_CREDS}"
+elif [ ! -n "${2}" ] && [ -e "${KAFKA_CREDS}" ]; then
+  echo "+++ INFO: Using IBM MessageHub credentials ${KAFKA_CREDS}"
+else
+  echo "OPEN LINK: https://console.bluemix.net/services/messagehub/b5f8df99-d3f6-47b8-b1dc-12806d63ae61/?paneId=credentials&new=true&env_id=ibm:yp:us-south&org=51aea963-6924-4a71-81d5-5f8c313328bd&space=f965a097-fcb8-4768-953e-5e86ea2d66b4"
+  echo "COPY credentials JSON structure from from IBM Cloud $ORGID; and PASTE and then type Control-D"
+  rm -f "${KAFKA_CREDS}"
+  while read -r; do
+    printf "%s\n" "$REPLY" >> "${KAFKA_CREDS}"
+  done
+fi
+if [ ! -s "${KAFKA_CREDS}" ]; then
+  echo "Empty ${KAFKA_CREDS}; exiting"
+  exit
+fi
 
 # TOPIC
 KAFKA_TOPIC=$(echo "${ORGID}.${PATTERN_ORG}_${PATTERN_ID}" | sed 's/@/_/g')
