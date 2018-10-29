@@ -207,8 +207,15 @@ fi
 NODE_LIST=$(hzn node list)
 if [ -n "${NODE_LIST}" ]; then
   DEVICE_REG=$(echo "${NODE_LIST}" | jq '.id?=="'"${DEVICE_ID}"'"')
+else
+  DEVICE_REG="false"
 fi
-if [ "${DEVICE_REG}" != "true" ]; then
+
+if [ "${DEVICE_REG}" == "true" ]; then
+  hass.log.debug "${DEVICE_ORG}/${DEVICE_ID} is registered"
+fi
+
+if [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') != "${PATTERN_URL}" ]]; then
   INPUT="${KAFKA_TOPIC}.json"
   rm -f "${INPUT}"
 
@@ -232,7 +239,14 @@ if [ "${DEVICE_REG}" != "true" ]; then
   # wait for registration
   while [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; do hass.log.debug "--- WAIT: On registration (60)"; sleep 60; done
 
-  hass.log.debug "Registration complete" $(date)
+  hass.log.debug "Registration complete for ${DEVICE_ORG}/${DEVICE_ID}"
+
+  ## WAIT ON AGREEMENT
+  while [[ $(hzn agreement list | jq '.?==[]') == true ]]; do hass.log.info "--- WAIT: On agreement (10)"; sleep 10; done
+
+  hass.log.debug "Agreement complete for ${PATTERN_URL}"
+else
+  hass.log.debug "Workload to run is ${PATTERN_URL}"
 fi
 
 hass.log.info "Registered ${DEVICE_ORG}/${DEVICE_ID} for ${PATTERN_ORG}/${PATTERN_ID}" 
@@ -258,17 +272,6 @@ hass.log.info "Registered ${DEVICE_ORG}/${DEVICE_ID} for ${PATTERN_ORG}/${PATTER
 #     }
 #   }
 # ]
-
-## WAIT ON AGREEMENT
-while [[ $(hzn agreement list | jq '.?==[]') == true ]]; do hass.log.info "--- WAIT: On agreement (10)"; sleep 10; done
-
-# confirm agreement
-if [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') != "${PATTERN_URL}" ]]; then
-  hass.log.fatal "Unable to find agreement for ${PATTERN_URL}"
-  exit
-fi
-
-hass.log.info "Agreement pattern ${PATTERN_URL}"
 
 ###
 ### ADD ON LOGIC
