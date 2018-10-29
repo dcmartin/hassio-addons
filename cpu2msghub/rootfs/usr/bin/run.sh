@@ -39,6 +39,7 @@ hass.log.debug "Using architecture: ${ARCH}"
 ### A HOST at DATE on ARCH
 ###
 
+# START JSON
 JSON='{"host":"'"$(hostname)"'","arch":"'"${ARCH}"'","date":'$(/bin/date +%s)
 # time zone
 VALUE=$(hass.config.get "timezone")
@@ -51,8 +52,6 @@ JSON="${JSON}"',"timezone":"'"${VALUE}"'"'
 ##
 ## HORIZON 
 ##
-
-# START JSON
 
 JSON="${JSON}"',"horizon":{"pattern":'"${HORIZON_PATTERN}"
 
@@ -125,7 +124,7 @@ if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.
 hass.log.debug "Kafka API key: ${VALUE}"
 JSON="${JSON}"',"api_key":"'"${VALUE}"'"}'
 
-## DONE w/ kakfa
+## DONE w/ JSON
 JSON="${JSON}"'}'
 
 hass.log.debug "${JSON}"
@@ -177,39 +176,19 @@ fi
 
 ### REGISTER DEVICE WITH PATTERN
 
-# SAMPLE hzn node list
-# {
-#   "id": "add-on-test",
-#   "organization": "cgiroua@us.ibm.com",
-#   "pattern": "IBM/cpu2msghub",
-#   "name": "add-on-test",
-#   "token_last_valid_time": "2018-10-26 12:35:41 -0700 PDT",
-#   "token_valid": true,
-#   "ha": false,
-#   "configstate": {
-#     "state": "configured",
-#     "last_update_time": "2018-10-26 12:35:44 -0700 PDT"
-#   },
-#   "configuration": {
-#     "exchange_api": "https://stg-edge-cluster.us-south.containers.appdomain.cloud/v1/",
-#     "exchange_version": "1.61.0",
-#     "required_minimum_exchange_version": "1.61.0",
-#     "preferred_exchange_version": "1.61.0",
-#     "architecture": "amd64",
-#     "horizon_version": "2.19.0"
-#   },
-#   "connectivity": {
-#     "firmware.bluehorizon.network": true,
-#     "images.bluehorizon.network": true
-#   }
-# }
-
 # get information about this node
 NODE_LIST=$(hzn node list)
 if [ -n "${NODE_LIST}" ]; then
   DEVICE_REG=$(echo "${NODE_LIST}" | jq '.id?=="'"${DEVICE_ID}"'"')
+else
+  DEVICE_REG="false"
 fi
-if [ "${DEVICE_REG}" != "true" ]; then
+
+if [ "${DEVICE_REG}" == "true" ]; then
+  hass.log.warning "${DEVICE_ORG}/${DEVICE_ID} is registered"
+fi
+
+if [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') != "${PATTERN_URL}" ]]; then
   INPUT="${KAFKA_TOPIC}.json"
   rm -f "${INPUT}"
 
@@ -233,43 +212,17 @@ if [ "${DEVICE_REG}" != "true" ]; then
   # wait for registration
   while [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; do hass.log.debug "--- WAIT: On registration (60)"; sleep 60; done
 
-  hass.log.debug "Registration complete" $(date)
+  hass.log.debug "Registration complete for ${DEVICE_ORG}/${DEVICE_ID}"
+
+  ## WAIT ON AGREEMENT
+  while [[ $(hzn agreement list | jq '.?==[]') == true ]]; do hass.log.info "--- WAIT: On agreement (10)"; sleep 10; done
+
+  hass.log.debug "Agreement complete for ${PATTERN_URL}"
+else
+  hass.log.debug "Workload to run is ${PATTERN_URL}"
 fi
 
 hass.log.info "Registered ${DEVICE_ORG}/${DEVICE_ID} for ${PATTERN_ORG}/${PATTERN_ID}" 
-
-#
-# SAMPLE AGREEEMENT
-# [
-#   {
-#     "name": "Policy for service-cpu merged with Policy for service-gps merged with cpu2msghub_github.com-open-horizon-examples-wiki-service-cpu2msghub_IBM_amd64",
-#     "current_agreement_id": "7079621a2e80f579b4a29b654f781783b1339f7f8e65947afd7575b8dc5aef01",
-#     "consumer_id": "IBM/stg-edge-cluster.us-south.containers.appdomain.cloud",
-#     "agreement_creation_time": "2018-10-26 08:57:13 -0700 PDT",
-#     "agreement_accepted_time": "2018-10-26 08:57:22 -0700 PDT",
-#     "agreement_finalized_time": "2018-10-26 08:57:26 -0700 PDT",
-#     "agreement_execution_start_time": "2018-10-26 08:57:37 -0700 PDT",
-#     "agreement_data_received_time": "",
-#     "agreement_protocol": "Basic",
-#     "workload_to_run": {
-#       "url": "https://github.com/open-horizon/examples/wiki/service-cpu2msghub",
-#       "org": "IBM",
-#       "version": "1.2.5",
-#       "arch": "amd64"
-#     }
-#   }
-# ]
-
-## WAIT ON AGREEMENT
-while [[ $(hzn agreement list | jq '.?==[]') == true ]]; do hass.log.info "--- WAIT: On agreement (10)"; sleep 10; done
-
-# confirm agreement
-if [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') != "${PATTERN_URL}" ]]; then
-  hass.log.fatal "Unable to find agreement for ${PATTERN_URL}"
-  exit
-fi
-
-hass.log.info "Agreement pattern ${PATTERN_URL}"
 
 ###
 ### ADD ON LOGIC
@@ -304,4 +257,3 @@ hass.log.fatal "Workload no longer valid"
 }
 
 main "$@"
-

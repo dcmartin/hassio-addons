@@ -176,33 +176,6 @@ fi
 
 ### REGISTER DEVICE WITH PATTERN
 
-# SAMPLE hzn node list
-# {
-#   "id": "add-on-test",
-#   "organization": "cgiroua@us.ibm.com",
-#   "pattern": "IBM/sdr2msghub",
-#   "name": "add-on-test",
-#   "token_last_valid_time": "2018-10-26 12:35:41 -0700 PDT",
-#   "token_valid": true,
-#   "ha": false,
-#   "configstate": {
-#     "state": "configured",
-#     "last_update_time": "2018-10-26 12:35:44 -0700 PDT"
-#   },
-#   "configuration": {
-#     "exchange_api": "https://stg-edge-cluster.us-south.containers.appdomain.cloud/v1/",
-#     "exchange_version": "1.61.0",
-#     "required_minimum_exchange_version": "1.61.0",
-#     "preferred_exchange_version": "1.61.0",
-#     "architecture": "amd64",
-#     "horizon_version": "2.19.0"
-#   },
-#   "connectivity": {
-#     "firmware.bluehorizon.network": true,
-#     "images.bluehorizon.network": true
-#   }
-# }
-
 # get information about this node
 NODE_LIST=$(hzn node list)
 if [ -n "${NODE_LIST}" ]; then
@@ -251,28 +224,6 @@ fi
 
 hass.log.info "Registered ${DEVICE_ORG}/${DEVICE_ID} for ${PATTERN_ORG}/${PATTERN_ID}" 
 
-#
-# SAMPLE AGREEEMENT
-# [
-#   {
-#     "name": "Policy for service-sdr merged with Policy for service-gps merged with sdr2msghub_github.com-open-horizon-examples-wiki-service-sdr2msghub_IBM_amd64",
-#     "current_agreement_id": "7079621a2e80f579b4a29b654f781783b1339f7f8e65947afd7575b8dc5aef01",
-#     "consumer_id": "IBM/stg-edge-cluster.us-south.containers.appdomain.cloud",
-#     "agreement_creation_time": "2018-10-26 08:57:13 -0700 PDT",
-#     "agreement_accepted_time": "2018-10-26 08:57:22 -0700 PDT",
-#     "agreement_finalized_time": "2018-10-26 08:57:26 -0700 PDT",
-#     "agreement_execution_start_time": "2018-10-26 08:57:37 -0700 PDT",
-#     "agreement_data_received_time": "",
-#     "agreement_protocol": "Basic",
-#     "workload_to_run": {
-#       "url": "https://github.com/open-horizon/examples/wiki/service-sdr2msghub",
-#       "org": "IBM",
-#       "version": "1.2.5",
-#       "arch": "amd64"
-#     }
-#   }
-# ]
-
 ###
 ### ADD ON LOGIC
 ###
@@ -296,7 +247,6 @@ JQ='{"name":.nodeID,"altitude":.gps.alt,"longitude":.gps.lon,"latitude":.gps.lat
 while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') != "${PATTERN_URL}" ]]; do
   hass.log.info "Starting main loop; routing ${KAFKA_TOPIC} to ${MQTT_TOPIC} at host ${MQTT_HOST} on port ${MQTT_PORT}"
 
-  # kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC" | jq --unbuffered -c "${JQ}" | ${MQTT}
   kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC"
 
   hass.log.debug "Unexpected failure of kafkacat"
