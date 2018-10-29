@@ -103,8 +103,8 @@ JSON="${JSON}"'}'
 ## KAFKA OPTIONS
 ##
 
-if [[ $(hass.config.has_value('kafka')) == false ]]; then
-  hass.log.fatal("No Kafka credentials")
+if [[ $(hass.config.has_value 'kafka') == false ]]; then
+  hass.log.fatal "No Kafka credentials"
   exit
 fi
 
