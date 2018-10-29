@@ -181,7 +181,7 @@ fi
 # {
 #   "id": "add-on-test",
 #   "organization": "cgiroua@us.ibm.com",
-#   "pattern": "IBM/cpu2msghub",
+#   "pattern": "IBM/sdr2msghub",
 #   "name": "add-on-test",
 #   "token_last_valid_time": "2018-10-26 12:35:41 -0700 PDT",
 #   "token_valid": true,
@@ -242,7 +242,7 @@ hass.log.info "Registered ${DEVICE_ORG}/${DEVICE_ID} for ${PATTERN_ORG}/${PATTER
 # SAMPLE AGREEEMENT
 # [
 #   {
-#     "name": "Policy for service-cpu merged with Policy for service-gps merged with cpu2msghub_github.com-open-horizon-examples-wiki-service-cpu2msghub_IBM_amd64",
+#     "name": "Policy for service-sdr merged with Policy for service-gps merged with sdr2msghub_github.com-open-horizon-examples-wiki-service-sdr2msghub_IBM_amd64",
 #     "current_agreement_id": "7079621a2e80f579b4a29b654f781783b1339f7f8e65947afd7575b8dc5aef01",
 #     "consumer_id": "IBM/stg-edge-cluster.us-south.containers.appdomain.cloud",
 #     "agreement_creation_time": "2018-10-26 08:57:13 -0700 PDT",
@@ -252,7 +252,7 @@ hass.log.info "Registered ${DEVICE_ORG}/${DEVICE_ID} for ${PATTERN_ORG}/${PATTER
 #     "agreement_data_received_time": "",
 #     "agreement_protocol": "Basic",
 #     "workload_to_run": {
-#       "url": "https://github.com/open-horizon/examples/wiki/service-cpu2msghub",
+#       "url": "https://github.com/open-horizon/examples/wiki/service-sdr2msghub",
 #       "org": "IBM",
 #       "version": "1.2.5",
 #       "arch": "amd64"

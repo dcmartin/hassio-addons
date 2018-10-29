@@ -1,8 +1,8 @@
 {
-  "name": "Open Horizon Shared CPU and GPS",
+  "name": "Open Horizon Shared SDR",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.0.5",
-  "slug": "cpu2msghub",
+  "version": "0.0.1",
+  "slug": "sdr2msghub",
   "description": "Routes Kakfa messages from Open Horizon (github.com/open-horizon) distributed system to MQTT for consumption by Home-Assistant",
   "startup": "before",
   "boot": "auto",
