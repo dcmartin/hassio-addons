@@ -25,7 +25,7 @@ RUN apt-get update \
       /var/lib/apt/lists/*
 
 # the pattern we expect to run
-ENV HORIZON_PATTERN='{"id":"sdr2msghub","org":"IBM","url":"https://github.com/open-horizon/examples/wiki/service-sdr2msghub","services":[{"id":"sdr2msghub","org":"IBM","url":"https://github.com/open-horizon/examples/wiki/service-sdr"]}'
+ENV HORIZON_PATTERN='{"id":"sdr2msghub","org":"IBM","url":"https://github.com/open-horizon/examples/wiki/service-sdr2msghub","services":[{"id":"sdr2msghub","org":"IBM","url":"https://github.com/open-horizon/examples/wiki/service-sdr"}]}'
 
 # Copy root filesystem
 COPY rootfs /

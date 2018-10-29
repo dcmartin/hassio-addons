@@ -39,6 +39,7 @@ hass.log.debug "Using architecture: ${ARCH}"
 ### A HOST at DATE on ARCH
 ###
 
+# START JSON
 JSON='{"host":"'"$(hostname)"'","arch":"'"${ARCH}"'","date":'$(/bin/date +%s)
 # time zone
 VALUE=$(hass.config.get "timezone")
@@ -51,8 +52,6 @@ JSON="${JSON}"',"timezone":"'"${VALUE}"'"'
 ##
 ## HORIZON 
 ##
-
-# START JSON
 
 JSON="${JSON}"',"horizon":{"pattern":'"${HORIZON_PATTERN}"
 
@@ -125,7 +124,7 @@ if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.
 hass.log.debug "Kafka API key: ${VALUE}"
 JSON="${JSON}"',"api_key":"'"${VALUE}"'"}'
 
-## DONE w/ kakfa
+## DONE w/ JSON
 JSON="${JSON}"'}'
 
 hass.log.debug "${JSON}"
