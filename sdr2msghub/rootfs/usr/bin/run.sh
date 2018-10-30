@@ -242,8 +242,7 @@ if [[ -n "${MQTT_USERNAME}" && -n "${MQTT_PASSWORD}" ]]; then
 fi
 
 # configuration for JQ tranformation
-# JQ='{"name":.nodeID,"altitude":.gps.alt,"longitude":.gps.lon,"latitude":.gps.lat,"cpu":.cpu}'
-JQ='.'
+JQ='{"date":.ts,"name":.devID,"frequency":.freq,"value":.expectedValue,"longitude":.lon,"latitude":.lat,"content-type":.contentType,"audio":.audio}'
 
 # wait on kafkacat death and re-start as long as token is valid
 while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_URL}" ]]; do
