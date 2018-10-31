@@ -272,20 +272,32 @@ while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_
 
   kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC" | jq -c --unbuffered "${JQ}" | while read -r; do
     hass.log.debug "Got reply " $(echo "${REPLY}" | jq -c '.audio="redacted"')
-    PAYLOAD="${REPLY}"
-    STT=$(echo "${PAYLOAD}" | jq --unbuffered -r '.audio' | base64 --decode | curl -fsSL --data-binary @- -u "${WATSON_STT_USERNAME}:${WATSON_STT_PASSWORD}" -H "Content-Type: audio/mp3" "${WATSON_STT_URL}")
-    if [ -n "${STT}" ]; then
-      hass.log.debug "Got STT " $(echo "${STT}" | jq -c '.')
-      PAYLOAD=$(echo "${PAYLOAD}" | jq -c '.stt='"${STT}")
-      NLU=$(echo "${STT}" | jq --unbuffered '{"text":.results?|sort_by(.alternatives[].confidence)[-1].alternatives[].transcript,"features":{"sentiment":{},"keywords":{}}}' | curl -fsSL -d @- -u "${WATSON_NLU_USERNAME}:${WATSON_NLU_PASSWORD}" -H "Content-Type: application/json" "${WATSON_NLU_URL}")
-    fi
-    if [ -n "${NLU}" ]; then
-      hass.log.debug "Got NLU " $(echo "${NLU}" | jq -c '.')
-      PAYLOAD=$(echo "${PAYLOAD}" | jq -c '.nlu='"${NLU}")
+    if [ -n "${REPLY}" ]; then
+      PAYLOAD="${REPLY}"
+      STT=$(echo "${PAYLOAD}" | jq  -r '.audio' | base64 --decode | curl -fsSL --data-binary @- -u "${WATSON_STT_USERNAME}:${WATSON_STT_PASSWORD}" -H "Content-Type: audio/mp3" "${WATSON_STT_URL}")
+      if [[ $? != 22 && -n "${STT}" ]]; then
+	hass.log.debug "Got STT " $(echo "${STT}" | jq -c '.')
+	PAYLOAD=$(echo "${PAYLOAD}" | jq -c '.stt='"${STT}")
+	NLU=$(echo "${STT}" | jq  '{"text":.results?|sort_by(.alternatives[].confidence)[-1].alternatives[].transcript,"features":{"sentiment":{},"keywords":{}}}' | curl -fsSL -d @- -u "${WATSON_NLU_USERNAME}:${WATSON_NLU_PASSWORD}" -H "Content-Type: application/json" "${WATSON_NLU_URL}")
+	if [[ $? != 22 && -n "${NLU}" ]]; then
+	  hass.log.debug "Got NLU " $(echo "${NLU}" | jq -c '.')
+	  PAYLOAD=$(echo "${PAYLOAD}" | jq -c '.nlu='"${NLU}")
+	else
+	  hass.log.warning "No NLU results"
+	  PAYLOAD=$(echo "${PAYLOAD}" | jq -c '.nlu=null')
+	fi
+      else
+	hass.log.warning "No STT results"
+	PAYLOAD=$(echo "${PAYLOAD}" | jq -c '.stt=null,.nlu=null')
+      fi
+    else
+      PAYLOAD=""
     fi
     if [ -n "${PAYLOAD}" ]; then
       hass.log.debug "Posting PAYLOAD " $(echo "${PAYLOAD}" | jq -c '.audio="redacted"')
       echo "${PAYLOAD}" | ${MQTT} -l -t "${MQTT_TOPIC}"
+    else
+      hass.log.warning "No payload found"
     fi
   done
   hass.log.debug "Unexpected failure of kafkacat"
