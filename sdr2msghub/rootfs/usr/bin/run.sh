@@ -131,6 +131,9 @@ hass.log.debug "${JSON}"
 
 ## MQTT
 
+# define command
+MQTT="mosquitto_pub -h ${MQTT_HOST} -p ${MQTT_PORT}"
+
 if [[ $(hass.config.has_value 'mqtt') == false ]]; then
   hass.log.fatal "No MQTT credentials; exiting"
   exit
@@ -157,6 +160,8 @@ if [[ $(hass.config.has_value 'mqtt.username') == true && $(hass.config.has_valu
   hass.log.debug "MQTT username: ${MQTT_USERNAME}"
   MQTT_PASSWORD=$(hass.config.get "mqtt.password")
   hass.log.debug "MQTT password: ${MQTT_PASSWORD}"
+  # update command
+  MQTT="${MQTT} -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD}"
 fi
 
 if [[ $(hass.config.has_value 'mqtt.topic') == false ]]; then
@@ -165,12 +170,6 @@ if [[ $(hass.config.has_value 'mqtt.topic') == false ]]; then
 else
   MQTT_TOPIC=$(hass.config.get "mqtt.topic")
   hass.log.debug "MQTT topic: ${MQTT_TOPIC}"
-fi
-
-# define command
-MQTT="mosquitto_pub -h ${MQTT_HOST} -p ${MQTT_PORT}"
-if [[ -n "${MQTT_USERNAME}" && -n "${MQTT_PASSWORD}" ]]; then
-  MQTT="${MQTT} -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD}"
 fi
 
 ## STT
