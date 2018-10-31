@@ -129,6 +129,110 @@ JSON="${JSON}"'}'
 
 hass.log.debug "${JSON}"
 
+## MQTT
+
+if [[ $(hass.config.has_value 'mqtt') == false ]]; then
+  hass.log.fatal "No MQTT credentials; exiting"
+  exit
+fi
+
+if [[ $(hass.config.has_value 'mqtt.host') == false ]]; then
+  MQTT_HOST="core-mosquitto"
+  hass.log.info "No MQTT host; using ${MQTT_HOST}"
+else
+  MQTT_HOST=$(hass.config.get "mqtt.host")
+  hass.log.debug "MQTT host: ${MQTT_HOST}"
+fi
+
+if [[ $(hass.config.has_value 'mqtt.port') == false ]]; then
+  MQTT_PORT=1883
+  hass.log.info "No MQTT port; using ${MQTT_PORT}"
+else
+  MQTT_PORT=$(hass.config.get "mqtt.port")
+  hass.log.debug "MQTT port: ${MQTT_PORT}"
+fi
+
+if [[ $(hass.config.has_value 'mqtt.username') == true && $(hass.config.has_value 'mqtt.password') == true ]]; then
+  MQTT_USERNAME=$(hass.config.get "mqtt.username")
+  hass.log.debug "MQTT username: ${MQTT_USERNAME}"
+  MQTT_PASSWORD=$(hass.config.get "mqtt.password")
+  hass.log.debug "MQTT password: ${MQTT_PASSWORD}"
+fi
+
+if [[ $(hass.config.has_value 'mqtt.topic') == false ]]; then
+  MQTT_TOPIC="kafka/${KAFKA_TOPIC}"
+  hass.log.info "No MQTT topic; using ${MQTT_TOPIC}"
+else
+  MQTT_PORT=$(hass.config.get "mqtt.topic")
+  hass.log.debug "MQTT topic: ${MQTT_TOPIC}"
+fi
+
+# define command
+MQTT="mosquitto_pub -h ${MQTT_HOST} -p ${MQTT_PORT}"
+if [[ -n "${MQTT_USERNAME}" && -n "${MQTT_PASSWORD}" ]]; then
+  MQTT="${MQTT} -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD}"
+fi
+
+## STT
+
+if [[ $(hass.config.has_value 'watson_stt') == false ]]; then
+  hass.log.fatal "No Watson STT credentials; exiting"
+  exit
+fi
+
+if [[ $(hass.config.has_value 'watson_stt.url') == false ]]; then
+  hass.log.fatal "No Watson STT URL; exiting"
+  exit
+else
+  WATSON_STT_URL=$(hass.config.get "watson_stt.url")
+  hass.log.debug "Watson STT URL: ${WATSON_STT_URL}"
+fi
+
+if [[ $(hass.config.has_value 'watson_nlu.apikey') == true ]]; then
+  WATSON_STT_USERNAME="apikey"
+  hass.log.debug "Watson STT username: ${WATSON_STT_USERNAME}"
+  WATSON_STT_PASSWORD=$(hass.config.get "watson_stt.apikey")
+  hass.log.debug "Watson STT password: ${WATSON_STT_PASSWORD}"
+elif [[ $(hass.config.has_value 'watson_stt.username') == true && $(hass.config.has_value 'watson_stt.password') == true ]]; then
+  WATSON_STT_USERNAME=$(hass.config.get "watson_stt.username")
+  hass.log.debug "Watson STT username: ${WATSON_STT_USERNAME}"
+  WATSON_STT_PASSWORD=$(hass.config.get "watson_stt.password")
+  hass.log.debug "Watson STT password: ${WATSON_STT_PASSWORD}"
+else
+  hass.log.fatal "Watson STT no apikey or username and password; exiting"
+  exit
+fi
+
+## NLU
+
+if [[ $(hass.config.has_value 'watson_nlu') == false ]]; then
+  hass.log.fatal "No Watson NLU credentials; exiting"
+  exit
+fi
+
+if [[ $(hass.config.has_value 'watson_nlu.url') == true ]]; then
+  WATSON_NLU_URL=$(hass.config.get "watson_nlu.url")
+  hass.log.debug "Watson NLU URL: ${WATSON_NLU_URL}"
+else
+  hass.log.fatal "No Watson NLU URL specified; exiting"
+  exit
+fi
+
+if [[ $(hass.config.has_value 'watson_nlu.apikey') == true ]]; then
+  WATSON_NLU_USERNAME="apikey"
+  hass.log.debug "Watson NLU username: ${WATSON_NLU_USERNAME}"
+  WATSON_NLU_PASSWORD=$(hass.config.get "watson_nlu.apikey")
+  hass.log.debug "Watson NLU password: ${WATSON_NLU_PASSWORD}"
+elif [[ $(hass.config.has_value 'watson_nlu.username') == true && $(hass.config.has_value 'watson_nlu.password') == true ]]; then
+  WATSON_NLU_USERNAME=$(hass.config.get "watson_nlu.username")
+  hass.log.debug "Watson NLU username: ${WATSON_NLU_USERNAME}"
+  WATSON_NLU_PASSWORD=$(hass.config.get "watson_nlu.password")
+  hass.log.debug "Watson NLU password: ${WATSON_NLU_PASSWORD}"
+else
+  hass.log.fatal "Watson NLU no apikey or username and password; exiting"
+  exit
+fi
+
 ###
 ### REVIEW
 ###
@@ -163,7 +267,9 @@ for TN in ${TOPIC_NAMES}; do
   fi
 done
 if [ -z ${FOUND} ]; then
-  # attempt to create a new topic
+  hass.log.info "Topic ${KAFKA_TOPIC} not found; exiting"
+  exit
+  hass.log.debug "Creating topic ${KAFKA_TOPIC} at ${KAFKA_ADMIN_URL} using /admin/topics"
   curl -fsSL -H "X-Auth-Token: $KAFKA_API_KEY" -d "{ \"name\": \"$KAFKA_TOPIC\", \"partitions\": 2 }" $KAFKA_ADMIN_URL/admin/topics
 else
   hass.log.debug "Topic found: ${KAFKA_TOPIC}"
@@ -175,104 +281,67 @@ if [ -z "${HZN}" ]; then
   exit
 fi
 
-### REGISTER DEVICE WITH PATTERN
+###
+### CONFIGURE HORIZON
+###
 
-# get information about this node
-NODE_LIST=$(hzn node list)
-if [ -n "${NODE_LIST}" ]; then
-  DEVICE_REG=$(echo "${NODE_LIST}" | jq '.id?=="'"${DEVICE_ID}"'"')
-else
-  DEVICE_REG="false"
+# check for outstanding agreements
+AGREEMENTS=$(hzn agreement list)
+COUNT=$(echo "${AGREEMENTS}" | jq '.?|length')
+hass.log.debug "Found ${COUNT} agreements"
+if [[ ${COUNT} > 0 ]]; then
+  WORKLOADS=$(echo "${AGREEMENTS}" | jq -r '.[]|.workload_to_run.url')
+  for WL in ${WORKLOADS}; do
+    if [ "${WL}" == "${PATTERN_URL}" ]; then
+      FOUND=true
+    fi
+  done
 fi
 
-if [ "${DEVICE_REG}" == "true" ]; then
-  hass.log.warning "${DEVICE_ORG}/${DEVICE_ID} is registered"
-fi
-
-if [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') != "${PATTERN_URL}" ]]; then
+# if agreement not found, register device with pattern
+if [[ ${COUNT} == 0 && -z ${FOUND} ]]; then
   INPUT="${KAFKA_TOPIC}.json"
-  rm -f "${INPUT}"
 
-  echo '{' >> "${INPUT}"
-  echo '  "services": [' >> "${INPUT}"
-  echo '    {' >> "${INPUT}"
-  echo '      "org": "'"${PATTERN_ORG}"'",' >> "${INPUT}"
-  echo '      "url": "'"${PATTERN_URL}"'",' >> "${INPUT}"
-  echo '      "versionRange": "[0.0.0,INFINITY)",' >> "${INPUT}"
-  echo '      "variables": {' >> "${INPUT}"
-  echo '        "MSGHUB_API_KEY": "'"${KAFKA_API_KEY}"'"' >> "${INPUT}"
-  echo '      }' >> "${INPUT}"
-  echo '    }' >> "${INPUT}"
-  echo '  ]' >> "${INPUT}"
-  echo '}' >> "${INPUT}"
+  echo '{"services": [{"org": "'"${PATTERN_ORG}"'","url": "'"${PATTERN_URL}"'","versionRange": "[0.0.0,INFINITY)","variables": {' >> "${INPUT}"
+  echo '"MSGHUB_API_KEY": "'"${KAFKA_API_KEY}"'"' >> "${INPUT}"
+  echo '}}]}' >> "${INPUT}"
 
   hass.log.debug "Registering device ${DEVICE_ID} organization ${DEVICE_ORG} with pattern ${PATTERN_ORG}/${PATTERN_ID} using input " $(jq -c '.' "${INPUT}")
 
+  # register
   hzn register -n "${DEVICE_ID}:${DEVICE_TOKEN}" "${DEVICE_ORG}" "${PATTERN_ORG}/${PATTERN_ID}" -f "${INPUT}"
-
   # wait for registration
   while [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; do hass.log.debug "--- WAIT: On registration (60)"; sleep 60; done
-
   hass.log.debug "Registration complete for ${DEVICE_ORG}/${DEVICE_ID}"
-
-  ## WAIT ON AGREEMENT
+  # wait for agreement
   while [[ $(hzn agreement list | jq '.?==[]') == true ]]; do hass.log.info "--- WAIT: On agreement (10)"; sleep 10; done
-
   hass.log.debug "Agreement complete for ${PATTERN_URL}"
+elif [ -n ${FOUND} ]; then
+  hass.log.debug "Found pattern in existing agreement: ${PATTERN_URL}"
+elif [[ ${COUNT} > 0 ]]; then
+  hass.log.fatal "Existing non-matching pattern agreement found; exiting: ${AGREEMENTS}"
+  exit
 else
-  hass.log.debug "Workload to run is ${PATTERN_URL}"
+  hass.log.fatal "Invalid state; exiting"
+  exit
 fi
 
-hass.log.info "Registered ${DEVICE_ORG}/${DEVICE_ID} for ${PATTERN_ORG}/${PATTERN_ID}" 
+hass.log.info "Device ${DEVICE_ID} in ${DEVICE_ORG} registered for pattern ${PATTERN_ID} from ${PATTERN_ORG}"
 
 ###
 ### ADD ON LOGIC
 ###
-
-# configuration for MQTT transfer
-MQTT_HOST=$(hass.config.get "mqtt.host")
-MQTT_PORT=$(hass.config.get "mqtt.port")
-MQTT_USERNAME=$(hass.config.get "mqtt.username")
-MQTT_PASSWORD=$(hass.config.get "mqtt.password")
-MQTT_TOPIC="kafka/${KAFKA_TOPIC}"
-# specify MQTT command
-MQTT="mosquitto_pub -h ${MQTT_HOST} -p ${MQTT_PORT}"
-if [[ -n "${MQTT_USERNAME}" && -n "${MQTT_PASSWORD}" ]]; then
-  MQTT="${MQTT} -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD}"
-fi
-
-if [[ $(hass.config.has_value 'watson_stt') == false ]]; then
-  hass.log.fatal "No Watson STT credentials"
-  exit
-fi
-
-WATSON_STT_URL=$(hass.config.get "watson_stt.url")
-WATSON_STT_USERNAME=$(hass.config.get "watson_stt.username")
-WATSON_STT_PASSWORD=$(hass.config.get "watson_stt.password")
-
-hass.log.debug "Watson STT: ${WATSON_STT_URL}"
-
-if [[ $(hass.config.has_value 'watson_nlu') == false ]]; then
-  hass.log.fatal "No Watson NLU credentials"
-  exit
-fi
-
-WATSON_NLU_URL=$(hass.config.get "watson_nlu.url")
-WATSON_NLU_USERNAME=$(hass.config.get "watson_nlu.username")
-WATSON_NLU_PASSWORD=$(hass.config.get "watson_nlu.password")
-
-hass.log.debug "Watson NLU: ${WATSON_NLU_URL}"
 
 # JQ tranformation
 JQ='{"date":.ts,"name":.devID,"frequency":.freq,"value":.expectedValue,"longitude":.lon,"latitude":.lat,"content-type":.contentType,"content-transfer-encoding":"BASE64","bytes":.audio|length,"audio":.audio}'
 
 # wait on kafkacat death and re-start as long as token is valid
 while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_URL}" ]]; do
-  hass.log.info "Starting main loop; listening for topic ${KAFKA_TOPIC}, processing with STT and NLU and posting to ${MQTT_TOPIC} at host ${MQTT_HOST} on port ${MQTT_PORT}"
+  hass.log.info "Listening for topic ${KAFKA_TOPIC}, processing with STT and NLU and posting to ${MQTT_TOPIC} at host ${MQTT_HOST} on port ${MQTT_PORT}..."
 
   kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC" | jq -c --unbuffered "${JQ}" | while read -r; do
-    hass.log.debug "Got reply " $(echo "${REPLY}" | jq -c '.audio="redacted"')
     if [ -n "${REPLY}" ]; then
+      hass.log.debug "Message received: " $(echo "${REPLY}" | jq -c '.audio="redacted"')
       PAYLOAD="${REPLY}"
       STT=$(echo "${PAYLOAD}" | jq  -r '.audio' | base64 --decode | curl -fsSL --data-binary @- -u "${WATSON_STT_USERNAME}:${WATSON_STT_PASSWORD}" -H "Content-Type: audio/mp3" "${WATSON_STT_URL}")
       if [[ $? != 22 && -n "${STT}" ]]; then
@@ -290,14 +359,10 @@ while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_
 	hass.log.warning "No STT results"
 	PAYLOAD=$(echo "${PAYLOAD}" | jq -c '.stt=null,.nlu=null')
       fi
-    else
-      PAYLOAD=""
-    fi
-    if [ -n "${PAYLOAD}" ]; then
       hass.log.debug "Posting PAYLOAD " $(echo "${PAYLOAD}" | jq -c '.audio="redacted"')
       echo "${PAYLOAD}" | ${MQTT} -l -t "${MQTT_TOPIC}"
     else
-      hass.log.warning "No payload found"
+      hass.log.debug "Null message received"
     fi
   done
   hass.log.debug "Unexpected failure of kafkacat"
