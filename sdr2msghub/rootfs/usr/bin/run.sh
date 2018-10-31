@@ -131,12 +131,12 @@ hass.log.debug "${JSON}"
 
 ## MQTT
 
-if [ $(hass.config.has_value 'mqtt') == false ]; then
+if hass.config.has_value 'mqtt'; then
   hass.log.fatal "No MQTT credentials; exiting"
   exit
 fi
 
-if [ $(hass.config.has_value 'mqtt.host') == false ]; then
+if hass.config.has_value 'mqtt.host'; then
   MQTT_HOST="core-mosquitto"
   hass.log.info "No MQTT host; using ${MQTT_HOST}"
 else
@@ -144,7 +144,7 @@ else
   hass.log.debug "MQTT host: ${MQTT_HOST}"
 fi
 
-if [ $(hass.config.has_value 'mqtt.port') == false ]; then
+if hass.config.has_value 'mqtt.port'; then
   MQTT_PORT=1883
   hass.log.info "No MQTT port; using ${MQTT_PORT}"
 else
@@ -155,7 +155,7 @@ fi
 # define command
 MQTT="mosquitto_pub -h ${MQTT_HOST} -p ${MQTT_PORT}"
 # test if username and password supplied
-if [ $(hass.config.has_value 'mqtt.username') == true && $(hass.config.has_value 'mqtt.password') == true ]; then
+if hass.config.has_value 'mqtt.username' && hass.config.has_value 'mqtt.password'; then
   MQTT_USERNAME=$(hass.config.get "mqtt.username")
   hass.log.debug "MQTT username: ${MQTT_USERNAME}"
   MQTT_PASSWORD=$(hass.config.get "mqtt.password")
@@ -164,7 +164,7 @@ if [ $(hass.config.has_value 'mqtt.username') == true && $(hass.config.has_value
   MQTT="${MQTT} -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD}"
 fi
 
-if [ $(hass.config.has_value 'mqtt.topic') == false ]; then
+if hass.config.has_value 'mqtt.topic'; then
   MQTT_TOPIC="kafka/${KAFKA_TOPIC}"
   hass.log.info "No MQTT topic; using ${MQTT_TOPIC}"
 else
@@ -174,12 +174,12 @@ fi
 
 ## STT
 
-if [ $(hass.config.has_value 'watson_stt') == false ]; then
+if hass.config.has_value 'watson_stt'; then
   hass.log.fatal "No Watson STT credentials; exiting"
   exit
 fi
 
-if [ $(hass.config.has_value 'watson_stt.url') == false ]; then
+if hass.config.has_value 'watson_stt.url'; then
   hass.log.fatal "No Watson STT URL; exiting"
   exit
 else
@@ -187,12 +187,12 @@ else
   hass.log.debug "Watson STT URL: ${WATSON_STT_URL}"
 fi
 
-if [ $(hass.config.has_value 'watson_nlu.apikey') == true ]; then
+if hass.config.has_value 'watson_nlu.apikey'; then
   WATSON_STT_USERNAME="apikey"
   hass.log.debug "Watson STT username: ${WATSON_STT_USERNAME}"
   WATSON_STT_PASSWORD=$(hass.config.get 'watson_stt.apikey')
   hass.log.debug "Watson STT password: ${WATSON_STT_PASSWORD}"
-elif [ hass.config.has_value 'watson_stt.username' && hass.config.has_value 'watson_stt.password']; then
+elif hass.config.has_value 'watson_stt.username' && hass.config.has_value 'watson_stt.password'; then
   WATSON_STT_USERNAME=$(hass.config.get 'watson_stt.username')
   hass.log.debug "Watson STT username: ${WATSON_STT_USERNAME}"
   WATSON_STT_PASSWORD=$(hass.config.get 'watson_stt.password')
@@ -204,12 +204,12 @@ fi
 
 ## NLU
 
-if [ $(hass.config.has_value 'watson_nlu') == false ]; then
+if hass.config.has_value 'watson_nlu'; then
   hass.log.fatal "No Watson NLU credentials; exiting"
   exit
 fi
 
-if [ $(hass.config.has_value 'watson_nlu.url') == true ]; then
+if hass.config.has_value 'watson_nlu.url'; then
   WATSON_NLU_URL=$(hass.config.get "watson_nlu.url")
   hass.log.debug "Watson NLU URL: ${WATSON_NLU_URL}"
 else
@@ -217,12 +217,12 @@ else
   exit
 fi
 
-if [ $(hass.config.has_value 'watson_nlu.apikey') == true ]; then
+if hass.config.has_value 'watson_nlu.apikey'; then
   WATSON_NLU_USERNAME="apikey"
   hass.log.debug "Watson NLU username: ${WATSON_NLU_USERNAME}"
   WATSON_NLU_PASSWORD=$(hass.config.get "watson_nlu.apikey")
   hass.log.debug "Watson NLU password: ${WATSON_NLU_PASSWORD}"
-elif [ $(hass.config.has_value 'watson_nlu.username') == true && $(hass.config.has_value 'watson_nlu.password') == true ]; then
+elif hass.config.has_value 'watson_nlu.username'; then
   WATSON_NLU_USERNAME=$(hass.config.get "watson_nlu.username")
   hass.log.debug "Watson NLU username: ${WATSON_NLU_USERNAME}"
   WATSON_NLU_PASSWORD=$(hass.config.get "watson_nlu.password")
