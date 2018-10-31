@@ -163,7 +163,7 @@ if [[ $(hass.config.has_value 'mqtt.topic') == false ]]; then
   MQTT_TOPIC="kafka/${KAFKA_TOPIC}"
   hass.log.info "No MQTT topic; using ${MQTT_TOPIC}"
 else
-  MQTT_PORT=$(hass.config.get "mqtt.topic")
+  MQTT_TOPIC=$(hass.config.get "mqtt.topic")
   hass.log.debug "MQTT topic: ${MQTT_TOPIC}"
 fi
 
