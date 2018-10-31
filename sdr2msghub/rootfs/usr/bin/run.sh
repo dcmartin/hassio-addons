@@ -267,16 +267,20 @@ while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_
   hass.log.info "Starting main loop; processing ${KAFKA_TOPIC} via STT and NLU and posting to ${MQTT_TOPIC} at host ${MQTT_HOST} on port ${MQTT_PORT}"
 
   kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC" | jq -c --unbuffered "${JQ}" | while read -r; do
+    hass.log.debug "Got reply ${REPLY}"
     PAYLOAD="${REPLY}"
     STT=$(echo "${PAYLOAD}" | jq --unbuffered -r '.audio' | base64 --decode | curl -fsSL --data-binary @- -u "${WATSON_STT_USERNAME}:${WATSON_STT_PASSWORD}" -H "Content-Type: audio/mp3" "${WATSON_STT_URL}")
     if [ -n "${STT}" ]; then
+      hass.log.debug "Got STT ${STT}"
       PAYLOAD=$(echo "${PAYLOAD}" | jq '.stt='"${STT}")
       NLU=$(echo "${STT}" | jq --unbuffered '{"text":.results?|sort_by(.alternatives[].confidence)[-1].alternatives[].transcript,"features":{"sentiment":{},"keywords":{}}}' | curl -fsSL -d @- -u "${WATSON_NLU_USERNAME}:${WATSON_NLU_PASSWORD}" -H "Content-Type: application/json" "${WATSON_NLU_URL}")
     fi
     if [ -n "${NLU}" ]; then
+      hass.log.debug "Got NLU ${NLU}"
       PAYLOAD=$(echo "${PAYLOAD}" | jq '.nlu='"${NLU}")
     fi
     if [ -n "${PAYLOAD}" ]; then
+      hass.log.debug "Posting PAYLOAD ${PAYLOAD}"
       ${MQTT} -t "${MQTT_TOPIC}" -m "${PAYLOAD}"
     fi
   done
