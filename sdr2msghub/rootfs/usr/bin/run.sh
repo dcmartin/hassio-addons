@@ -131,9 +131,6 @@ hass.log.debug "${JSON}"
 
 ## MQTT
 
-# define command
-MQTT="mosquitto_pub -h ${MQTT_HOST} -p ${MQTT_PORT}"
-
 if [[ $(hass.config.has_value 'mqtt') == false ]]; then
   hass.log.fatal "No MQTT credentials; exiting"
   exit
@@ -155,6 +152,9 @@ else
   hass.log.debug "MQTT port: ${MQTT_PORT}"
 fi
 
+# define command
+MQTT="mosquitto_pub -h ${MQTT_HOST} -p ${MQTT_PORT}"
+# test if username and password supplied
 if [[ $(hass.config.has_value 'mqtt.username') == true && $(hass.config.has_value 'mqtt.password') == true ]]; then
   MQTT_USERNAME=$(hass.config.get "mqtt.username")
   hass.log.debug "MQTT username: ${MQTT_USERNAME}"
