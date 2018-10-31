@@ -250,6 +250,8 @@ WATSON_STT_URL=$(hass.config.get "watson_stt.url")
 WATSON_STT_USERNAME=$(hass.config.get "watson_stt.username")
 WATSON_STT_PASSWORD=$(hass.config.get "watson_stt.password")
 
+hass.log.debug "Watson STT: ${WATSON_STT_URL}"
+
 if [[ $(hass.config.has_value 'watson_nlu') == false ]]; then
   hass.log.fatal "No Watson NLU credentials"
   exit
@@ -259,12 +261,14 @@ WATSON_NLU_URL=$(hass.config.get "watson_nlu.url")
 WATSON_NLU_USERNAME=$(hass.config.get "watson_nlu.username")
 WATSON_NLU_PASSWORD=$(hass.config.get "watson_nlu.password")
 
+hass.log.debug "Watson NLU: ${WATSON_NLU_URL}"
+
 # JQ tranformation
 JQ='{"date":.ts,"name":.devID,"frequency":.freq,"value":.expectedValue,"longitude":.lon,"latitude":.lat,"content-type":.contentType,"content-transfer-encoding":"BASE64","bytes":.audio|length,"audio":.audio}'
 
 # wait on kafkacat death and re-start as long as token is valid
 while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_URL}" ]]; do
-  hass.log.info "Starting main loop; processing ${KAFKA_TOPIC} via STT and NLU and posting to ${MQTT_TOPIC} at host ${MQTT_HOST} on port ${MQTT_PORT}"
+  hass.log.info "Starting main loop; listening for topic ${KAFKA_TOPIC}, processing with STT and NLU and posting to ${MQTT_TOPIC} at host ${MQTT_HOST} on port ${MQTT_PORT}"
 
   kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC" | jq -c --unbuffered "${JQ}" | while read -r; do
     hass.log.debug "Got reply ${REPLY}"
