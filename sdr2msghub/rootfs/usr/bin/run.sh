@@ -236,20 +236,50 @@ MQTT_USERNAME=$(hass.config.get "mqtt.username")
 MQTT_PASSWORD=$(hass.config.get "mqtt.password")
 MQTT_TOPIC="kafka/${KAFKA_TOPIC}"
 # specify MQTT command
-MQTT="mosquitto_pub -l -h ${MQTT_HOST} -p ${MQTT_PORT} -t ${MQTT_TOPIC}"
+MQTT="mosquitto_pub -h ${MQTT_HOST} -p ${MQTT_PORT}"
 if [[ -n "${MQTT_USERNAME}" && -n "${MQTT_PASSWORD}" ]]; then
   MQTT="${MQTT} -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD}"
 fi
+
+if [[ $(hass.config.has_value 'watson_stt') == false ]]; then
+  hass.log.fatal "No Watson STT credentials"
+  exit
+fi
+
+WATSON_STT_URL=$(hass.config.get "watson_stt.url")
+WATSON_STT_USERNAME=$(hass.config.get "watson_stt.username")
+WATSON_STT_PASSWORD=$(hass.config.get "watson_stt.password")
+
+if [[ $(hass.config.has_value 'watson_nlu') == false ]]; then
+  hass.log.fatal "No Watson NLU credentials"
+  exit
+fi
+
+WATSON_NLU_URL=$(hass.config.get "watson_nlu.url")
+WATSON_NLU_USERNAME=$(hass.config.get "watson_nlu.username")
+WATSON_NLU_PASSWORD=$(hass.config.get "watson_nlu.password")
 
 # JQ tranformation
 JQ='{"date":.ts,"name":.devID,"frequency":.freq,"value":.expectedValue,"longitude":.lon,"latitude":.lat,"content-type":.contentType,"content-transfer-encoding":"BASE64","bytes":.audio|length,"audio":.audio}'
 
 # wait on kafkacat death and re-start as long as token is valid
 while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_URL}" ]]; do
-  hass.log.info "Starting main loop; routing ${KAFKA_TOPIC} to ${MQTT_TOPIC} at host ${MQTT_HOST} on port ${MQTT_PORT}"
+  hass.log.info "Starting main loop; processing ${KAFKA_TOPIC} via STT and NLU and posting to ${MQTT_TOPIC} at host ${MQTT_HOST} on port ${MQTT_PORT}"
 
-  kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC" | jq --unbuffered -c "${JQ}" | ${MQTT} 
-
+  kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC" | jq -c --unbuffered "${JQ}" | while read -r; do
+    PAYLOAD="${REPLY}"
+    STT=$(echo "${PAYLOAD}" | jq --unbuffered -r '.audio' | base64 --decode | curl -fsSL --data-binary @- -u "${WATSON_STT_USERNAME}:${WATSON_STT_PASSWORD}" -H "Content-Type: audio/mp3" "${WATSON_STT_URL}")
+    if [ -n "${STT}" ]; then
+      PAYLOAD=$(echo "${PAYLOAD}" | jq '.stt='"${STT}")
+      NLU=$(echo "${STT}" | jq --unbuffered '{"text":.results?|sort_by(.alternatives[].confidence)[-1].alternatives[].transcript,"features":{"sentiment":{},"keywords":{}}}' | curl -fsSL -d @- -u "${WATSON_NLU_USERNAME}:${WATSON_NLU_PASSWORD}" -H "Content-Type: application/json" "${WATSON_NLU_URL}")
+    fi
+    if [ -n "${NLU}" ]; then
+      PAYLOAD=$(echo "${PAYLOAD}" | jq '.nlu='"${NLU}")
+    fi
+    if [ -n "${PAYLOAD}" ]; then
+      ${MQTT} -t "${MQTT_TOPIC}" -m "${PAYLOAD}"
+    fi
+  done
   hass.log.debug "Unexpected failure of kafkacat"
 done
 
