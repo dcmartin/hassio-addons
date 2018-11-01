@@ -310,9 +310,9 @@ fi
 if [[ $COUNT > 0 && $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; then
   hass.log.info "Existing agreeement with another device identifier; unregistering"
   hzn unregister -f
-  hass.log.debug "Waiting for unregistration to complete; sleeping (30)"
-  # while [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; do hass.log.debug "--- WAIT: On registration (60)"; sleep 60; done
-  sleep 30
+  while [[ $(hzn node list | jq '.configstate.state?=="unconfigured"') == false ]]; do hass.log.debug "Waiting for unregistration to complete (10)"; sleep 10; done
+  # hass.log.debug "Waiting for unregistration to complete; sleeping (30)"
+  # sleep 30
   COUNT=0
   AGREEMENTS=""
   WORKLOAD_FOUND=""
