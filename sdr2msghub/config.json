@@ -1,7 +1,7 @@
 {
   "name": "Open Horizon Shared SDR",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.0.27",
+  "version": "0.0.28",
   "slug": "sdr2msghub",
   "description": "Routes Kakfa messages from Open Horizon (github.com/open-horizon) distributed system to MQTT for consumption by Home-Assistant",
   "startup": "before",
@@ -63,7 +63,8 @@
       "host": "str",
       "port": "port",
       "username": "str?",
-      "password": "str?"
+      "password": "str?",
+      "topic": "str?"
     },
     "watson_stt": {
       "url": "str",
