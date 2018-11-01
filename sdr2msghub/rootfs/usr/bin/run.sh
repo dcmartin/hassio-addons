@@ -264,7 +264,7 @@ fi
 ###
 
 # FIND TOPICS
-TOPIC_NAMES=$(curl -qsSL -H "X-Auth-Token: $KAFKA_API_KEY" $KAFKA_ADMIN_URL/admin/topics | jq -j '.[]|.name," "')
+TOPIC_NAMES=$(curl -sSL -H "X-Auth-Token: $KAFKA_API_KEY" $KAFKA_ADMIN_URL/admin/topics | jq -j '.[]|.name," "')
 hass.log.debug "Topics availble: ${TOPIC_NAMES}"
 TOPIC_FOUND=""
 for TN in ${TOPIC_NAMES}; do
@@ -276,7 +276,7 @@ if [ -z "${TOPIC_FOUND}" ]; then
   hass.log.info "Topic ${KAFKA_TOPIC} not found; exiting"
   exit
   hass.log.debug "Creating topic ${KAFKA_TOPIC} at ${KAFKA_ADMIN_URL} using /admin/topics"
-  curl -qsSL -H "X-Auth-Token: $KAFKA_API_KEY" -d "{ \"name\": \"$KAFKA_TOPIC\", \"partitions\": 2 }" $KAFKA_ADMIN_URL/admin/topics
+  curl -sSL -H "X-Auth-Token: $KAFKA_API_KEY" -d "{ \"name\": \"$KAFKA_TOPIC\", \"partitions\": 2 }" $KAFKA_ADMIN_URL/admin/topics
 else
   hass.log.debug "Topic found: ${KAFKA_TOPIC}"
 fi
@@ -363,11 +363,11 @@ while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_
     if [ -n "${REPLY}" ]; then
       hass.log.debug "Message received: " $(echo "${REPLY}" | jq -c '.audio="redacted"')
       PAYLOAD="${REPLY}"
-      STT=$(echo "${PAYLOAD}" | jq  -r '.audio' | base64 --decode | curl -qsSL --data-binary @- -u "${WATSON_STT_USERNAME}:${WATSON_STT_PASSWORD}" -H "Content-Type: audio/mp3" "${WATSON_STT_URL}")
+      STT=$(echo "${PAYLOAD}" | jq  -r '.audio' | base64 --decode | curl -sSL --data-binary @- -u "${WATSON_STT_USERNAME}:${WATSON_STT_PASSWORD}" -H "Content-Type: audio/mp3" "${WATSON_STT_URL}")
       if [[ -n "${STT}" && $(echo "${STT}" | jq '.results?==null') == 'false' ]]; then
 	hass.log.debug "Got STT " $(echo "${STT}" | jq -c '.')
 	PAYLOAD=$(echo "${PAYLOAD}" | jq -c '.stt='"${STT}")
-	NLU=$(echo "${STT}" | jq  '{"text":.results?|sort_by(.alternatives[].confidence)[-1].alternatives[].transcript,"features":{"sentiment":{},"keywords":{}}}' | curl -qsSL -d @- -u "${WATSON_NLU_USERNAME}:${WATSON_NLU_PASSWORD}" -H "Content-Type: application/json" "${WATSON_NLU_URL}")
+	NLU=$(echo "${STT}" | jq  '{"text":.results?|sort_by(.alternatives[].confidence)[-1].alternatives[].transcript,"features":{"sentiment":{},"keywords":{}}}' | curl -sSL -d @- -u "${WATSON_NLU_USERNAME}:${WATSON_NLU_PASSWORD}" -H "Content-Type: application/json" "${WATSON_NLU_URL}")
 	if [[ -n "${NLU}" ]]; then
 	  hass.log.debug "Got NLU " $(echo "${NLU}" | jq -c '.')
 	  PAYLOAD=$(echo "${PAYLOAD}" | jq -c '.nlu='"${NLU}")
