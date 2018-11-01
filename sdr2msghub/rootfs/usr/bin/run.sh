@@ -145,8 +145,6 @@ DEVICE_ID=$(echo "$JSON" | jq -r '.horizon.device?' )
 DEVICE_TOKEN=$(echo "$JSON" | jq -r '.horizon.token?')
 DEVICE_ORG=$(echo "$JSON" | jq -r '.horizon.organization?')
 
-hass.log.debug "HORIZON device ${DEVICE_ID} in ${DEVICE_ORG} using pattern ${PATTERN_ORG}/${PATTERN_ID} @ ${PATTERN_URL}"
-
 ###
 ### KAFKA TOPIC
 ###
@@ -307,6 +305,18 @@ if [[ ${COUNT} > 0 ]]; then
   done
 fi
 
+if [[ $COUNT > 0 && $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; then
+  hass.log.info "Existing agreeement with another device identifier; unregistering"
+  hzn unregister -f
+  hass.log.debug "Waiting for unregistration to complete; sleeping (30)"
+  # while [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; do hass.log.debug "--- WAIT: On registration (60)"; sleep 60; done
+  sleep 30
+  COUNT=0
+  AGREEMENTS=""
+  WORKLOAD_FOUND=""
+  hass.log.debug "Reseting agreements, count, and workloads"
+fi
+
 # if agreement not found, register device with pattern
 if [[ ${COUNT} == 0 && -z ${WORKLOAD_FOUND} ]]; then
   INPUT="${KAFKA_TOPIC}.json"
@@ -320,10 +330,10 @@ if [[ ${COUNT} == 0 && -z ${WORKLOAD_FOUND} ]]; then
   # register
   hzn register -n "${DEVICE_ID}:${DEVICE_TOKEN}" "${DEVICE_ORG}" "${PATTERN_ORG}/${PATTERN_ID}" -f "${INPUT}"
   # wait for registration
-  while [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; do hass.log.debug "--- WAIT: On registration (60)"; sleep 60; done
+  while [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; do hass.log.debug "Waiting on registration (60)"; sleep 60; done
   hass.log.debug "Registration complete for ${DEVICE_ORG}/${DEVICE_ID}"
   # wait for agreement
-  while [[ $(hzn agreement list | jq '.?==[]') == true ]]; do hass.log.info "--- WAIT: On agreement (10)"; sleep 10; done
+  while [[ $(hzn agreement list | jq '.?==[]') == true ]]; do hass.log.info "Waiting on agreement (10)"; sleep 10; done
   hass.log.debug "Agreement complete for ${PATTERN_URL}"
 elif [ -n ${WORKLOAD_FOUND} ]; then
   hass.log.debug "Found pattern in existing agreement: ${PATTERN_URL}"
