@@ -344,27 +344,48 @@ while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_
     if [ -n "${REPLY}" ]; then
       hass.log.debug "Message received: " $(echo "${REPLY}" | jq -c '.audio="redacted"')
       PAYLOAD="${REPLY}"
-      STT=$(echo "${PAYLOAD}" | jq  -r '.audio' | base64 --decode | curl -fsSL --data-binary @- -u "${WATSON_STT_USERNAME}:${WATSON_STT_PASSWORD}" -H "Content-Type: audio/mp3" "${WATSON_STT_URL}")
-      if [[ $? == 0 && -n "${STT}" && $(echo "${STT}" | jq '.results?|length==0') == 'false' ]]; then
+      AUDIO=$(echo "${PAYLOAD}" | jq -r '.audio')
+      if [ -z "${AUDIO}" ]; then
+        hass.log.debug "No audio in payload ${PAYLOAD}"
+        continue
+      fi
+      STT=$(echo "${AUDIO}" | base64 --decode | curl -fsSL --data-binary @- -u "${WATSON_STT_USERNAME}:${WATSON_STT_PASSWORD}" -H "Content-Type: audio/mp3" "${WATSON_STT_URL}")
+      if [[ $? == 0 && -n "${STT}" ]]; then
 	hass.log.debug "Got STT " $(echo "${STT}" | jq -c '.')
+        NR=$(echo "${STT}" | jq '.results?|length')
+        if [[ ${NR} == 0 ]]; then hass.log.debug "No STT results; continuing"; continue; fi 
+        hass.log.debug "STT produced ${NR} transcripts"
 	PAYLOAD=$(echo "${PAYLOAD}" | jq -c '.stt='"${STT}")
-	NLU=$(echo "${STT}" | jq  '{"text":.results?|sort_by(.alternatives[].confidence)[-1].alternatives[].transcript,"features":{"sentiment":{},"keywords":{}}}' | curl -fsSL -d @- -u "${WATSON_NLU_USERNAME}:${WATSON_NLU_PASSWORD}" -H "Content-Type: application/json" "${WATSON_NLU_URL}")
-	if [[ $? == 0 && -n "${NLU}" ]]; then
-	  hass.log.debug "Got NLU " $(echo "${NLU}" | jq -c '.')
-	  PAYLOAD=$(echo "${PAYLOAD}" | jq -c '.nlu='"${NLU}")
+        R=1; while [[ ${R} <= ${NR} ]]; do
+          hass.log.debug "Processing result ${R}"
+          ALTS=$(echo "${STT} | jq -r '.results['${R}'].alternatives[]')
+          A=1; for ALT in ${ALTS}; do
+            hass.log.debug "Processing result ${R}, alternative ${A}: " $(echo "${ALT}" | jq -c '.')
+            C=$(echo "${ALT}" | jq -r '.confidence')
+            T=$(echo "${ALT}" | jq -r '.transcript')
+            hass.log.debug "Requesting NLU for transcript with confidence ${C}: ${T}"
+            N=$(echo '{"text":"'${T}'","features":{"sentiment":{},"keywords":{}}}' | curl -fsSL -d @- -u "${WATSON_NLU_USERNAME}:${WATSON_NLU_PASSWORD}" -H "Content-Type: application/json" "${WATSON_NLU_URL}")
+            if [[ $? != 0 || -z "${N}" ]]; then hass.log.debug "NLU request failed; continuing"; continue; fi
+            hass.log.debug "Understood results ${R}, alternative ${A}: " $(echo "${N}" | jq -c '.')
+            PAYLOAD=$(echo "${PAYLOAD}" | jq -c '.stt.results['${R}'].alternatives['${A}'].nlu='"${N}"')
+            ((I++))
+          done
+          ((R++))
+        done  
 	else
-	  hass.log.warning "No Watson NLU results"
-	  PAYLOAD=$(echo "${PAYLOAD}" | jq -c '.nlu=null')
+	  hass.log.warning "STT request failued; continuing"
+	  continue
 	fi
       else
-	hass.log.warning "No Watson STT results"
-	PAYLOAD=$(echo "${PAYLOAD}" | jq -c '.stt=null|.nlu=null')
+	hass.log.warning "Failed to convert speech to text; continuing"
+	continue
       fi
-      hass.log.debug "Posting PAYLOAD " $(echo "${PAYLOAD}" | jq -c '.audio="redacted"')
-      echo "${PAYLOAD}" | ${MQTT} -l -t "${MQTT_TOPIC}"
     else
-      hass.log.debug "Null message received"
+      hass.log.debug "Null message received; continuing"
+      continue
     fi
+    hass.log.debug "Posting PAYLOAD " $(echo "${PAYLOAD}" | jq -c '.audio="redacted"')
+    echo "${PAYLOAD}" | ${MQTT} -l -t "${MQTT_TOPIC}"
   done
   hass.log.debug "Unexpected failure of kafkacat"
 done
