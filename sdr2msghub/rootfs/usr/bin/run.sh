@@ -364,7 +364,7 @@ while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_
       hass.log.debug "Message received: " $(echo "${REPLY}" | jq -c '.audio="redacted"')
       PAYLOAD="${REPLY}"
       STT=$(echo "${PAYLOAD}" | jq  -r '.audio' | base64 --decode | curl -sSL --data-binary @- -u "${WATSON_STT_USERNAME}:${WATSON_STT_PASSWORD}" -H "Content-Type: audio/mp3" "${WATSON_STT_URL}")
-      if [[ -n "${STT}" && $(echo "${STT}" | jq '.results?==null') == 'false' ]]; then
+      if [[ -n "${STT}" && $(echo "${STT}" | jq '.results?|length==0') == 'false' ]]; then
 	hass.log.debug "Got STT " $(echo "${STT}" | jq -c '.')
 	PAYLOAD=$(echo "${PAYLOAD}" | jq -c '.stt='"${STT}")
 	NLU=$(echo "${STT}" | jq  '{"text":.results?|sort_by(.alternatives[].confidence)[-1].alternatives[].transcript,"features":{"sentiment":{},"keywords":{}}}' | curl -sSL -d @- -u "${WATSON_NLU_USERNAME}:${WATSON_NLU_PASSWORD}" -H "Content-Type: application/json" "${WATSON_NLU_URL}")
