@@ -349,7 +349,6 @@ while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_
         hass.log.debug "No audio in payload ${PAYLOAD}"
         continue
       fi
-      # PAYLOAD=$(echo "${PAYLOAD}" | jq -c '.audio=null')
       STT=$(echo "${AUDIO}" | base64 --decode | curl -sL --data-binary @- -u "${WATSON_STT_USERNAME}:${WATSON_STT_PASSWORD}" -H "Content-Type: audio/mp3" "${WATSON_STT_URL}")
       if [[ $? == 0 && -n "${STT}" ]]; then
 	hass.log.debug "Got STT " $(echo "${STT}" | jq -c '.')
