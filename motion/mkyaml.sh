@@ -1,7 +1,7 @@
 #!/bin/tcsh 
 
 setenv DEBUG
-unsetenv VERBOSE
+setenv VERBOSE
 
 if ($?VERBOSE) echo "$0:t $$ -- START $*" >& /dev/stderr
 
@@ -100,6 +100,7 @@ echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $
 ## binary_sensor for input_boolean
 echo "- platform: template" >> "$out"
 echo "  sensors:" >> "$out"
+
 # LOOP
 foreach c ( $cameras )
 echo "    motion_notify_${c}:" >> "$out"
@@ -121,9 +122,25 @@ set components = ( $components "$c" )
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
 echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; devicedb $devicedb)" >> "$out"
 
+echo "${devicedb}_camera_network_status_notify:" >> "$out"
+echo "  name: ${devicedb}_camera_network_status_notify" >> "$out"
+echo "  initial: true" >> "$out"
+echo "  icon: mdi:switch" >> "$out"
+echo "" >> "$out"
+echo "${devicedb}_event_end_notify:" >> "$out"
+echo "  name: ${devicedb}_event_end_notify" >> "$out"
+echo "  initial: true" >> "$out"
+echo "  icon: mdi:switch" >> "$out"
+echo "" >> "$out"
+echo "${devicedb}_camera_status_notify:" >> "$out"
+echo "  name: ${devicedb}_camera_status_notify" >> "$out"
+echo "  initial: true" >> "$out"
+echo "  icon: mdi:switch" >> "$out"
+echo "" >> "$out"
+
 foreach c ( $cameras )
-echo "motion_notify_${c}:" >> "$out"
-echo "  name: motion_notify_${c}" >> "$out"
+echo "${devicedb}_${c}_notify:" >> "$out"
+echo "  name: ${devicedb}_${c}_notify" >> "$out"
 echo "  initial: false" >> "$out"
 echo "" >> "$out"
 end
@@ -138,8 +155,8 @@ set c = "automation"
 set components = ( $components "$c" )
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
 echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; devicedb $devicedb)" >> "$out"
-echo "- id: motion_notify_recognize" >> "$out"
-echo "  alias: motion_notify_recognize" >> "$out"
+echo "- id: ${devicedb}_notify_recognize" >> "$out"
+echo "  alias: ${devicedb}_notify_recognize" >> "$out"
 echo "  initial_state: on" >> "$out"
 echo "  trigger:" >> "$out"
 echo "    - platform: mqtt" >> "$out"
@@ -171,6 +188,48 @@ echo "          attachment:" >> "$out"
 echo '            url: http://'"${www}"':8123{{- states(("sensor.motion_",trigger.payload_json.location,"_entity_picture")|join|lower) -}}' >> "$out"
 echo "            content-type: gif" >> "$out"
 echo "            hide-thumbnail: false" >> "$out"
+echo "" >> "$out"
+
+echo "- id: ${devicedb}_device_status_notify" >> "$out"
+echo "  alias: ${devicedb}_device_status_notify" >> "$out"
+echo "  initial_state: on" >> "$out"
+echo "  trigger:" >> "$out"
+echo "    - platform: state" >> "$out"
+echo "      entity_id:" >> "$out"
+echo "        - group.${devicedb}_${name}_status" >> "$out"
+echo "  condition:" >> "$out"
+echo "    condition: and" >> "$out"
+echo "    conditions:" >> "$out"
+echo "      - condition: template" >> "$out"
+echo "        value_template: >" >> "$out"
+echo "          {{ (trigger.from_state.state|lower) != 'unknown' }}" >> "$out"
+echo "      - condition: template" >> "$out"
+echo "        value_template: >" >> "$out"
+echo "          {{ is_state('binary_sensor.${devicedb}_device_status_notify','on') }}" >> "$out"
+echo "  action:" >> "$out"
+echo "    - service: persistent_notification.create" >> "$out"
+echo "      data_template:" >> "$out"
+echo "        title: >" >> "$out"
+echo "          {{ state_attr(trigger.entity_id,"friendly_name") }}" >> "$out"
+echo "        notification_id: >" >> "$out"
+echo "          {{ trigger.entity_id }}" >> "$out"
+echo "        message: >" >> "$out"
+echo '          {% for state in state_attr(trigger.entity_id,"entity_id") %}' >> "$out"
+echo "            {%- if (states(state)|lower) != 'home' -%}" >> "$out"
+echo "              {{ state }} is {{ states(state) }}" >> "$out"
+echo "            {% endif -%}" >> "$out"
+echo "          {% endfor %}" >> "$out"
+echo "    - service: mqtt.publish" >> "$out"
+echo "      data_template:" >> "$out"
+echo "        topic: '${devicedb}/${name}/status/change'" >> "$out"
+echo "        retain: false" >> "$out"
+echo "        payload: >" >> "$out"
+echo '          {%- for state in state_attr(trigger.entity_id,"entity_id") -%}' >> "$out"
+echo '            {%- if loop.first -%}{"status":"{{trigger.entity_id}}","date":{{ (now().timestamp()|int) }},"items":[' >> "$out"
+echo "            {%- else -%}," >> "$out"
+echo "            {%- endif -%}" >> "$out"
+echo '            {"name":"{{state}}","status":"{{states(state)}}"}' >> "$out"
+echo "          {%- endfor -%}]}" >> "$out"
 echo "" >> "$out"
 
 if ($?VERBOSE) echo "$0:t $$ -- processed $out" >& /dev/stderr
@@ -225,6 +284,7 @@ echo "  port: $mqtt_port" >> "$out"
 echo "  client_id: $name" >> "$out"
 # echo "  keepalive: 60" >> "$out"
 echo "" >> "$out"
+
 #echo "mqtt:" >> "$out"
 #echo "  discovery: true" >> "$out"
 #echo "  discovery_prefix: $devicedb" >> "$out"
@@ -269,74 +329,29 @@ echo "" >> "$out"
 ## MAKE ALL CAMERAS
 ##
 
-set allcameras = ()
-if ($?MOTION_CLOUDANT_URL == 0) goto group
-
-set json = "/tmp/$0:t.$$.json"
-curl -s -q -f -L "$MOTION_CLOUDANT_URL/${devicedb}/_all_docs?include_docs=true" -o $json
-if (-s "$json") then
-  set devices = ( `jq -r '.rows[].doc.name' "$json"` )
-  if ($?VERBOSE) echo "$0:t $$ -- Found $#devices devices for ${devicedb}" >& /dev/stderr
-  # control whether local device shows all cameras; leaning toward no (obviously)
-  if ($?do_allcameras == 0) then
-    if ($?DEBUG) echo "$0:t $$ -- INFO -- local cameras only for this device: $name" >& /dev/stderr
-    set devices = ( "$name" )
-  endif
-  foreach d ( $devices )
-    set nocams = ( `jq -r '.rows[]?|select(.doc.name=="'${d}'").doc.cameras?==null' "$json"` )
-    if ($nocams == "false") then
-      set devcams = ( `jq -r '.rows[]?|select(.doc.name=="'${d}'").doc.cameras[]?.name' "$json"` )
-      if ($?VERBOSE) echo "$0:t $$ -- Found $#devcams cameras for device $d" >& /dev/stderr
-      foreach c ( $devcams )
-        if ($?VERBOSE) echo "$0:t $$ -- Motion device ${d} at location $c" >& /dev/stderr
-        set www = ( `jq -r '.rows[]?|select(.doc.name=="'${d}'").doc.www' "$json"` )
-        set port = ( `jq -r '.rows[]?|select(.doc.name=="'${d}'").doc.cameras[]?|select(.name=="'${c}'").port' "$json"` )
-	echo "camera motion_${c}_animated:" >> "$out"
-	echo "  - platform: mqtt" >> "$out"
-	echo "    name: motion_${c}_animated" >> "$out"
-	echo '    topic: "'$devicedb/${d}/${c}'/image-animated"' >> "$out"
-	echo "" >> "$out"
-	echo "camera motion_${c}_image:" >> "$out"
-	echo "  - platform: mqtt" >> "$out"
-	echo "    name: motion_${c}_image" >> "$out"
-	echo '    topic: "'$devicedb/${d}/${c}'/image"' >> "$out"
-	echo "" >> "$out"
-        if ("$d" == "$name") then
-	  set mjpeg_url = "http://${host}:${port}"
-        else 
-	  set mjpeg_url = "http://${www}:${port}"
-	endif
-        if ($?VERBOSE) echo "$0:t $$ -- Live camera URL for device ${d} camera ${c}: $mjpeg_url" >& /dev/stderr
-	echo "camera motion_${c}_live:" >> "$out"
-	echo "  - platform: mjpeg" >> "$out"
-	echo "    name: motion_${c}_live" >> "$out"
-	echo "    mjpeg_url: $mjpeg_url" >> "$out"
-	echo "    username: $username" >> "$out"
-	echo "    password: $password" >> "$out"
-	echo "" >> "$out"
-	set allcameras = ( $allcameras $c )
-      end
-    else
-      # legacy ageathome cameras have no JSON camera attribute
-      set c = ( `jq -r '.rows[]?|select(.doc.name=="'${d}'").doc.location' "$json"` )
-      if ($?VERBOSE) echo "$0:t $$ -- Legacy device ${d} at location $c" >& /dev/stderr
-      echo "camera motion_${c}_animated:" >> "$out"
-      echo "  - platform: mqtt" >> "$out"
-      echo "    name: motion_${c}_animated" >> "$out"
-      echo "    topic: 'image-animated/"${c}"'" >> "$out"
-      echo "" >> "$out"
-      echo "camera motion_${c}_image:" >> "$out"
-      echo "  - platform: mqtt" >> "$out"
-      echo "    name: motion_${c}_image" >> "$out"
-      echo "    topic: 'image/"${c}"'" >> "$out"
-      echo "" >> "$out"
-      set allcameras = ( $allcameras $c )
-    endif
-  end
-else
-  if ($?DEBUG) echo "$0:t $$ -- No devices for ${devicedb}" >& /dev/stderr
-endif
-rm -f "$json"
+foreach c ( $cameras )
+  if ($?VERBOSE) echo "$0:t $$ -- Motion device ${name} at location $c" >& /dev/stderr
+  set port = ( `jq -r '.cameras[]?|select(.name=="'${c}'").port' "$MOTION_JSON_FILE"` )
+  echo "camera motion_${c}_animated:" >> "$out"
+  echo "  - platform: mqtt" >> "$out"
+  echo "    name: motion_${c}_animated" >> "$out"
+  echo '    topic: "'$devicedb/${name}/${c}'/image-animated"' >> "$out"
+  echo "" >> "$out"
+  echo "camera motion_${c}_image:" >> "$out"
+  echo "  - platform: mqtt" >> "$out"
+  echo "    name: motion_${c}_image" >> "$out"
+  echo '    topic: "'$devicedb/${name}/${c}'/image"' >> "$out"
+  echo "" >> "$out"
+  set mjpeg_url = "http://${www}:${port}"
+  if ($?VERBOSE) echo "$0:t $$ -- Live camera URL for device ${name} camera ${c}: $mjpeg_url" >& /dev/stderr
+  echo "camera motion_${c}_live:" >> "$out"
+  echo "  - platform: mjpeg" >> "$out"
+  echo "    name: motion_${c}_live" >> "$out"
+  echo "    mjpeg_url: $mjpeg_url" >> "$out"
+  echo "    username: $username" >> "$out"
+  echo "    password: $password" >> "$out"
+  echo "" >> "$out"
+end
 
 if ($?VERBOSE) echo "$0:t $$ -- processed $out" >& /dev/stderr
 
@@ -367,7 +382,6 @@ echo "" >> "$out"
 echo "onoff:" >> "$out"
 echo "  view: yes" >> "$out"
 echo "  name: onoff" >> "$out"
-# echo "  control: hidden" >> "$out"
 echo "  entities:" >> "$out"
 foreach c ( $cameras )
 echo "    - input_boolean.motion_notify_${c}" >> "$out"
@@ -377,7 +391,6 @@ echo "" >> "$out"
 echo "latest:" >> "$out"
 echo "  view: yes" >> "$out"
 echo "  name: latest" >> "$out"
-# echo "  control: hidden" >> "$out"
 echo "  entities:" >> "$out"
 echo "    - camera.motion_image" >> "$out"
 echo "    - camera.motion_animated" >> "$out"
@@ -389,10 +402,51 @@ echo "  view: yes" >> "$out"
 echo "  name: animated" >> "$out"
 # echo "  control: hidden" >> "$out"
 echo "  entities:" >> "$out"
-foreach c ( $allcameras )
+foreach c ( $cameras )
 echo "    - camera.motion_${c}_animated" >> "$out"
 end
 echo "" >> "$out"
+
+## CAMERA_NETWORK_STATUS group
+
+echo "${devicedb}_camera_network_staus:" >> "$out"
+echo "  name: ${devicedb} Camera Network Status" >> "$out"
+echo "  hidden: true" >> "$out"
+echo "  entities:" >> "$out"
+foreach c ( $cameras )
+  set mac = ( `jq -r '.cameras[]|select(.name=="'${c}'").mac?' "$CONFIG_PATH"` )
+  if ($#mac && "$mac" != "null") then
+    echo "    - device_tracker.${devicedb}_${name}_${c}" >> "$out"
+  endif
+end
+echo "" >> "$out"
+
+if ($?VERBOSE) echo "$0:t $$ -- processed $out" >& /dev/stderr
+
+####
+#### known_devices.yaml
+####
+
+set c = "known_devices"
+set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
+set components = ( $components "$c" )
+
+echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; devicedb $devicedb)" >> "$out"
+
+# 192.168.1.163 00:22:6B:F0:92:60 (Cisco-Linksys)
+foreach c ( $cameras )
+  set mac = ( `jq -r '.cameras[]|select(.name=="'${c}'").mac?' "$CONFIG_PATH"` )
+  if ($#mac && "$mac" != "null") then
+    echo "${devicedb}_${name}_${c}:" >> "$out"
+    echo "  mac: ${mac}" >> "$out"
+    echo "  name: ${devicedb}_${name}_${c}" >> "$out"
+    echo "  icon: mdi:webcam" >> "$out"
+    echo "  track: true" >> "$out"
+    echo "  hide_if_away: false" >> "$out"
+    echo "" >> "$out"
+  endif
+end
+
 
 if ($?VERBOSE) echo "$0:t $$ -- processed $out" >& /dev/stderr
 
@@ -400,7 +454,9 @@ if ($?VERBOSE) echo "$0:t $$ -- processed $out" >& /dev/stderr
 #### ui-lovelace.yaml
 ####
 
-set out = "$DATA_DIR/ui-lovelace.yaml"; rm -f "$out"
+set c = "ui-lovelace"
+set components = ( $components "$c" )
+set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
 
 echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; devicedb $devicedb)" >> "$out"
 echo "name: $name" >> "$out"
@@ -409,14 +465,14 @@ echo "views:" >> "$out"
 echo "  - icon: mdi:animation" >> "$out"
 echo "    title: ANIMATIONS" >> "$out"
 echo "    cards:" >> "$out"
-foreach c ( $allcameras )
+foreach c ( $cameras )
 echo "    - type: picture-entity" >> "$out"
 echo "      entity: camera.motion_${c}_animated" >> "$out"
 end
 echo "  - icon: mdi:webcam" >> "$out"
 echo "    title: IMAGES" >> "$out"
 echo "    cards:" >> "$out"
-foreach c ( $allcameras )
+foreach c ( $cameras )
 echo "    - type: picture-entity" >> "$out"
 echo "      entity: camera.motion_${c}_image" >> "$out"
 end

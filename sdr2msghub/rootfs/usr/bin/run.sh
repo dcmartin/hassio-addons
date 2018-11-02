@@ -243,7 +243,7 @@ fi
 ###
 
 # FIND TOPICS
-TOPIC_NAMES=$(curl -fsSL -H "X-Auth-Token: $KAFKA_API_KEY" $KAFKA_ADMIN_URL/admin/topics | jq -j '.[]|.name," "')
+TOPIC_NAMES=$(curl -sL -H "X-Auth-Token: $KAFKA_API_KEY" $KAFKA_ADMIN_URL/admin/topics | jq -j '.[]|.name," "')
 if [ $? != 0 ]; then hass.log.fatal "Unable to retrieve Kafka topics; exiting"; exit; fi
 hass.log.debug "Topics availble: ${TOPIC_NAMES}"
 TOPIC_FOUND=""
@@ -256,7 +256,7 @@ if [ -z "${TOPIC_FOUND}" ]; then
   hass.log.info "Topic ${KAFKA_TOPIC} not found; exiting"
   exit
   hass.log.debug "Creating topic ${KAFKA_TOPIC} at ${KAFKA_ADMIN_URL} using /admin/topics"
-  curl -fsSL -H "X-Auth-Token: $KAFKA_API_KEY" -d "{ \"name\": \"$KAFKA_TOPIC\", \"partitions\": 2 }" $KAFKA_ADMIN_URL/admin/topics
+  curl -sL -H "X-Auth-Token: $KAFKA_API_KEY" -d "{ \"name\": \"$KAFKA_TOPIC\", \"partitions\": 2 }" $KAFKA_ADMIN_URL/admin/topics
   if [ $? != 0 ]; then hass.log.fatal "Unable to create Kafka topic ${KAFKA_TOPIC}; exiting"; exit; fi
 else
   hass.log.debug "Topic found: ${KAFKA_TOPIC}"

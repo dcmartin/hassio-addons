@@ -34,16 +34,16 @@ RUN apk add --update \
     python \
     python-dev \
     py-pip \
-    build-base \
-  && pip install --upgrade pip
-  && pip install --upgrade setuptools
-  && pip install --upgrade csvkit --ignore-installed six
+    build-base
+
+RUN pip install --upgrade pip \
+  && pip install --upgrade setuptools \
+  && pip install --upgrade csvkit --ignore-installed six \
   && rm -rf /var/cache/apk/*
 
 # environment
 ENV CONFIG_PATH /data/options.json
 
-CMD [ "/usr/local/bin/run.sh" ]
 
 # Build arugments
 ARG BUILD_ARCH
@@ -61,8 +61,8 @@ LABEL \
     maintainer="David C Martin <github@dcmartin.com>"
 
 # variables
-ARG AAHDIR=/var/lib/age-at-home 
-ARG CREDIR=/usr/local/etc
+ARG AAHDIR=/share/ageathome 
+ARG CREDIR=/etc/ageathome
 
 # environment
 ENV DIGITS_HOST 192.168.1.40:32769
@@ -100,3 +100,4 @@ COPY ./httpd.conf /usr/local/apache2/conf/httpd.conf
 
 EXPOSE 80
 
+CMD [ "/usr/local/bin/run.sh" ]

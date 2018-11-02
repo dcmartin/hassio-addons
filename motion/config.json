@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.3.121",
+  "version": "0.3.122",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -128,6 +128,7 @@
         "device": "str?",
         "palette": "int?",
         "url": "str?",
+        "mac": "str?",
         "type": "str?",
         "fov": "int?",
         "fps": "int?",

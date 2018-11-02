@@ -1,24 +1,24 @@
-#!/bin/bash
+#!/bin/tcsh
 
-DEBUG=true
+setenv DEBUG true
 
-CONFIG_PATH=/data/options.json
+if ($?CONFIG_PATH == 0) setenv CONFIG_PATH /data/options.json
 
-AAHDIR=$(jq --raw-output ".aahdir" $CONFIG_PATH)
+AAHDIR=$(jq -r ".aahdir" $CONFIG_PATH)
 if ($?DEBUG) echo "AAH directory ${AAHDIR}"
 
-BASE_URL=$(jq --raw-output ".base_url" $CONFIG_PATH)
+BASE_URL=$(jq -r ".base_url" $CONFIG_PATH)
 if ($?DEBUG) echo "Base URL ${BASE_URL}"
 
-CLOUDANT_URL=$(jq --raw-output ".cloudant.url" $CONFIG_PATH)
-CLOUDANT_USERNAME=$(jq --raw-output ".cloudant.username" $CONFIG_PATH)
-CLOUDANT_PASSWORD=$(jq --raw-output ".cloudant.password" $CONFIG_PATH)
+CLOUDANT_URL=$(jq -r ".cloudant.url" $CONFIG_PATH)
+CLOUDANT_USERNAME=$(jq -r ".cloudant.username" $CONFIG_PATH)
+CLOUDANT_PASSWORD=$(jq -r ".cloudant.password" $CONFIG_PATH)
 if ($?DEBUG) echo "Cloudant setup ${CLOUDANT_URL}, ${CLOUDANT_USERNAME}, ${CLOUDANT_PASSWORD}"
 
-WATSON_VR_URL=$(jq --raw-output ".watson.vr_url" $CONFIG_PATH)
-WATSON_VR_APIKEY=$(jq --raw-output ".watson.vr_apikey" $CONFIG_PATH)
-WATSON_VR_VERSION=$(jq --raw-output ".watson.vr_version" $CONFIG_PATH)
-WATSON_VR_DATE=$(jq --raw-output ".watson.vr_date" $CONFIG_PATH)
+WATSON_VR_URL=$(jq -r ".watson.vr_url" $CONFIG_PATH)
+WATSON_VR_APIKEY=$(jq -r ".watson.vr_apikey" $CONFIG_PATH)
+WATSON_VR_VERSION=$(jq -r ".watson.vr_version" $CONFIG_PATH)
+WATSON_VR_DATE=$(jq -r ".watson.vr_date" $CONFIG_PATH)
 if ($?DEBUG) echo "Watson Visual Recognition setup ${WATSON_VR_URL}, ${WATSON_VR_APIKEY}, ${WATSON_VR_VERSION}, ${WATSON_VR_DATE}"
 
 if ($?DEBUG) echo "Starting Apache"
@@ -27,4 +27,4 @@ if ($?DEBUG) echo "Starting Apache"
 
 rc-service apache2 start
 
-sleep 1800
+mosquitto_sub -h 192.168.1.40 -t 'motion/#' >& /dev/stderr

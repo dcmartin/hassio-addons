@@ -11,7 +11,7 @@ if ($?DEBUG) echo `date` "$0:t $$ -- START" >>&! $LOGTO
 
 # environment
 if ($?MOTION_DEVICE_DB == 0) then
-  set MOTION_DEVICE_DB = "devices"
+  set MOTION_DEVICE_DB = "motion"
   if ($?DEBUG) echo `date` "$0:t $$ -- MOTION_DEVICE_DB not set; using $MOTION_DEVICE_DB" >>&! $LOGTO
 endif
 if ($?MOTION_CLOUDANT_URL == 0) then

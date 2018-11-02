@@ -1,8 +1,8 @@
 #!/bin/tcsh
 
 setenv DEBUG
-unsetenv VERBOSE
-unsetenv USE_MQTT
+setenv VERBOSE
+setenv USE_MQTT
 
 if ($?VERBOSE) echo "$0:t $$ -- START" `date` >& /dev/stderr
 
@@ -92,7 +92,6 @@ if ("$interval" == "null" || $#interval == 0) set interval = 0
 if ($?USE_MQTT && $?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"interval":'"$interval"'}'
 if ($?VERBOSE) echo "$0:t $$ -- Interval specified as $interval" >& /dev/stderr
 
-set LAST = START
 set frames = ()
 set elapsed = 0
 if ($#jpgs) then
@@ -106,9 +105,10 @@ if ($#jpgs) then
       @ i--
       continue
     endif
-    set LAST = `echo "$jpg:t:r" | sed 's/\(.*\)-.*-.*/\1/'`
-    set LAST = `$dateconv -i '%Y%m%d%H%M%S' -f "%s" $LAST`
-    @ seconds = $LAST - $START
+    set THIS = `echo "$jpg:t:r" | sed 's/\(.*\)-.*-.*/\1/'`
+    set THIS = `$dateconv -i '%Y%m%d%H%M%S' -f "%s" $THIS`
+    if ($?LAST == 0) set LAST = $THIS
+    @ seconds = $THIS - $START
     if ($?USE_MQTT && $?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"json":"'"$jsn"'","elapsed":'$seconds'}'
     if ($?VERBOSE) echo "$0:t $$ -- Located JSON $jsn for image $jpg; elapsed $seconds" >& /dev/stderr
     # test for breaking conditions
