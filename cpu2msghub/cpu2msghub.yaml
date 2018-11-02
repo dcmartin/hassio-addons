@@ -1,0 +1,78 @@
+# CPU
+
+group cpu2msghub:
+  name: cpu2msghub
+  entities:
+    - sensor.cpu2msghub_event
+    - sensor.cpu2msghub_date
+    - sensor.cpu2msghub_name
+    - sensor.cpu2msghub_cpu
+    - sensor.cpu2msghub_latitude
+    - sensor.cpu2msghub_longitude
+    - sensor.cpu2msghub_altitude
+
+sensor cpu2msghub_event:
+  - platform: mqtt
+    name: cpu2msghub_event
+    state_topic: 'kafka/cgiroua_us.ibm.com.IBM_cpu2msghub'
+    json_attributes:
+      - name
+      - date
+      - cpu
+      - longitude
+      - latitude
+      - altitude
+    value_template: >
+      {% if value_json is defined %}
+        {{ value_json.date,value_json.name,value_json.cpu,value_json.altitude,value_json.longitude,value_json.latitude }}
+      {% else %} {{ null }} {% endif %}
+
+sensor cpu2msghub_template:
+  platform: template
+  sensors:
+    cpu2msghub_date:
+      entity_id:
+        - sensor.cpu2msghub_event
+      value_template: >
+        {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.date is defined %}
+          {{ states.sensor.cpu2msghub_event.attributes.date | timestamp_custom("%a %b %d %I:%M %p") }}
+        {% else %} null {% endif %}
+    cpu2msghub_name:
+      entity_id:
+        - sensor.cpu2msghub_event
+      value_template: >
+        {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.name is defined %}
+          {{ states.sensor.cpu2msghub_event.attributes.name}}
+        {% else %} null {% endif %}
+    cpu2msghub_cpu:
+      entity_id:
+        - sensor.cpu2msghub_event
+      value_template: >
+        {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.cpu is defined %}
+          {{ states.sensor.cpu2msghub_event.attributes.cpu}}
+        {% else %} 0 {% endif %}
+    cpu2msghub_latitude:
+      entity_id:
+        - sensor.cpu2msghub_event
+      unit_of_measurement: degrees
+      value_template: >
+        {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.latitude is defined %}
+          {{ states.sensor.cpu2msghub_event.attributes.latitude}}
+        {% else %} 0 {% endif %}
+    cpu2msghub_longitude:
+      entity_id:
+        - sensor.cpu2msghub_event
+      unit_of_measurement: degrees
+      value_template: >
+        {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.longitude is defined %}
+          {{ states.sensor.cpu2msghub_event.attributes.longitude}}
+        {% else %} 0 {% endif %}
+    cpu2msghub_altitude:
+      entity_id:
+        - sensor.cpu2msghub_event
+      unit_of_measurement: feet
+      value_template: >
+        {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.altitude is defined %}
+          {{ states.sensor.cpu2msghub_event.attributes.altitude}}
+        {% else %} 0 {% endif %}
+
