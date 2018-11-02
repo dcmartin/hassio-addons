@@ -1,3 +1,21 @@
+# SDR
+
+group sdr2msghub:
+  name: sdr2msghub
+  entities:
+    - sensor.sdr2msghub_event
+    - sensor.sdr2msghub_date
+    - sensor.sdr2msghub_name
+    - sensor.sdr2msghub_bytes
+    - sensor.sdr2msghub_latitude
+    - sensor.sdr2msghub_longitude
+    - sensor.sdr2msghub_frequency
+    - sensor.sdr2msghub_value
+    - sensor.sdr2msghub_results
+    - sensor.sdr2msghub_keywords
+    - sensor.sdr2msghub_sentiment
+    - sensor.sdr2msghub_language
+
 sensor sdr2msghub_event:
   - platform: mqtt
     name: sdr2msghub_event
@@ -8,7 +26,9 @@ sensor sdr2msghub_event:
       - latitude
       - longitude
       - frequency
+      - value
       - bytes
+      - stt
     value_template: >
       {% if value_json is defined %}
         {{ value_json.date,value_json.name,value_json.frequency,value_json.bytes,value_json.longitude,value_json.latitude }}
@@ -62,11 +82,18 @@ sensor sdr2msghub_template:
         {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.bytes is defined %}
           {{ states.sensor.sdr2msghub_event.attributes.bytes }}
         {% else %} 0 {% endif %}
+    sdr2msghub_results:
+      entity_id:
+        - sensor.sdr2msghub_event
+      value_template: >-
+        {%- if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.stt is defined and states.sensor.sdr2msghub_event.attributes.stt.results is defined -%}
+          {{- states.sensor.sdr2msghub_event.attributes.stt.results|length -}}
+        {%- else -%} null {%- endif -%}
     sdr2msghub_keywords:
       entity_id:
         - sensor.sdr2msghub_event
-      value_template: >
-        {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.stt is defined and and states.sensor.sdr2msghub_event.attributes.stt.results is defined %}
+      value_template: >-
+        {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.stt is defined and states.sensor.sdr2msghub_event.attributes.stt.results is defined %}
           {% set results = states.sensor.sdr2msghub_event.attributes.stt.results %}
           {% for result in results %}
             {%- for alternative in result.alternatives -%}
@@ -81,4 +108,41 @@ sensor sdr2msghub_template:
               {%- endif -%}
             {%- endfor -%}
           {%- endfor -%}
-        {% else %} 0 {% endif %}
+        {%- else -%} null {%- endif -%}
+    sdr2msghub_sentiment:
+      entity_id:
+        - sensor.sdr2msghub_event
+      value_template: >-
+        {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.stt is defined and states.sensor.sdr2msghub_event.attributes.stt.results is defined %}
+          {% set results = states.sensor.sdr2msghub_event.attributes.stt.results %}
+          {% for result in results %}
+            {%- set outerloop = loop %}
+            {%- for alternative in result.alternatives -%}
+              {%- if alternative.confidence > 0.0 -%}
+                {%- if alternative.nlu is defined and alternative.nlu.sentiment is defined -%}
+                    {%- if alternative.nlu.sentiment.document.label is defined -%}
+                      {%- if outerloop.first -%}{%- else -%},{%- endif -%}{{- alternative.nlu.sentiment.document.label -}}
+                    {%- endif -%}
+                {%- endif -%}
+              {%- endif -%}
+            {%- endfor -%}
+          {%- endfor %}
+        {%- else -%} null {%- endif -%}
+    sdr2msghub_language:
+      entity_id:
+        - sensor.sdr2msghub_event
+      value_template: >-
+        {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.stt is defined and states.sensor.sdr2msghub_event.attributes.stt.results is defined %}
+          {% set results = states.sensor.sdr2msghub_event.attributes.stt.results %}
+          {% for result in results %}
+            {%- set outerloop = loop %}
+            {%- for alternative in result.alternatives -%}
+              {%- if alternative.confidence > 0.0 -%}
+                {%- if alternative.nlu is defined and alternative.nlu.language is defined -%}
+                      {%- if outerloop.first -%}{%- else -%},{%- endif -%}{{- alternative.nlu.language -}}
+                {%- endif -%}
+              {%- endif -%}
+            {%- endfor -%}
+          {%- endfor %}
+        {%- else -%} null {%- endif -%}
+
