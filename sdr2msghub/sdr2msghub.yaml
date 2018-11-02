@@ -1,0 +1,84 @@
+sensor sdr2msghub_event:
+  - platform: mqtt
+    name: sdr2msghub_event
+    state_topic: 'kafka/sdr-audio'
+    json_attributes:
+      - name
+      - date
+      - latitude
+      - longitude
+      - frequency
+      - bytes
+    value_template: >
+      {% if value_json is defined %}
+        {{ value_json.date,value_json.name,value_json.frequency,value_json.bytes,value_json.longitude,value_json.latitude }}
+      {% else %} {{ null }} {% endif %}
+
+sensor sdr2msghub_template:
+  platform: template
+  sensors:
+    sdr2msghub_date:
+      entity_id:
+        - sensor.sdr2msghub_event
+      value_template: >
+        {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.date is defined %}
+          {{ states.sensor.sdr2msghub_event.attributes.date | timestamp_custom("%a %b %d %I:%M %p") }}
+        {% else %} null {% endif %}
+    sdr2msghub_name:
+      entity_id:
+        - sensor.sdr2msghub_event
+      value_template: >
+        {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.name is defined %}
+          {{ states.sensor.sdr2msghub_event.attributes.name }}
+        {% else %} null {% endif %}
+    sdr2msghub_latitude:
+      entity_id:
+        - sensor.sdr2msghub_event
+      unit_of_measurement: degrees
+      value_template: >
+        {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.latitude is defined %}
+          {{ states.sensor.sdr2msghub_event.attributes.latitude }}
+        {% else %} 0 {% endif %}
+    sdr2msghub_longitude:
+      entity_id:
+        - sensor.sdr2msghub_event
+      unit_of_measurement: degrees
+      value_template: >
+        {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.longitude is defined %}
+          {{ states.sensor.sdr2msghub_event.attributes.longitude }}
+        {% else %} 0 {% endif %}
+    sdr2msghub_frequency:
+      entity_id:
+        - sensor.sdr2msghub_event
+      value_template: >
+        {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.frequency is defined %}
+          {{ states.sensor.sdr2msghub_event.attributes.frequency }}
+        {% else %} 0 {% endif %}
+    sdr2msghub_bytes:
+      entity_id:
+        - sensor.sdr2msghub_event
+      unit_of_measurement: byte
+      value_template: >
+        {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.bytes is defined %}
+          {{ states.sensor.sdr2msghub_event.attributes.bytes }}
+        {% else %} 0 {% endif %}
+    sdr2msghub_keywords:
+      entity_id:
+        - sensor.sdr2msghub_event
+      value_template: >
+        {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.stt is defined and and states.sensor.sdr2msghub_event.attributes.stt.results is defined %}
+          {% set results = states.sensor.sdr2msghub_event.attributes.stt.results %}
+          {% for result in results %}
+            {%- for alternative in result.alternatives -%}
+              {%- if alternative.confidence > 0.0 -%}
+                {%- if alternative.nlu is defined and alternative.nlu.keywords is defined -%}
+                  {%- for keyword in alternative.nlu.keywords -%}
+                    {%- if keyword.text is defined and keyword.relevance > 0.0 -%}
+                      {% if loop.first %}{% else %},{% endif %}{{- keyword.text -}}
+                    {%- endif -%}
+                  {%- endfor -%}
+                {%- endif -%}
+              {%- endif -%}
+            {%- endfor -%}
+          {%- endfor -%}
+        {% else %} 0 {% endif %}
