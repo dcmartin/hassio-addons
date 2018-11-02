@@ -154,16 +154,21 @@ hass.log.debug "HORIZON device ${DEVICE_ID} in ${DEVICE_ORG} using pattern ${PAT
 KAFKA_TOPIC=$(echo "${DEVICE_ORG}.${PATTERN_ORG}_${PATTERN_ID}" | sed 's/@/_/g')
 
 # FIND TOPICS
-TOPIC_NAMES=$(curl -fsSL -H "X-Auth-Token: $KAFKA_API_KEY" $KAFKA_ADMIN_URL/admin/topics | jq -j '.[]|.name," "')
+TOPIC_NAMES=$(curl -sL -H "X-Auth-Token: $KAFKA_API_KEY" $KAFKA_ADMIN_URL/admin/topics | jq -j '.[]|.name," "')
+if [ $? != 0 ]; then hass.log.fatal "Unable to retrieve Kafka topics; exiting"; exit; fi
 hass.log.debug "Topics availble: ${TOPIC_NAMES}"
+TOPIC_FOUND=""
 for TN in ${TOPIC_NAMES}; do
   if [ ${TN} == "${KAFKA_TOPIC}" ]; then
-    FOUND=true
+    TOPIC_FOUND=true
   fi
 done
-if [ -z ${FOUND} ]; then
-  # attempt to create a new topic
-  curl -fsSL -H "X-Auth-Token: $KAFKA_API_KEY" -d "{ \"name\": \"$KAFKA_TOPIC\", \"partitions\": 2 }" $KAFKA_ADMIN_URL/admin/topics
+if [ -z "${TOPIC_FOUND}" ]; then
+  hass.log.info "Topic ${KAFKA_TOPIC} not found; exiting"
+  exit
+  hass.log.debug "Creating topic ${KAFKA_TOPIC} at ${KAFKA_ADMIN_URL} using /admin/topics"
+  curl -sL -H "X-Auth-Token: $KAFKA_API_KEY" -d "{ \"name\": \"$KAFKA_TOPIC\", \"partitions\": 2 }" $KAFKA_ADMIN_URL/admin/topics
+  if [ $? != 0 ]; then hass.log.fatal "Unable to create Kafka topic ${KAFKA_TOPIC}; exiting"; exit; fi
 else
   hass.log.debug "Topic found: ${KAFKA_TOPIC}"
 fi
@@ -174,55 +179,65 @@ if [ -z "${HZN}" ]; then
   exit
 fi
 
-### REGISTER DEVICE WITH PATTERN
+###
+### CONFIGURE HORIZON
+###
 
-# get information about this node
-NODE_LIST=$(hzn node list)
-if [ -n "${NODE_LIST}" ]; then
-  DEVICE_REG=$(echo "${NODE_LIST}" | jq '.id?=="'"${DEVICE_ID}"'"')
-else
-  DEVICE_REG="false"
+# check for outstanding agreements
+AGREEMENTS=$(hzn agreement list)
+COUNT=$(echo "${AGREEMENTS}" | jq '.?|length')
+hass.log.debug "Found ${COUNT} agreements"
+WORKLOAD_FOUND=""
+if [[ ${COUNT} > 0 ]]; then
+  WORKLOADS=$(echo "${AGREEMENTS}" | jq -r '.[]|.workload_to_run.url')
+  for WL in ${WORKLOADS}; do
+    if [ "${WL}" == "${PATTERN_URL}" ]; then
+      WORKLOAD_FOUND=true
+    fi
+  done
 fi
 
-if [ "${DEVICE_REG}" == "true" ]; then
-  hass.log.warning "${DEVICE_ORG}/${DEVICE_ID} is registered"
+if [[ $COUNT > 0 && $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; then
+  hass.log.info "Existing agreeement with another device identifier; unregistering"
+  hzn unregister -f
+  while [[ $(hzn node list | jq '.configstate.state?=="unconfigured"') == false ]]; do hass.log.debug "Waiting for unregistration to complete (10)"; sleep 10; done
+  # hass.log.debug "Waiting for unregistration to complete; sleeping (30)"
+  # sleep 30
+  COUNT=0
+  AGREEMENTS=""
+  WORKLOAD_FOUND=""
+  hass.log.debug "Reseting agreements, count, and workloads"
 fi
 
-if [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') != "${PATTERN_URL}" ]]; then
+# if agreement not found, register device with pattern
+if [[ ${COUNT} == 0 && -z ${WORKLOAD_FOUND} ]]; then
   INPUT="${KAFKA_TOPIC}.json"
-  rm -f "${INPUT}"
 
-  echo '{' >> "${INPUT}"
-  echo '  "services": [' >> "${INPUT}"
-  echo '    {' >> "${INPUT}"
-  echo '      "org": "'"${PATTERN_ORG}"'",' >> "${INPUT}"
-  echo '      "url": "'"${PATTERN_URL}"'",' >> "${INPUT}"
-  echo '      "versionRange": "[0.0.0,INFINITY)",' >> "${INPUT}"
-  echo '      "variables": {' >> "${INPUT}"
-  echo '        "MSGHUB_API_KEY": "'"${KAFKA_API_KEY}"'"' >> "${INPUT}"
-  echo '      }' >> "${INPUT}"
-  echo '    }' >> "${INPUT}"
-  echo '  ]' >> "${INPUT}"
-  echo '}' >> "${INPUT}"
+  echo '{"services": [{"org": "'"${PATTERN_ORG}"'","url": "'"${PATTERN_URL}"'","versionRange": "[0.0.0,INFINITY)","variables": {' >> "${INPUT}"
+  echo '"MSGHUB_API_KEY": "'"${KAFKA_API_KEY}"'"' >> "${INPUT}"
+  echo '}}]}' >> "${INPUT}"
 
   hass.log.debug "Registering device ${DEVICE_ID} organization ${DEVICE_ORG} with pattern ${PATTERN_ORG}/${PATTERN_ID} using input " $(jq -c '.' "${INPUT}")
 
+  # register
   hzn register -n "${DEVICE_ID}:${DEVICE_TOKEN}" "${DEVICE_ORG}" "${PATTERN_ORG}/${PATTERN_ID}" -f "${INPUT}"
-
   # wait for registration
-  while [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; do hass.log.debug "--- WAIT: On registration (60)"; sleep 60; done
-
+  while [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; do hass.log.debug "Waiting on registration (60)"; sleep 60; done
   hass.log.debug "Registration complete for ${DEVICE_ORG}/${DEVICE_ID}"
-
-  ## WAIT ON AGREEMENT
-  while [[ $(hzn agreement list | jq '.?==[]') == true ]]; do hass.log.info "--- WAIT: On agreement (10)"; sleep 10; done
-
+  # wait for agreement
+  while [[ $(hzn agreement list | jq '.?==[]') == true ]]; do hass.log.info "Waiting on agreement (10)"; sleep 10; done
   hass.log.debug "Agreement complete for ${PATTERN_URL}"
+elif [ -n ${WORKLOAD_FOUND} ]; then
+  hass.log.debug "Found pattern in existing agreement: ${PATTERN_URL}"
+elif [[ ${COUNT} > 0 ]]; then
+  hass.log.fatal "Existing non-matching pattern agreement found; exiting: ${AGREEMENTS}"
+  exit
 else
-  hass.log.debug "Workload to run is ${PATTERN_URL}"
+  hass.log.fatal "Invalid state; exiting"
+  exit
 fi
 
-hass.log.info "Registered ${DEVICE_ORG}/${DEVICE_ID} for ${PATTERN_ORG}/${PATTERN_ID}" 
+hass.log.info "Device ${DEVICE_ID} in ${DEVICE_ORG} registered for pattern ${PATTERN_ID} from ${PATTERN_ORG}"
 
 ###
 ### ADD ON LOGIC
