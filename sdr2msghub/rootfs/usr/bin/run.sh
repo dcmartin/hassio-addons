@@ -366,7 +366,7 @@ while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_
             T=$(echo "${STT}" | jq -r '.results['${R}'].alternatives['${A}'].transcript')
             hass.log.debug "Confidence ${C} for transcript ${T}"
             N=$(echo '{"text":"'"${T}"'","features":{"sentiment":{},"keywords":{}}}' | curl -sL -d @- -u "${WATSON_NLU_USERNAME}:${WATSON_NLU_PASSWORD}" -H "Content-Type: application/json" "${WATSON_NLU_URL}")
-            if [[ $? != 0 || -z "${N}" ]]; then hass.log.debug "NLU request failed; continuing"; continue; fi
+            if [[ $? != 0 || -z "${N}" || $(jq '.error?!=null') ]]; then hass.log.warning "NLU request failed: ${N}; continuing"; continue; fi
             hass.log.debug "Understood results ${R}, alternative ${A}: " $(echo "${N}" | jq -c '.')
             PAYLOAD=$(echo "${PAYLOAD}" | jq -c '.stt.results['${R}'].alternatives['${A}'].nlu='"${N}")
             hass.log.debug "Incrementing to next alternative"
