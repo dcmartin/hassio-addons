@@ -146,6 +146,8 @@ else
   echo "*** WARN: The horizon.service is already active"
 fi
 
+exit
+
 ##
 ## HORIZON PATTERN SETUP
 ##
