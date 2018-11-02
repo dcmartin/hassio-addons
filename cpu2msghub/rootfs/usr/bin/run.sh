@@ -248,9 +248,12 @@ while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_
   hass.log.info "Starting main loop; routing ${KAFKA_TOPIC} to ${MQTT_TOPIC} at host ${MQTT_HOST} on port ${MQTT_PORT}"
 
   kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC" \
-    | jq --unbuffered -c "${JQ}" \
-    | jq --unbuffered -c ".date="$(date '+%s') \
-    | ${MQTT}
+    | while read -r; do
+      echo "${REPLY}" \
+        | jq --unbuffered -c "${JQ}" \
+        | jq --unbuffered -c ".date="$(date '+%s') \
+        | ${MQTT}
+      done
 
   hass.log.debug "Unexpected failure of kafkacat"
 done
