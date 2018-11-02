@@ -366,9 +366,12 @@ while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_
             T=$(echo "${STT}" | jq -r '.results['${R}'].alternatives['${A}'].transcript')
             hass.log.debug "Confidence ${C} for transcript ${T}"
             N=$(echo '{"text":"'"${T}"'","features":{"sentiment":{},"keywords":{}}}' | curl -sL -d @- -u "${WATSON_NLU_USERNAME}:${WATSON_NLU_PASSWORD}" -H "Content-Type: application/json" "${WATSON_NLU_URL}")
-            if [[ $? != 0 || -z "${N}" || $(echo "${N}" | jq '.error?!=null') == "true" ]]; then hass.log.warning "NLU request failed; continuing"; continue; fi
-            hass.log.debug "Understood results ${R}, alternative ${A}: " $(echo "${N}" | jq -c '.')
-            PAYLOAD=$(echo "${PAYLOAD}" | jq -c '.stt.results['${R}'].alternatives['${A}'].nlu='"${N}")
+            if [[ $? != 0 || -z "${N}" || $(echo "${N}" | jq '.error?!=null') == "true" ]]; then
+	      hass.log.warning "NLU request failed" $(echo "${N}" | jq -c '.')
+	    else
+              hass.log.debug "Understood results ${R}, alternative ${A}: " $(echo "${N}" | jq -c '.')
+              PAYLOAD=$(echo "${PAYLOAD}" | jq -c '.stt.results['${R}'].alternatives['${A}'].nlu='"${N}")
+	    fi
             hass.log.debug "Incrementing to next alternative"
             A=$((A+1))
           done
