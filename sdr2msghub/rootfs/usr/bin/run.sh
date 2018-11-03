@@ -52,7 +52,7 @@ VALUE=$(hass.config.get "horizon.password")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No exchange password"; hass.die; fi
 JSON="${JSON}"',"password":"'"${VALUE}"'"'
 export HZN_EXCHANGE_USER_AUTH="${HZN_EXCHANGE_USER_AUTH}:${VALUE}"
-hass.log.debug "Setting HZN_EXCHANGE_USER_AUTH ${HZN_EXCHANGE_USER_AUTH}" >&2
+hass.log.trace "Setting HZN_EXCHANGE_USER_AUTH ${HZN_EXCHANGE_USER_AUTH}" >&2
 
 # ORGANIZATION
 VALUE=$(hass.config.get "horizon.organization")
@@ -90,7 +90,7 @@ JSON="${JSON}"',"kafka":{"id":"'$(hass.config.get 'kafka.instance_id')'"'
 # BROKERS_SASL
 VALUE=$(jq -r '.kafka.kafka_brokers_sasl' "/data/options.json")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.kafka_brokers_sasl"; hass.die; fi
-hass.log.debug "Kafka brokers: ${VALUE}"
+hass.log.trace "Kafka brokers: ${VALUE}"
 JSON="${JSON}"',"brokers":'"${VALUE}"
 # ADMIN_URL
 VALUE=$(hass.config.get "kafka.kafka_admin_url")
@@ -100,7 +100,7 @@ JSON="${JSON}"',"admin_url":"'"${VALUE}"'"'
 # API_KEY
 VALUE=$(hass.config.get "kafka.api_key")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.api_key"; hass.die; fi
-hass.log.debug "Kafka API key: ${VALUE}"
+hass.log.trace "Kafka API key: ${VALUE}"
 JSON="${JSON}"',"api_key":"'"${VALUE}"'"}'
 
 ## DONE w/ JSON
@@ -125,6 +125,18 @@ DEVICE_TOKEN=$(echo "$JSON" | jq -r '.horizon.token?')
 DEVICE_ORG=$(echo "$JSON" | jq -r '.horizon.organization?')
 
 ###
+### TURN on/off listen only mode
+###
+
+if [[ $(hass.config.has_value 'listen') ]]; then
+  LISTEN_ONLY=$(hass.config.get "listen")
+  hass.log.info "Listen only: ${LISTEN_ONLY}"
+else
+  hass.log.debug "Listen only mode off by default" 
+  LISTEN_ONLY="false"
+fi
+
+###
 ### TURN on/off MOCK SDR
 ###
 
@@ -132,7 +144,7 @@ if [[ $(hass.config.has_value 'mock') ]]; then
   MOCK_SDR=$(hass.config.get "mock")
   hass.log.info "Mock SDR: ${MOCK_SDR}"
 else
-  hass.log.info "Ignoring mock SDR messages by default" 
+  hass.log.debug "Ignoring mock SDR messages by default" 
   MOCK_SDR="false"
 fi
 
@@ -280,7 +292,7 @@ fi
 
 # test if horizon is installed
 HZN=$(command -v hzn)
-if [ -n "${HZN}" ]; then
+if [[ -n "${HZN}" && "${LISTEN_ONLY}" != "true" ]; then
   # check for outstanding agreements
   AGREEMENTS=$(hzn agreement list)
   COUNT=$(echo "${AGREEMENTS}" | jq '.?|length')
@@ -378,7 +390,7 @@ while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_
 		  hass.log.debug "NLU request failed on transcript ${T}; setting NLU to null; return: " $(echo "${N}" | jq -c '.')
 		  STT=$(echo "${STT}" | jq -c '.results['${R}'].alternatives['${A}'].nlu=null')
 		else
-		  hass.log.debug "NLU for result ${R}; alternative ${A}: " $(echo "${N}" | jq -c '.')
+		  hass.log.trace "NLU for result ${R}; alternative ${A}: " $(echo "${N}" | jq -c '.')
 		  STT=$(echo "${STT}" | jq -c '.results['${R}'].alternatives['${A}'].nlu='"${N}")
 		fi
 		hass.log.trace "Incrementing to next alternative"
@@ -389,19 +401,19 @@ while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_
 	    done  
 	    hass.log.trace "Done with ${NR} STT results"
 	  else
-            hass.log.debug "No STT results"
+            hass.log.debug "STT returned zero results: " $(echo "${STT}" | jq -c '.')
           fi
         else
-	  hass.log.debug "Failed at STT"
 	  STT='{"results":[{"alternatives":[{"confidence":0.0,"transcript":"*** FAIL ***"}],"final":null}],"result_index":0}'
+	  hass.log.debug "STT request failed; set STT to ${STT}"
 	fi
       else
-	hass.log.debug "Mock SDR; using mock STT results with no NLU"
+	hass.log.trace "Mock SDR detected; frequency is zero!"
 	STT='{"results":[{"alternatives":[{"confidence":0.0,"transcript":"*** MOCK ***"}],"final":null}],"result_index":-1}'
 	PAYLOAD=$(echo "${PAYLOAD}" | jq '.audio=""|.bytes=0')
-	hass.log.trace "Removed audio from payload"
+	hass.log.trace "Set bytes to zero; removed audio; STT set to ${STT}"
       fi
-      hass.log.debug "Using STT results: " $(echo "${STT}" | jq -c '.')
+      hass.log.trace "Using STT results: " $(echo "${STT}" | jq -c '.')
       PAYLOAD=$(echo "${PAYLOAD}" | jq -c '.stt='"${STT}")
     else
       hass.log.warning "Null message received; continuing"
@@ -411,7 +423,7 @@ while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_
       hass.log.info "POSTING: " $(echo "${PAYLOAD}" | jq -c '.audio="redacted"')
       echo "${PAYLOAD}" | ${MQTT} -l -t "${MQTT_TOPIC}"
     else
-      hass.log.debug "Ignoring zero bytes audio; MOCK_SDR is ${MOCK_SDR}"
+      hass.log.info "IGNORED: zero bytes audio; MOCK_SDR is ${MOCK_SDR}"
     fi
   done
   hass.log.debug "Unexpected failure of kafkacat"
