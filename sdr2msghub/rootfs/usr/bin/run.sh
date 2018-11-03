@@ -292,7 +292,7 @@ fi
 
 # test if horizon is installed
 HZN=$(command -v hzn)
-if [[ -n "${HZN}" && "${LISTEN_ONLY}" != "true" ]; then
+if [[ -n "${HZN}" && "${LISTEN_ONLY}" != "true" ]]; then
   # check for outstanding agreements
   AGREEMENTS=$(hzn agreement list)
   COUNT=$(echo "${AGREEMENTS}" | jq '.?|length')
