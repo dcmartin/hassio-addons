@@ -38,25 +38,25 @@ JSON="${JSON}"',"horizon":{"pattern":'"${HORIZON_PATTERN}"
 
 # URL
 VALUE=$(hass.config.get "horizon.exchange")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No exchange URL"; exit; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No exchange URL"; hass.die; fi
 export HZN_EXCHANGE_URL="${VALUE}"
 hass.log.debug "Setting HZN_EXCHANGE_URL to ${VALUE}" >&2
 JSON="${JSON}"',"exchange":"'"${VALUE}"'"'
 # USERNAME
 VALUE=$(hass.config.get "horizon.username")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No exchange username"; exit; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No exchange username"; hass.die; fi
 JSON="${JSON}"',"username":"'"${VALUE}"'"'
 HZN_EXCHANGE_USER_AUTH="${VALUE}"
 # PASSWORD
 VALUE=$(hass.config.get "horizon.password")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No exchange password"; exit; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No exchange password"; hass.die; fi
 JSON="${JSON}"',"password":"'"${VALUE}"'"'
 export HZN_EXCHANGE_USER_AUTH="${HZN_EXCHANGE_USER_AUTH}:${VALUE}"
 hass.log.debug "Setting HZN_EXCHANGE_USER_AUTH ${HZN_EXCHANGE_USER_AUTH}" >&2
 
 # ORGANIZATION
 VALUE=$(hass.config.get "horizon.organization")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No horizon organization"; exit; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No horizon organization"; hass.die; fi
 JSON="${JSON}"',"organization":"'"${VALUE}"'"'
 # DEVICE
 VALUE=$(hass.config.get "horizon.device")
@@ -83,23 +83,23 @@ JSON="${JSON}"'}'
 
 if [[ $(hass.config.has_value 'kafka') == false ]]; then
   hass.log.fatal "No Kafka credentials"
-  exit
+  hass.die
 fi
 
 JSON="${JSON}"',"kafka":{"id":"'$(hass.config.get 'kafka.instance_id')'"'
 # BROKERS_SASL
 VALUE=$(jq -r '.kafka.kafka_brokers_sasl' "/data/options.json")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.kafka_brokers_sasl"; exit; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.kafka_brokers_sasl"; hass.die; fi
 hass.log.debug "Kafka brokers: ${VALUE}"
 JSON="${JSON}"',"brokers":'"${VALUE}"
 # ADMIN_URL
 VALUE=$(hass.config.get "kafka.kafka_admin_url")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.kafka_admin_url"; exit; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.kafka_admin_url"; hass.die; fi
 hass.log.debug "Kafka admin URL: ${VALUE}"
 JSON="${JSON}"',"admin_url":"'"${VALUE}"'"'
 # API_KEY
 VALUE=$(hass.config.get "kafka.api_key")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.api_key"; exit; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.api_key"; hass.die; fi
 hass.log.debug "Kafka API key: ${VALUE}"
 JSON="${JSON}"',"api_key":"'"${VALUE}"'"}'
 
@@ -135,7 +135,7 @@ KAFKA_TOPIC="sdr-audio"
 
 if [[ $(hass.config.exists 'mqtt') == "false" ]]; then
   hass.log.fatal "No MQTT credentials; exiting"
-  exit
+  hass.die
 fi
 
 if [[ $(hass.config.has_value 'mqtt.host') == "false" ]]; then
@@ -180,7 +180,7 @@ hass.log.debug "Watson STT: " $(hass.config.get "watson_stt")
 
 if [[ -z $(hass.config.get 'watson_stt') ]]; then
   hass.log.fatal "No Watson STT credentials; exiting"
-  exit
+  hass.die
 fi
 
 if [[ -n $(hass.config.get 'watson_stt.url') ]]; then
@@ -188,22 +188,22 @@ if [[ -n $(hass.config.get 'watson_stt.url') ]]; then
   hass.log.debug "Watson STT URL: ${WATSON_STT_URL}"
 else
   hass.log.fatal "No Watson STT URL; exiting"
-  exit
+  hass.die
 fi
 
 if [[ -n $(hass.config.get 'watson_nlu.apikey') ]]; then
   WATSON_STT_USERNAME="apikey"
   hass.log.debug "Watson STT username: ${WATSON_STT_USERNAME}"
   WATSON_STT_PASSWORD=$(hass.config.get 'watson_stt.apikey')
-  hass.log.debug "Watson STT password: ${WATSON_STT_PASSWORD}"
+  hass.log.trace "Watson STT password: ${WATSON_STT_PASSWORD}"
 elif [[ -n $(hass.config.get 'watson_stt.username') && -n $(hass.config.get 'watson_stt.password') ]]; then
   WATSON_STT_USERNAME=$(hass.config.get 'watson_stt.username')
   hass.log.debug "Watson STT username: ${WATSON_STT_USERNAME}"
   WATSON_STT_PASSWORD=$(hass.config.get 'watson_stt.password')
-  hass.log.debug "Watson STT password: ${WATSON_STT_PASSWORD}"
+  hass.log.trace "Watson STT password: ${WATSON_STT_PASSWORD}"
 else
   hass.log.fatal "Watson STT no apikey or username and password; exiting"
-  exit
+  hass.die
 fi
 
 ## NLU
@@ -212,7 +212,7 @@ hass.log.debug "Watson NLU: " $(hass.config.get "watson_nlu")
 
 if [[ -z $(hass.config.get 'watson_nlu') ]]; then
   hass.log.fatal "No Watson NLU credentials; exiting"
-  exit
+  hass.die
 fi
 
 if [[ -n $(hass.config.get 'watson_nlu.url') ]]; then
@@ -220,7 +220,7 @@ if [[ -n $(hass.config.get 'watson_nlu.url') ]]; then
   hass.log.debug "Watson NLU URL: ${WATSON_NLU_URL}"
 else
   hass.log.fatal "No Watson NLU URL specified; exiting"
-  exit
+  hass.die
 fi
 
 if [[ -n $(hass.config.get 'watson_nlu.apikey') ]]; then
@@ -235,7 +235,7 @@ elif [[ -n $(hass.config.get 'watson_nlu.username') && -n $(hass.config.get 'wat
   hass.log.debug "Watson NLU password: ${WATSON_NLU_PASSWORD}"
 else
   hass.log.fatal "Watson NLU no apikey or username and password; exiting"
-  exit
+  hass.die
 fi
 
 ###
@@ -244,7 +244,7 @@ fi
 
 # FIND TOPICS
 TOPIC_NAMES=$(curl -sL -H "X-Auth-Token: $KAFKA_API_KEY" $KAFKA_ADMIN_URL/admin/topics | jq -j '.[]|.name," "')
-if [ $? != 0 ]; then hass.log.fatal "Unable to retrieve Kafka topics; exiting"; exit; fi
+if [ $? != 0 ]; then hass.log.fatal "Unable to retrieve Kafka topics; exiting"; hass.die; fi
 hass.log.debug "Topics availble: ${TOPIC_NAMES}"
 TOPIC_FOUND=""
 for TN in ${TOPIC_NAMES}; do
@@ -254,10 +254,10 @@ for TN in ${TOPIC_NAMES}; do
 done
 if [ -z "${TOPIC_FOUND}" ]; then
   hass.log.info "Topic ${KAFKA_TOPIC} not found; exiting"
-  exit
+  hass.die
   hass.log.debug "Creating topic ${KAFKA_TOPIC} at ${KAFKA_ADMIN_URL} using /admin/topics"
   curl -sL -H "X-Auth-Token: $KAFKA_API_KEY" -d "{ \"name\": \"$KAFKA_TOPIC\", \"partitions\": 2 }" $KAFKA_ADMIN_URL/admin/topics
-  if [ $? != 0 ]; then hass.log.fatal "Unable to create Kafka topic ${KAFKA_TOPIC}; exiting"; exit; fi
+  if [ $? != 0 ]; then hass.log.fatal "Unable to create Kafka topic ${KAFKA_TOPIC}; exiting"; hass.die; fi
 else
   hass.log.debug "Topic found: ${KAFKA_TOPIC}"
 fi
@@ -265,7 +265,7 @@ fi
 HZN=$(command -v hzn)
 if [ -z "${HZN}" ]; then
   hass.log.fatal "Failure to install horizon CLI"
-  exit
+  hass.die
 fi
 
 ###
@@ -320,10 +320,10 @@ elif [ -n ${WORKLOAD_FOUND} ]; then
   hass.log.debug "Found pattern in existing agreement: ${PATTERN_URL}"
 elif [[ ${COUNT} > 0 ]]; then
   hass.log.fatal "Existing non-matching pattern agreement found; exiting: ${AGREEMENTS}"
-  exit
+  hass.die
 else
   hass.log.fatal "Invalid state; exiting"
-  exit
+  hass.die
 fi
 
 hass.log.info "Device ${DEVICE_ID} in ${DEVICE_ORG} registered for pattern ${PATTERN_ID} from ${PATTERN_ORG}"
@@ -342,51 +342,62 @@ while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_
 
   kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC" | jq -c --unbuffered "${JQ}" | while read -r; do
     if [ -n "${REPLY}" ]; then
-      hass.log.debug "Message received: " $(echo "${REPLY}" | jq -c '.audio="redacted"')
+      hass.log.info "Message received: " $(echo "${REPLY}" | jq -c '.audio="redacted"')
       PAYLOAD="${REPLY}"
       AUDIO=$(echo "${PAYLOAD}" | jq -r '.audio')
       if [ -z "${AUDIO}" ]; then
-        hass.log.debug "No audio in payload ${PAYLOAD}"
-        continue
-      fi
-      STT=$(echo "${AUDIO}" | base64 --decode | curl -sL --data-binary @- -u "${WATSON_STT_USERNAME}:${WATSON_STT_PASSWORD}" -H "Content-Type: audio/mp3" "${WATSON_STT_URL}")
-      if [[ $? == 0 && -n "${STT}" ]]; then
-	hass.log.debug "Got STT " $(echo "${STT}" | jq -c '.')
-        NR=$(echo "${STT}" | jq '.results?|length')
-        if [[ ${NR} == 0 ]]; then hass.log.warning "No STT results; continuing"; continue; fi 
-        hass.log.debug "STT produced ${NR} results"
-	PAYLOAD=$(echo "${PAYLOAD}" | jq -c '.stt='"${STT}")
-        R=0; while [ ${R} -lt ${NR} ]; do
-          NA=$(echo "${STT}" | jq -r '.results['${R}'].alternatives|length')
-          hass.log.debug "STT result ${R} with ${NA} alternatives"
-          A=0; while [ ${A} -lt ${NA} ]; do
-            hass.log.debug "Alternative ${A}"
-            C=$(echo "${STT}" | jq -r '.results['${R}'].alternatives['${A}'].confidence')
-            T=$(echo "${STT}" | jq -r '.results['${R}'].alternatives['${A}'].transcript')
-            hass.log.debug "Confidence ${C} for transcript ${T}"
-            N=$(echo '{"text":"'"${T}"'","features":{"sentiment":{},"keywords":{}}}' | curl -sL -d @- -u "${WATSON_NLU_USERNAME}:${WATSON_NLU_PASSWORD}" -H "Content-Type: application/json" "${WATSON_NLU_URL}")
-            if [[ $? != 0 || -z "${N}" || $(echo "${N}" | jq '.error?!=null') == "true" ]]; then
-	      hass.log.warning "NLU request failed" $(echo "${N}" | jq -c '.')
-	    else
-              hass.log.debug "Understood results ${R}, alternative ${A}: " $(echo "${N}" | jq -c '.')
-              PAYLOAD=$(echo "${PAYLOAD}" | jq -c '.stt.results['${R}'].alternatives['${A}'].nlu='"${N}")
-	    fi
-            hass.log.debug "Incrementing to next alternative"
-            A=$((A+1))
-          done
-          hass.log.debug "Incrementing to next result"
-          R=$((R+1))
-        done  
-        hass.log.debug "Done with results"
+        hass.log.debug "No audio in payload ${PAYLOAD}; not processing STT or NLU"
+      elif [[ $(echo "${PAYLOAD}" | jq -r '.frequency') != 0 ]]; then
+	hass.log.trace "Received message with non-zero frequency; requesting STT from ${WATSON_STT_URL}"
+	STT=$(echo "${AUDIO}" | base64 --decode | curl -sL --data-binary @- -u "${WATSON_STT_USERNAME}:${WATSON_STT_PASSWORD}" -H "Content-Type: audio/mp3" "${WATSON_STT_URL}")
+	if [[ $? == 0 && -n "${STT}" ]]; then
+	  hass.log.trace "Received STT response:" $(echo "${STT}" | jq -c '.')
+	  NR=$(echo "${STT}" | jq '.results?|length')
+	  if [[ ${NR} > 0 ]]; then
+	    hass.log.trace "STT produced ${NR} results"
+	    R=0; while [ ${R} -lt ${NR} ]; do
+	      NA=$(echo "${STT}" | jq -r '.results['${R}'].alternatives|length')
+	      hass.log.trace "STT result ${R} with ${NA} alternatives"
+	      A=0; while [ ${A} -lt ${NA} ]; do
+		hass.log.trace "Alternative ${A}"
+		C=$(echo "${STT}" | jq -r '.results['${R}'].alternatives['${A}'].confidence')
+		T=$(echo "${STT}" | jq -r '.results['${R}'].alternatives['${A}'].transcript')
+		hass.log.trace "Confidence ${C} for transcript ${T}"
+		N=$(echo '{"text":"'"${T}"'","features":{"sentiment":{},"keywords":{}}}' | curl -sL -d @- -u "${WATSON_NLU_USERNAME}:${WATSON_NLU_PASSWORD}" -H "Content-Type: application/json" "${WATSON_NLU_URL}")
+		if [[ $? != 0 || -z "${N}" || $(echo "${N}" | jq '.error?!=null') == "true" ]]; then
+		  hass.log.debug "NLU request failed" $(echo "${N}" | jq -c '.')
+		  STT=$(echo "${STT}" | jq -c '.results['${R}'].alternatives['${A}'].nlu=null')
+		else
+		  hass.log.trace "Understood results ${R}, alternative ${A}: " $(echo "${N}" | jq -c '.')
+		  STT=$(echo "${STT}" | jq -c '.results['${R}'].alternatives['${A}'].nlu='"${N}")
+		fi
+		hass.log.trace "Incrementing to next alternative"
+		A=$((A+1))
+	      done
+	      hass.log.trace "Incrementing to next result"
+	      R=$((R+1))
+	    done  
+	    hass.log.trace "Done with ${NR} STT results"
+	  else
+            hass.log.debug "Zero STT results"
+          fi
+        else
+	  hass.log.debug "Failed to convert speech to text"
+	  STT='{"results":[{"alternatives":[{"confidence":0.0,"transcript":"*** FAIL ***"}],"final":null}],"result_index":0}'
+	fi
       else
-	hass.log.warning "Failed to convert speech to text; continuing"
-	continue
+	hass.log.debug "Mock SDR; using mock STT results with no NLU"
+	STT='{"results":[{"alternatives":[{"confidence":0.0,"transcript":"*** MOCK ***"}],"final":null}],"result_index":-1}'
+	PAYLOAD=$(echo "${PAYLOAD}" | jq '.audio=""|.bytes=0')
+	hass.log.trace "Removed audio from payload"
       fi
+      hass.log.trace "Using STT results: " $(echo "${STT}" | jq -c '.')
+      PAYLOAD=$(echo "${PAYLOAD}" | jq -c '.stt='"${STT}")
     else
       hass.log.warning "Null message received; continuing"
       continue
     fi
-    hass.log.debug "Posting PAYLOAD: " $(echo "${PAYLOAD}" | jq -c '.audio="redacted"')
+    hass.log.info "Posting PAYLOAD: " $(echo "${PAYLOAD}" | jq -c '.audio="redacted"')
     echo "${PAYLOAD}" | ${MQTT} -l -t "${MQTT_TOPIC}"
   done
   hass.log.debug "Unexpected failure of kafkacat"
