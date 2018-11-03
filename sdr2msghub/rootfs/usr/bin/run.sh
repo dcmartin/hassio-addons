@@ -130,7 +130,6 @@ DEVICE_ORG=$(echo "$JSON" | jq -r '.horizon.organization?')
 VALUE=$(hass.config.get "listen")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="false"; fi
 hass.log.trace "Listen: ${VALUE}"
-JSON="${JSON}"',"listen":"'"${VALUE}"'"}'
 LISTEN_ONLY=${VALUE}
 
 ###
@@ -139,7 +138,6 @@ LISTEN_ONLY=${VALUE}
 VALUE=$(hass.config.get "mock")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="false"; fi
 hass.log.trace "Mock: ${VALUE}"
-JSON="${JSON}"',"mock":"'"${VALUE}"'"}'
 MOCK_SDR=${VALUE}
 
 ###
