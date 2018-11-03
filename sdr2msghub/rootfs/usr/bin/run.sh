@@ -318,9 +318,7 @@ JQ='{"date":.ts,"name":.devID,"frequency":.freq,"value":.expectedValue,"longitud
 
 hass.log.info "Listening for topic ${KAFKA_TOPIC}, processing with STT and NLU and posting to ${MQTT_TOPIC} at host ${MQTT_HOST} on port ${MQTT_PORT}..."
 
-# wait on kafkacat death and re-start as long as token is valid
-while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_URL}" ]]; do
-
+  # wait on kafkacat death
   kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC" | jq -c --unbuffered "${JQ}" | while read -r; do
     if [ -n "${REPLY}" ]; then
       hass.log.info "RECEIVED: " $(echo "${REPLY}" | jq -c '.audio="redacted"')
@@ -385,9 +383,6 @@ while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_
     fi
   done
   hass.log.debug "Unexpected failure of kafkacat"
-done
-
-hass.log.fatal "Workload no longer valid"
 
 }
 
