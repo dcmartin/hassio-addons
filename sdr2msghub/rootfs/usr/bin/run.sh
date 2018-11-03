@@ -53,7 +53,6 @@ if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No exchan
 JSON="${JSON}"',"password":"'"${VALUE}"'"'
 export HZN_EXCHANGE_USER_AUTH="${HZN_EXCHANGE_USER_AUTH}:${VALUE}"
 hass.log.trace "Setting HZN_EXCHANGE_USER_AUTH ${HZN_EXCHANGE_USER_AUTH}" >&2
-
 # ORGANIZATION
 VALUE=$(hass.config.get "horizon.organization")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No horizon organization"; hass.die; fi
@@ -80,11 +79,6 @@ JSON="${JSON}"'}'
 ##
 ## KAFKA OPTIONS
 ##
-
-if [[ $(hass.config.has_value 'kafka') == false ]]; then
-  hass.log.fatal "No Kafka credentials"
-  hass.die
-fi
 
 JSON="${JSON}"',"kafka":{"id":"'$(hass.config.get 'kafka.instance_id')'"'
 # BROKERS_SASL
@@ -124,6 +118,9 @@ DEVICE_ID=$(echo "$JSON" | jq -r '.horizon.device?' )
 DEVICE_TOKEN=$(echo "$JSON" | jq -r '.horizon.token?')
 DEVICE_ORG=$(echo "$JSON" | jq -r '.horizon.organization?')
 
+## KAFKA TOPIC
+KAFKA_TOPIC="sdr-audio" # alternatively $(echo "${DEVICE_ORG}.${PATTERN_ORG}_${PATTERN_ID}" | sed 's/@/_/g')
+
 ###
 ### TURN on/off listen only mode
 ###
@@ -140,65 +137,38 @@ if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="false"; fi
 hass.log.trace "Mock: ${VALUE}"
 MOCK_SDR=${VALUE}
 
-###
-### KAFKA TOPIC
-###
-
-# KAFKA_TOPIC=$(echo "${DEVICE_ORG}.${PATTERN_ORG}_${PATTERN_ID}" | sed 's/@/_/g')
-KAFKA_TOPIC="sdr-audio"
-
 ## MQTT
 
-if [[ $(hass.config.has_value 'mqtt') == "false" ]]; then
-  hass.log.fatal "No MQTT credentials; exiting"
-  hass.die
-fi
+VALUE=$(hass.config.get "mqtt.host")
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="core-mosquitto"; fi
+hass.log.debug "MQTT host: ${VALUE}"
+MQTT_HOST=${VALUE}
 
-if [[ $(hass.config.has_value 'mqtt.host') == "false" ]]; then
-  MQTT_HOST="core-mosquitto"
-  hass.log.info "No MQTT host; using ${MQTT_HOST}"
-else
-  MQTT_HOST=$(hass.config.get "mqtt.host")
-  hass.log.info "MQTT host: ${MQTT_HOST}"
-fi
+VALUE=$(hass.config.get "mqtt.port")
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="1883"; fi
+hass.log.debug "MQTT port: ${VALUE}"
+MQTT_PORT=${VALUE}
 
-if [[ $(hass.config.has_value 'mqtt.port') == "false" ]]; then
-  MQTT_PORT=1883
-  hass.log.info "No MQTT port; using ${MQTT_PORT}"
-else
-  MQTT_PORT=$(hass.config.get "mqtt.port")
-  hass.log.debug "MQTT port: ${MQTT_PORT}"
-fi
+VALUE=$(hass.config.get "mqtt.topic")
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="kafka/${KAFKA_TOPIC}"; fi
+hass.log.debug "MQTT topic: ${VALUE}"
+MQTT_TOPIC=${VALUE}
 
-# define command
+# set command
 MQTT="mosquitto_pub -h ${MQTT_HOST} -p ${MQTT_PORT}"
 # test if username and password supplied
-if [[ $(hass.config.has_value 'mqtt.username') && $(hass.config.has_value 'mqtt.password') ]]; then
-  MQTT_USERNAME=$(hass.config.get "mqtt.username")
-  hass.log.debug "MQTT username: ${MQTT_USERNAME}"
-  MQTT_PASSWORD=$(hass.config.get "mqtt.password")
-  hass.log.trace "MQTT password: ${MQTT_PASSWORD}"
+if [[ -n MQTT_USERNAME=$(hass.config.get "mqtt.username") && -n MQTT_PASSWORD=$(hass.config.get "mqtt.password") ]]; then
   # update command
   MQTT="${MQTT} -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD}"
-fi
-
-if [[ $(hass.config.has_value 'mqtt.topic') ]]; then
-  MQTT_TOPIC=$(hass.config.get "mqtt.topic")
-  hass.log.info "MQTT topic: ${MQTT_TOPIC}"
-else
-  MQTT_TOPIC="kafka/${KAFKA_TOPIC}"
-  hass.log.info "No MQTT topic; using ${MQTT_TOPIC}"
 fi
 
 ## STT
 
 hass.log.trace "Watson STT: " $(hass.config.get "watson_stt")
-
 if [[ -z $(hass.config.get 'watson_stt') ]]; then
   hass.log.fatal "No Watson STT credentials; exiting"
   hass.die
 fi
-
 if [[ -n $(hass.config.get 'watson_stt.url') ]]; then
   WATSON_STT_URL=$(hass.config.get "watson_stt.url")
   hass.log.info "Watson STT URL: ${WATSON_STT_URL}"
@@ -206,7 +176,6 @@ else
   hass.log.fatal "No Watson STT URL; exiting"
   hass.die
 fi
-
 if [[ -n $(hass.config.get 'watson_nlu.apikey') ]]; then
   WATSON_STT_USERNAME="apikey"
   hass.log.debug "Watson STT username: ${WATSON_STT_USERNAME}"
@@ -225,12 +194,10 @@ fi
 ## NLU
 
 hass.log.trace "Watson NLU: " $(hass.config.get "watson_nlu")
-
 if [[ -z $(hass.config.get 'watson_nlu') ]]; then
   hass.log.fatal "No Watson NLU credentials; exiting"
   hass.die
 fi
-
 if [[ -n $(hass.config.get 'watson_nlu.url') ]]; then
   WATSON_NLU_URL=$(hass.config.get "watson_nlu.url")
   hass.log.info "Watson NLU URL: ${WATSON_NLU_URL}"
@@ -238,7 +205,6 @@ else
   hass.log.fatal "No Watson NLU URL specified; exiting"
   hass.die
 fi
-
 if [[ -n $(hass.config.get 'watson_nlu.apikey') ]]; then
   WATSON_NLU_USERNAME="apikey"
   hass.log.debug "Watson NLU username: ${WATSON_NLU_USERNAME}"
