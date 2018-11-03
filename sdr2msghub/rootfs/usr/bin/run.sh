@@ -131,6 +131,7 @@ VALUE=$(hass.config.get "listen")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="false"; fi
 hass.log.trace "Listen: ${VALUE}"
 JSON="${JSON}"',"listen":"'"${VALUE}"'"}'
+LISTEN_ONLY=${VALUE}
 
 ###
 ### TURN on/off MOCK SDR
@@ -139,6 +140,7 @@ VALUE=$(hass.config.get "mock")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="false"; fi
 hass.log.trace "Mock: ${VALUE}"
 JSON="${JSON}"',"mock":"'"${VALUE}"'"}'
+MOCK_SDR=${VALUE}
 
 ###
 ### KAFKA TOPIC
