@@ -306,9 +306,9 @@ if [[ -n "${HZN}" && "${LISTEN_ONLY}" != "true" ]]; then
       fi
     done
   fi
-
-  if [[ $COUNT > 0 && $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; then
-    hass.log.info "Existing agreeement with another device identifier; unregistering"
+  # if a variety of conditions are true; start-over
+  if [[ $COUNT > 0 && $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false && $(hzn node list | jq '.configstate.state?=="unconfigured"') == false ]]; then
+    hass.log.info "Existing agreement with another device identifier; unregistering"
     hzn unregister -f
     while [[ $(hzn node list | jq '.configstate.state?=="unconfigured"') == false ]]; do hass.log.debug "Waiting for unregistration to complete (10)"; sleep 10; done
     # hass.log.debug "Waiting for unregistration to complete; sleeping (30)"
