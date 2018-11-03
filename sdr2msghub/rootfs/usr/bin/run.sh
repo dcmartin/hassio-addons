@@ -81,7 +81,7 @@ JSON="${JSON}"'}'
 ## KAFKA OPTIONS
 ##
 
-if [[ $(hass.config.has_value 'kafka') == false ]]; then
+if [[ $(hass.config.exists 'kafka') == false ]]; then
   hass.log.fatal "No Kafka credentials"
   hass.die
 fi
@@ -128,8 +128,8 @@ DEVICE_ORG=$(echo "$JSON" | jq -r '.horizon.organization?')
 ### TURN on/off listen only mode
 ###
 
-if [[ $(hass.config.has_value 'listen') ]]; then
-  LISTEN_ONLY=$(hass.config.get "listen")
+if [[ $(hass.config.exists 'listen') ]]; then
+  LISTEN_ONLY=$(hass.config.get 'listen')
   hass.log.info "Listen only: ${LISTEN_ONLY}"
 else
   hass.log.debug "Listen only mode off by default" 
@@ -140,8 +140,8 @@ fi
 ### TURN on/off MOCK SDR
 ###
 
-if [[ $(hass.config.has_value 'mock') ]]; then
-  MOCK_SDR=$(hass.config.get "mock")
+if [[ $(hass.config.exists 'mock') ]]; then
+  MOCK_SDR=$(hass.config.get 'mock')
   hass.log.info "Mock SDR: ${MOCK_SDR}"
 else
   hass.log.debug "Ignoring mock SDR messages by default" 
@@ -162,7 +162,7 @@ if [[ $(hass.config.exists 'mqtt') == "false" ]]; then
   hass.die
 fi
 
-if [[ $(hass.config.has_value 'mqtt.host') == "false" ]]; then
+if [[ $(hass.config.exists 'mqtt.host') == "false" ]]; then
   MQTT_HOST="core-mosquitto"
   hass.log.info "No MQTT host; using ${MQTT_HOST}"
 else
@@ -170,7 +170,7 @@ else
   hass.log.info "MQTT host: ${MQTT_HOST}"
 fi
 
-if [[ $(hass.config.has_value 'mqtt.port') == "false" ]]; then
+if [[ $(hass.config.exists 'mqtt.port') == "false" ]]; then
   MQTT_PORT=1883
   hass.log.info "No MQTT port; using ${MQTT_PORT}"
 else
@@ -181,7 +181,7 @@ fi
 # define command
 MQTT="mosquitto_pub -h ${MQTT_HOST} -p ${MQTT_PORT}"
 # test if username and password supplied
-if [[ $(hass.config.has_value 'mqtt.username') && $(hass.config.has_value 'mqtt.password') ]]; then
+if [[ $(hass.config.exists 'mqtt.username') && $(hass.config.exists 'mqtt.password') ]]; then
   MQTT_USERNAME=$(hass.config.get "mqtt.username")
   hass.log.debug "MQTT username: ${MQTT_USERNAME}"
   MQTT_PASSWORD=$(hass.config.get "mqtt.password")
@@ -190,7 +190,7 @@ if [[ $(hass.config.has_value 'mqtt.username') && $(hass.config.has_value 'mqtt.
   MQTT="${MQTT} -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD}"
 fi
 
-if [[ $(hass.config.has_value 'mqtt.topic') ]]; then
+if [[ $(hass.config.exists 'mqtt.topic') ]]; then
   MQTT_TOPIC=$(hass.config.get "mqtt.topic")
   hass.log.info "MQTT topic: ${MQTT_TOPIC}"
 else
