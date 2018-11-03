@@ -157,9 +157,9 @@ MQTT_TOPIC=${VALUE}
 # set command
 MQTT="mosquitto_pub -h ${MQTT_HOST} -p ${MQTT_PORT}"
 # test if username and password supplied
-if [[ -n MQTT_USERNAME=$(hass.config.get "mqtt.username") && -n MQTT_PASSWORD=$(hass.config.get "mqtt.password") ]]; then
+if [[ $(hass.config.exists "mqtt.username") && $(hass.config.exists "mqtt.password") ]]; then
   # update command
-  MQTT="${MQTT} -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD}"
+  MQTT="${MQTT} -u $(hass.config.get 'mqtt.username') -P (hass.config.get 'mqtt.password')"
 fi
 
 ## STT
