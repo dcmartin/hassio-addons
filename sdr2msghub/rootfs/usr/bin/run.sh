@@ -127,26 +127,18 @@ DEVICE_ORG=$(echo "$JSON" | jq -r '.horizon.organization?')
 ###
 ### TURN on/off listen only mode
 ###
-
-if [[ $(hass.config.exists 'listen') ]]; then
-  LISTEN_ONLY=$(hass.config.get 'listen')
-  hass.log.info "Listen only: ${LISTEN_ONLY}"
-else
-  hass.log.debug "Listen only mode off by default" 
-  LISTEN_ONLY="false"
-fi
+VALUE=$(hass.config.get "listen")
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="false"; fi
+hass.log.trace "Listen: ${VALUE}"
+JSON="${JSON}"',"listen":"'"${VALUE}"'"}'
 
 ###
 ### TURN on/off MOCK SDR
 ###
-
-if [[ $(hass.config.exists 'mock') ]]; then
-  MOCK_SDR=$(hass.config.get 'mock')
-  hass.log.info "Mock SDR: ${MOCK_SDR}"
-else
-  hass.log.debug "Ignoring mock SDR messages by default" 
-  MOCK_SDR="false"
-fi
+VALUE=$(hass.config.get "mock")
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="false"; fi
+hass.log.trace "Mock: ${VALUE}"
+JSON="${JSON}"',"mock":"'"${VALUE}"'"}'
 
 ###
 ### KAFKA TOPIC
