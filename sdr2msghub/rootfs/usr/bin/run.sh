@@ -353,7 +353,7 @@ while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_
 
   kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC" | jq -c --unbuffered "${JQ}" | while read -r; do
     if [ -n "${REPLY}" ]; then
-      hass.log.info "Message received: " $(echo "${REPLY}" | jq -c '.audio="redacted"')
+      hass.log.info "RECEIVED: " $(echo "${REPLY}" | jq -c '.audio="redacted"')
       PAYLOAD="${REPLY}"
       AUDIO=$(echo "${PAYLOAD}" | jq -r '.audio')
       if [ -z "${AUDIO}" ]; then
@@ -370,16 +370,15 @@ while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_
 	      NA=$(echo "${STT}" | jq -r '.results['${R}'].alternatives|length')
 	      hass.log.trace "STT result ${R} with ${NA} alternatives"
 	      A=0; while [ ${A} -lt ${NA} ]; do
-		hass.log.trace "Alternative ${A}"
 		C=$(echo "${STT}" | jq -r '.results['${R}'].alternatives['${A}'].confidence')
 		T=$(echo "${STT}" | jq -r '.results['${R}'].alternatives['${A}'].transcript')
-		hass.log.debug "Confidence ${C} for transcript ${T}"
+		hass.log.trace "Alternative ${A}: Confidence ${C}; transcript: ${T}"
 		N=$(echo '{"text":"'"${T}"'","features":{"sentiment":{},"keywords":{}}}' | curl -sL -d @- -u "${WATSON_NLU_USERNAME}:${WATSON_NLU_PASSWORD}" -H "Content-Type: application/json" "${WATSON_NLU_URL}")
 		if [[ $? != 0 || -z "${N}" || $(echo "${N}" | jq '.error?!=null') == "true" ]]; then
-		  hass.log.debug "NLU request failed on alternative ${A}; setting NLU to null; transcript ${T} response:" $(echo "${N}" | jq -c '.')
+		  hass.log.debug "NLU request failed on transcript ${T}; setting NLU to null; return: " $(echo "${N}" | jq -c '.')
 		  STT=$(echo "${STT}" | jq -c '.results['${R}'].alternatives['${A}'].nlu=null')
 		else
-		  hass.log.trace "Understood results ${R}, alternative ${A}: " $(echo "${N}" | jq -c '.')
+		  hass.log.debug "NLU for result ${R}; alternative ${A}: " $(echo "${N}" | jq -c '.')
 		  STT=$(echo "${STT}" | jq -c '.results['${R}'].alternatives['${A}'].nlu='"${N}")
 		fi
 		hass.log.trace "Incrementing to next alternative"
@@ -390,10 +389,10 @@ while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_
 	    done  
 	    hass.log.trace "Done with ${NR} STT results"
 	  else
-            hass.log.debug "Zero STT results"
+            hass.log.debug "No STT results"
           fi
         else
-	  hass.log.debug "Failed to convert speech to text"
+	  hass.log.debug "Failed at STT"
 	  STT='{"results":[{"alternatives":[{"confidence":0.0,"transcript":"*** FAIL ***"}],"final":null}],"result_index":0}'
 	fi
       else
@@ -409,10 +408,10 @@ while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_
       continue
     fi
     if [[ $(echo "${PAYLOAD}" | jq -r '.bytes') > 0 || ${MOCK_SDR} == "true" ]]; then
-      hass.log.info "Posting PAYLOAD: " $(echo "${PAYLOAD}" | jq -c '.audio="redacted"')
+      hass.log.info "POSTING: " $(echo "${PAYLOAD}" | jq -c '.audio="redacted"')
       echo "${PAYLOAD}" | ${MQTT} -l -t "${MQTT_TOPIC}"
     else
-      hass.log.info "Ignoring zero bytes audio; MOCK_SDR is ${MOCK_SDR}: " $(echo "${PAYLOAD}" | jq -c '.audio="redacted"')
+      hass.log.debug "Ignoring zero bytes audio; MOCK_SDR is ${MOCK_SDR}"
     fi
   done
   hass.log.debug "Unexpected failure of kafkacat"
