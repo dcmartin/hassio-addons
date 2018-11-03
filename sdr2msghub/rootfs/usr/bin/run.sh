@@ -81,7 +81,7 @@ JSON="${JSON}"'}'
 ## KAFKA OPTIONS
 ##
 
-if [[ $(hass.config.exists 'kafka') == false ]]; then
+if [[ $(hass.config.has_value 'kafka') == false ]]; then
   hass.log.fatal "No Kafka credentials"
   hass.die
 fi
@@ -149,12 +149,12 @@ KAFKA_TOPIC="sdr-audio"
 
 ## MQTT
 
-if [[ $(hass.config.exists 'mqtt') == "false" ]]; then
+if [[ $(hass.config.has_value 'mqtt') == "false" ]]; then
   hass.log.fatal "No MQTT credentials; exiting"
   hass.die
 fi
 
-if [[ $(hass.config.exists 'mqtt.host') == "false" ]]; then
+if [[ $(hass.config.has_value 'mqtt.host') == "false" ]]; then
   MQTT_HOST="core-mosquitto"
   hass.log.info "No MQTT host; using ${MQTT_HOST}"
 else
@@ -162,7 +162,7 @@ else
   hass.log.info "MQTT host: ${MQTT_HOST}"
 fi
 
-if [[ $(hass.config.exists 'mqtt.port') == "false" ]]; then
+if [[ $(hass.config.has_value 'mqtt.port') == "false" ]]; then
   MQTT_PORT=1883
   hass.log.info "No MQTT port; using ${MQTT_PORT}"
 else
@@ -173,7 +173,7 @@ fi
 # define command
 MQTT="mosquitto_pub -h ${MQTT_HOST} -p ${MQTT_PORT}"
 # test if username and password supplied
-if [[ $(hass.config.exists 'mqtt.username') && $(hass.config.exists 'mqtt.password') ]]; then
+if [[ $(hass.config.has_value 'mqtt.username') && $(hass.config.has_value 'mqtt.password') ]]; then
   MQTT_USERNAME=$(hass.config.get "mqtt.username")
   hass.log.debug "MQTT username: ${MQTT_USERNAME}"
   MQTT_PASSWORD=$(hass.config.get "mqtt.password")
@@ -182,7 +182,7 @@ if [[ $(hass.config.exists 'mqtt.username') && $(hass.config.exists 'mqtt.passwo
   MQTT="${MQTT} -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD}"
 fi
 
-if [[ $(hass.config.exists 'mqtt.topic') ]]; then
+if [[ $(hass.config.has_value 'mqtt.topic') ]]; then
   MQTT_TOPIC=$(hass.config.get "mqtt.topic")
   hass.log.info "MQTT topic: ${MQTT_TOPIC}"
 else
