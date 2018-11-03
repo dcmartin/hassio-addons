@@ -125,6 +125,17 @@ DEVICE_TOKEN=$(echo "$JSON" | jq -r '.horizon.token?')
 DEVICE_ORG=$(echo "$JSON" | jq -r '.horizon.organization?')
 
 ###
+### TURN on/off MOCK SDR
+###
+
+if [[ MOCK_SDR=$(hass.config.has_value 'mock') == "false" ]]; then
+  hass.log.info "Ignoring mock SDR messages" 
+else
+  MOCK_SDR=$(hass.config.get "mock")
+  hass.log.info "Mock SDR: ${MOCK_SDR}"
+fi
+
+###
 ### KAFKA TOPIC
 ###
 
@@ -262,71 +273,70 @@ else
   hass.log.info "Topic found: ${KAFKA_TOPIC}"
 fi
 
-HZN=$(command -v hzn)
-if [ -z "${HZN}" ]; then
-  hass.log.fatal "Failure to install horizon CLI"
-  hass.die
-fi
-
 ###
 ### CONFIGURE HORIZON
 ###
 
-# check for outstanding agreements
-AGREEMENTS=$(hzn agreement list)
-COUNT=$(echo "${AGREEMENTS}" | jq '.?|length')
-hass.log.trace "Found ${COUNT} agreements"
-WORKLOAD_FOUND=""
-if [[ ${COUNT} > 0 ]]; then
-  WORKLOADS=$(echo "${AGREEMENTS}" | jq -r '.[]|.workload_to_run.url')
-  for WL in ${WORKLOADS}; do
-    if [ "${WL}" == "${PATTERN_URL}" ]; then
-      WORKLOAD_FOUND=true
-    fi
-  done
-fi
-
-if [[ $COUNT > 0 && $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; then
-  hass.log.info "Existing agreeement with another device identifier; unregistering"
-  hzn unregister -f
-  while [[ $(hzn node list | jq '.configstate.state?=="unconfigured"') == false ]]; do hass.log.debug "Waiting for unregistration to complete (10)"; sleep 10; done
-  # hass.log.debug "Waiting for unregistration to complete; sleeping (30)"
-  # sleep 30
-  COUNT=0
-  AGREEMENTS=""
+# test if horizon is installed
+HZN=$(command -v hzn)
+if [ -n "${HZN}" ]; then
+  # check for outstanding agreements
+  AGREEMENTS=$(hzn agreement list)
+  COUNT=$(echo "${AGREEMENTS}" | jq '.?|length')
+  hass.log.trace "Found ${COUNT} agreements"
   WORKLOAD_FOUND=""
-  hass.log.trace "Reset agreements, count, and workloads"
-fi
+  if [[ ${COUNT} > 0 ]]; then
+    WORKLOADS=$(echo "${AGREEMENTS}" | jq -r '.[]|.workload_to_run.url')
+    for WL in ${WORKLOADS}; do
+      if [ "${WL}" == "${PATTERN_URL}" ]; then
+	WORKLOAD_FOUND=true
+      fi
+    done
+  fi
 
-# if agreement not found, register device with pattern
-if [[ ${COUNT} == 0 && -z ${WORKLOAD_FOUND} ]]; then
-  INPUT="${KAFKA_TOPIC}.json"
+  if [[ $COUNT > 0 && $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; then
+    hass.log.info "Existing agreeement with another device identifier; unregistering"
+    hzn unregister -f
+    while [[ $(hzn node list | jq '.configstate.state?=="unconfigured"') == false ]]; do hass.log.debug "Waiting for unregistration to complete (10)"; sleep 10; done
+    # hass.log.debug "Waiting for unregistration to complete; sleeping (30)"
+    # sleep 30
+    COUNT=0
+    AGREEMENTS=""
+    WORKLOAD_FOUND=""
+    hass.log.trace "Reset agreements, count, and workloads"
+  fi
 
-  echo '{"services": [{"org": "'"${PATTERN_ORG}"'","url": "'"${PATTERN_URL}"'","versionRange": "[0.0.0,INFINITY)","variables": {' >> "${INPUT}"
-  echo '"MSGHUB_API_KEY": "'"${KAFKA_API_KEY}"'"' >> "${INPUT}"
-  echo '}}]}' >> "${INPUT}"
+  # if agreement not found, register device with pattern
+  if [[ ${COUNT} == 0 && -z ${WORKLOAD_FOUND} ]]; then
+    INPUT="${KAFKA_TOPIC}.json"
 
-  hass.log.debug "Registering device ${DEVICE_ID} organization ${DEVICE_ORG} with pattern ${PATTERN_ORG}/${PATTERN_ID} using input " $(jq -c '.' "${INPUT}")
+    echo '{"services": [{"org": "'"${PATTERN_ORG}"'","url": "'"${PATTERN_URL}"'","versionRange": "[0.0.0,INFINITY)","variables": {' >> "${INPUT}"
+    echo '"MSGHUB_API_KEY": "'"${KAFKA_API_KEY}"'"' >> "${INPUT}"
+    echo '}}]}' >> "${INPUT}"
 
-  # register
-  hzn register -n "${DEVICE_ID}:${DEVICE_TOKEN}" "${DEVICE_ORG}" "${PATTERN_ORG}/${PATTERN_ID}" -f "${INPUT}"
-  # wait for registration
-  while [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; do hass.log.debug "Waiting on registration (60)"; sleep 60; done
-  hass.log.debug "Registration complete for ${DEVICE_ORG}/${DEVICE_ID}"
-  # wait for agreement
-  while [[ $(hzn agreement list | jq '.?==[]') == true ]]; do hass.log.info "Waiting on agreement (10)"; sleep 10; done
-  hass.log.debug "Agreement complete for ${PATTERN_URL}"
-elif [ -n ${WORKLOAD_FOUND} ]; then
-  hass.log.info "Found pattern in existing agreement: ${PATTERN_URL}"
-elif [[ ${COUNT} > 0 ]]; then
-  hass.log.fatal "Existing non-matching pattern agreement found; exiting: ${AGREEMENTS}"
-  hass.die
+    hass.log.debug "Registering device ${DEVICE_ID} organization ${DEVICE_ORG} with pattern ${PATTERN_ORG}/${PATTERN_ID} using input " $(jq -c '.' "${INPUT}")
+
+    # register
+    hzn register -n "${DEVICE_ID}:${DEVICE_TOKEN}" "${DEVICE_ORG}" "${PATTERN_ORG}/${PATTERN_ID}" -f "${INPUT}"
+    # wait for registration
+    while [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; do hass.log.debug "Waiting on registration (60)"; sleep 60; done
+    hass.log.debug "Registration complete for ${DEVICE_ORG}/${DEVICE_ID}"
+    # wait for agreement
+    while [[ $(hzn agreement list | jq '.?==[]') == true ]]; do hass.log.info "Waiting on agreement (10)"; sleep 10; done
+    hass.log.debug "Agreement complete for ${PATTERN_URL}"
+  elif [ -n ${WORKLOAD_FOUND} ]; then
+    hass.log.info "Found pattern in existing agreement: ${PATTERN_URL}"
+  elif [[ ${COUNT} > 0 ]]; then
+    hass.log.fatal "Existing non-matching pattern agreement found; exiting: ${AGREEMENTS}"
+    hass.die
+  else
+    hass.log.fatal "Invalid state; exiting"
+    hass.die
+  fi
+  hass.log.info "Device ${DEVICE_ID} in ${DEVICE_ORG} registered for pattern ${PATTERN_ID} from ${PATTERN_ORG}"
 else
-  hass.log.fatal "Invalid state; exiting"
-  hass.die
+  hass.log.info "Horizon not installed; running in listen-only mode"
 fi
-
-hass.log.info "Device ${DEVICE_ID} in ${DEVICE_ORG} registered for pattern ${PATTERN_ID} from ${PATTERN_ORG}"
 
 ###
 ### ADD ON LOGIC
@@ -397,8 +407,12 @@ while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_
       hass.log.warning "Null message received; continuing"
       continue
     fi
-    hass.log.info "Posting PAYLOAD: " $(echo "${PAYLOAD}" | jq -c '.audio="redacted"')
-    echo "${PAYLOAD}" | ${MQTT} -l -t "${MQTT_TOPIC}"
+    if [[ $(echo "${PAYLOAD}" | jq -r '.bytes') > 0 || ${MOCK_SDR} == "true" ]];
+      hass.log.info "Posting PAYLOAD: " $(echo "${PAYLOAD}" | jq -c '.audio="redacted"')
+      echo "${PAYLOAD}" | ${MQTT} -l -t "${MQTT_TOPIC}"
+    else
+      hass.log.info "Ignoring zero bytes audio; MOCK_SDR is ${MOCK_SDR}: " $(echo "${PAYLOAD}" | jq -c '.audio="redacted"')
+    fi
   done
   hass.log.debug "Unexpected failure of kafkacat"
 done
