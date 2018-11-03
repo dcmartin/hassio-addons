@@ -407,7 +407,7 @@ while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_
       hass.log.warning "Null message received; continuing"
       continue
     fi
-    if [[ $(echo "${PAYLOAD}" | jq -r '.bytes') > 0 || ${MOCK_SDR} == "true" ]];
+    if [[ $(echo "${PAYLOAD}" | jq -r '.bytes') > 0 || ${MOCK_SDR} == "true" ]]; then
       hass.log.info "Posting PAYLOAD: " $(echo "${PAYLOAD}" | jq -c '.audio="redacted"')
       echo "${PAYLOAD}" | ${MQTT} -l -t "${MQTT_TOPIC}"
     else
