@@ -24,7 +24,7 @@ JSON='{"host":"'"$(hostname)"'","arch":"'"$(arch)"'","date":'$(/bin/date +%s)
 VALUE=$(hass.config.get "timezone")
 # Set the correct timezone
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="GMT"; fi
-hass.log.debug "Setting TIMEZONE ${VALUE}" >&2
+hass.log.info "Setting TIMEZONE ${VALUE}" >&2
 cp /usr/share/zoneinfo/${VALUE} /etc/localtime
 JSON="${JSON}"',"timezone":"'"${VALUE}"'"'
 
@@ -40,7 +40,7 @@ JSON="${JSON}"',"horizon":{"pattern":'"${HORIZON_PATTERN}"
 VALUE=$(hass.config.get "horizon.exchange")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No exchange URL"; hass.die; fi
 export HZN_EXCHANGE_URL="${VALUE}"
-hass.log.debug "Setting HZN_EXCHANGE_URL to ${VALUE}" >&2
+hass.log.info "Setting HZN_EXCHANGE_URL to ${VALUE}" >&2
 JSON="${JSON}"',"exchange":"'"${VALUE}"'"'
 # USERNAME
 VALUE=$(hass.config.get "horizon.username")
@@ -65,7 +65,7 @@ if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then
   VALUE="$(hostname)-${VALUE}"
 fi
 JSON="${JSON}"',"device":"'"${VALUE}"'"'
-hass.log.debug "DEVICE_ID ${VALUE}" >&2
+hass.log.info "DEVICE_ID ${VALUE}" >&2
 # TOKEN
 VALUE=$(hass.config.get "horizon.token")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then
@@ -106,7 +106,7 @@ JSON="${JSON}"',"api_key":"'"${VALUE}"'"}'
 ## DONE w/ JSON
 JSON="${JSON}"'}'
 
-hass.log.debug "${JSON}"
+hass.log.trace "${JSON}"
 
 ###
 ### REVIEW
@@ -143,7 +143,7 @@ if [[ $(hass.config.has_value 'mqtt.host') == "false" ]]; then
   hass.log.info "No MQTT host; using ${MQTT_HOST}"
 else
   MQTT_HOST=$(hass.config.get "mqtt.host")
-  hass.log.debug "MQTT host: ${MQTT_HOST}"
+  hass.log.info "MQTT host: ${MQTT_HOST}"
 fi
 
 if [[ $(hass.config.has_value 'mqtt.port') == "false" ]]; then
@@ -161,14 +161,14 @@ if [[ $(hass.config.has_value 'mqtt.username') && $(hass.config.has_value 'mqtt.
   MQTT_USERNAME=$(hass.config.get "mqtt.username")
   hass.log.debug "MQTT username: ${MQTT_USERNAME}"
   MQTT_PASSWORD=$(hass.config.get "mqtt.password")
-  hass.log.debug "MQTT password: ${MQTT_PASSWORD}"
+  hass.log.trace "MQTT password: ${MQTT_PASSWORD}"
   # update command
   MQTT="${MQTT} -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD}"
 fi
 
 if [[ $(hass.config.has_value 'mqtt.topic') ]]; then
   MQTT_TOPIC=$(hass.config.get "mqtt.topic")
-  hass.log.debug "MQTT topic: ${MQTT_TOPIC}"
+  hass.log.info "MQTT topic: ${MQTT_TOPIC}"
 else
   MQTT_TOPIC="kafka/${KAFKA_TOPIC}"
   hass.log.info "No MQTT topic; using ${MQTT_TOPIC}"
@@ -176,7 +176,7 @@ fi
 
 ## STT
 
-hass.log.debug "Watson STT: " $(hass.config.get "watson_stt")
+hass.log.trace "Watson STT: " $(hass.config.get "watson_stt")
 
 if [[ -z $(hass.config.get 'watson_stt') ]]; then
   hass.log.fatal "No Watson STT credentials; exiting"
@@ -185,7 +185,7 @@ fi
 
 if [[ -n $(hass.config.get 'watson_stt.url') ]]; then
   WATSON_STT_URL=$(hass.config.get "watson_stt.url")
-  hass.log.debug "Watson STT URL: ${WATSON_STT_URL}"
+  hass.log.info "Watson STT URL: ${WATSON_STT_URL}"
 else
   hass.log.fatal "No Watson STT URL; exiting"
   hass.die
@@ -198,7 +198,7 @@ if [[ -n $(hass.config.get 'watson_nlu.apikey') ]]; then
   hass.log.trace "Watson STT password: ${WATSON_STT_PASSWORD}"
 elif [[ -n $(hass.config.get 'watson_stt.username') && -n $(hass.config.get 'watson_stt.password') ]]; then
   WATSON_STT_USERNAME=$(hass.config.get 'watson_stt.username')
-  hass.log.debug "Watson STT username: ${WATSON_STT_USERNAME}"
+  hass.log.trace "Watson STT username: ${WATSON_STT_USERNAME}"
   WATSON_STT_PASSWORD=$(hass.config.get 'watson_stt.password')
   hass.log.trace "Watson STT password: ${WATSON_STT_PASSWORD}"
 else
@@ -208,7 +208,7 @@ fi
 
 ## NLU
 
-hass.log.debug "Watson NLU: " $(hass.config.get "watson_nlu")
+hass.log.trace "Watson NLU: " $(hass.config.get "watson_nlu")
 
 if [[ -z $(hass.config.get 'watson_nlu') ]]; then
   hass.log.fatal "No Watson NLU credentials; exiting"
@@ -217,7 +217,7 @@ fi
 
 if [[ -n $(hass.config.get 'watson_nlu.url') ]]; then
   WATSON_NLU_URL=$(hass.config.get "watson_nlu.url")
-  hass.log.debug "Watson NLU URL: ${WATSON_NLU_URL}"
+  hass.log.info "Watson NLU URL: ${WATSON_NLU_URL}"
 else
   hass.log.fatal "No Watson NLU URL specified; exiting"
   hass.die
@@ -227,12 +227,12 @@ if [[ -n $(hass.config.get 'watson_nlu.apikey') ]]; then
   WATSON_NLU_USERNAME="apikey"
   hass.log.debug "Watson NLU username: ${WATSON_NLU_USERNAME}"
   WATSON_NLU_PASSWORD=$(hass.config.get "watson_nlu.apikey")
-  hass.log.debug "Watson NLU password: ${WATSON_NLU_PASSWORD}"
+  hass.log.trace "Watson NLU password: ${WATSON_NLU_PASSWORD}"
 elif [[ -n $(hass.config.get 'watson_nlu.username') && -n $(hass.config.get 'watson_nlu.password') ]]; then
   WATSON_NLU_USERNAME=$(hass.config.get "watson_nlu.username")
   hass.log.debug "Watson NLU username: ${WATSON_NLU_USERNAME}"
   WATSON_NLU_PASSWORD=$(hass.config.get "watson_nlu.password")
-  hass.log.debug "Watson NLU password: ${WATSON_NLU_PASSWORD}"
+  hass.log.trace "Watson NLU password: ${WATSON_NLU_PASSWORD}"
 else
   hass.log.fatal "Watson NLU no apikey or username and password; exiting"
   hass.die
@@ -245,7 +245,7 @@ fi
 # FIND TOPICS
 TOPIC_NAMES=$(curl -sL -H "X-Auth-Token: $KAFKA_API_KEY" $KAFKA_ADMIN_URL/admin/topics | jq -j '.[]|.name," "')
 if [ $? != 0 ]; then hass.log.fatal "Unable to retrieve Kafka topics; exiting"; hass.die; fi
-hass.log.debug "Topics availble: ${TOPIC_NAMES}"
+hass.log.trace "Topics availble: ${TOPIC_NAMES}"
 TOPIC_FOUND=""
 for TN in ${TOPIC_NAMES}; do
   if [ ${TN} == "${KAFKA_TOPIC}" ]; then
@@ -259,7 +259,7 @@ if [ -z "${TOPIC_FOUND}" ]; then
   curl -sL -H "X-Auth-Token: $KAFKA_API_KEY" -d "{ \"name\": \"$KAFKA_TOPIC\", \"partitions\": 2 }" $KAFKA_ADMIN_URL/admin/topics
   if [ $? != 0 ]; then hass.log.fatal "Unable to create Kafka topic ${KAFKA_TOPIC}; exiting"; hass.die; fi
 else
-  hass.log.debug "Topic found: ${KAFKA_TOPIC}"
+  hass.log.info "Topic found: ${KAFKA_TOPIC}"
 fi
 
 HZN=$(command -v hzn)
@@ -275,7 +275,7 @@ fi
 # check for outstanding agreements
 AGREEMENTS=$(hzn agreement list)
 COUNT=$(echo "${AGREEMENTS}" | jq '.?|length')
-hass.log.debug "Found ${COUNT} agreements"
+hass.log.trace "Found ${COUNT} agreements"
 WORKLOAD_FOUND=""
 if [[ ${COUNT} > 0 ]]; then
   WORKLOADS=$(echo "${AGREEMENTS}" | jq -r '.[]|.workload_to_run.url')
@@ -295,7 +295,7 @@ if [[ $COUNT > 0 && $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]
   COUNT=0
   AGREEMENTS=""
   WORKLOAD_FOUND=""
-  hass.log.debug "Reseting agreements, count, and workloads"
+  hass.log.trace "Reset agreements, count, and workloads"
 fi
 
 # if agreement not found, register device with pattern
@@ -317,7 +317,7 @@ if [[ ${COUNT} == 0 && -z ${WORKLOAD_FOUND} ]]; then
   while [[ $(hzn agreement list | jq '.?==[]') == true ]]; do hass.log.info "Waiting on agreement (10)"; sleep 10; done
   hass.log.debug "Agreement complete for ${PATTERN_URL}"
 elif [ -n ${WORKLOAD_FOUND} ]; then
-  hass.log.debug "Found pattern in existing agreement: ${PATTERN_URL}"
+  hass.log.info "Found pattern in existing agreement: ${PATTERN_URL}"
 elif [[ ${COUNT} > 0 ]]; then
   hass.log.fatal "Existing non-matching pattern agreement found; exiting: ${AGREEMENTS}"
   hass.die
@@ -362,10 +362,10 @@ while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_
 		hass.log.trace "Alternative ${A}"
 		C=$(echo "${STT}" | jq -r '.results['${R}'].alternatives['${A}'].confidence')
 		T=$(echo "${STT}" | jq -r '.results['${R}'].alternatives['${A}'].transcript')
-		hass.log.trace "Confidence ${C} for transcript ${T}"
+		hass.log.debug "Confidence ${C} for transcript ${T}"
 		N=$(echo '{"text":"'"${T}"'","features":{"sentiment":{},"keywords":{}}}' | curl -sL -d @- -u "${WATSON_NLU_USERNAME}:${WATSON_NLU_PASSWORD}" -H "Content-Type: application/json" "${WATSON_NLU_URL}")
 		if [[ $? != 0 || -z "${N}" || $(echo "${N}" | jq '.error?!=null') == "true" ]]; then
-		  hass.log.debug "NLU request failed" $(echo "${N}" | jq -c '.')
+		  hass.log.debug "NLU request failed on alternative ${A}; setting NLU to null; transcript ${T} response:" $(echo "${N}" | jq -c '.')
 		  STT=$(echo "${STT}" | jq -c '.results['${R}'].alternatives['${A}'].nlu=null')
 		else
 		  hass.log.trace "Understood results ${R}, alternative ${A}: " $(echo "${N}" | jq -c '.')
@@ -391,7 +391,7 @@ while [[ $(hzn agreement list | jq -r '.[]|.workload_to_run.url') == "${PATTERN_
 	PAYLOAD=$(echo "${PAYLOAD}" | jq '.audio=""|.bytes=0')
 	hass.log.trace "Removed audio from payload"
       fi
-      hass.log.trace "Using STT results: " $(echo "${STT}" | jq -c '.')
+      hass.log.debug "Using STT results: " $(echo "${STT}" | jq -c '.')
       PAYLOAD=$(echo "${PAYLOAD}" | jq -c '.stt='"${STT}")
     else
       hass.log.warning "Null message received; continuing"
