@@ -128,12 +128,12 @@ DEVICE_ORG=$(echo "$JSON" | jq -r '.horizon.organization?')
 ### TURN on/off MOCK SDR
 ###
 
-if [[ $(hass.config.has_value 'mock') == "false" ]]; then
-  hass.log.info "Ignoring mock SDR messages by default" 
-  MOCK_SDR="false"
-else
+if [[ $(hass.config.has_value 'mock') ]]; then
   MOCK_SDR=$(hass.config.get "mock")
   hass.log.info "Mock SDR: ${MOCK_SDR}"
+else
+  hass.log.info "Ignoring mock SDR messages by default" 
+  MOCK_SDR="false"
 fi
 
 ###
