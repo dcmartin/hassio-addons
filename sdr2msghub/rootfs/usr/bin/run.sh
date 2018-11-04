@@ -334,8 +334,21 @@ hass.log.info "Listening for topic ${KAFKA_TOPIC}, processing with STT and NLU a
 	if [[ $? == 0 && -n "${STT}" ]]; then
 	  hass.log.trace "Received STT response:" $(echo "${STT}" | jq -c '.')
 	  NR=$(echo "${STT}" | jq '.results?|length')
+	  hass.log.trace "STT produced ${NR} results"
 	  if [[ ${NR} > 0 ]]; then
-	    hass.log.trace "STT produced ${NR} results"
+
+	    # perform NLU on unified transcript
+	    TRANSCRIPT=$(echo "${STT}" | jq -j '.results[].alternatives[].transcript')
+	    N=$(echo '{"text":"'"${TRANSCRIPT}"'","features":{"sentiment":{},"keywords":{}}}' | curl -sL -d @- -u "${WATSON_NLU_USERNAME}:${WATSON_NLU_PASSWORD}" -H "Content-Type: application/json" "${WATSON_NLU_URL}")
+	    if [[ $? != 0 || -z "${N}" || $(echo "${N}" | jq '.error?!=null') == "true" ]]; then
+	      hass.log.debug "NLU request failed on transcript ${TRANSCRIPT}; setting NLU to null; return: " $(echo "${N}" | jq -c '.')
+	      STT=$(echo "${STT}" | jq -c '.nlu=null')
+	    else
+	      hass.log.trace "NLU for result ${R}; alternative ${A}: " $(echo "${N}" | jq -c '.')
+	      STT=$(echo "${STT}" | jq -c '.nlu='"${N}")
+	    fi
+
+	    # perform NLU on each result alternative
 	    R=0; while [ ${R} -lt ${NR} ]; do
 	      NA=$(echo "${STT}" | jq -r '.results['${R}'].alternatives|length')
 	      hass.log.trace "STT result ${R} with ${NA} alternatives"
@@ -357,6 +370,7 @@ hass.log.info "Listening for topic ${KAFKA_TOPIC}, processing with STT and NLU a
 	      hass.log.trace "Incrementing to next result"
 	      R=$((R+1))
 	    done  
+
 	    hass.log.trace "Done with ${NR} STT results"
 	  else
             hass.log.debug "STT returned zero results: " $(echo "${STT}" | jq -c '.')
