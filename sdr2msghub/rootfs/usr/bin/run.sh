@@ -34,28 +34,53 @@ JSON="${JSON}"',"timezone":"'"${VALUE}"'"'
 
 JSON="${JSON}"',"horizon":{"pattern":'"${HORIZON_PATTERN}"
 
-## OPTIONS that need to be set
+###
+### TURN on/off listen only mode
+###
+VALUE=$(hass.config.get "listen")
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="false"; fi
+hass.log.debug "Listen only mode: ${VALUE}"
+LISTEN_ONLY=${VALUE}
+
+###
+### TURN on/off MOCK SDR
+###
+VALUE=$(hass.config.get "mock")
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="false"; fi
+hass.log.debug "Mock SDR included: ${VALUE}"
+MOCK_SDR=${VALUE}
+
+###
+### TURN on/off ALL_TRANSCRIPTS
+###
+VALUE=$(hass.config.get "transcripts")
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="false"; fi
+hass.log.debug "NLU for individual transcripts: ${VALUE}"
+ALL_TRANSCRIPTS=${VALUE}
+
+
+## HORIZON EXCHANGE
 
 # URL
 VALUE=$(hass.config.get "horizon.exchange")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No exchange URL"; hass.die; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.warning "No exchange URL"; VALUE="null"; fi
 export HZN_EXCHANGE_URL="${VALUE}"
 hass.log.info "Setting HZN_EXCHANGE_URL to ${VALUE}" >&2
 JSON="${JSON}"',"exchange":"'"${VALUE}"'"'
 # USERNAME
 VALUE=$(hass.config.get "horizon.username")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No exchange username"; hass.die; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.warning "No exchange username"; VALUE="null"; fi
 JSON="${JSON}"',"username":"'"${VALUE}"'"'
 HZN_EXCHANGE_USER_AUTH="${VALUE}"
 # PASSWORD
 VALUE=$(hass.config.get "horizon.password")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No exchange password"; hass.die; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.warning "No exchange password"; VALUE="null"; fi
 JSON="${JSON}"',"password":"'"${VALUE}"'"'
 export HZN_EXCHANGE_USER_AUTH="${HZN_EXCHANGE_USER_AUTH}:${VALUE}"
 hass.log.trace "Setting HZN_EXCHANGE_USER_AUTH ${HZN_EXCHANGE_USER_AUTH}" >&2
 # ORGANIZATION
 VALUE=$(hass.config.get "horizon.organization")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No horizon organization"; hass.die; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.warning "No horizon organization"; VALUE="null"; fi
 JSON="${JSON}"',"organization":"'"${VALUE}"'"'
 # DEVICE
 VALUE=$(hass.config.get "horizon.device")
@@ -64,14 +89,14 @@ if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then
   VALUE="$(hostname)-${VALUE}"
 fi
 JSON="${JSON}"',"device":"'"${VALUE}"'"'
-hass.log.info "DEVICE_ID ${VALUE}" >&2
+hass.log.info "EXCHANGE_ID ${VALUE}" >&2
 # TOKEN
 VALUE=$(hass.config.get "horizon.token")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then
   VALUE==$(echo "${HZN_EXCHANGE_USER_AUTH}" | sed 's/.*://')
 fi
 JSON="${JSON}"',"token":"'"${VALUE}"'"'
-hass.log.debug "DEVICE_TOKEN ${VALUE}" >&2
+hass.log.debug "EXCHANGE_TOKEN ${VALUE}" >&2
 
 ## DONE w/ horizon
 JSON="${JSON}"'}'
@@ -100,7 +125,7 @@ JSON="${JSON}"',"api_key":"'"${VALUE}"'"}'
 ## DONE w/ JSON
 JSON="${JSON}"'}'
 
-hass.log.trace "${JSON}"
+hass.log.debug "CONFIGURATION:" $(echo "${JSON}" | jq -c '.')
 
 ###
 ### REVIEW
@@ -114,36 +139,12 @@ KAFKA_BROKER_URL=$(echo "$JSON" | jq -j '.kafka.brokers[]?|.,","')
 KAFKA_ADMIN_URL=$(echo "$JSON" | jq -r '.kafka.admin_url?')
 KAFKA_API_KEY=$(echo "$JSON" | jq -r '.kafka.api_key?')
 
-DEVICE_ID=$(echo "$JSON" | jq -r '.horizon.device?' )
-DEVICE_TOKEN=$(echo "$JSON" | jq -r '.horizon.token?')
-DEVICE_ORG=$(echo "$JSON" | jq -r '.horizon.organization?')
+EXCHANGE_ID=$(echo "$JSON" | jq -r '.horizon.device?' )
+EXCHANGE_TOKEN=$(echo "$JSON" | jq -r '.horizon.token?')
+EXCHANGE_ORG=$(echo "$JSON" | jq -r '.horizon.organization?')
 
 ## KAFKA TOPIC
-KAFKA_TOPIC="sdr-audio" # alternatively $(echo "${DEVICE_ORG}.${PATTERN_ORG}_${PATTERN_ID}" | sed 's/@/_/g')
-
-###
-### TURN on/off listen only mode
-###
-VALUE=$(hass.config.get "listen")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="false"; fi
-hass.log.trace "Listen: ${VALUE}"
-LISTEN_ONLY=${VALUE}
-
-###
-### TURN on/off MOCK SDR
-###
-VALUE=$(hass.config.get "mock")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="false"; fi
-hass.log.trace "Mock: ${VALUE}"
-MOCK_SDR=${VALUE}
-
-###
-### TURN on/off ALL_TRANSCRIPTS
-###
-VALUE=$(hass.config.get "transcripts")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="false"; fi
-hass.log.trace "All transcripts: ${VALUE}"
-ALL_TRANSCRIPTS=${VALUE}
+KAFKA_TOPIC="sdr-audio" # alternatively $(echo "${EXCHANGE_ORG}.${PATTERN_ORG}_${PATTERN_ID}" | sed 's/@/_/g')
 
 ## MQTT
 
@@ -273,7 +274,7 @@ if [[ -n "${HZN}" && "${LISTEN_ONLY}" != "true" ]]; then
     done
   fi
   # if a variety of conditions are true; start-over
-  if [[ $COUNT > 0 && $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == true && $(hzn node list | jq '.configstate.state?=="configured"') == true ]]; then
+  if [[ $COUNT > 0 && $(hzn node list | jq '.id?=="'"${EXCHANGE_ID}"'"') == true && $(hzn node list | jq '.configstate.state?=="configured"') == true ]]; then
     hass.log.info "Existing agreement with this device in a configured state"
   else
     hass.log.debug "Existing agreement with another device identifier or current node unconfigured or configuring; unregistering..."
@@ -295,13 +296,13 @@ if [[ -n "${HZN}" && "${LISTEN_ONLY}" != "true" ]]; then
     echo '"MSGHUB_API_KEY": "'"${KAFKA_API_KEY}"'"' >> "${INPUT}"
     echo '}}]}' >> "${INPUT}"
 
-    hass.log.debug "Registering device ${DEVICE_ID} organization ${DEVICE_ORG} with pattern ${PATTERN_ORG}/${PATTERN_ID} using input " $(jq -c '.' "${INPUT}")
+    hass.log.debug "Registering device ${EXCHANGE_ID} organization ${EXCHANGE_ORG} with pattern ${PATTERN_ORG}/${PATTERN_ID} using input " $(jq -c '.' "${INPUT}")
 
     # register
-    hzn register -n "${DEVICE_ID}:${DEVICE_TOKEN}" "${DEVICE_ORG}" "${PATTERN_ORG}/${PATTERN_ID}" -f "${INPUT}"
+    hzn register -n "${EXCHANGE_ID}:${EXCHANGE_TOKEN}" "${EXCHANGE_ORG}" "${PATTERN_ORG}/${PATTERN_ID}" -f "${INPUT}"
     # wait for registration
-    while [[ $(hzn node list | jq '.id?=="'"${DEVICE_ID}"'"') == false ]]; do hass.log.debug "Waiting on registration (60)"; sleep 60; done
-    hass.log.debug "Registration complete for ${DEVICE_ORG}/${DEVICE_ID}"
+    while [[ $(hzn node list | jq '.id?=="'"${EXCHANGE_ID}"'"') == false ]]; do hass.log.debug "Waiting on registration (60)"; sleep 60; done
+    hass.log.debug "Registration complete for ${EXCHANGE_ORG}/${EXCHANGE_ID}"
     # wait for agreement
     while [[ $(hzn agreement list | jq '.?==[]') == true ]]; do hass.log.info "Waiting on agreement (10)"; sleep 10; done
     hass.log.debug "Agreement complete for ${PATTERN_URL}"
@@ -314,7 +315,7 @@ if [[ -n "${HZN}" && "${LISTEN_ONLY}" != "true" ]]; then
     hass.log.fatal "Invalid state; exiting"
     hass.die
   fi
-  hass.log.info "Device ${DEVICE_ID} in ${DEVICE_ORG} registered for pattern ${PATTERN_ID} from ${PATTERN_ORG}"
+  hass.log.info "Device ${EXCHANGE_ID} in ${EXCHANGE_ORG} registered for pattern ${PATTERN_ID} from ${PATTERN_ORG}"
 else
   hass.log.info "Horizon not installed or running in listen-only: ${LISTEN_ONLY}"
 fi
