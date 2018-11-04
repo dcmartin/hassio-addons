@@ -308,7 +308,7 @@ if [[ -n "${HZN}" && "${LISTEN_ONLY}" != "true" ]]; then
   fi
   hass.log.info "Device ${DEVICE_ID} in ${DEVICE_ORG} registered for pattern ${PATTERN_ID} from ${PATTERN_ORG}"
 else
-  hass.log.info "Horizon not installed; running in listen-only mode"
+  hass.log.info "Horizon not installed or running in listen-only: ${LISTEN_ONLY}"
 fi
 
 ###
@@ -350,7 +350,7 @@ if [[ ${NR} > 1 ]]; then
 	      STT=$(echo "${STT}" | jq -c '.nlu='"${N}")
 	    fi
 else
-	      hass.log.trace "Single result; no unified transcript" $(echo "${N}" | jq -c '.')
+	      hass.log.trace "Single result; no unified transcript"
 	      STT=$(echo "${STT}" | jq -c '.nlu=null')
 fi
 
