@@ -1,5 +1,23 @@
 # SDR
 
+group sdr2msghub:
+  name: sdr2msghub
+  entities:
+    - input_number.sdr2msghub_confidence
+    - input_number.sdr2msghub_relevance
+    - sensor.sdr2msghub_date
+    - sensor.sdr2msghub_name
+    - sensor.sdr2msghub_bytes
+    - sensor.sdr2msghub_latitude
+    - sensor.sdr2msghub_longitude
+    - sensor.sdr2msghub_frequency
+    - sensor.sdr2msghub_value
+    - sensor.sdr2msghub_results
+    - sensor.sdr2msghub_keywords
+    - sensor.sdr2msghub_sentiment
+    - sensor.sdr2msghub_language
+    
+
 input_number:
   sdr2msghub_confidence:
     name: Confidence
@@ -18,41 +36,23 @@ input_number:
     step: 0.01
     icon: mdi:target
 
-group sdr2msghub:
-  name: sdr2msghub
-  entities:
-    - input_number.sdr2msghub_confidence
-    - input_number.sdr2msghub_relevance
-    - sensor.sdr2msghub_event
-    - sensor.sdr2msghub_date
-    - sensor.sdr2msghub_name
-    - sensor.sdr2msghub_bytes
-    - sensor.sdr2msghub_latitude
-    - sensor.sdr2msghub_longitude
-    - sensor.sdr2msghub_frequency
-    - sensor.sdr2msghub_value
-    - sensor.sdr2msghub_results
-    - sensor.sdr2msghub_keywords
-    - sensor.sdr2msghub_sentiment
-    - sensor.sdr2msghub_language
-
 sensor sdr2msghub_event:
   - platform: mqtt
     name: sdr2msghub_event
     state_topic: 'kafka/sdr-audio'
+    force_update: true
+    expire_after: 1
     json_attributes:
       - name
       - date
       - latitude
       - longitude
       - frequency
-      - value
+      - value 
       - bytes
       - stt
     value_template: >
-      {% if value_json is defined %}
-        {{ value_json.date,value_json.name,value_json.frequency,value_json.bytes,value_json.longitude,value_json.latitude }}
-      {% else %} {{ null }} {% endif %}
+      {% if value_json is defined and value_json.bytes > 0 %} True {% else %} False {% endif %}
 
 sensor sdr2msghub_template:
   platform: template
@@ -98,7 +98,7 @@ sensor sdr2msghub_template:
     sdr2msghub_bytes:
       entity_id:
         - sensor.sdr2msghub_event
-      unit_of_measurement: byte
+      unit_of_measurement: bytes
       value_template: >
         {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.bytes is defined %}
           {{ states.sensor.sdr2msghub_event.attributes.bytes }}
@@ -110,31 +110,8 @@ sensor sdr2msghub_template:
       value_template: >-
         {%- if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.stt is defined and states.sensor.sdr2msghub_event.attributes.stt.results is defined -%}
           {{- states.sensor.sdr2msghub_event.attributes.stt.results|length -}}
-        {%- else -%} null {%- endif -%}
-    sdr2msghub_keywords:
-      entity_id:
-        - sensor.sdr2msghub_event
-        - input_number.sdr2msghub_confidence
-        - input_number.sdr2msghub_relevance
-      value_template: >-
-        {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.stt is defined and states.sensor.sdr2msghub_event.attributes.stt.results is defined %}
-          {% set results = states.sensor.sdr2msghub_event.attributes.stt.results %}
-          {% for result in results %}
-            {%- set outerloop = loop %}
-            {%- for alternative in result.alternatives -%}
-              {%- if alternative.confidence|float > states.input_number.sdr2msghub_confidence|float  -%}
-                {%- if alternative.nlu is defined and alternative.nlu.keywords is defined -%}
-                  {%- for keyword in alternative.nlu.keywords -%}
-                    {%- if keyword.text is defined and keyword.relevance|float > states.input_number.sdr2msghub_relevance|float -%}
-                      {% if outerloop.first and loop.first %}{% else %},{% endif %}{{- keyword.text -}}
-                    {%- endif -%}
-                  {%- endfor -%}
-                {%- endif -%}
-              {%- endif -%}
-            {%- endfor -%}
-          {%- endfor -%}
-        {%- else -%} null {%- endif -%}
-    sdr2msghub_sentiment:
+        {%- else -%} 0 {%- endif -%}
+    sdr2msghub_sentiments:
       entity_id:
         - sensor.sdr2msghub_event
         - input_number.sdr2msghub_confidence
@@ -142,19 +119,20 @@ sensor sdr2msghub_template:
         {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.stt is defined and states.sensor.sdr2msghub_event.attributes.stt.results is defined %}
           {% set results = states.sensor.sdr2msghub_event.attributes.stt.results %}
           {% for result in results %}
-            {%- set outerloop = loop %}
+            {%- if loop.first -%}{%- else -%},{%- endif -%}
             {%- for alternative in result.alternatives -%}
+              {%- if loop.first -%}{%- else -%},{%- endif -%}
               {%- if alternative.confidence|float > states.input_number.sdr2msghub_confidence|float -%}
                 {%- if alternative.nlu is defined and alternative.nlu.sentiment is defined -%}
-                    {%- if alternative.nlu.sentiment.document.label is defined -%}
-                      {%- if outerloop.first and loop.first -%}{%- else -%},{%- endif -%}{{- alternative.nlu.sentiment.document.label -}}
-                    {%- endif -%}
-                {%- endif -%}
-              {%- endif -%}
+                  {%- if alternative.nlu.sentiment.document.label is defined -%}
+                    {{- alternative.nlu.sentiment.document.label -}}
+                  {%- else -%}null{%- endif -%}
+                {%- else -%}null{%- endif -%}
+              {%- else -%}null{%- endif -%}
             {%- endfor -%}
           {%- endfor %}
         {%- else -%} null {%- endif -%}
-    sdr2msghub_language:
+    sdr2msghub_languages:
       entity_id:
         - sensor.sdr2msghub_event
         - input_number.sdr2msghub_confidence
@@ -162,13 +140,14 @@ sensor sdr2msghub_template:
         {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.stt is defined and states.sensor.sdr2msghub_event.attributes.stt.results is defined %}
           {% set results = states.sensor.sdr2msghub_event.attributes.stt.results %}
           {% for result in results %}
-            {%- set outerloop = loop %}
+            {%- if loop.first -%}{%- else -%},{%- endif -%}
             {%- for alternative in result.alternatives -%}
+              {%- if loop.first -%}{%- else -%},{%- endif -%}
               {%- if alternative.confidence > states.input_number.sdr2msghub_confidence|float -%}
                 {%- if alternative.nlu is defined and alternative.nlu.language is defined -%}
-                      {%- if outerloop.first and loop.first -%}{%- else -%},{%- endif -%}{{- alternative.nlu.language -}}
-                {%- endif -%}
-              {%- endif -%}
+                  {{- alternative.nlu.language -}}
+                {%- else -%}null{%- endif -%}
+              {%- else -%}null{%- endif -%}
             {%- endfor -%}
           {%- endfor %}
         {%- else -%} null {%- endif -%}
@@ -184,4 +163,128 @@ sensor sdr2msghub_template:
       unit_of_measurement: RV
       value_template: >
         {{ states.input_number.sdr2msghub_relevance.state }}
+    sdr2msghub_all_keywords:
+      entity_id:
+        - sensor.sdr2msghub_event
+        - sensor.sdr2msghub_confidence_minimum
+        - sensor.sdr2msghub_relevance_minimum
+      value_template: >-
+        {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.stt is defined and states.sensor.sdr2msghub_event.attributes.stt.results is defined %}
+          {% set results = states.sensor.sdr2msghub_event.attributes.stt.results %}
+          {% for result in results %}
+            {%- if loop.first -%}{% else %},{% endif %}
+            {%- for alternative in result.alternatives -%}
+              {%- if loop.first -%}{% else %},{% endif %}
+              {%- if alternative.confidence|float > states.sensor.sdr2msghub_confidence_minimum.state|float  -%}
+                {%- if alternative.nlu is defined and alternative.nlu.keywords is defined and alternative.nlu.keywords != null -%}
+                  {%- for keyword in alternative.nlu.keywords -%}
+                    {%- if loop.first -%}{% else %},{% endif %}
+                    {%- if keyword.text is defined and keyword.relevance|float > states.sensor.sdr2msghub_relevance_minimum.state|float -%}
+                      {{- keyword.text -}}
+                    {%- else -%}null{%- endif -%}
+                  {%- endfor -%}
+                {%- else -%}null{%- endif -%}
+              {%- else -%}null{%- endif -%}
+            {%- endfor -%}
+          {%- endfor -%}
+        {%- else -%}null{%- endif -%}
+    sdr2msghub_characters:
+      entity_id:
+        - sensor.sdr2msghub_event
+      unit_of_measurement: characters
+      value_template: >
+        {% if states.sensor.sdr2msghub_event.attributes.stt is defined and states.sensor.sdr2msghub_event.attributes.stt.nlu is defined and states.sensor.sdr2msghub_event.attributes.stt.nlu != null %}
+          {% set nlu = states.sensor.sdr2msghub_event.attributes.stt.nlu %}
+          {{ nlu.usage.text_characters|int }}
+        {%- else -%}null{%- endif -%}
+    sdr2msghub_language:
+      entity_id:
+        - sensor.sdr2msghub_event
+      value_template: >
+        {% if states.sensor.sdr2msghub_event.attributes.stt is defined and states.sensor.sdr2msghub_event.attributes.stt.nlu is defined and states.sensor.sdr2msghub_event.attributes.stt.nlu != null %}
+          {% set nlu = states.sensor.sdr2msghub_event.attributes.stt.nlu %}
+          {{ nlu.language }}
+        {%- else -%}null{%- endif -%}
+    sdr2msghub_sentiment_score:
+      entity_id:
+        - sensor.sdr2msghub_event
+      unit_of_measurement: SS
+      value_template: >
+        {% if states.sensor.sdr2msghub_event.attributes.stt is defined and states.sensor.sdr2msghub_event.attributes.stt.nlu is defined and states.sensor.sdr2msghub_event.attributes.stt.nlu != null %}
+          {% set nlu = states.sensor.sdr2msghub_event.attributes.stt.nlu %}
+          {{ nlu.sentiment.document.score|float }}
+        {%- else -%}null{%- endif -%}
+    sdr2msghub_sentiment_label:
+      entity_id:
+        - sensor.sdr2msghub_event
+      value_template: >
+        {% if states.sensor.sdr2msghub_event.attributes.stt is defined and states.sensor.sdr2msghub_event.attributes.stt.nlu is defined and states.sensor.sdr2msghub_event.attributes.stt.nlu != null %}
+          {% set nlu = states.sensor.sdr2msghub_event.attributes.stt.nlu %}
+          {{ nlu.sentiment.document.label }}
+        {%- else -%}null{%- endif -%}
+    sdr2msghub_keywords:
+      entity_id:
+        - sensor.sdr2msghub_event
+        - sensor.sdr2msghub_relevance_minimum
+      value_template: >
+        {% if states.sensor.sdr2msghub_event.attributes.stt is defined and states.sensor.sdr2msghub_event.attributes.stt.nlu is defined and states.sensor.sdr2msghub_event.attributes.stt.nlu != null %}
+          {% set nlu = states.sensor.sdr2msghub_event.attributes.stt.nlu %}
+          {% for keyword in nlu.keywords %}
+           {%- if loop.first -%}{% else %},{% endif %}
+           {%- if keyword.text is defined and keyword.relevance|float > states.sensor.sdr2msghub_relevance_minimum.state|float -%}
+             {{- keyword.text -}}
+           {%- else -%}null{%- endif -%}
+         {%- endfor -%}
+        {%- else -%}null{%- endif -%}
+    sdr2msghub_count:
+      entity_id:
+        - sensor.sdr2msghub_event_count
+      unit_of_measurement: events
+      value_template: >
+        {% if states.sensor.sdr2msghub_event_count is defined %}
+          {{ states.sensor.sdr2msghub_event_count.state }}
+        {%- else -%}null{%- endif -%}
+    sdr2msghub_ratio:
+      entity_id:
+        - sensor.sdr2msghub_event_ratio
+      unit_of_measurement: '%'
+      value_template: >
+        {% if states.sensor.sdr2msghub_event_ratio is defined %}
+          {{ states.sensor.sdr2msghub_event_ratio.state }}
+        {%- else -%}null{%- endif -%}
+    sdr2msghub_sentiment_mean:
+      entity_id:
+        - sensor.sdr2msghub_sentiment_statistics_mean
+      unit_of_measurement: SS 
+      value_template: >
+        {% if states.sensor.sdr2msghub_event_sentiment_mean is defined %}
+          {{ states.sensor.sdr2msghub_sentiment_statistics_mean.state }}
+        {%- else -%}null{%- endif -%}
+
+sensor sdr2msghub_event_ratio:
+  - platform: history_stats
+    icon: mdi:percent
+    name: sdr2msghub_event_ratio
+    entity_id: sensor.sdr2msghub_event
+    state: True
+    type: ratio
+    start: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
+    end: '{{ now() }}'
+
+sensor sdr2msghub_event_count:
+  - platform: history_stats
+    icon: mdi:sigma
+    name: sdr2msghub_event_count
+    entity_id: sensor.sdr2msghub_event
+    state: True
+    type: count
+    start: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
+    end: '{{ now() }}'
+
+sensor sdr2msghub_sentiment_statistics:
+  - platform: statistics
+    entity_id: sensor.sdr2msghub_sentiment_score
+    name: sdr2msghub_sentiment_statistics
+    max_age:
+      hours: 24
 
