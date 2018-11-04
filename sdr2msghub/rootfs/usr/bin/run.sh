@@ -137,6 +137,14 @@ if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="false"; fi
 hass.log.trace "Mock: ${VALUE}"
 MOCK_SDR=${VALUE}
 
+###
+### TURN on/off ALL_TRANSCRIPTS
+###
+VALUE=$(hass.config.get "transcripts")
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="false"; fi
+hass.log.trace "All transcripts: ${VALUE}"
+ALL_TRANSCRIPTS=${VALUE}
+
 ## MQTT
 
 VALUE=$(hass.config.get "mqtt.host")
@@ -334,49 +342,46 @@ hass.log.info "Listening for topic ${KAFKA_TOPIC}, processing with STT and NLU a
 	if [[ $? == 0 && -n "${STT}" ]]; then
 	  hass.log.trace "Received STT response:" $(echo "${STT}" | jq -c '.')
 	  NR=$(echo "${STT}" | jq '.results?|length')
-	  hass.log.trace "STT produced ${NR} results"
 	  if [[ ${NR} > 0 ]]; then
-
-if [[ ${NR} > 1 ]]; then
+	    hass.log.debug "STT produced ${NR} results"
 	    # perform NLU on unified transcript
 	    TRANSCRIPT=$(echo "${STT}" | jq -j '.results[].alternatives[].transcript')
-            hass.log.debug "Unified transcript: ${TRANSCRIPT}"
+            hass.log.trace "Unified transcript: ${TRANSCRIPT}"
 	    N=$(echo '{"text":"'"${TRANSCRIPT}"'","features":{"sentiment":{},"keywords":{}}}' | curl -sL -d @- -u "${WATSON_NLU_USERNAME}:${WATSON_NLU_PASSWORD}" -H "Content-Type: application/json" "${WATSON_NLU_URL}")
 	    if [[ $? != 0 || -z "${N}" || $(echo "${N}" | jq '.error?!=null') == "true" ]]; then
 	      hass.log.debug "NLU request failed on unified transcript; setting NLU to null; return: " $(echo "${N}" | jq -c '.')
-	      STT=$(echo "${STT}" | jq -c '.nlu=null')
-	    else
-	      hass.log.debug "NLU for unified transcript:" $(echo "${N}" | jq -c '.')
-	      STT=$(echo "${STT}" | jq -c '.nlu='"${N}")
+              N='null'
 	    fi
-else
-	      hass.log.trace "Single result; no unified transcript"
-	      STT=$(echo "${STT}" | jq -c '.nlu=null')
-fi
-
-	    # perform NLU on each result alternative
-	    R=0; while [ ${R} -lt ${NR} ]; do
-	      NA=$(echo "${STT}" | jq -r '.results['${R}'].alternatives|length')
-	      hass.log.trace "STT result ${R} with ${NA} alternatives"
-	      A=0; while [ ${A} -lt ${NA} ]; do
-		C=$(echo "${STT}" | jq -r '.results['${R}'].alternatives['${A}'].confidence')
-		T=$(echo "${STT}" | jq -r '.results['${R}'].alternatives['${A}'].transcript')
-		hass.log.trace "Alternative ${A}: Confidence ${C}; transcript: ${T}"
-		N=$(echo '{"text":"'"${T}"'","features":{"sentiment":{},"keywords":{}}}' | curl -sL -d @- -u "${WATSON_NLU_USERNAME}:${WATSON_NLU_PASSWORD}" -H "Content-Type: application/json" "${WATSON_NLU_URL}")
-		if [[ $? != 0 || -z "${N}" || $(echo "${N}" | jq '.error?!=null') == "true" ]]; then
-		  hass.log.debug "NLU request failed on transcript ${T}; setting NLU to null; return: " $(echo "${N}" | jq -c '.')
-		  STT=$(echo "${STT}" | jq -c '.results['${R}'].alternatives['${A}'].nlu=null')
-		else
-		  hass.log.trace "NLU for result ${R}; alternative ${A}: " $(echo "${N}" | jq -c '.')
-		  STT=$(echo "${STT}" | jq -c '.results['${R}'].alternatives['${A}'].nlu='"${N}")
-		fi
-		hass.log.trace "Incrementing to next alternative"
-		A=$((A+1))
-	      done
-	      hass.log.trace "Incrementing to next result"
-	      R=$((R+1))
-	    done  
-
+	    hass.log.debug "NLU for unified transcript:" $(echo "${N}" | jq -c '.')
+	    STT=$(echo "${STT}" | jq -c '.nlu='"${N}")
+            if [[ ${NR} > 1 && "${ALL_TRANSCRIPTS}" == "true" ]]; then
+	      # perform NLU on each result alternative
+	      R=0; while [ ${R} -lt ${NR} ]; do
+		NA=$(echo "${STT}" | jq -r '.results['${R}'].alternatives|length')
+		hass.log.trace "STT result ${R} with ${NA} alternatives"
+		A=0; while [ ${A} -lt ${NA} ]; do
+		  C=$(echo "${STT}" | jq -r '.results['${R}'].alternatives['${A}'].confidence')
+		  T=$(echo "${STT}" | jq -r '.results['${R}'].alternatives['${A}'].transcript')
+		  hass.log.trace "Alternative ${A}: Confidence ${C}; transcript: ${T}"
+		  N=$(echo '{"text":"'"${T}"'","features":{"sentiment":{},"keywords":{}}}' | curl -sL -d @- -u "${WATSON_NLU_USERNAME}:${WATSON_NLU_PASSWORD}" -H "Content-Type: application/json" "${WATSON_NLU_URL}")
+		  if [[ $? != 0 || -z "${N}" || $(echo "${N}" | jq '.error?!=null') == "true" ]]; then
+		    hass.log.debug "NLU request failed on transcript ${T}; setting NLU to null; return: " $(echo "${N}" | jq -c '.')
+		    STT=$(echo "${STT}" | jq -c '.results['${R}'].alternatives['${A}'].nlu=null')
+		  else
+		    hass.log.trace "NLU for result ${R}; alternative ${A}: " $(echo "${N}" | jq -c '.')
+		    STT=$(echo "${STT}" | jq -c '.results['${R}'].alternatives['${A}'].nlu='"${N}")
+		  fi
+		  hass.log.trace "Incrementing to next alternative"
+		  A=$((A+1))
+		done
+		hass.log.trace "Incrementing to next result"
+		R=$((R+1))
+	      done  
+            else
+	      hass.log.debug "Only one transcript or all transcripts is false: ${ALL_TRANSCRIPTS}"
+	      hass.log.trace "For consistency copying first result alternative to NLU for unified transcript: " $(echo "${N}" | jq -c '.')
+	      STT=$(echo "${STT}" | jq -c '.results[0].alternatives[0].nlu='"${N}")
+            fi
 	    hass.log.trace "Done with ${NR} STT results"
 	  else
             hass.log.debug "STT returned zero results: " $(echo "${STT}" | jq -c '.')
