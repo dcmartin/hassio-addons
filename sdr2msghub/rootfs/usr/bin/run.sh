@@ -337,17 +337,19 @@ hass.log.info "Listening for topic ${KAFKA_TOPIC}, processing with STT and NLU a
 	  hass.log.trace "STT produced ${NR} results"
 	  if [[ ${NR} > 0 ]]; then
 
+if [[ ${NR} > 1 ]]]; then
 	    # perform NLU on unified transcript
 	    TRANSCRIPT=$(echo "${STT}" | jq -j '.results[].alternatives[].transcript')
-            hass.log.trace "Unified transcript: ${TRANSCRIPT}"
+            hass.log.debug "Unified transcript: ${TRANSCRIPT}"
 	    N=$(echo '{"text":"'"${TRANSCRIPT}"'","features":{"sentiment":{},"keywords":{}}}' | curl -sL -d @- -u "${WATSON_NLU_USERNAME}:${WATSON_NLU_PASSWORD}" -H "Content-Type: application/json" "${WATSON_NLU_URL}")
 	    if [[ $? != 0 || -z "${N}" || $(echo "${N}" | jq '.error?!=null') == "true" ]]; then
 	      hass.log.debug "NLU request failed on unified transcript; setting NLU to null; return: " $(echo "${N}" | jq -c '.')
 	      STT=$(echo "${STT}" | jq -c '.nlu=null')
 	    else
-	      hass.log.trace "NLU for unified transcript:" $(echo "${N}" | jq -c '.')
+	      hass.log.debug "NLU for unified transcript:" $(echo "${N}" | jq -c '.')
 	      STT=$(echo "${STT}" | jq -c '.nlu='"${N}")
 	    fi
+fi
 
 	    # perform NLU on each result alternative
 	    R=0; while [ ${R} -lt ${NR} ]; do
