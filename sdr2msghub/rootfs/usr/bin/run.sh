@@ -337,7 +337,7 @@ hass.log.info "Listening for topic ${KAFKA_TOPIC}, processing with STT and NLU a
 	  hass.log.trace "STT produced ${NR} results"
 	  if [[ ${NR} > 0 ]]; then
 
-if [[ ${NR} > 1 ]]]; then
+if [[ ${NR} > 1 ]]; then
 	    # perform NLU on unified transcript
 	    TRANSCRIPT=$(echo "${STT}" | jq -j '.results[].alternatives[].transcript')
             hass.log.debug "Unified transcript: ${TRANSCRIPT}"
@@ -349,6 +349,9 @@ if [[ ${NR} > 1 ]]]; then
 	      hass.log.debug "NLU for unified transcript:" $(echo "${N}" | jq -c '.')
 	      STT=$(echo "${STT}" | jq -c '.nlu='"${N}")
 	    fi
+else
+	      hass.log.trace "Single result; no unified transcript" $(echo "${N}" | jq -c '.')
+	      STT=$(echo "${STT}" | jq -c '.nlu=null')
 fi
 
 	    # perform NLU on each result alternative
