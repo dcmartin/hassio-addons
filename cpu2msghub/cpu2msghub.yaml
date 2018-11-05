@@ -15,6 +15,8 @@ sensor cpu2msghub_event:
   - platform: mqtt
     name: cpu2msghub_event
     state_topic: 'kafka/cgiroua_us.ibm.com.IBM_cpu2msghub'
+    force_update: true
+    expire_after: 1
     json_attributes:
       - name
       - date
@@ -23,9 +25,7 @@ sensor cpu2msghub_event:
       - latitude
       - altitude
     value_template: >
-      {% if value_json is defined %}
-        {{ value_json.date,value_json.name,value_json.cpu,value_json.altitude,value_json.longitude,value_json.latitude }}
-      {% else %} {{ null }} {% endif %}
+      {% if value_json is defined and value_json.cpu > 0 %} True {% else %} False {% endif %}
 
 sensor cpu2msghub_template:
   platform: template
@@ -47,6 +47,7 @@ sensor cpu2msghub_template:
     cpu2msghub_cpu:
       entity_id:
         - sensor.cpu2msghub_event
+      unit_of_measurement: load
       value_template: >
         {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.cpu is defined %}
           {{ states.sensor.cpu2msghub_event.attributes.cpu}}
@@ -75,4 +76,39 @@ sensor cpu2msghub_template:
         {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.altitude is defined %}
           {{ states.sensor.cpu2msghub_event.attributes.altitude}}
         {% else %} 0 {% endif %}
+    cpu2msghub_cpu_mean:
+      entity_id:
+        - sensor.cpu2msghub_cpu_statistics_mean
+      unit_of_measurement: load
+      value_template: >
+        {% if states.sensor.cpu2msghub_cpu is defined %}
+          {{ states.sensor.cpu2msghub_cpu_statistics_mean.state }}
+        {%- else -%}null{%- endif -%}
 
+sensor cpu2msghub_event_ratio:
+  - platform: history_stats
+    icon: mdi:percent
+    name: cpu2msghub_event_ratio
+    entity_id: sensor.cpu2msghub_event
+    state: True
+    type: ratio
+    start: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
+    end: '{{ now() }}'
+
+sensor cpu2msghub_event_count:
+  - platform: history_stats
+    icon: mdi:sigma
+    name: cpu2msghub_event_count
+    entity_id: sensor.cpu2msghub_event
+    state: True
+    type: count
+    start: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
+    end: '{{ now() }}'
+
+sensor cpu2msghub_cpu_statistics:
+  - platform: statistics
+    entity_id: sensor.cpu2msghub_cpu
+    name: cpu2msghub_cpu_statistics
+    sampling_size: 1000
+    max_age:
+      hours: 24
