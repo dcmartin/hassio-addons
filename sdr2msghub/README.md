@@ -2,31 +2,31 @@
 
 This add-on is for the [SDR pattern][sdr-pattern]
 
-## Installation
-
-The installation of this add-on may require the installation of [OpenHorizon][open-horizon], a distibuted, decentralized, zero-ops, method and apparatus
+This add-on may require the installation of [OpenHorizon][open-horizon], a distibuted, decentralized, zero-ops, method and apparatus
 to deploy containers.  This addon is designed to produce and consume messages containing audio fragments and GPS coordinates (latitude, longitude) 
 from software-defined-radios (SDR) attached to participating nodes.  
 
 Detailed [documentation][edge-fabric] is available.  A Slack [channel][edge-slack] is also available.
 
-### Install OpenHorizon (OPTIONAL)
-
 You will need an IBM Cloud [account][ibm-registration].  Once you have an IBM Cloud account, proceed to the next step.
+
+## Installation
+
+### Install OpenHorizon (OPTIONAL)
 
 **Note**: _You must obtain credentials and URL for the OpenHorizon exchange from cgiroua@us.ibm.com_
 
 **Note**: _You must obtain credentials for IBM MessageHub for [alpha phase][kafka-creds]_
 
-If you have SDR USB device, and a LINUX host, you may install OpenHorizon by running the following (as root): `wget - ibm.biz/horizon-setup | bash`
+If you have SDR USB device, and a LINUX host, you may install OpenHorizon by running the following (as root)
 
-### Install SDR addon
+`wget - ibm.biz/horizon-setup | bash`
 
-1. Optionally install USB SDR device and OpenHorizon (see above)
+### Install sdr2msghub addon
+
 1. [Add our Hass.io add-ons repository][repository] to your Hass.io instance.
 1. Install the "sdr2msghub" add-on
 1. Setup the "sdr2msghub" add-on
-2. Configure `listen` option to `true` if OpenHorizon was not installed
 2. Optionally change `horizon` to OpenHorizon exchange credentials; `device` and `token` default to: `hostname`-MAC and exchange password.
 2. Optionally change `mqtt` if not using `host: core-mosquitto` on `port: 1883` with topic `kafka/sdr-audio` (`username` and `password` are also supported)
 2. Configure `kafka` to IBM MessageHub [credentials][kafka-creds]
