@@ -3,26 +3,39 @@
 This add-on is for the [SDR pattern][sdr-pattern]
 
 This add-on may require the installation of [OpenHorizon][open-horizon], a distibuted, decentralized, zero-ops, method and apparatus
-to deploy containers.  This addon is designed to produce and consume messages containing audio fragments and GPS coordinates (latitude, longitude) 
-from software-defined-radios (SDR) attached to participating nodes.  
+to deploy containers.
 
-Detailed [documentation][edge-fabric] is available.  A Slack [channel][edge-slack] is also available.
+This addon is designed to produce and consume messages containing audio fragments and GPS coordinates (latitude, longitude) 
+from software-defined-radios (SDR) attached to participating nodes.  Messages received are processed using IBM Watson Speech-to-Text (STT) and 
+Natural Language Understanding (NLU) to produce a JSON payload sent to a MQTT broker, e.g. `core-mosquitto` from the HASSIO addons catalog.
 
-You will need an IBM Cloud [account][ibm-registration].  Once you have an IBM Cloud account, proceed to the next step.
+Configuration examples are provided for processing the JSON:
+
+1. Edit your HomeAssistant configuration YAML to include sdr2msghub [configuration][sdr-yaml]
+1. Edit your `ui-lovelace.yaml` configuration display sdr2msghub [configuration][sdr-lovelace]
+
+Detailed [documentation][edge-fabric] for the IBM Edge Fabric is available on-line.  A Slack [channel][edge-slack] is also available.
+
+**Note**: _You will need an IBM Cloud [account][ibm-registration]_
 
 ## Installation
 
 ### Install OpenHorizon (OPTIONAL)
 
-**Note**: _You must obtain credentials and URL for the OpenHorizon exchange from cgiroua@us.ibm.com_
+**Note**: _Obtain credentials and URL for the OpenHorizon exchange from cgiroua@us.ibm.com_
 
-**Note**: _You must obtain credentials for IBM MessageHub for [alpha phase][kafka-creds]_
-
-If you have SDR USB device, and a LINUX host, you may install OpenHorizon by running the following (as root)
+To install on the Ubuntu and most Debian LINUX systems, run the following as root from the command line:
 
 `wget - ibm.biz/horizon-setup | bash`
 
+More detailed instructions are [available][edge-install].  Installation package for macOS is also [available][macos-install]
+
 ### Install sdr2msghub addon
+
+The add-on listens to Kafka messages from an IBM Message Hub operating in the IBM Cloud; messages received include an ASCII representation of a MP3 audio
+sequence captured from the SDR listening to local FM radio stations.
+
+**Note**: _You must obtain credentials for IBM MessageHub for [alpha phase][kafka-creds]_
 
 1. [Add our Hass.io add-ons repository][repository] to your Hass.io instance.
 1. Install the "sdr2msghub" add-on
@@ -34,14 +47,12 @@ If you have SDR USB device, and a LINUX host, you may install OpenHorizon by run
 2. Configure `watson_nlu` to your IBM Cloud Watson Natural Language Understanding [service][watson-nlu]
 1. Start the "sdr2msghub" add-on
 1. Check the logs of the add-on for failures :-(
-1. Edit your HomeAssistant configuration YAML to include sdr2msghub [configuration][sdr-yaml]
-1. Edit your `ui-lovelace.yaml` configuration display sdr2msghub [configuration][sdr-lovelace]
 
 #### USE
 
-Listen to the host and port for receiving MQTT messages.
+Listen to the MQTT host and port to receive JSON payload of the processed SDR audio.
 
-1. `kafka/sdr-audio` -- JSON payload of SDR detected
+1. `kafka/sdr-audio`
 
 ### CONFIGURATION
 
@@ -93,3 +104,5 @@ David C Martin (github@dcmartin.com)
 [open-horizon]: https://github.com/open-horizon
 [sdr-pattern]: https://github.com/open-horizon/examples/wiki/service-sdr2msghub
 [edge-fabric]: https://console.test.cloud.ibm.com/docs/services/edge-fabric/getting-started.html
+[edge-install]: https://console.test.cloud.ibm.com/docs/services/edge-fabric/adding-devices.html
+[macos-install]: https://github.com/open-horizon/anax/releases
