@@ -65,7 +65,7 @@ ALL_TRANSCRIPTS=${VALUE}
 VALUE=$(hass.config.get "horizon.exchange")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.warning "No exchange URL"; VALUE="null"; fi
 export HZN_EXCHANGE_URL="${VALUE}"
-hass.log.info "Setting HZN_EXCHANGE_URL to ${VALUE}" >&2
+hass.log.debug "Setting HZN_EXCHANGE_URL to ${VALUE}" >&2
 JSON="${JSON}"',"exchange":"'"${VALUE}"'"'
 # USERNAME
 VALUE=$(hass.config.get "horizon.username")
@@ -89,7 +89,7 @@ if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then
   VALUE="$(hostname)-${VALUE}"
 fi
 JSON="${JSON}"',"device":"'"${VALUE}"'"'
-hass.log.info "EXCHANGE_ID ${VALUE}" >&2
+hass.log.debug "EXCHANGE_ID ${VALUE}" >&2
 # TOKEN
 VALUE=$(hass.config.get "horizon.token")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then
@@ -180,7 +180,7 @@ if [[ -z $(hass.config.get 'watson_stt') ]]; then
 fi
 if [[ -n $(hass.config.get 'watson_stt.url') ]]; then
   WATSON_STT_URL=$(hass.config.get "watson_stt.url")
-  hass.log.info "Watson STT URL: ${WATSON_STT_URL}"
+  hass.log.debug "Watson STT URL: ${WATSON_STT_URL}"
 else
   hass.log.fatal "No Watson STT URL; exiting"
   hass.die
@@ -209,7 +209,7 @@ if [[ -z $(hass.config.get 'watson_nlu') ]]; then
 fi
 if [[ -n $(hass.config.get 'watson_nlu.url') ]]; then
   WATSON_NLU_URL=$(hass.config.get "watson_nlu.url")
-  hass.log.info "Watson NLU URL: ${WATSON_NLU_URL}"
+  hass.log.debug "Watson NLU URL: ${WATSON_NLU_URL}"
 else
   hass.log.fatal "No Watson NLU URL specified; exiting"
   hass.die
@@ -244,7 +244,7 @@ for TN in ${TOPIC_NAMES}; do
   fi
 done
 if [ -z "${TOPIC_FOUND}" ]; then
-  hass.log.info "Topic ${KAFKA_TOPIC} not found; exiting"
+  hass.log.fatal "Topic ${KAFKA_TOPIC} not found; exiting"
   hass.die
   hass.log.debug "Creating topic ${KAFKA_TOPIC} at ${KAFKA_ADMIN_URL} using /admin/topics"
   curl -sL -H "X-Auth-Token: $KAFKA_API_KEY" -d "{ \"name\": \"$KAFKA_TOPIC\", \"partitions\": 2 }" $KAFKA_ADMIN_URL/admin/topics
