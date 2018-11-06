@@ -8,6 +8,12 @@ This addon is designed to produce and consume messages containing audio fragment
 
 Detailed [documentation][edge-fabric] for the IBM Edge Fabric is available on-line.  A Slack [channel][edge-slack] is also available.
 
+The add-on listens to Kafka messages from an IBM Message Hub operating in the IBM Cloud; messages received include an ASCII representation of a MP3 audio sequence captured from the SDR listening to local FM radio stations.
+
+By default the system will only listen for messages, process using STT and NLU, and publish results using MQTT to the local `core-mosquitto` broker on port 1883 with topic `kafka/sdr-audio` (`username` and `password` are also supported).
+
+If the addon is configured with SDR and Open Horizon is installed, the options for `device` and `token` will default to hostname with MAC address appended and exchange password.
+
 **Note**: _You will need an IBM Cloud [account][ibm-registration]_
 
 ## Installation
@@ -21,12 +27,6 @@ To install on Ubuntu and most Debian LINUX systems, run the following as root fr
 More detailed instructions are [available][edge-install].  Installation package for macOS is also [available][macos-install]
 
 ### Install addon
-
-The add-on listens to Kafka messages from an IBM Message Hub operating in the IBM Cloud; messages received include an ASCII representation of a MP3 audio sequence captured from the SDR listening to local FM radio stations.
-
-By default the system will only listen for messages, process using STT and NLU, and publish results using MQTT to the local `core-mosquitto` broker on port 1883 with topic `kafka/sdr-audio` (`username` and `password` are also supported).
-
-If the addon is configured with SDR and Open Horizon is installed, the options for `device` and `token` will default to hostname with MAC address appended and exchange password.
 
 1. [Add our Hass.io add-ons repository][repository] to your Hass.io instance.
 1. Install the "sdr2msghub" add-on
@@ -99,6 +99,20 @@ This option provides the information required to use the Watson NLU service.
   "watson_nlu": {
     "url": "https://gateway.watsonplatform.net/natural-language-understanding/api/v1/analyze?version=2018-03-19",
     "apikey": "<apikey>"
+  }
+```
+
+### Option: `mqtt`
+
+This option provides the information required for MQTT service.
+
+```
+  "mqtt": {
+    "host": "core-mosquitto",
+    "port": 1883,
+    "topic": "kafka/sdr-audio"
+    "username": "",
+    "password": ""
   }
 ```
 
