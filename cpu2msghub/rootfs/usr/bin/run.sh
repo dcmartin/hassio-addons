@@ -203,6 +203,7 @@ fi
 NODE=$(hzn node list)
 EXCHANGE_FOUND=$(echo "${NODE}" | jq '.id?=="'"${EXCHANGE_ID}"'"')
 EXCHANGE_CONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="configured"')
+EXCHANGE_UNCONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="unconfigured"')
 
 # if a variety of conditions are true; start-over
 if [[ ${LISTEN_MODE} == "only" ]]; then
@@ -211,7 +212,7 @@ elif [[ ${PATTERN_FOUND} == true && ${EXCHANGE_FOUND} == true && ${EXCHANGE_CONF
   hass.log.info "Device ${EXCHANGE_ID} found with pattern ${PATTERN_URL} in a configured state; skipping registration"
 else
   # unregister if currently registered
-  if [[ ${PATTERN_FOUND} == true && ${EXCHANGE_FOUND} == true ]]; then
+  if [[ ${EXCHANGE_UNCONFIGURED} != true ]]; then
     hass.log.debug "Device ${EXCHANGE_ID} found with pattern ${PATTERN_URL}, but not configured; unregistering..."
     hzn unregister -f
     while [[ $(hzn node list | jq '.configstate.state?=="unconfigured"') == false ]]; do hass.log.debug "Waiting for unregistration to complete (10)"; sleep 10; done
