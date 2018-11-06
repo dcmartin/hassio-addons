@@ -2,17 +2,9 @@
 
 This add-on is for the [SDR pattern][sdr-pattern]
 
-This add-on may require the installation of [OpenHorizon][open-horizon], a distibuted, decentralized, zero-ops, method and apparatus
-to deploy containers.
+This add-on may require the installation of [OpenHorizon][open-horizon], a distibuted, decentralized, zero-ops, method and apparatus to deploy containers.
 
-This addon is designed to produce and consume messages containing audio fragments and GPS coordinates (latitude, longitude) 
-from software-defined-radios (SDR) attached to participating nodes.  Messages received are processed using IBM Watson Speech-to-Text (STT) and 
-Natural Language Understanding (NLU) to produce a JSON payload sent to a MQTT broker, e.g. `core-mosquitto` from the HASSIO addons catalog.
-
-Configuration examples are provided for processing the JSON:
-
-1. Edit your HomeAssistant configuration YAML to include sdr2msghub [configuration][sdr-yaml]
-1. Edit your `ui-lovelace.yaml` configuration display sdr2msghub [configuration][sdr-lovelace]
+This addon is designed to produce and consume messages containing audio fragments and GPS coordinates (latitude, longitude) from software-defined-radios (SDR) attached to participating nodes.  Messages received are processed using IBM Watson Speech-to-Text (STT) and Natural Language Understanding (NLU) to produce a JSON payload sent to a MQTT broker, e.g. `core-mosquitto` from the HASSIO addons catalog.
 
 Detailed [documentation][edge-fabric] for the IBM Edge Fabric is available on-line.  A Slack [channel][edge-slack] is also available.
 
@@ -22,55 +14,108 @@ Detailed [documentation][edge-fabric] for the IBM Edge Fabric is available on-li
 
 ### Install OpenHorizon (OPTIONAL)
 
-**Note**: _Obtain credentials and URL for the OpenHorizon exchange from cgiroua@us.ibm.com_
-
 To install on the Ubuntu and most Debian LINUX systems, run the following as root from the command line:
+
+**Note**: _Obtain credentials and URL for the OpenHorizon exchange from cgiroua@us.ibm.com_
 
 `wget - ibm.biz/horizon-setup | bash`
 
 More detailed instructions are [available][edge-install].  Installation package for macOS is also [available][macos-install]
 
-### Install sdr2msghub addon
+### Install addon
 
-The add-on listens to Kafka messages from an IBM Message Hub operating in the IBM Cloud; messages received include an ASCII representation of a MP3 audio
-sequence captured from the SDR listening to local FM radio stations.
+The add-on listens to Kafka messages from an IBM Message Hub operating in the IBM Cloud; messages received include an ASCII representation of a MP3 audio sequence captured from the SDR listening to local FM radio stations.  By default the system will only listen for messages, process using STT and NLU, and publish results using MQTT to the local `core-mosquitto` broker on port 1883 with topic `kafka/sdr-audio` (`username` and `password` are also supported).  If the addon is configured with SDR and OpenHorizon is installed, the options for `device` and `token` will default to the hostname with MAC address and the exchange credentials password.
 
 **Note**: _You must obtain credentials for IBM MessageHub for [alpha phase][kafka-creds]_
+
 
 1. [Add our Hass.io add-ons repository][repository] to your Hass.io instance.
 1. Install the "sdr2msghub" add-on
 1. Setup the "sdr2msghub" add-on
-2. Optionally change `horizon` to OpenHorizon exchange credentials; `device` and `token` default to: `hostname`-MAC and exchange password.
-2. Optionally change `mqtt` if not using `host: core-mosquitto` on `port: 1883` with topic `kafka/sdr-audio` (`username` and `password` are also supported)
-2. Configure `kafka` to IBM MessageHub [credentials][kafka-creds]
-2. Configure `watson_stt` to your IBM Cloud Watson Speech-to-Text [service][watson-stt]
-2. Configure `watson_nlu` to your IBM Cloud Watson Natural Language Understanding [service][watson-nlu]
+1. Configure `kafka` for [IBM MessageHub][kafka-creds]
+1. Configure `watson_stt` to your IBM Cloud Watson Speech-to-Text [service][watson-stt]
+1. Configure `watson_nlu` to your IBM Cloud Watson Natural Language Understanding [service][watson-nlu]
+1. Optionally change `horizon` to OpenHorizon exchange credentials; `device` and `token` default to: `hostname`-MAC and exchange password.
+1. Optionally change `mqtt` if not using `host: core-mosquitto` on `port: 1883` with topic `kafka/sdr-audio` 
 1. Start the "sdr2msghub" add-on
 1. Check the logs of the add-on for failures :-(
 
-#### USE
+## Configuration
+
+### Option: `horizon`
+ 
+Credentials required for interacting with the OpenHorizon exchange; currently only `cgiroua@us.ibm.com` is defined.  The `device` and `token` values are optional and will default to the hostname with MAC address appended and the exchange password.  These options are ignored if OpenHorizon is not installed or if `listen` mode is set to `true`
+
+```
+  "horizon": {
+    "exchange": "<url>",
+    "username": "<username>",
+    "password": "<password>",
+    "organization": "<organization>",
+    "device": "",
+    "token": ""
+  }
+```
+
+### Option: `kafka`
+
+```
+  "kafka": {
+    "instance_id": "<instance_id>",
+    "mqlight_lookup_url": "<url>",
+    "api_key": "<apikey>",
+    "kafka_admin_url": "<url>",
+    "kafka_rest_url": "<url>",
+    "kafka_brokers_sasl": [
+      "<url>",
+      "<url>",
+      ...
+    ],
+    "user": "<username>",
+    "password": "<password>"
+  }
+```
+
+### Option: `watson_stt`
+
+This option provides the information required to use the Watson STT service.
+
+```
+  "watson_stt": {
+    "url": "https://stream.watsonplatform.net/speech-to-text/api/v1/recognize",
+    "apikey": "<apikey>"
+  }
+```
+
+### Option: `watson_nlu`
+
+This option provides the information required to use the Watson NLU service.
+
+```
+  "watson_nlu": {
+    "url": "https://gateway.watsonplatform.net/natural-language-understanding/api/v1/analyze?version=2018-03-19",
+    "apikey": "<apikey>"
+  }
+```
+
+### Option: `listen`
+
+Listen only mode; do not attempt to register with OpenHorizon.  Boolean; default false.
+
+### Option: `mock`
+
+Process simulated (aka mock) SDR transmissions, indicated by `frequency` of zero.  Boolean; default false.
+
+## USE
 
 Listen to the MQTT host and port to receive JSON payload of the processed SDR audio.
 
 1. `kafka/sdr-audio`
 
-### CONFIGURATION
+Configuration examples are provided for processing the JSON:
 
-### Options
-
-#### Option: `kafka`
-
-#### Option: `watson_stt`
-
-#### Option: `watson_nlu`
-
-#### Option: `horizon`
-
-#### Option: `listen`
-
-### Additional Options: SDR
-
-The SDR package has extensive [documentation][SDRdoc] on available parameters.
+1. Edit your HomeAssistant configuration YAML to include [sdr2msghub][sdr-yaml]
+1. Edit your `ui-lovelace.yaml` configuration for [display][sdr-lovelace]
 
 ## Changelog & Releases
 
