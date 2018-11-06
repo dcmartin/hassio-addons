@@ -22,7 +22,11 @@ More detailed instructions are [available][edge-install].  Installation package 
 
 ### Install addon
 
-The add-on listens to Kafka messages from an IBM Message Hub operating in the IBM Cloud; messages received include an ASCII representation of a MP3 audio sequence captured from the SDR listening to local FM radio stations.  By default the system will only listen for messages, process using STT and NLU, and publish results using MQTT to the local `core-mosquitto` broker on port 1883 with topic `kafka/sdr-audio` (`username` and `password` are also supported).  If the addon is configured with SDR and Open Horizon is installed, the options for `device` and `token` will default to the hostname with MAC address and the exchange credentials password.
+The add-on listens to Kafka messages from an IBM Message Hub operating in the IBM Cloud; messages received include an ASCII representation of a MP3 audio sequence captured from the SDR listening to local FM radio stations.
+
+By default the system will only listen for messages, process using STT and NLU, and publish results using MQTT to the local `core-mosquitto` broker on port 1883 with topic `kafka/sdr-audio` (`username` and `password` are also supported).
+
+If the addon is configured with SDR and Open Horizon is installed, the options for `device` and `token` will default to hostname with MAC address appended and exchange password.
 
 1. [Add our Hass.io add-ons repository][repository] to your Hass.io instance.
 1. Install the "sdr2msghub" add-on
@@ -38,8 +42,9 @@ The add-on listens to Kafka messages from an IBM Message Hub operating in the IB
 ## Configuration
 
 ### Option: `horizon`
- 
-Credentials required for interacting with the Open Horizon exchange; currently only `cgiroua@us.ibm.com` is defined.  The `device` and `token` values are optional and will default to the hostname with MAC address appended and the exchange password.  These options are ignored if Open Horizon is not installed or if `listen` mode is set to `true`
+Credentials required for interacting with the Open Horizon exchange; currently the only organization defined is `cgiroua@us.ibm.com`.  These options are ignored if Open Horizon is not installed or if `listen` mode is set to `true`
+
+The `device` and `token` values are optional and will default to the hostname with MAC address appended and the exchange password.
 
 **Note**: _Obtain credentials and URL for the Open Horizon exchange from cgiroua@us.ibm.com_
 
