@@ -20,7 +20,7 @@ If the addon is configured with SDR and Open Horizon is installed, the options f
 
 ### Install Open Horizon (OPTIONAL)
 
-To install on Ubuntu and most Debian LINUX systems, run the following as root from the command line:
+To install on Ubuntu and most Debian LINUX systems, a [script][hzn-setup] run as root from the command line will install the appropriate packages on your LINUX machine or VM:
 
 `wget - ibm.biz/horizon-setup | bash`
 
@@ -169,3 +169,4 @@ David C Martin (github@dcmartin.com)
 [edge-fabric]: https://console.test.cloud.ibm.com/docs/services/edge-fabric/getting-started.html
 [edge-install]: https://console.test.cloud.ibm.com/docs/services/edge-fabric/adding-devices.html
 [macos-install]: https://github.com/open-horizon/anax/releases
+[hzn-setup]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/horizon/hzn-setup.sh
