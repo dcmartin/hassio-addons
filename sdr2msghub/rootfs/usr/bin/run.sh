@@ -2,8 +2,8 @@
 # ==============================================================================
 set -o nounset  # Exit script on use of an undefined variable
 set -o pipefail # Return exit status of the last command in the pipe that failed
-# set -o errtrace # Exit on error inside any functions or sub-shells
 # set -o errexit  # Exit script when a command exits with non-zero status
+# set -o errtrace # Exit on error inside any functions or sub-shells
 
 # shellcheck disable=SC1091
 source /usr/lib/hassio-addons/base.sh
@@ -39,8 +39,8 @@ JSON="${JSON}"',"horizon":{"pattern":'"${HORIZON_PATTERN}"
 ###
 VALUE=$(hass.config.get "listen")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="false"; fi
-hass.log.debug "Listen only mode: ${VALUE}"
-LISTEN_ONLY=${VALUE}
+hass.log.debug "Listen mode: ${VALUE}"
+LISTEN_MODE=${VALUE}
 
 ###
 ### TURN on/off MOCK SDR
@@ -57,7 +57,6 @@ VALUE=$(hass.config.get "transcripts")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="false"; fi
 hass.log.debug "NLU for individual transcripts: ${VALUE}"
 ALL_TRANSCRIPTS=${VALUE}
-
 
 ## HORIZON EXCHANGE
 
@@ -109,7 +108,7 @@ JSON="${JSON}"',"kafka":{"id":"'$(hass.config.get 'kafka.instance_id')'"'
 # BROKERS_SASL
 VALUE=$(jq -r '.kafka.kafka_brokers_sasl' "/data/options.json")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.kafka_brokers_sasl"; hass.die; fi
-hass.log.trace "Kafka brokers: ${VALUE}"
+hass.log.debug "Kafka brokers: ${VALUE}"
 JSON="${JSON}"',"brokers":'"${VALUE}"
 # ADMIN_URL
 VALUE=$(hass.config.get "kafka.kafka_admin_url")
@@ -119,8 +118,11 @@ JSON="${JSON}"',"admin_url":"'"${VALUE}"'"'
 # API_KEY
 VALUE=$(hass.config.get "kafka.api_key")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.api_key"; hass.die; fi
-hass.log.trace "Kafka API key: ${VALUE}"
-JSON="${JSON}"',"api_key":"'"${VALUE}"'"}'
+hass.log.debug "Kafka API key: ${VALUE}"
+JSON="${JSON}"',"api_key":"'"${VALUE}"'"'
+
+## DONE w/ kafka
+JSON="${JSON}"'}'
 
 ## DONE w/ JSON
 JSON="${JSON}"'}'
@@ -230,13 +232,13 @@ else
 fi
 
 ###
-### CHECK KAKFA
+### CHECK KAFKA
 ###
 
 # FIND TOPICS
 TOPIC_NAMES=$(curl -sL -H "X-Auth-Token: $KAFKA_API_KEY" $KAFKA_ADMIN_URL/admin/topics | jq -j '.[]|.name," "')
 if [ $? != 0 ]; then hass.log.fatal "Unable to retrieve Kafka topics; exiting"; hass.die; fi
-hass.log.trace "Topics availble: ${TOPIC_NAMES}"
+hass.log.debug "Topics availble: ${TOPIC_NAMES}"
 TOPIC_FOUND=""
 for TN in ${TOPIC_NAMES}; do
   if [ ${TN} == "${KAFKA_TOPIC}" ]; then
@@ -257,68 +259,60 @@ fi
 ### CONFIGURE HORIZON
 ###
 
-# test if horizon is installed
-HZN=$(command -v hzn)
-if [[ -n "${HZN}" && "${LISTEN_ONLY}" != "true" ]]; then
-  # check for outstanding agreements
-  AGREEMENTS=$(hzn agreement list)
-  COUNT=$(echo "${AGREEMENTS}" | jq '.?|length')
-  hass.log.trace "Found ${COUNT} agreements"
-  WORKLOAD_FOUND=""
-  if [[ ${COUNT} > 0 ]]; then
-    WORKLOADS=$(echo "${AGREEMENTS}" | jq -r '.[]|.workload_to_run.url')
-    for WL in ${WORKLOADS}; do
-      if [ "${WL}" == "${PATTERN_URL}" ]; then
-	WORKLOAD_FOUND=true
-      fi
-    done
-  fi
-  # if a variety of conditions are true; start-over
-  if [[ $COUNT > 0 && $(hzn node list | jq '.id?=="'"${EXCHANGE_ID}"'"') == true && $(hzn node list | jq '.configstate.state?=="configured"') == true ]]; then
-    hass.log.info "Existing agreement with this device in a configured state"
-  else
-    hass.log.debug "Existing agreement with another device identifier or current node unconfigured or configuring; unregistering..."
+# check for outstanding agreements
+AGREEMENTS=$(hzn agreement list)
+COUNT=$(echo "${AGREEMENTS}" | jq '.?|length')
+hass.log.debug "Found ${COUNT} agreements"
+PATTERN_FOUND=""
+if [[ ${COUNT} > 0 ]]; then
+  WORKLOADS=$(echo "${AGREEMENTS}" | jq -r '.[]|.workload_to_run.url')
+  for WL in ${WORKLOADS}; do
+    if [ "${WL}" == "${PATTERN_URL}" ]; then
+      PATTERN_FOUND=true
+    fi
+  done
+fi
+
+# get node status from horizon
+NODE=$(hzn node list)
+EXCHANGE_FOUND=$(echo "${NODE}" | jq '.id?=="'"${EXCHANGE_ID}"'"')
+EXCHANGE_CONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="configured"')
+
+# if a variety of conditions are true; start-over
+if [[ ${PATTERN_FOUND} == true && ${EXCHANGE_FOUND} == true && ${EXCHANGE_CONFIGURED} == true ]]; then
+  hass.log.info "Device ${EXCHANGE_ID} found with pattern ${PATTERN_URL} in a configured state; skipping registration"
+else
+  # unregister if currently registered
+  if [[ ${PATTERN_FOUND} == true && ${EXCHANGE_FOUND} == true ]]; then
+    hass.log.debug "Device ${EXCHANGE_ID} found with pattern ${PATTERN_URL}, but not configured; unregistering..."
     hzn unregister -f
     while [[ $(hzn node list | jq '.configstate.state?=="unconfigured"') == false ]]; do hass.log.debug "Waiting for unregistration to complete (10)"; sleep 10; done
-    # hass.log.debug "Waiting for unregistration to complete; sleeping (30)"
-    # sleep 30
     COUNT=0
     AGREEMENTS=""
-    WORKLOAD_FOUND=""
-    hass.log.trace "Reset agreements, count, and workloads"
+    PATTERN_FOUND=""
+    hass.log.debug "Reseting agreements, count, and workloads"
   fi
 
-  # if agreement not found, register device with pattern
-  if [[ ${COUNT} == 0 && -z ${WORKLOAD_FOUND} ]]; then
-    INPUT="${KAFKA_TOPIC}.json"
+  # perform registration
+  INPUT="${KAFKA_TOPIC}.json"
 
-    echo '{"services": [{"org": "'"${PATTERN_ORG}"'","url": "'"${PATTERN_URL}"'","versionRange": "[0.0.0,INFINITY)","variables": {' >> "${INPUT}"
-    echo '"MSGHUB_API_KEY": "'"${KAFKA_API_KEY}"'"' >> "${INPUT}"
-    echo '}}]}' >> "${INPUT}"
+  echo '{"services": [{"org": "'"${PATTERN_ORG}"'","url": "'"${PATTERN_URL}"'","versionRange": "[0.0.0,INFINITY)","variables": {' >> "${INPUT}"
+  echo '"MSGHUB_API_KEY": "'"${KAFKA_API_KEY}"'"' >> "${INPUT}"
+  echo '}}]}' >> "${INPUT}"
 
-    hass.log.debug "Registering device ${EXCHANGE_ID} organization ${EXCHANGE_ORG} with pattern ${PATTERN_ORG}/${PATTERN_ID} using input " $(jq -c '.' "${INPUT}")
+  hass.log.debug "Registering device ${EXCHANGE_ID} organization ${EXCHANGE_ORG} with pattern ${PATTERN_ORG}/${PATTERN_ID} using input " $(jq -c '.' "${INPUT}")
 
-    # register
-    hzn register -n "${EXCHANGE_ID}:${EXCHANGE_TOKEN}" "${EXCHANGE_ORG}" "${PATTERN_ORG}/${PATTERN_ID}" -f "${INPUT}"
-    # wait for registration
-    while [[ $(hzn node list | jq '.id?=="'"${EXCHANGE_ID}"'"') == false ]]; do hass.log.debug "Waiting on registration (60)"; sleep 60; done
-    hass.log.debug "Registration complete for ${EXCHANGE_ORG}/${EXCHANGE_ID}"
-    # wait for agreement
-    while [[ $(hzn agreement list | jq '.?==[]') == true ]]; do hass.log.info "Waiting on agreement (10)"; sleep 10; done
-    hass.log.debug "Agreement complete for ${PATTERN_URL}"
-  elif [ -n ${WORKLOAD_FOUND} ]; then
-    hass.log.info "Found pattern in existing agreement: ${PATTERN_URL}"
-  elif [[ ${COUNT} > 0 ]]; then
-    hass.log.fatal "Existing non-matching pattern agreement found; exiting: ${AGREEMENTS}"
-    hass.die
-  else
-    hass.log.fatal "Invalid state; exiting"
-    hass.die
-  fi
-  hass.log.info "Device ${EXCHANGE_ID} in ${EXCHANGE_ORG} registered for pattern ${PATTERN_ID} from ${PATTERN_ORG}"
-else
-  hass.log.info "Horizon not installed or running in listen-only: ${LISTEN_ONLY}"
+  # register
+  hzn register -n "${EXCHANGE_ID}:${EXCHANGE_TOKEN}" "${EXCHANGE_ORG}" "${PATTERN_ORG}/${PATTERN_ID}" -f "${INPUT}"
+  # wait for registration
+  while [[ $(hzn node list | jq '.id?=="'"${EXCHANGE_ID}"'"') == false ]]; do hass.log.debug "Waiting on registration (60)"; sleep 60; done
+  hass.log.debug "Registration complete for ${EXCHANGE_ORG}/${EXCHANGE_ID}"
+  # wait for agreement
+  while [[ $(hzn agreement list | jq '.?==[]') == true ]]; do hass.log.info "Waiting on agreement (10)"; sleep 10; done
+  hass.log.debug "Agreement complete for ${PATTERN_URL}"
 fi
+
+hass.log.info "Device ${EXCHANGE_ID} in ${EXCHANGE_ORG} registered for pattern ${PATTERN_ID} from ${PATTERN_ORG}"
 
 ###
 ### ADD ON LOGIC
@@ -330,7 +324,8 @@ JQ='{"date":.ts,"name":.devID,"frequency":.freq,"value":.expectedValue,"longitud
 hass.log.info "Listening for topic ${KAFKA_TOPIC}, processing with STT and NLU and posting to ${MQTT_TOPIC} at host ${MQTT_HOST} on port ${MQTT_PORT}..."
 
 # run forever
-while true; do
+while [[ "${LISTEN_MODE}" != "false" ]]; do
+  hass.log.info "Starting listen loop; routing ${KAFKA_TOPIC} to ${MQTT_TOPIC} at host ${MQTT_HOST} on port ${MQTT_PORT}"
   # wait on kafkacat death
   kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC" | jq -c --unbuffered "${JQ}" | while read -r; do
     if [ -n "${REPLY}" ]; then

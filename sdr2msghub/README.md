@@ -1,6 +1,6 @@
 ## About
 
-This add-on is for the [SDR pattern][sdr-pattern]
+This add-on is for the SDR2MSGHUB [pattern][sdr-pattern]
 
 This add-on may require the installation of [Open Horizon][open-horizon], a distibuted, decentralized, zero-ops, method and apparatus to deploy containers.
 
@@ -42,7 +42,7 @@ More detailed instructions are [available][edge-install].  Installation package 
 ## Configuration
 
 ### Option: `horizon`
-Credentials required for interacting with the Open Horizon exchange; currently the only organization defined is `cgiroua@us.ibm.com`.  These options are ignored if Open Horizon is not installed or if `listen` mode is set to `true`
+Credentials required for interacting with the Open Horizon exchange; currently the only organization defined is `cgiroua@us.ibm.com`.  These options are ignored if Open Horizon is not installed or if `listen` mode is set to `only`
 
 The `device` and `token` values are optional and will default to the hostname with MAC address appended and the exchange password.
 
@@ -118,7 +118,7 @@ This option provides the information required for MQTT service.
 
 ### Option: `listen`
 
-Listen only mode; do not attempt to register with Open Horizon.  Boolean; default false.
+Listen mode; (true|false|only); false will not listen; only will not attempt to register pattern.
 
 ### Option: `mock`
 
@@ -165,7 +165,7 @@ David C Martin (github@dcmartin.com)
 [sdr-yaml]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/sdr2msghub/sdr2msghub.yaml
 [sdr-lovelace]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/sdr2msghub/ui-lovelace.yaml
 [open-horizon]: https://github.com/open-horizon
-[sdr-pattern]: https://github.com/open-horizon/examples/wiki/service-sdr2msghub
+[sdr-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/sdr2msghub
 [edge-fabric]: https://console.test.cloud.ibm.com/docs/services/edge-fabric/getting-started.html
 [edge-install]: https://console.test.cloud.ibm.com/docs/services/edge-fabric/adding-devices.html
 [macos-install]: https://github.com/open-horizon/anax/releases
