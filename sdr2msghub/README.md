@@ -56,7 +56,7 @@ Credentials required for interacting with the Open Horizon exchange; currently o
 
 ### Option: `kafka`
 
-**Note**: _You must obtain credentials for IBM MessageHub for [alpha phase][kafka-creds]_
+**Note**: _You must obtain [credentials][kafka-creds] for IBM MessageHub for alpha phase_
 
 ```
   "kafka": {
