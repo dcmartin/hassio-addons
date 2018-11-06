@@ -329,6 +329,8 @@ JQ='{"date":.ts,"name":.devID,"frequency":.freq,"value":.expectedValue,"longitud
 
 hass.log.info "Listening for topic ${KAFKA_TOPIC}, processing with STT and NLU and posting to ${MQTT_TOPIC} at host ${MQTT_HOST} on port ${MQTT_PORT}..."
 
+# run forever
+while true; do
   # wait on kafkacat death
   kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC" | jq -c --unbuffered "${JQ}" | while read -r; do
     if [ -n "${REPLY}" ]; then
@@ -410,7 +412,8 @@ hass.log.info "Listening for topic ${KAFKA_TOPIC}, processing with STT and NLU a
       hass.log.info "IGNORED: zero bytes audio; MOCK_SDR is ${MOCK_SDR}"
     fi
   done
-  hass.log.debug "Unexpected failure of kafkacat"
+  hass.log.warning "Unexpected failure of kafkacat"
+done
 
 }
 
