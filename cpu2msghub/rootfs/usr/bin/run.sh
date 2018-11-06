@@ -172,7 +172,7 @@ for TN in ${TOPIC_NAMES}; do
   fi
 done
 if [ -z "${TOPIC_FOUND}" ]; then
-  hass.log.die "Topic ${KAFKA_TOPIC} not found; exiting"
+  hass.log.fatal "Topic ${KAFKA_TOPIC} not found; exiting"
   hass.die
   hass.log.debug "Creating topic ${KAFKA_TOPIC} at ${KAFKA_ADMIN_URL} using /admin/topics"
   curl -sL -H "X-Auth-Token: $KAFKA_API_KEY" -d "{ \"name\": \"$KAFKA_TOPIC\", \"partitions\": 2 }" $KAFKA_ADMIN_URL/admin/topics
@@ -256,11 +256,14 @@ while [[ "${LISTEN_MODE}" != "false" ]]; do
 
   kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC" | jq --unbuffered -c "${JQ}" | while read -r; do
     if [ -n "${REPLY}" ]; then
-      echo "${REPLY}" | jq --unbuffered -c ".date="$(date '+%s') | ${MQTT}
+      hass.log.trace "RECEIVED: " $(echo "${REPLY}" | jq -c '.')
+      PAYLOAD="${REPLY}"
     else
       hass.log.warning "Null message received; continuing"
       continue
     fi
+    hass.log.debug "POSTING: " $(echo "${PAYLOAD}" | jq -c '.')
+    echo "${PAYLOAD}" | jq --unbuffered -c ".date="$(date '+%s') | ${MQTT} -t -t "${MQTT_TOPIC}"
   done
   hass.log.warning "Unexpected failure of kafkacat"
 done

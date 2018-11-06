@@ -324,15 +324,13 @@ hass.log.info "Device ${EXCHANGE_ID} in ${EXCHANGE_ORG} registered for pattern $
 # JQ tranformation
 JQ='{"date":.ts,"name":.devID,"frequency":.freq,"value":.expectedValue,"longitude":.lon,"latitude":.lat,"content-type":.contentType,"content-transfer-encoding":"BASE64","bytes":.audio|length,"audio":.audio}'
 
-hass.log.info "Listening for topic ${KAFKA_TOPIC}, processing with STT and NLU and posting to ${MQTT_TOPIC} at host ${MQTT_HOST} on port ${MQTT_PORT}..."
-
 # run forever
 while [[ "${LISTEN_MODE}" != "false" ]]; do
   hass.log.info "Starting listen loop; routing ${KAFKA_TOPIC} to ${MQTT_TOPIC} at host ${MQTT_HOST} on port ${MQTT_PORT}"
   # wait on kafkacat death
   kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC" | jq -c --unbuffered "${JQ}" | while read -r; do
     if [ -n "${REPLY}" ]; then
-      hass.log.info "RECEIVED: " $(echo "${REPLY}" | jq -c '.audio="redacted"')
+      hass.log.trace "RECEIVED: " $(echo "${REPLY}" | jq -c '.audio="redacted"')
       PAYLOAD="${REPLY}"
       AUDIO=$(echo "${PAYLOAD}" | jq -r '.audio')
       if [ -z "${AUDIO}" ]; then
@@ -404,10 +402,10 @@ while [[ "${LISTEN_MODE}" != "false" ]]; do
       continue
     fi
     if [[ $(echo "${PAYLOAD}" | jq -r '.bytes') > 0 || ${MOCK_SDR} == "true" ]]; then
-      hass.log.info "POSTING: " $(echo "${PAYLOAD}" | jq -c '.audio="redacted"')
+      hass.log.debug "POSTING: " $(echo "${PAYLOAD}" | jq -c '.audio="redacted"')
       echo "${PAYLOAD}" | ${MQTT} -l -t "${MQTT_TOPIC}"
     else
-      hass.log.info "IGNORED: zero bytes audio; MOCK_SDR is ${MOCK_SDR}"
+      hass.log.debug "IGNORED: zero bytes audio; MOCK_SDR is ${MOCK_SDR}"
     fi
   done
   hass.log.warning "Unexpected failure of kafkacat"

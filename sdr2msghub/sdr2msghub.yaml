@@ -16,7 +16,6 @@ group sdr2msghub:
     - sensor.sdr2msghub_keywords
     - sensor.sdr2msghub_sentiment
     - sensor.sdr2msghub_language
-    
 
 input_number:
   sdr2msghub_confidence:
