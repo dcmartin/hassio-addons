@@ -38,7 +38,7 @@ JSON="${JSON}"',"horizon":{"pattern":'"${HORIZON_PATTERN}"
 ### TURN on/off listen only mode
 ###
 VALUE=$(hass.config.get "listen")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="false"; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="true"; fi
 hass.log.debug "Listen mode: ${VALUE}"
 LISTEN_MODE=${VALUE}
 
