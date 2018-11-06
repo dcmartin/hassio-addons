@@ -2,7 +2,7 @@
 
 This add-on is for the [SDR pattern][sdr-pattern]
 
-This add-on may require the installation of [OpenHorizon][open-horizon], a distibuted, decentralized, zero-ops, method and apparatus to deploy containers.
+This add-on may require the installation of [Open Horizon][open-horizon], a distibuted, decentralized, zero-ops, method and apparatus to deploy containers.
 
 This addon is designed to produce and consume messages containing audio fragments and GPS coordinates (latitude, longitude) from software-defined-radios (SDR) attached to participating nodes.  Messages received are processed using IBM Watson Speech-to-Text (STT) and Natural Language Understanding (NLU) to produce a JSON payload sent to a MQTT broker, e.g. `core-mosquitto` from the HASSIO addons catalog.
 
@@ -12,11 +12,9 @@ Detailed [documentation][edge-fabric] for the IBM Edge Fabric is available on-li
 
 ## Installation
 
-### Install OpenHorizon (OPTIONAL)
+### Install Open Horizon (OPTIONAL)
 
-To install on the Ubuntu and most Debian LINUX systems, run the following as root from the command line:
-
-**Note**: _Obtain credentials and URL for the OpenHorizon exchange from cgiroua@us.ibm.com_
+To install on Ubuntu and most Debian LINUX systems, run the following as root from the command line:
 
 `wget - ibm.biz/horizon-setup | bash`
 
@@ -24,10 +22,7 @@ More detailed instructions are [available][edge-install].  Installation package 
 
 ### Install addon
 
-The add-on listens to Kafka messages from an IBM Message Hub operating in the IBM Cloud; messages received include an ASCII representation of a MP3 audio sequence captured from the SDR listening to local FM radio stations.  By default the system will only listen for messages, process using STT and NLU, and publish results using MQTT to the local `core-mosquitto` broker on port 1883 with topic `kafka/sdr-audio` (`username` and `password` are also supported).  If the addon is configured with SDR and OpenHorizon is installed, the options for `device` and `token` will default to the hostname with MAC address and the exchange credentials password.
-
-**Note**: _You must obtain credentials for IBM MessageHub for [alpha phase][kafka-creds]_
-
+The add-on listens to Kafka messages from an IBM Message Hub operating in the IBM Cloud; messages received include an ASCII representation of a MP3 audio sequence captured from the SDR listening to local FM radio stations.  By default the system will only listen for messages, process using STT and NLU, and publish results using MQTT to the local `core-mosquitto` broker on port 1883 with topic `kafka/sdr-audio` (`username` and `password` are also supported).  If the addon is configured with SDR and Open Horizon is installed, the options for `device` and `token` will default to the hostname with MAC address and the exchange credentials password.
 
 1. [Add our Hass.io add-ons repository][repository] to your Hass.io instance.
 1. Install the "sdr2msghub" add-on
@@ -35,7 +30,7 @@ The add-on listens to Kafka messages from an IBM Message Hub operating in the IB
 1. Configure `kafka` for [IBM MessageHub][kafka-creds]
 1. Configure `watson_stt` to your IBM Cloud Watson Speech-to-Text [service][watson-stt]
 1. Configure `watson_nlu` to your IBM Cloud Watson Natural Language Understanding [service][watson-nlu]
-1. Optionally change `horizon` to OpenHorizon exchange credentials; `device` and `token` default to: `hostname`-MAC and exchange password.
+1. Optionally change `horizon` to Open Horizon exchange credentials; `device` and `token` default to: `hostname`-MAC and exchange password.
 1. Optionally change `mqtt` if not using `host: core-mosquitto` on `port: 1883` with topic `kafka/sdr-audio` 
 1. Start the "sdr2msghub" add-on
 1. Check the logs of the add-on for failures :-(
@@ -44,7 +39,9 @@ The add-on listens to Kafka messages from an IBM Message Hub operating in the IB
 
 ### Option: `horizon`
  
-Credentials required for interacting with the OpenHorizon exchange; currently only `cgiroua@us.ibm.com` is defined.  The `device` and `token` values are optional and will default to the hostname with MAC address appended and the exchange password.  These options are ignored if OpenHorizon is not installed or if `listen` mode is set to `true`
+Credentials required for interacting with the Open Horizon exchange; currently only `cgiroua@us.ibm.com` is defined.  The `device` and `token` values are optional and will default to the hostname with MAC address appended and the exchange password.  These options are ignored if Open Horizon is not installed or if `listen` mode is set to `true`
+
+**Note**: _Obtain credentials and URL for the Open Horizon exchange from cgiroua@us.ibm.com_
 
 ```
   "horizon": {
@@ -58,6 +55,8 @@ Credentials required for interacting with the OpenHorizon exchange; currently on
 ```
 
 ### Option: `kafka`
+
+**Note**: _You must obtain credentials for IBM MessageHub for [alpha phase][kafka-creds]_
 
 ```
   "kafka": {
@@ -100,7 +99,7 @@ This option provides the information required to use the Watson NLU service.
 
 ### Option: `listen`
 
-Listen only mode; do not attempt to register with OpenHorizon.  Boolean; default false.
+Listen only mode; do not attempt to register with Open Horizon.  Boolean; default false.
 
 ### Option: `mock`
 
