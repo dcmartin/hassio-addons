@@ -328,10 +328,10 @@ JQ='{"date":.ts,"name":.devID,"frequency":.freq,"value":.expectedValue,"longitud
 while [[ "${LISTEN_MODE}" != "false" ]]; do
   hass.log.info "Starting listen loop; routing ${KAFKA_TOPIC} to ${MQTT_TOPIC} at host ${MQTT_HOST} on port ${MQTT_PORT}"
   # wait on kafkacat death
-  kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC" | jq -c --unbuffered "${JQ}" | while read -r; do
+  kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC" | while read -r; do
     if [ -n "${REPLY}" ]; then
-      hass.log.trace "RECEIVED: " $(echo "${REPLY}" | jq -c '.audio="redacted"')
-      PAYLOAD="${REPLY}"
+      PAYLOAD=$(echo "${REPLY}" | jq -c "${JQ}")
+      hass.log.debug "RECEIVED: " $(echo "${PAYLOAD}" | jq -c '.audio="redacted"')
       AUDIO=$(echo "${PAYLOAD}" | jq -r '.audio')
       if [ -z "${AUDIO}" ]; then
         hass.log.debug "No audio in payload ${PAYLOAD}; not processing STT or NLU"

@@ -254,10 +254,10 @@ JQ='{"name":.nodeID,"altitude":.gps.alt,"longitude":.gps.lon,"latitude":.gps.lat
 while [[ "${LISTEN_MODE}" != "false" ]]; do
   hass.log.info "Starting listen loop; routing ${KAFKA_TOPIC} to ${MQTT_TOPIC} at host ${MQTT_HOST} on port ${MQTT_PORT}"
 
-  kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC" | jq --unbuffered -c "${JQ}" | while read -r; do
+  kafkacat -u -C -q -o end -f "%s\n" -b $KAFKA_BROKER_URL -X "security.protocol=sasl_ssl" -X "sasl.mechanisms=PLAIN" -X "sasl.username=${KAFKA_API_KEY:0:16}" -X "sasl.password=${KAFKA_API_KEY:16}" -t "$KAFKA_TOPIC" | while read -r; do
     if [ -n "${REPLY}" ]; then
-      hass.log.trace "RECEIVED: " $(echo "${REPLY}" | jq -c '.')
-      PAYLOAD="${REPLY}"
+      PAYLOAD=$(echo "${REPLY}" | jq -c "${JQ}")
+      hass.log.debug "RECEIVED: " $(echo "${PAYLOAD}")
     else
       hass.log.warning "Null message received; continuing"
       continue
