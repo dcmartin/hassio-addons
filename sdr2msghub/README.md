@@ -42,7 +42,7 @@ More detailed instructions are [available][edge-install].  Installation package 
 ## Configuration
 
 ### Option: `horizon`
-Credentials required for interacting with the Open Horizon exchange; currently the only organization defined is `cgiroua@us.ibm.com`.  These options are ignored if Open Horizon is not installed or if `listen` mode is set to `only`
+Credentials required for interacting with the Open Horizon exchange; currently the only organization defined is cgiroua@us.ibm.com.  These options are ignored if Open Horizon is not installed or if `listen` option is set to `only`
 
 The `device` and `token` values are optional and will default to the hostname with MAC address appended and the exchange password.
 
@@ -118,7 +118,7 @@ This option provides the information required for MQTT service.
 
 ### Option: `listen`
 
-Listen mode; (true|false|only); false will not listen; only will not attempt to register pattern.
+Listen mode; (`true`|`false`|`only`); `false` will not listen; `only` will not attempt to register pattern.
 
 ### Option: `mock`
 

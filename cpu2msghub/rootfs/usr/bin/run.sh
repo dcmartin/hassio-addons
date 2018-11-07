@@ -213,7 +213,7 @@ elif [[ ${PATTERN_FOUND} == true && ${EXCHANGE_FOUND} == true && ${EXCHANGE_CONF
 else
   # unregister if currently registered
   if [[ ${EXCHANGE_UNCONFIGURED} != true ]]; then
-    hass.log.debug "Device ${EXCHANGE_ID} found with pattern ${PATTERN_URL}, but not configured; unregistering..."
+    hass.log.debug "Device ${EXCHANGE_ID} not configured for pattern ${PATTERN_URL}; unregistering..."
     hzn unregister -f
     while [[ $(hzn node list | jq '.configstate.state?=="unconfigured"') == false ]]; do hass.log.debug "Waiting for unregistration to complete (10)"; sleep 10; done
     COUNT=0

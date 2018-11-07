@@ -283,7 +283,7 @@ EXCHANGE_UNCONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="unconfigured"
 if [[ ${LISTEN_MODE} == "only" ]]; then
   hass.log.info "Listen only mode; not starting Open Horizon"
 elif [[ ${PATTERN_FOUND} == true && ${EXCHANGE_FOUND} == true && ${EXCHANGE_CONFIGURED} == true ]]; then
-  hass.log.info "Device ${EXCHANGE_ID} found with pattern ${PATTERN_URL} in a configured state; skipping registration"
+  hass.log.debug "Device ${EXCHANGE_ID} not configured for pattern ${PATTERN_URL}; unregistering..."
 else
   # unregister if currently registered
   if [[ ${EXCHANGE_UNCONFIGURED} != true ]]; then

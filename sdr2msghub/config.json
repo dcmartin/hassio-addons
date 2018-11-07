@@ -1,7 +1,7 @@
 {
   "name": "Open Horizon Shared SDR",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/sdr2msghub",
-  "version": "0.0.73",
+  "version": "0.0.74",
   "slug": "sdr2msghub",
   "description": "Routes Kakfa messages from Open Horizon (github.com/open-horizon) distributed system to MQTT for consumption by Home-Assistant",
   "startup": "before",
@@ -30,16 +30,15 @@
   ],
   "options": {
     "log_level": "info",
+    "listen": "only",
     "timezone": "America/Los_Angeles",
     "horizon": {
-      "device": "",
-      "token": "",
       "username": "",
       "password": "",
-      "exchange": "",
-      "organization": ""
+      "exchange": "https://stg-edge-cluster.us-south.containers.appdomain.cloud/v1",
+      "organization": "cgiroua@us.ibm.com"
     },
-    "mqtt": {},
+    "mqtt": { "host": "core-mosquitto", "port": 1883 },
     "watson_stt": {},
     "watson_nlu": {},
     "kafka": {}
@@ -52,8 +51,8 @@
     "mock": "bool?",
     "transcripts": "bool?",
     "horizon": {
-      "device": "str",
-      "token": "str",
+      "device": "str?",
+      "token": "str?",
       "username": "str",
       "password": "str",
       "exchange": "url",

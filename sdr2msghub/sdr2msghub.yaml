@@ -1,10 +1,22 @@
-# SDR
+###
+### SDR
+###
+
+group default_view:
+  view: true
+  name: Default View
+  icon: mdi:home-variant
+  control: hidden
+  entities:
+    - group.sdr2msghub
 
 group sdr2msghub:
   name: sdr2msghub
   entities:
     - input_number.sdr2msghub_confidence
     - input_number.sdr2msghub_relevance
+    - sensor.sdr2msghub_count
+    - sensor.sdr2msghub_ratio
     - sensor.sdr2msghub_date
     - sensor.sdr2msghub_name
     - sensor.sdr2msghub_bytes
@@ -14,8 +26,11 @@ group sdr2msghub:
     - sensor.sdr2msghub_value
     - sensor.sdr2msghub_results
     - sensor.sdr2msghub_keywords
-    - sensor.sdr2msghub_sentiment
+    - sensor.sdr2msghub_sentiment_label
+    - sensor.sdr2msghub_sentiment_score
+    - sensor.sdr2msghub_sentiment_mean
     - sensor.sdr2msghub_language
+    - sensor.sdr2msghub_characters
 
 input_number:
   sdr2msghub_confidence:
@@ -286,4 +301,3 @@ sensor sdr2msghub_sentiment_statistics:
     name: sdr2msghub_sentiment_statistics
     max_age:
       hours: 24
-

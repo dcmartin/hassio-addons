@@ -1,6 +1,6 @@
 {
   "name": "Open Horizon Shared CPU and GPS",
-  "url": "https://github.com/dcmartin/hassio-addons",
+  "url": "https://github.com/dcmartin/hassio-addons/tree/master/cpu2msghub",
   "version": "0.0.24",
   "slug": "cpu2msghub",
   "description": "Routes Kakfa messages from Open Horizon (github.com/open-horizon) distributed system to MQTT for consumption by Home-Assistant",
@@ -30,28 +30,27 @@
   ],
   "options": {
     "log_level": "info",
+    "listen": "only",
     "timezone": "America/Los_Angeles",
     "horizon": {
-      "device": "",
-      "token": "",
       "username": "",
       "password": "",
-      "exchange": "",
-      "organization": ""
+      "exchange": "https://stg-edge-cluster.us-south.containers.appdomain.cloud/v1",
+      "organization": "cgiroua@us.ibm.com"
     },
     "mqtt": {
-      "host": "",
-      "port": 1883
+      "host": "core-mosquitto", "port": 1883
     },
     "kafka": {}
   },
   "schema": {
     "log_level": "match(^(trace|debug|info|notice|warning|error|fatal)$)",
+    "listen": "match(^(true|false|only)$)?",
     "pattern": "str?",
     "timezone": "str?",
     "horizon": {
-      "device": "str",
-      "token": "str",
+      "device": "str?",
+      "token": "str?",
       "username": "str",
       "password": "str",
       "exchange": "url",
