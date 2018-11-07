@@ -68,7 +68,7 @@ JSON="${JSON}"',"organization":"'"${VALUE}"'"'
 # DEVICE
 VALUE=$(hass.config.get "horizon.device")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then
-  VALUE=$(ip addr | egrep -v NO-CARRIER | egrep -A 1 BROADCAST | egrep -v BROADCAST | sed "s/.*ether \([^ ]*\) .*/\1/g" | sed "s/://g" | head -1)
+  VALUE=($(hostname -I | sed 's/\./-/g'))
   VALUE="$(hostname)-${VALUE}"
 fi
 JSON="${JSON}"',"device":"'"${VALUE}"'"'

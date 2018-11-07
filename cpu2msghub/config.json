@@ -1,7 +1,7 @@
 {
   "name": "Open Horizon Shared CPU and GPS",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/cpu2msghub",
-  "version": "0.0.28",
+  "version": "0.0.29",
   "slug": "cpu2msghub",
   "description": "Routes Kakfa messages from Open Horizon (github.com/open-horizon) distributed system to MQTT for consumption by Home-Assistant",
   "startup": "before",
