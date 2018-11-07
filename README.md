@@ -8,12 +8,12 @@ You can read detailed Installation [instructions][hassio-install] or try the fol
 curl -sL https://raw.githubusercontent.com/home-assistant/hassio-build/master/install/hassio_install | bash -s
 ```
 
-### Open Horizon Examples
+### [Open Horizon][openhorizon-git] Examples
 
-These addons are demonstrations of the IBM Edge Fabric, currently in alpha, based on the open source `Open Horizon` [software][openhorizon-git]
+These addons are demonstrations of the IBM Edge Fabric, currently in alpha, which is based on Open Horizon.
 
-1. cpu2msghub - Shared CPU addon to run the CPU2MSGHUB [pattern][cpu-pattern] on the Open Horizon distributed, decentralized, edge fabric
-1. cpu2msghub - Shared SDR (software defined radio) addon to run the SDR2MSGHUB [pattern][sdr-pattern] on the Open Horizon distributed, decentralized, edge fabric
+1. cpu2msghub - Shared CPU addon to run [CPU2MSGHUB][cpu-pattern] on a distributed, decentralized, edge fabric
+1. cpu2msghub - Shared SDR (software defined radio) addon to run the [SDR2MSGHUB][sdr-pattern] on a distributed, decentralized, edge fabric
 
 ### Home Hacking
 
