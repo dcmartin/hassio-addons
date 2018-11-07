@@ -181,64 +181,60 @@ else
   hass.log.info "Topic found: ${KAFKA_TOPIC}"
 fi
 
-###
-### CONFIGURE HORIZON
-###
-
-# check for outstanding agreements
-AGREEMENTS=$(hzn agreement list)
-COUNT=$(echo "${AGREEMENTS}" | jq '.?|length')
-hass.log.debug "Found ${COUNT} agreements"
-PATTERN_FOUND=""
-if [[ ${COUNT} > 0 ]]; then
-  WORKLOADS=$(echo "${AGREEMENTS}" | jq -r '.[]|.workload_to_run.url')
-  for WL in ${WORKLOADS}; do
-    if [ "${WL}" == "${PATTERN_URL}" ]; then
-      PATTERN_FOUND=true
-    fi
-  done
-fi
-
-# get node status from horizon
-NODE=$(hzn node list)
-EXCHANGE_FOUND=$(echo "${NODE}" | jq '.id?=="'"${EXCHANGE_ID}"'"')
-EXCHANGE_CONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="configured"')
-EXCHANGE_UNCONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="unconfigured"')
-
-# if a variety of conditions are true; start-over
 if [[ ${LISTEN_MODE} == "only" ]]; then
   hass.log.info "Listen only mode; not starting Open Horizon"
-elif [[ ${PATTERN_FOUND} == true && ${EXCHANGE_FOUND} == true && ${EXCHANGE_CONFIGURED} == true ]]; then
-  hass.log.info "Device ${EXCHANGE_ID} found with pattern ${PATTERN_URL} in a configured state; skipping registration"
 else
-  # unregister if currently registered
-  if [[ ${EXCHANGE_UNCONFIGURED} != true ]]; then
-    hass.log.debug "Device ${EXCHANGE_ID} not configured for pattern ${PATTERN_URL}; unregistering..."
-    hzn unregister -f
-    while [[ $(hzn node list | jq '.configstate.state?=="unconfigured"') == false ]]; do hass.log.debug "Waiting for unregistration to complete (10)"; sleep 10; done
-    COUNT=0
-    AGREEMENTS=""
-    PATTERN_FOUND=""
-    hass.log.debug "Reseting agreements, count, and workloads"
+  # check for outstanding agreements
+  AGREEMENTS=$(hzn agreement list)
+  COUNT=$(echo "${AGREEMENTS}" | jq '.?|length')
+  hass.log.debug "Found ${COUNT} agreements"
+  PATTERN_FOUND=""
+  if [[ ${COUNT} > 0 ]]; then
+    WORKLOADS=$(echo "${AGREEMENTS}" | jq -r '.[]|.workload_to_run.url')
+    for WL in ${WORKLOADS}; do
+      if [ "${WL}" == "${PATTERN_URL}" ]; then
+	PATTERN_FOUND=true
+      fi
+    done
   fi
+  # get node status from horizon
+  NODE=$(hzn node list)
+  EXCHANGE_FOUND=$(echo "${NODE}" | jq '.id?=="'"${EXCHANGE_ID}"'"')
+  EXCHANGE_CONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="configured"')
+  EXCHANGE_UNCONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="unconfigured"')
+  # test conditions
+  if [[ ${PATTERN_FOUND} == true && ${EXCHANGE_FOUND} == true && ${EXCHANGE_CONFIGURED} == true ]]; then
+    hass.log.info "Device ${EXCHANGE_ID} found with pattern ${PATTERN_URL} in a configured state; skipping registration"
+  else
+    # unregister if currently registered
+    if [[ ${EXCHANGE_UNCONFIGURED} != true ]]; then
+      hass.log.debug "Device ${EXCHANGE_ID} not configured for pattern ${PATTERN_URL}; unregistering..."
+      hzn unregister -f
+      while [[ $(hzn node list | jq '.configstate.state?=="unconfigured"') == false ]]; do hass.log.debug "Waiting for unregistration to complete (10)"; sleep 10; done
+      COUNT=0
+      AGREEMENTS=""
+      PATTERN_FOUND=""
+      hass.log.debug "Reseting agreements, count, and workloads"
+    fi
 
-  # perform registration
-  INPUT="${KAFKA_TOPIC}.json"
+    # perform registration
+    INPUT="${KAFKA_TOPIC}.json"
 
-  echo '{"services": [{"org": "'"${PATTERN_ORG}"'","url": "'"${PATTERN_URL}"'","versionRange": "[0.0.0,INFINITY)","variables": {' >> "${INPUT}"
-  echo '"MSGHUB_API_KEY": "'"${KAFKA_API_KEY}"'"' >> "${INPUT}"
-  echo '}}]}' >> "${INPUT}"
+    echo '{"services": [{"org": "'"${PATTERN_ORG}"'","url": "'"${PATTERN_URL}"'","versionRange": "[0.0.0,INFINITY)","variables": {' >> "${INPUT}"
+    echo '"MSGHUB_API_KEY": "'"${KAFKA_API_KEY}"'"' >> "${INPUT}"
+    echo '}}]}' >> "${INPUT}"
 
-  hass.log.debug "Registering device ${EXCHANGE_ID} organization ${EXCHANGE_ORG} with pattern ${PATTERN_ORG}/${PATTERN_ID} using input " $(jq -c '.' "${INPUT}")
+    hass.log.debug "Registering device ${EXCHANGE_ID} organization ${EXCHANGE_ORG} with pattern ${PATTERN_ORG}/${PATTERN_ID} using input " $(jq -c '.' "${INPUT}")
 
-  # register
-  hzn register -n "${EXCHANGE_ID}:${EXCHANGE_TOKEN}" "${EXCHANGE_ORG}" "${PATTERN_ORG}/${PATTERN_ID}" -f "${INPUT}"
-  # wait for registration
-  while [[ $(hzn node list | jq '.id?=="'"${EXCHANGE_ID}"'"') == false ]]; do hass.log.debug "Waiting on registration (60)"; sleep 60; done
-  hass.log.debug "Registration complete for ${EXCHANGE_ORG}/${EXCHANGE_ID}"
-  # wait for agreement
-  while [[ $(hzn agreement list | jq '.?==[]') == true ]]; do hass.log.info "Waiting on agreement (10)"; sleep 10; done
-  hass.log.debug "Agreement complete for ${PATTERN_URL}"
+    # register
+    hzn register -n "${EXCHANGE_ID}:${EXCHANGE_TOKEN}" "${EXCHANGE_ORG}" "${PATTERN_ORG}/${PATTERN_ID}" -f "${INPUT}"
+    # wait for registration
+    while [[ $(hzn node list | jq '.id?=="'"${EXCHANGE_ID}"'"') == false ]]; do hass.log.debug "Waiting on registration (60)"; sleep 60; done
+    hass.log.debug "Registration complete for ${EXCHANGE_ORG}/${EXCHANGE_ID}"
+    # wait for agreement
+    while [[ $(hzn agreement list | jq '.?==[]') == true ]]; do hass.log.info "Waiting on agreement (10)"; sleep 10; done
+    hass.log.debug "Agreement complete for ${PATTERN_URL}"
+  fi
 fi
 
 ###
