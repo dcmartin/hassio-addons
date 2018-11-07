@@ -28,7 +28,7 @@ These addons are demonstrations of the IBM Edge Fabric, a distributed, decentral
 The installation of any add-on is pretty straightforward and not different in
 comparison to installing an "app" on your smartphone.
 
-1. Add this [repository][thisrepo] to your Hass.io instance: 
+1. Add this [repository][thisrepo] to your Hass.io _ADD-ON STORE_: 
 1. Install the add-on 
 1. Configure the add-on 
 1. Start the add-on
