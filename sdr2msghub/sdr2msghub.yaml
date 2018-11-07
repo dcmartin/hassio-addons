@@ -31,6 +31,23 @@ group sdr2msghub:
     - sensor.sdr2msghub_sentiment_mean
     - sensor.sdr2msghub_language
     - sensor.sdr2msghub_characters
+    - history_graph.sdr2msghub_sentiment
+    - history_graph.sdr2msghub_count
+
+history_graph:
+  sdr2msghub_sentiment:
+    name: sdr2msghub_sentiment
+    hours_to_show: 1
+    refresh: 10
+    entities:
+      - sensor.sdr2msghub_sentiment_score
+      - sensor.sdr2msghub_sentiment_mean
+  sdr2msghub_count:
+    name: sdr2msghub_count
+    hours_to_show: 1
+    refresh: 10
+    entities:
+      - sensor.sdr2msghub_count
 
 input_number:
   sdr2msghub_confidence:
