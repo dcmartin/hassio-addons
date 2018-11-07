@@ -71,7 +71,7 @@ sensor cpu2msghub_template:
       value_template: >
         {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.cpu is defined %}
           {{ states.sensor.cpu2msghub_event.attributes.cpu}}
-        {% else %} 0 {% endif %}
+        {% else %} null {% endif %}
     cpu2msghub_latitude:
       entity_id:
         - sensor.cpu2msghub_event
@@ -79,7 +79,7 @@ sensor cpu2msghub_template:
       value_template: >
         {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.latitude is defined %}
           {{ states.sensor.cpu2msghub_event.attributes.latitude}}
-        {% else %} 0 {% endif %}
+        {% else %} null {% endif %}
     cpu2msghub_longitude:
       entity_id:
         - sensor.cpu2msghub_event
@@ -87,7 +87,7 @@ sensor cpu2msghub_template:
       value_template: >
         {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.longitude is defined %}
           {{ states.sensor.cpu2msghub_event.attributes.longitude}}
-        {% else %} 0 {% endif %}
+        {% else %} null {% endif %}
     cpu2msghub_altitude:
       entity_id:
         - sensor.cpu2msghub_event
@@ -95,7 +95,7 @@ sensor cpu2msghub_template:
       value_template: >
         {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.altitude is defined %}
           {{ states.sensor.cpu2msghub_event.attributes.altitude}}
-        {% else %} 0 {% endif %}
+        {% else %} null {% endif %}
     cpu2msghub_ratio:
       entity_id:
         - sensor.cpu2msghub_event_ratio
