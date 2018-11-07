@@ -246,7 +246,7 @@ fi
 ###
 
 # configuration for JQ tranformation
-JQ='{"name":.nodeID,"altitude":.gps.alt,"longitude":.gps.lon,"latitude":.gps.lat,"cpu":.cpu}'
+JQ='{"name":.nodeID?,"altitude":.gps?.alt?,"longitude":.gps?.lon?,"latitude":.gps?.lat?,"cpu":.cpu?}'
 
 # run forever
 while [[ "${LISTEN_MODE}" != "false" ]]; do

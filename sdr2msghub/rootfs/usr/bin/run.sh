@@ -320,7 +320,7 @@ fi
 ###
 
 # JQ tranformation
-JQ='{"date":.ts,"name":.devID,"frequency":.freq,"value":.expectedValue,"longitude":.lon,"latitude":.lat,"content-type":.contentType,"content-transfer-encoding":"BASE64","bytes":.audio|length,"audio":.audio}'
+JQ='{"date":.ts?,"name":.devID?,"frequency":.freq?,"value":.expectedValue?,"longitude":.lon?,"latitude":.lat?,"content-type":.contentType?,"content-transfer-encoding":"BASE64","bytes":.audio?|length,"audio":.audio?}'
 
 # run forever
 while [[ "${LISTEN_MODE}" != "false" ]]; do
