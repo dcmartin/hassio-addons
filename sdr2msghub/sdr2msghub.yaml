@@ -109,7 +109,7 @@ sensor sdr2msghub_template:
       value_template: >
         {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.latitude is defined %}
           {{ states.sensor.sdr2msghub_event.attributes.latitude }}
-        {% else %} 0 {% endif %}
+        {% else %} null {% endif %}
     sdr2msghub_longitude:
       entity_id:
         - sensor.sdr2msghub_event
@@ -117,7 +117,7 @@ sensor sdr2msghub_template:
       value_template: >
         {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.longitude is defined %}
           {{ states.sensor.sdr2msghub_event.attributes.longitude }}
-        {% else %} 0 {% endif %}
+        {% else %} null {% endif %}
     sdr2msghub_frequency:
       entity_id:
         - sensor.sdr2msghub_event
@@ -125,7 +125,7 @@ sensor sdr2msghub_template:
       value_template: >
         {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.frequency is defined %}
           {{ states.sensor.sdr2msghub_event.attributes.frequency / 1000000.0 }}
-        {% else %} 0 {% endif %}
+        {% else %} null {% endif %}
     sdr2msghub_bytes:
       entity_id:
         - sensor.sdr2msghub_event
@@ -133,7 +133,7 @@ sensor sdr2msghub_template:
       value_template: >
         {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.bytes is defined %}
           {{ states.sensor.sdr2msghub_event.attributes.bytes }}
-        {% else %} 0 {% endif %}
+        {% else %} null {% endif %}
     sdr2msghub_results:
       entity_id:
         - sensor.sdr2msghub_event
@@ -141,7 +141,7 @@ sensor sdr2msghub_template:
       value_template: >-
         {%- if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.stt is defined and states.sensor.sdr2msghub_event.attributes.stt.results is defined -%}
           {{- states.sensor.sdr2msghub_event.attributes.stt.results|length -}}
-        {%- else -%} 0 {%- endif -%}
+        {%- else -%} null {%- endif -%}
     sdr2msghub_sentiments:
       entity_id:
         - sensor.sdr2msghub_event
