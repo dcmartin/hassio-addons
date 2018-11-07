@@ -241,8 +241,6 @@ else
   hass.log.debug "Agreement complete for ${PATTERN_URL}"
 fi
 
-hass.log.info "Device ${EXCHANGE_ID} in ${EXCHANGE_ORG} registered for pattern ${PATTERN_ID} from ${PATTERN_ORG}"
-
 ###
 ### ADD ON LOGIC
 ###
