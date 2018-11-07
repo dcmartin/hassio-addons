@@ -1,8 +1,8 @@
-# Home Assistant Add-ons
+# [Home Assistant][homeassistantio] Add-ons
 
 ## About
 
-This is a repository of add-ons for [Home Assistant][homeassistantio]. You can install Home Assistant on anything (Mac, LINUX, RaspberryPi, ..).
+This is a repository of add-ons for Home Assistant. You can install Home Assistant on anything (Mac, LINUX, RaspberryPi, ..).
 You can read detailed Installation [instructions][hassio-install] or try the following command in a LINUX virtual machine.
 ```
 curl -sL https://raw.githubusercontent.com/home-assistant/hassio-build/master/install/hassio_install | bash -s
@@ -120,3 +120,5 @@ SOFTWARE.
 [ageathome]: http://age-at-home.mybluemix.net
 [motion-url]: https://motion-project.github.io/ 
 [intu-url]: https://github.com/watson-intu
+[cpu-pattern]: https://github.com/dcmartin/hassio-addons/tree/master/cpu2msghub
+[sdr-pattern]: https://github.com/dcmartin/hassio-addons/tree/master/sdr2msghub
