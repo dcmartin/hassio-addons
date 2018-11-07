@@ -120,5 +120,5 @@ SOFTWARE.
 [ageathome]: http://age-at-home.mybluemix.net
 [motion-url]: https://motion-project.github.io/ 
 [intu-url]: https://github.com/watson-intu
-[cpu-pattern]: https://github.com/dcmartin/hassio-addons/tree/master/cpu2msghub
-[sdr-pattern]: https://github.com/dcmartin/hassio-addons/tree/master/sdr2msghub
+[cpu-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/cpu2msghub
+[sdr-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/sdr2msghub
