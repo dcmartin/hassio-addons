@@ -19,7 +19,7 @@ These addons are demonstrations of the IBM Edge Fabric, a distributed, decentral
 
 1. `motion` - Packaging of the popular [Motion][motion-url] software for attached cameras (and network too)
 1. `ageathome` - an [eldercare][ageathome] monitoring to analyze daily activities
-1. intu` - a cognitive platform using IBM Watson and the OSS [Intu][intu-url] software
+1. `intu` - a cognitive platform using IBM Watson and the OSS [Intu][intu-url] software
 1. `horizon` - an [OSS] [openhorizon-git] decentralized, zero-ops, computing platform (base)
 1. `tfod` - TensorFlow On-Demand
 
