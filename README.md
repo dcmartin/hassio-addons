@@ -1,13 +1,27 @@
-# DCMARTIN Hass.io Add-ons
+# Home Assistant Add-ons
 
 ## About
 
-This is a repository of add-ons for Hass.io, which is part of HomeAssistant (http://home-assistant.io)
+This is a repository of add-ons for [Home Assistant][homeassistantio]. You can install Home Assistant on anything (Mac, LINUX, RaspberryPi, ..).
+You can read detailed Installation [instructions][hassio-install] or try the following command in a LINUX virtual machine.
+```
+curl -sL https://raw.githubusercontent.com/home-assistant/hassio-build/master/install/hassio_install | bash -s
+```
 
-1. motion - a packaging of the popular Motion software: https://motion-project.github.io/
-1. ageathome - an applicaiton of motion used to analyze daily activities http://age-at-home.mybluemix.net
-1. intu - a cognitive platform using IBM Watson https://github.com/watson-intu
-1. horizon - a decentralized, zero-ops, computing platform https://github.com/open-horizon
+### Open Horizon Examples
+
+These addons are demonstrations of the IBM Edge Fabric, currently in alpha, based on the open source `Open Horizon` [software][openhorizon-git]
+
+1. cpu2msghub - Shared CPU addon to run the CPU2MSGHUB [pattern][cpu-pattern] on the Open Horizon distributed, decentralized, edge fabric
+1. cpu2msghub - Shared SDR (software defined radio) addon to run the SDR2MSGHUB [pattern][sdr-pattern] on the Open Horizon distributed, decentralized, edge fabric
+
+### Home Hacking
+
+1. motion - Packaging of the popular [Motion][motion-url] software for attached cameras (and network too)
+1. ageathome - an [eldercare][ageathome] monitoring to analyze daily activities
+1. intu - a cognitive platform using IBM Watson and the OSS [Intu][intu-url] software
+1. horizon - an [OSS] [openhorizon-git] decentralized, zero-ops, computing platform (base)
+1. tfod - TensorFlow On-Demand
 
 ## Installation
 
@@ -18,7 +32,8 @@ comparison to installing an "app" on your smartphone.
 1. Install the add-on 
 1. Configure the add-on 
 1. Start the add-on
-1. Check the logs of the "Example" add-on to see it in action.
+1. Check the logs of the add-on to information
+1. Click on the `WebUI` link to access the addon UX (iff exists)
 
 **NOTE**: Please see the README for each add-on
 
@@ -99,3 +114,9 @@ SOFTWARE.
 [releases]: https://github.com/dcmartin/hassio-addons/addon-motion/releases
 [repository]: https://github.com/dcmartin/hassio-addons/repository
 [semver]: http://semver.org/spec/v2.0.0.html
+[homeassistantio]: https://www.home-assistant.io/
+[hassio-install]: https://www.home-assistant.io/hassio/installation/
+[openhorizon-git]: https://github.com/open-horizon/
+[ageathome]: http://age-at-home.mybluemix.net
+[motion-url]: https://motion-project.github.io/ 
+[intu-url]: https://github.com/watson-intu
