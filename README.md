@@ -10,25 +10,25 @@ curl -sL https://raw.githubusercontent.com/home-assistant/hassio-build/master/in
 
 ### [Open Horizon][openhorizon-git] Examples
 
-These addons are demonstrations of the IBM Edge Fabric, currently in alpha, which is based on Open Horizon.
+These addons are demonstrations of the IBM Edge Fabric, a distributed, decentralized, zero ops, edge fabric, currently in alpha, which is based on Open Horizon.
 
-1. cpu2msghub - Shared CPU addon to run [CPU2MSGHUB][cpu-pattern] on a distributed, decentralized, edge fabric
-1. cpu2msghub - Shared SDR (software defined radio) addon to run the [SDR2MSGHUB][sdr-pattern] on a distributed, decentralized, edge fabric
+1. `cpu2msghub` - Shared CPU addon to run [CPU2MSGHUB][cpu-pattern]
+1. `sdr2msghub` - Shared SDR (software defined radio) addon to run the [SDR2MSGHUB][sdr-pattern]
 
 ### Home Hacking
 
-1. motion - Packaging of the popular [Motion][motion-url] software for attached cameras (and network too)
-1. ageathome - an [eldercare][ageathome] monitoring to analyze daily activities
-1. intu - a cognitive platform using IBM Watson and the OSS [Intu][intu-url] software
-1. horizon - an [OSS] [openhorizon-git] decentralized, zero-ops, computing platform (base)
-1. tfod - TensorFlow On-Demand
+1. `motion` - Packaging of the popular [Motion][motion-url] software for attached cameras (and network too)
+1. `ageathome` - an [eldercare][ageathome] monitoring to analyze daily activities
+1. intu` - a cognitive platform using IBM Watson and the OSS [Intu][intu-url] software
+1. `horizon` - an [OSS] [openhorizon-git] decentralized, zero-ops, computing platform (base)
+1. `tfod` - TensorFlow On-Demand
 
 ## Installation
 
 The installation of any add-on is pretty straightforward and not different in
 comparison to installing an "app" on your smartphone.
 
-1. Add this repository to your Hass.io instance: https://github.com/dcmartin/hassio-addons
+1. Add this [repository][thisrepo] to your Hass.io instance: 
 1. Install the add-on 
 1. Configure the add-on 
 1. Start the add-on
@@ -122,3 +122,4 @@ SOFTWARE.
 [intu-url]: https://github.com/watson-intu
 [cpu-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/cpu2msghub
 [sdr-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/sdr2msghub
+[thisrepo]: https://github.com/dcmartin/hassio-addons
