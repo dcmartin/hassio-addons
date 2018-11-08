@@ -294,7 +294,7 @@ if ($#jpgs > 1) then
   @ i = 1
   while ( $i <= $#diffs )
     # keep track of frames w/ change > average
-    if ($ps[$i] > $a) then
+    if ($ps[$i] > $avgdiff) then
       if ($?VERBOSE) echo "$0:t $$ -- KEY $frames[$i]:t:r ($i)" >& /dev/stderr
       set kframes = ( $frames[$i] $kframes )
       set kdiffs = ( $diffs[$i] $kdiffs )
