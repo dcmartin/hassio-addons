@@ -224,7 +224,7 @@ if ($#jpgs > 1) then
   if ($?USE_MQTT && $?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"tmpdir":"'"$tmpdir"'"}'
 
   ## AVERAGE 
-  set average = "$tmpdir/$lastjson:t:r-average.jpg"
+  set average = "$tmpdir/$lastjson:t:r"'-average.jpg'
   convert $jpgs -average $average >&! /tmp/$$.out
   if ( -s "$average") then
     if ($?USE_MQTT && $?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"average":"'"$average"'"}'
@@ -247,7 +247,7 @@ if ($#jpgs > 1) then
   set i = 1
   while ( $i <= $#jpgs )
     # calculate difference
-    set diffs = ( $diffs "$tmpdir/$jpgs[$i]:t"'-mask.jpg' )
+    set diffs = ( $diffs "$tmpdir/$jpgs[$i]:t:r"'-mask.jpg' )
     set p = ( `compare -metric fuzz -fuzz "$fuzz"'%' "$jpgs[$i]" "$average" -compose src -highlight-color white -lowlight-color black "$diffs[$#diffs]" |& awk '{ print $1 }'` )
     if ($?USE_MQTT && $?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"jpg":"'"$jpgs[$i]"'","pixels":'$p'}'
     # keep track of differences
@@ -276,7 +276,7 @@ if ($#jpgs > 1) then
   if ($?VERBOSE) echo "$0:t $$ -- Average difference: $avgdiff; size: $avgsize from $#jpgs JPEGS" >& /dev/stderr
 
   ## BLEND
-  set blend = "$tmpdir/$lastjson:t:r-blend.jpg"
+  set blend = "$tmpdir/$lastjson:t:r"'-blend.jpg'
   convert $jpgs -compose blend -define 'compose:args=50' -alpha on -composite $blend
   if ( ! -s "$blend") then
     if ($?USE_MQTT && $?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"DEBUG":"'$0:t'","pid":'$$',"blend":"FAILED"}'
@@ -296,7 +296,7 @@ if ($#jpgs > 1) then
     # keep track of frames w/ change > average
     if ($ps[$i] > $avgdiff) then
       if ($?VERBOSE) echo "$0:t $$ -- KEY $frames[$i]:t:r ($i)" >& /dev/stderr
-      set kframes = ( $frames[$i] $kframes )
+      set kframes = ( $jpgs[$i] $kframes )
       set kdiffs = ( $diffs[$i] $kdiffs )
     endif
     @ i++
@@ -304,7 +304,7 @@ if ($#jpgs > 1) then
   if ($?VERBOSE) echo "$0:t $$ -- key frames $#kframes of total frames $#frames" >& /dev/stderr
 
   ## COMPOSITE 
-  set composite = "$tmpdir/$lastjson:t:r-composite.jpg"
+  set composite = "$tmpdir/$lastjson:t:r"'-composite.jpg'
   cp "$average" "$composite"
   @ i = 1
   if ($?DEBUG) echo "$0:t $$ -- Compositing $#jpgs JPGS with $#diffs DIFFS" >& /dev/stderr
