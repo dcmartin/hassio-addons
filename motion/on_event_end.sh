@@ -311,10 +311,10 @@ if ($#jpgs > 1) then
   while ( $i <= $#kframes )
     set c = $composite:r.$i.jpg
     if ($?COMPOSITE_CORRECTLY) then
-      if ($?DEBUG) echo "$0:t $$ -- Compositing ${i} into $c} from $kframe[$i] and $kdiffs[$i]" >& /dev/stderr
+      if ($?DEBUG) echo "$0:t $$ -- Compositing ${i} into ${c} from $kframes[$i] and $kdiffs[$i]" >& /dev/stderr
       composite "$kframes[$i]" $composite "$kdiffs[$i]" $c
     else
-      if ($?DEBUG) echo "$0:t $$ -- Compositing ${i} into $c} from $kframe[$i] and $diffs[$i]" >& /dev/stderr
+      if ($?DEBUG) echo "$0:t $$ -- Compositing ${i} into ${c} from $kframes[$i] and $diffs[$i]" >& /dev/stderr
       composite "$kframes[$i]" $composite "$diffs[$i]" $c
     endif
     mv -f $c $composite
