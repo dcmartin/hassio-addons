@@ -1,7 +1,7 @@
 #!/bin/tcsh
 
 setenv DEBUG
-setenv VERBOSE
+unsetenv VERBOSE
 unsetenv USE_MQTT
 
 if ($?VERBOSE) echo "$0:t $$ -- START" `date` >& /dev/stderr
@@ -297,7 +297,7 @@ if ($#jpgs > 1) then
   set composite = "$tmpdir/$lastjson:t:r"'-composite.jpg'
   cp -f "$average" "$composite"
   # test if key frame only
-  if ($?KEY_FRAMES) then
+  if ($?ALL_FRAMES == 0) then
     set kjpgs = ()
     set kdiffs = ()
     @ i = 1
@@ -308,7 +308,7 @@ if ($#jpgs > 1) then
         set kjpgs = ( $kjpgs $jpgs[$i] )
         set kdiffs = ( $kdiffs $diffs[$i] )
       endif
-      @ i
+      @ i++
     end
     if ($?VERBOSE) echo "$0:t $$ -- key frames $#kjpgs of total frames $#frames" >& /dev/stderr
     set srcs = ( $kjpgs )
