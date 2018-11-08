@@ -247,7 +247,7 @@ if ($#jpgs > 1) then
   set i = 1
   while ( $i <= $#jpgs )
     # calculate difference
-    set diffs = ( $diffs "$tmpdir/$jpgs[$i]:t-mask.jpg" )
+    set diffs = ( $diffs "$tmpdir/$jpgs[$i]:t"'-mask.jpg' )
     set p = ( `compare -metric fuzz -fuzz "$fuzz"'%' "$jpgs[$i]" "$average" -compose src -highlight-color white -lowlight-color black "$diffs[$#diffs]" |& awk '{ print $1 }'` )
     if ($?USE_MQTT && $?VERBOSE) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"jpg":"'"$jpgs[$i]"'","pixels":'$p'}'
     # keep track of differences
