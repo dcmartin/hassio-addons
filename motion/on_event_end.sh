@@ -289,33 +289,29 @@ if ($#jpgs > 1) then
   endif
 
   ## KEY FRAMES
-  set kframes = ()
+  set kjpgs = ()
   set kdiffs = ()
   @ i = 1
   while ( $i <= $#diffs )
     # keep track of frames w/ change > average
     if ($ps[$i] > $avgdiff) then
-      if ($?VERBOSE) echo "$0:t $$ -- KEY $frames[$i]:t:r ($i)" >& /dev/stderr
-      set kframes = ( $jpgs[$i] $kframes )
+      if ($?VERBOSE) echo "$0:t $$ -- KEY ($i) SIZE ($ps[$i]) - $jpgs[$i] $diffs[$i]" >& /dev/stderr
+      set kjpgs = ( $jpgs[$i] $kjpgs )
       set kdiffs = ( $diffs[$i] $kdiffs )
     endif
     @ i++
   end
-  if ($?VERBOSE) echo "$0:t $$ -- key frames $#kframes of total frames $#frames" >& /dev/stderr
+  if ($?VERBOSE) echo "$0:t $$ -- key frames $#kjpgs of total frames $#frames" >& /dev/stderr
 
   ## COMPOSITE 
   set composite = "$tmpdir/$lastjson:t:r"'-composite.jpg'
   cp "$average" "$composite"
   @ i = 1
   if ($?DEBUG) echo "$0:t $$ -- Compositing $#jpgs JPGS with $#diffs DIFFS" >& /dev/stderr
-  while ( $i <= $#kframes )
+  while ( $i <= $#kjpgs )
     set c = $composite:r.$i.jpg
-    if ($?COMPOSITE_CORRECTLY) then
-      if ($?DEBUG) echo "$0:t $$ -- Compositing ${i} into ${c} from $kframes[$i] and $kdiffs[$i]" >& /dev/stderr
-      composite "$kframes[$i]" $composite "$kdiffs[$i]" $c
-    else
-      if ($?DEBUG) echo "$0:t $$ -- Compositing ${i} into ${c} from $kframes[$i] and $diffs[$i]" >& /dev/stderr
-      composite "$kframes[$i]" $composite "$diffs[$i]" $c
+    if ($?DEBUG) echo "$0:t $$ -- Compositing ${i} into ${c} from $kjpgs[$i] and $kdiffs[$i]" >& /dev/stderr
+    composite "$kjpgs[$i]" $composite "$kdiffs[$i]" $c
     endif
     mv -f $c $composite
     @ i++
