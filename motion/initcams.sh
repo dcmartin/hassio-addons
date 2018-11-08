@@ -1,7 +1,7 @@
 #!/bin/tcsh 
 
-setenv DEBUG
-setenv VERBOSE
+unsetenv DEBUG
+unsetenv VERBOSE
 
 if ($?VERBOSE) echo "$0:t $$ -- START $*" >& /dev/stderr
 

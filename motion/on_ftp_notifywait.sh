@@ -1,5 +1,5 @@
 #!/bin/tcsh
-setenv DEBUG
+unsetenv DEBUG
 unsetenv VERBOSE
 
 if ($?VERBOSE) echo "$0:t $$ -- START $*" `date` >& /dev/stderr

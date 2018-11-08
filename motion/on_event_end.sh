@@ -1,6 +1,6 @@
 #!/bin/tcsh
 
-setenv DEBUG
+unsetenv DEBUG
 unsetenv VERBOSE
 unsetenv USE_MQTT
 

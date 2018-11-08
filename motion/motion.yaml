@@ -1,20 +1,12 @@
 ## MOTION
 
-panel_iframe motion_panel:
+panel_iframe:
   motion:
     title: 'Motion AddOn'
     icon: mdi:image-plus
-    url: 'http://newman.local:7999'
+    url: 'http://%%DEVICE%%.local:7999'
 
-history motion_history:
-  include:
-    entities:
-      - sensor.motion_event_end_count
-      - sensor.motion_event_end_time
-      - sensor.motion_event_end_state
-      - sensor.motion_event_end_camera
-
-input_boolean motion_input_booleans:
+input_boolean:
   motion_event_end_notify:
     name: motion_event_end_notify
     initial: true
@@ -42,8 +34,8 @@ group motion_last_cameras:
     - camera.motion_last_animated
     - camera.motion_last_animated_mask
     - camera.motion_last_composite
-    - camera.motion_last_average
-    - camera.motion_last_blend
+#    - camera.motion_last_average
+#    - camera.motion_last_blend
 #    - camera.motion_last_annotated
 #    - camera.motion_last_cropped
 
@@ -54,8 +46,8 @@ group motion_localhost_cameras:
     - camera.motion_localhost_animated
     - camera.motion_localhost_animated_mask
     - camera.motion_localhost_composite
-    - camera.motion_localhost_average
-    - camera.motion_localhost_blend
+#    - camera.motion_localhost_average
+#    - camera.motion_localhost_blend
 #    - camera.motion_localhost_annotated
 #    - camera.motion_localhost_cropped
 
@@ -118,7 +110,7 @@ automation motion_automations:
           title: >
             Camera {{ trigger.payload_json.camera }} {{ trigger.payload_json.status }}
           notification_id: >
-            {{ trigger.payload_json.camera }}
+            {{ trigger.payload_json.device }}
           message: >-
             Camera {{ trigger.payload_json.camera }} on device {{ trigger.payload_json.device }} {{ trigger.payload_json.status }} at
             {{ trigger.payload_json.time|int|timestamp_custom("%a %b %d @ %I:%M %p") | default(null) }}
@@ -153,7 +145,7 @@ automation motion_automations:
 sensor motion_sensors:
   - platform: mqtt
     name: motion_configuration
-    state_topic: 'motion/+/start'
+    state_topic: 'motion/%%DEVICE%%/start'
     json_attributes:
       - unit_system
       - latitude
@@ -404,33 +396,33 @@ camera motion_cameras:
     topic: 'motion/+/+/image-cropped'
   - platform: mqtt
     name: motion_localhost_image
-    topic: 'motion/newman/+/image'
+    topic: 'motion/%%DEVICE%%/+/image'
   - platform: mqtt
     name: motion_localhost_average
-    topic: 'motion/newman/+/image-average'
+    topic: 'motion/%%DEVICE%%/+/image-average'
   - platform: mqtt
     name: motion_localhost_blend
-    topic: 'motion/newman/+/image-blend'
+    topic: 'motion/%%DEVICE%%/+/image-blend'
   - platform: mqtt
     name: motion_localhost_animated_mask
-    topic: 'motion/newman/+/image-animated-mask'
+    topic: 'motion/%%DEVICE%%/+/image-animated-mask'
   - platform: mqtt
     name: motion_localhost_composite
-    topic: 'motion/newman/+/image-composite'
+    topic: 'motion/%%DEVICE%%/+/image-composite'
   - platform: mqtt
     name: motion_localhost_animated
-    topic: 'motion/newman/+/image-animated'
+    topic: 'motion/%%DEVICE%%/+/image-animated'
   - platform: mqtt
     name: motion_localhost_annotated
-    topic: 'motion/newman/+/image-annotated'
+    topic: 'motion/%%DEVICE%%/+/image-annotated'
   - platform: mqtt
     name: motion_localhost_cropped
-    topic: 'motion/newman/+/image-cropped'
+    topic: 'motion/%%DEVICE%%/+/image-cropped'
   - platform: mqtt
     name: motion_localhost_image
-    topic: 'motion/newman/+/image'
+    topic: 'motion/%%DEVICE%%/+/image'
   - platform: mjpeg
-    mjpeg_url: http://newman.local:8090/
+    mjpeg_url: http://%%DEVICE%%.local:8090/
     name: motion_localhost_live
     username: !secret motion_username
     password: !secret motion_password

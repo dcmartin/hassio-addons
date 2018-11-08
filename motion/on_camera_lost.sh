@@ -1,7 +1,7 @@
 #!/bin/tcsh
-setenv DEBUG
-setenv VERBOSE
-setenv USE_MQTT
+unsetenv DEBUG
+unsetenv VERBOSE
+unsetenv USE_MQTT
 
 if ($?VERBOSE) echo "$0:t $$ -- START" `date` >& /dev/stderr
 
