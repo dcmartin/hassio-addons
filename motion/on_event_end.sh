@@ -2,7 +2,7 @@
 
 setenv DEBUG
 setenv VERBOSE
-setenv USE_MQTT
+unsetenv USE_MQTT
 
 if ($?VERBOSE) echo "$0:t $$ -- START" `date` >& /dev/stderr
 
@@ -161,7 +161,7 @@ if ($?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then
 endif
 
 ###
-### PROCESS FRAMES
+### PROCESS 
 ###
 
 set jpgs = ()
@@ -288,35 +288,43 @@ if ($#jpgs > 1) then
     if ($?VERBOSE) echo "$0:t $$ -- ${MOTION_MQTT_HOST} $MQTT_TOPIC" >& /dev/stderr
   endif
 
-  ## KEY FRAMES
-  set kjpgs = ()
-  set kdiffs = ()
-  @ i = 1
-  while ( $i <= $#diffs )
-    # keep track of frames w/ change > average
-    if ($ps[$i] > $avgdiff) then
-      if ($?VERBOSE) echo "$0:t $$ -- KEY ($i) SIZE ($ps[$i]) - $jpgs[$i] $diffs[$i]" >& /dev/stderr
-      set kjpgs = ( $jpgs[$i] $kjpgs )
-      set kdiffs = ( $diffs[$i] $kdiffs )
-    endif
-    @ i++
-  end
-  if ($?VERBOSE) echo "$0:t $$ -- key frames $#kjpgs of total frames $#frames" >& /dev/stderr
-
   ## COMPOSITE 
+
+  # composite these images
+  set srcs = ( $jpgs )
+  set masks = ( $diffs )
+  # start with average
   set composite = "$tmpdir/$lastjson:t:r"'-composite.jpg'
-  cp "$average" "$composite"
+  cp -f "$average" "$composite"
+  # test if key frame only
+  if ($?KEY_FRAMES) then
+    set kjpgs = ()
+    set kdiffs = ()
+    @ i = 1
+    while ( $i <= $#jpgs )
+      # keep track of jpgs w/ change > average
+      if ($ps[$i] > $avgdiff) then
+        if ($?VERBOSE) echo "$0:t $$ -- KEY ($i) SIZE ($ps[$i]) - $jpgs[$i] $diffs[$i]" >& /dev/stderr
+        set kjpgs = ( $kjpgs $jpgs[$i] )
+        set kdiffs = ( $kdiffs $diffs[$i] )
+      endif
+      @ i
+    end
+    if ($?VERBOSE) echo "$0:t $$ -- key frames $#kjpgs of total frames $#frames" >& /dev/stderr
+    set srcs = ( $kjpgs )
+    set masks = ( $kdiffs )
+  endif
+  # loop
+  if ($?DEBUG) echo "$0:t $$ -- Compositing $#srcs sources with $#masks masks" >& /dev/stderr
   @ i = 1
-  if ($?DEBUG) echo "$0:t $$ -- Compositing $#kjpgs JPGS with $#diffs DIFFS" >& /dev/stderr
-  while ( $i <= $#kjpgs )
+  while ( $i <= $#srcs )
     set c = $composite:r.$i.jpg
-    if ($?DEBUG) echo "$0:t $$ -- Compositing ${i} into ${c} from $kjpgs[$i] and $kdiffs[$i]" >& /dev/stderr
-    # composite "$kjpgs[$i]" "$composite" "$kdiffs[$i]" $c
-    composite "$kjpgs[$i]" "$composite" "$diffs[$i]" $c
-    # composite "$kjpgs[$i]" "$composite" "$average" $c
+    if ($?VERBOSE) echo "$0:t $$ -- Compositing ${i} ${c} from $srcs[$i] and $masks[$i]" >& /dev/stderr
+    convert "$composite" "$srcs[$i]" "$masks[$i]" -composite "$c"
     mv -f $c $composite
     @ i++
   end
+  # success or failure
   if (! -s "$composite") then
     if ($?USE_MQTT && $?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"DEBUG":"'$0:t'","pid":'$$',"composite":"FAILED"}'
     if ($?DEBUG) echo "$0:t $$ -- Failed to convert $#jpgs into a composite: $composite" >& /dev/stderr
