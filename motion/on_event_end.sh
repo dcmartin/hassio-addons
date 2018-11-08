@@ -311,7 +311,9 @@ if ($#jpgs > 1) then
   while ( $i <= $#kjpgs )
     set c = $composite:r.$i.jpg
     if ($?DEBUG) echo "$0:t $$ -- Compositing ${i} into ${c} from $kjpgs[$i] and $kdiffs[$i]" >& /dev/stderr
-    composite "$kjpgs[$i]" $composite "$kdiffs[$i]" $c
+    # composite "$kjpgs[$i]" "$composite" "$kdiffs[$i]" $c
+    composite "$kjpgs[$i]" "$composite" "$diffs[$i]" $c
+    # composite "$kjpgs[$i]" "$composite" "$average" $c
     mv -f $c $composite
     @ i++
   end
