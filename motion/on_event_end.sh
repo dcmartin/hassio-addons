@@ -307,12 +307,11 @@ if ($#jpgs > 1) then
   set composite = "$tmpdir/$lastjson:t:r"'-composite.jpg'
   cp "$average" "$composite"
   @ i = 1
-  if ($?DEBUG) echo "$0:t $$ -- Compositing $#jpgs JPGS with $#diffs DIFFS" >& /dev/stderr
+  if ($?DEBUG) echo "$0:t $$ -- Compositing $#kjpgs JPGS with $#diffs DIFFS" >& /dev/stderr
   while ( $i <= $#kjpgs )
     set c = $composite:r.$i.jpg
     if ($?DEBUG) echo "$0:t $$ -- Compositing ${i} into ${c} from $kjpgs[$i] and $kdiffs[$i]" >& /dev/stderr
     composite "$kjpgs[$i]" $composite "$kdiffs[$i]" $c
-    endif
     mv -f $c $composite
     @ i++
   end
