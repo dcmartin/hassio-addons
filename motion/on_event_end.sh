@@ -288,13 +288,35 @@ if ($#jpgs > 1) then
     if ($?VERBOSE) echo "$0:t $$ -- ${MOTION_MQTT_HOST} $MQTT_TOPIC" >& /dev/stderr
   endif
 
+  ## KEY FRAMES
+  set kframes = ()
+  set kdiffs = ()
+  @ i = 1
+  while ( $i <= $#diffs )
+    # keep track of frames w/ change > average
+    if ($ps[$i] > $a) then
+      if ($?VERBOSE) echo "$0:t $$ -- KEY $frames[$i]:t:r ($i)" >& /dev/stderr
+      set kframes = ( $frames[$i] $kframes )
+      set kdiffs = ( $diffs[$i] $kdiffs )
+    endif
+    @ i++
+  end
+  if ($?VERBOSE) echo "$0:t $$ -- key frames $#kframes of total frames $#frames" >& /dev/stderr
+
   ## COMPOSITE 
   set composite = "$tmpdir/$lastjson:t:r-composite.jpg"
   cp "$average" "$composite"
   @ i = 1
-  while ( $i <= $#jpgs )
+  if ($?DEBUG) echo "$0:t $$ -- Compositing $#jpgs JPGS with $#diffs DIFFS" >& /dev/stderr
+  while ( $i <= $#kframes )
     set c = $composite:r.$i.jpg
-    composite "$jpgs[$i]" $composite "$diffs[$i]" $c
+    if ($?COMPOSITE_CORRECTLY) then
+      if ($?DEBUG) echo "$0:t $$ -- Compositing ${i} into $c} from $kframe[$i] and $kdiffs[$i]" >& /dev/stderr
+      composite "$kframes[$i]" $composite "$kdiffs[$i]" $c
+    else
+      if ($?DEBUG) echo "$0:t $$ -- Compositing ${i} into $c} from $kframe[$i] and $diffs[$i]" >& /dev/stderr
+      composite "$kframes[$i]" $composite "$diffs[$i]" $c
+    endif
     mv -f $c $composite
     @ i++
   end
