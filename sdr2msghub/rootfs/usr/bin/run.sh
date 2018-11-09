@@ -62,7 +62,7 @@ ALL_TRANSCRIPTS=${VALUE}
 
 # URL
 VALUE=$(hass.config.get "horizon.exchange")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.warning "No exchange URL"; VALUE="null"; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.warning "Using default exchange"; VALUE="https://stg-edge-cluster.us-south.containers.appdomain.cloud/v1"; fi
 export HZN_EXCHANGE_URL="${VALUE}"
 hass.log.debug "Setting HZN_EXCHANGE_URL to ${VALUE}" >&2
 JSON="${JSON}"',"exchange":"'"${VALUE}"'"'
@@ -79,7 +79,7 @@ export HZN_EXCHANGE_USER_AUTH="${HZN_EXCHANGE_USER_AUTH}:${VALUE}"
 hass.log.trace "Setting HZN_EXCHANGE_USER_AUTH ${HZN_EXCHANGE_USER_AUTH}" >&2
 # ORGANIZATION
 VALUE=$(hass.config.get "horizon.organization")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.warning "No horizon organization"; VALUE="null"; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.warning "Using default organization"; VALUE="cgiroua@us.ibm.com"; fi
 JSON="${JSON}"',"organization":"'"${VALUE}"'"'
 # DEVICE
 VALUE=$(hass.config.get "horizon.device")
