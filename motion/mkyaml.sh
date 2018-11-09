@@ -1,7 +1,7 @@
 #!/bin/tcsh 
 
-unsetenv DEBUG
-unsetenv VERBOSE
+setenv DEBUG
+setenv VERBOSE
 
 if ($?VERBOSE) echo "$0:t $$ -- START $*" >& /dev/stderr
 
@@ -369,49 +369,49 @@ echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $
 echo "default_view:" >> "$out"
 echo "  view: yes" >> "$out"
 echo "  name: Home" >> "$out"
-# echo "  control: hidden" >> "$out"
 echo "  icon: mdi:home" >> "$out"
 echo "  entities:" >> "$out"
-foreach c ( $cameras )
-echo "    - camera.motion_${c}_image" >> "$out"
-echo "    - camera.motion_${c}_live" >> "$out"
-echo "    - camera.motion_${c}_animated" >> "$out"
-end
+echo "    - group.${devicedb}_camera_latest_images" >> "$out"
+echo "    - group.${devicedb}_camera_network_status" >> "$out"
+echo "    - group.${devicedb}_input_booleans" >> "$out"
 echo "" >> "$out"
 
-echo "onoff:" >> "$out"
-echo "  view: yes" >> "$out"
-echo "  name: onoff" >> "$out"
+echo "${devicedb}_camera_latest_images:" >> "$out"
+echo "  name: Home" >> "$out"
+echo "  icon: mdi:home" >> "$out"
 echo "  entities:" >> "$out"
-foreach c ( $cameras )
-echo "    - input_boolean.motion_notify_${c}" >> "$out"
-end
+echo "    - camera.${devicedb}_image" >> "$out"
+echo "    - camera.${devicedb}_animated" >> "$out"
+echo "    - camera.${devicedb}_image_animated" >> "$out"
 echo "" >> "$out"
 
-echo "latest:" >> "$out"
-echo "  view: yes" >> "$out"
-echo "  name: latest" >> "$out"
+echo "${devicedb}_input_booleans:" >> "$out"
+echo "  name: Home" >> "$out"
+echo "  icon: mdi:home" >> "$out"
 echo "  entities:" >> "$out"
-echo "    - camera.motion_image" >> "$out"
-echo "    - camera.motion_animated" >> "$out"
-echo "    - camera.motion_image_animated" >> "$out"
+echo "    - input_boolean.${devicedb}_camera_network_status_notify" >> "$out"
+echo "    - input_boolean.${devicedb}_camera_status_notify" >> "$out"
+echo "    - input_boolean.${devicedb}_event_end_notify" >> "$out"
 echo "" >> "$out"
 
-echo "animated:" >> "$out"
-echo "  view: yes" >> "$out"
-echo "  name: animated" >> "$out"
-# echo "  control: hidden" >> "$out"
-echo "  entities:" >> "$out"
 foreach c ( $cameras )
-echo "    - camera.motion_${c}_animated" >> "$out"
+echo "${devicedb}_${c}_view:" >> "$out"
+echo "  view: yes" >> "$out"
+echo "  name: Home" >> "$out"
+echo "  icon: mdi:home" >> "$out"
+echo "  entities:" >> "$out"
+echo "    - camera.${devicedb}_${c}_image" >> "$out"
+echo "    - camera.${devicedb}_${c}_live" >> "$out"
+echo "    - camera.${devicedb}_${c}_animated" >> "$out"
+echo "    - input_boolean.${devicedb}_${c}_status_notify" >> "$out"
 end
 echo "" >> "$out"
 
 ## CAMERA_NETWORK_STATUS group
 
-echo "${devicedb}_camera_network_staus:" >> "$out"
+echo "${devicedb}_camera_network_status:" >> "$out"
 echo "  name: ${devicedb} Camera Network Status" >> "$out"
-echo "  hidden: true" >> "$out"
+echo "  view: false" >> "$out"
 echo "  entities:" >> "$out"
 foreach c ( $cameras )
   set mac = ( `jq -r '.cameras[]|select(.name=="'${c}'").mac?' "$CONFIG_PATH"` )
