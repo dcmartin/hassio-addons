@@ -790,6 +790,7 @@ echo '    "folder": "motion/mosquitto"' >&2
 echo '  }' >&2
 echo "NOTIFY -- Re-start MQTT add-on" >&2
 # change configuration
+rm -f /share/motion/mosquitto/mosquitto.conf
 echo "max_connections -1" >> /share/motion/mosquitto/mosquitto.conf
 echo "max_inflight_messages 0" >> /share/motion/mosquitto/mosquitto.conf
 echo "max_queued_messages 1000" >> /share/motion/mosquitto/mosquitto.conf
