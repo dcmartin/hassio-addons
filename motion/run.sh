@@ -680,6 +680,9 @@ echo "${JSON}" | jq '.' > "${MOTION_JSON_FILE}"
 if [ ! -s "${MOTION_JSON_FILE}" ]; then
   echo "Invalid JSON: ${JSON}" >&2
   exit
+else
+  echo "Publishing configuration to ${MOTION_MQTT_HOST} topic ${MOTION_DEVICE_DB}/${MOTION_DEVICE_NAME}/start" >&2
+  mosquitto_pub -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "${MOTION_DEVICE_DB}/${MOTION_DEVICE_NAME}/start" -f "${MOTION_JSON_FILE}"
 fi
 
 ###
