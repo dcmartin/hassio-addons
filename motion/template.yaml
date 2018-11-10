@@ -1,11 +1,12 @@
+# TEMPLATE
 homeassistant:
-  name: Motion (fastboy)
-  latitude: 37.174429
-  longitude: -121.816545
-  elevation: 820
-  unit_system: imperial
-  time_zone: America/Los_Angeles
-  customize: !include customize.yaml
+  name: Motion (%%DEVICE_NAME%%)
+  latitude: %%LATITUDE%%
+  longitude: %%LONGITUDE%%
+  elevation: %%ELEVATION%%
+  unit_system: %%UNIT_SYSTEM%%
+  time_zone: %%TIME_ZONE%%
+# customize: !include customize.yaml
 
 hassio:
 cloud:
@@ -20,7 +21,7 @@ sun:
 # conversation:
 # discovery:
 # tts:
-  # - platform: google
+#   - platform: google
 
 group: !include groups.yaml
 automation: !include automations.yaml
@@ -29,10 +30,10 @@ automation: !include automations.yaml
 ## MQTT
 
 mqtt:
-  broker: 192.168.1.40
-  port: 1883
-#  username: ''
-#  password: ''
+  broker: '%%MQTT_BROKER%%'
+  port: %%MQTT_PORT%%
+  username: '%%MQTT_USERNAME%%'
+  password: '%%MQTT_PASSWORD%%'
 
 ## PANELS
 
@@ -40,11 +41,11 @@ panel_iframe:
   motion:
     title: 'Motion AddOn'
     icon: mdi:image-plus
-    url: 'http://192.168.1.201:7999'
+    url: 'http://%%DEVICE_IPADDR%%:7999'
   configurator:
     title: Configurator
     icon: mdi:wrench
-    url: 'http://192.168.1.201:3218'
+    url: 'http://%%DEVICE_IPADDR%%:3218'
 
 ###
 ### MOTION
@@ -84,11 +85,70 @@ history_graph:
     entities:
       - sensor.motion_event_count
 
+# CAMERA
+camera motion_cameras:
+  - platform: mqtt
+    name: motion_last_image
+    topic: '%%ORGANIZATION%%/+/+/image'
+  - platform: mqtt
+    name: motion_last_average
+    topic: '%%ORGANIZATION%%/+/+/image-average'
+  - platform: mqtt
+    name: motion_last_blend
+    topic: '%%ORGANIZATION%%/+/+/image-blend'
+  - platform: mqtt
+    name: motion_last_animated_mask
+    topic: '%%ORGANIZATION%%/+/+/image-animated-mask'
+  - platform: mqtt
+    name: motion_last_composite
+    topic: '%%ORGANIZATION%%/+/+/image-composite'
+  - platform: mqtt
+    name: motion_last_animated
+    topic: '%%ORGANIZATION%%/+/+/image-animated'
+  - platform: mqtt
+    name: motion_last_annotated
+    topic: '%%ORGANIZATION%%/+/+/image-annotated'
+  - platform: mqtt
+    name: motion_last_cropped
+    topic: '%%ORGANIZATION%%/+/+/image-cropped'
+  - platform: mqtt
+    name: motion_localhost_image
+    topic: '%%ORGANIZATION%%/%%DEVICE_NAME%%/+/image'
+  - platform: mqtt
+    name: motion_localhost_average
+    topic: '%%ORGANIZATION%%/%%DEVICE_NAME%%/+/image-average'
+  - platform: mqtt
+    name: motion_localhost_blend
+    topic: '%%ORGANIZATION%%/%%DEVICE_NAME%%/+/image-blend'
+  - platform: mqtt
+    name: motion_localhost_animated_mask
+    topic: '%%ORGANIZATION%%/%%DEVICE_NAME%%/+/image-animated-mask'
+  - platform: mqtt
+    name: motion_localhost_composite
+    topic: '%%ORGANIZATION%%/%%DEVICE_NAME%%/+/image-composite'
+  - platform: mqtt
+    name: motion_localhost_animated
+    topic: '%%ORGANIZATION%%/%%DEVICE_NAME%%/+/image-animated'
+  - platform: mqtt
+    name: motion_localhost_annotated
+    topic: '%%ORGANIZATION%%/%%DEVICE_NAME%%/+/image-annotated'
+  - platform: mqtt
+    name: motion_localhost_cropped
+    topic: '%%ORGANIZATION%%/%%DEVICE_NAME%%/+/image-cropped'
+  - platform: mqtt
+    name: motion_localhost_image
+    topic: '%%ORGANIZATION%%/%%DEVICE_NAME%%/+/image'
+  - platform: mjpeg
+    mjpeg_url: 'http://%%DEVICE_IPADDR%%:8090/'
+    name: motion_localhost_live
+    username: !secret %%ORGANIZATION%%_username
+    password: !secret %%ORGANIZATION%%_password
+
 # SENSOR
 sensor motion_sensors:
   - platform: mqtt
     name: motion_configuration
-    state_topic: 'motion/fastboy/start'
+    state_topic: '%%ORGANIZATION%%/%%DEVICE_NAME%%/start'
     json_attributes:
       - unit_system
       - latitude
@@ -113,7 +173,7 @@ sensor motion_sensors:
       {% if value_json is defined %}True{% else %}null{% endif %}
   - platform: mqtt
     name: motion_camera_found
-    state_topic: 'motion/+/+/status/found'
+    state_topic: '%%ORGANIZATION%%/+/+/status/found'
     expire_after: 1
     force_update: true
     json_attributes:
@@ -125,7 +185,7 @@ sensor motion_sensors:
       {% if value_json is defined %}True{% else %}null{% endif %}
   - platform: mqtt
     name: motion_camera_lost
-    state_topic: 'motion/+/+/status/lost'
+    state_topic: '%%ORGANIZATION%%/+/+/status/lost'
     expire_after: 1
     force_update: true
     json_attributes:
@@ -137,7 +197,7 @@ sensor motion_sensors:
       {% if value_json is defined %}True{% else %}null{% endif %}
   - platform: mqtt
     name: motion_event_image
-    state_topic: 'motion/+/+/event/image'
+    state_topic: '%%ORGANIZATION%%/+/+/event/image'
     expire_after: 1
     force_update: true
     json_attributes:
@@ -157,7 +217,7 @@ sensor motion_sensors:
       {% if value_json is defined %}True{% else %}null{% endif %}
   - platform: mqtt
     name: motion_event_end
-    state_topic: 'motion/+/+/event/end'
+    state_topic: '%%ORGANIZATION%%/+/+/event/end'
     expire_after: 1
     force_update: true
     json_attributes:
@@ -361,62 +421,3 @@ sensor motion_statistics:
     entity_id: sensor.motion_event_end_elapsed
     max_age:
       hours: 24
-
-# CAMERA
-camera motion_cameras:
-  - platform: mqtt
-    name: motion_last_image
-    topic: 'motion/+/+/image'
-  - platform: mqtt
-    name: motion_last_average
-    topic: 'motion/+/+/image-average'
-  - platform: mqtt
-    name: motion_last_blend
-    topic: 'motion/+/+/image-blend'
-  - platform: mqtt
-    name: motion_last_animated_mask
-    topic: 'motion/+/+/image-animated-mask'
-  - platform: mqtt
-    name: motion_last_composite
-    topic: 'motion/+/+/image-composite'
-  - platform: mqtt
-    name: motion_last_animated
-    topic: 'motion/+/+/image-animated'
-  - platform: mqtt
-    name: motion_last_annotated
-    topic: 'motion/+/+/image-annotated'
-  - platform: mqtt
-    name: motion_last_cropped
-    topic: 'motion/+/+/image-cropped'
-  - platform: mqtt
-    name: motion_localhost_image
-    topic: 'motion/fastboy/+/image'
-  - platform: mqtt
-    name: motion_localhost_average
-    topic: 'motion/fastboy/+/image-average'
-  - platform: mqtt
-    name: motion_localhost_blend
-    topic: 'motion/fastboy/+/image-blend'
-  - platform: mqtt
-    name: motion_localhost_animated_mask
-    topic: 'motion/fastboy/+/image-animated-mask'
-  - platform: mqtt
-    name: motion_localhost_composite
-    topic: 'motion/fastboy/+/image-composite'
-  - platform: mqtt
-    name: motion_localhost_animated
-    topic: 'motion/fastboy/+/image-animated'
-  - platform: mqtt
-    name: motion_localhost_annotated
-    topic: 'motion/fastboy/+/image-annotated'
-  - platform: mqtt
-    name: motion_localhost_cropped
-    topic: 'motion/fastboy/+/image-cropped'
-  - platform: mqtt
-    name: motion_localhost_image
-    topic: 'motion/fastboy/+/image'
-  - platform: mjpeg
-    mjpeg_url: http://192.168.1.201:8090/
-    name: motion_localhost_live
-    username: !secret motion_username
-    password: !secret motion_password

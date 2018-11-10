@@ -1,0 +1,71 @@
+
+# GROUP
+default_view:
+  name: motion_group
+  view: true
+  icon: mdi:video
+  entities:
+    - group.motion_notify_controls
+    - group.motion_localhost_cameras
+    - group.motion_event_end
+    - group.motion_last_cameras
+    - group.motion_history
+
+motion_history:
+  name: motion_history
+  icon: mdi:graph
+  entities:
+    - history_graph.motion_event_ago
+    - history_graph.motion_event_count
+    - history_graph.motion_event_elapsed
+
+motion_notify_controls:
+  name: motion_notify_controls
+  icon: mdi:notify
+  control: hidden
+  entities:
+    - input_boolean.motion_event_notify
+    - input_boolean.motion_status_notify
+    - automation.motion_event_end_notify
+    - automation.motion_camera_status_notify
+    - automation.motion_camera_network_status_notify
+
+motion_last_cameras:
+  name: motion_last_cameras
+  entities:
+#    - camera.motion_last_image
+    - camera.motion_last_animated
+#    - camera.motion_last_animated_mask
+    - camera.motion_last_composite
+#    - camera.motion_last_average
+#    - camera.motion_last_blend
+#    - camera.motion_last_annotated
+#    - camera.motion_last_cropped
+
+motion_localhost_cameras:
+  name: motion_localhost_cameras
+  entities:
+    - camera.motion_localhost_live
+#    - camera.motion_localhost_image
+    - camera.motion_localhost_animated
+#    - camera.motion_localhost_animated_mask
+    - camera.motion_localhost_composite
+#    - camera.motion_localhost_average
+#    - camera.motion_localhost_blend
+#    - camera.motion_localhost_annotated
+#    - camera.motion_localhost_cropped
+
+motion_event_end:
+  name: motion_event_end
+  entities:
+    - sensor.motion_event_end_when
+    - sensor.motion_event_end_ago
+    - sensor.motion_event_end_device
+    - sensor.motion_event_end_camera
+    - sensor.motion_event_end_elapsed
+    - sensor.motion_event_end_image_count
+    - sensor.motion_event_end_time
+    - sensor.motion_event_end_count
+    - sensor.motion_event_end_ago_mean
+
+
