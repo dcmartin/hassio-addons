@@ -87,8 +87,33 @@ history_graph:
 # SENSOR
 sensor motion_sensors:
   - platform: mqtt
-    name: motion_configuration
+    name: motion_configuration_localhost
     state_topic: 'motion/fastboy/start'
+    json_attributes:
+      - unit_system
+      - latitude
+      - longitude
+      - elevation
+      - interval
+      - minimum_animate
+      - post_pictures
+      - share_dir
+      - name
+      - host
+      - date
+      - www
+      - devicedb
+      - timezone
+      - mqtt
+      - watson
+      - digits
+      - motion
+      - cameras
+    value_template: >
+      {% if value_json is defined %}True{% else %}null{% endif %}
+  - platform: mqtt
+    name: motion_configuration_network
+    state_topic: 'motion/+/start'
     json_attributes:
       - unit_system
       - latitude
@@ -173,19 +198,37 @@ sensor motion_sensors:
       {% if value_json is defined %}True{% else %}null{% endif %}
   - platform: template
     sensors:
-      motion_camera_count:
+      motion_configuration_localhost_camera_count:
         entity_id:
-          - sensor.motion_configuration
+          - sensor.motion_configuration_localhost
         value_template: >-
-          {% if states.sensor.motion_configuration.attributes.cameras is defined %}
-            {{ states.sensor.motion_configuration.attributes.cameras | length }}
+          {% if states.sensor.motion_configuration_localhost.attributes.cameras is defined %}
+            {{ states.sensor.motion_configuration_localhost.attributes.cameras | length }}
           {% else %}null{% endif %}
-      motion_camera_names:
+      motion_configuration_localhost_camera_names:
         entity_id:
-          - sensor.motion_configuration
+          - sensor.motion_configuration_localhost
         value_template: >-
-          {% if states.sensor.motion_configuration.attributes.cameras is defined %}
-            {%- for camera in states.sensor.motion_configuration.attributes.cameras -%}
+          {% if states.sensor.motion_configuration_localhost.attributes.cameras is defined %}
+            {%- for camera in states.sensor.motion_configuration_localhost.attributes.cameras -%}
+              {% if loop.first %}[{% else %},{% endif %}
+              {{- camera.name | tojson -}}
+              {%- if loop.last -%}]{%- endif -%}
+            {% endfor %}
+          {% else %}null{% endif %}
+      motion_configuration_network_camera_count:
+        entity_id:
+          - sensor.motion_configuration_network
+        value_template: >-
+          {% if states.sensor.motion_configuration_network.attributes.cameras is defined %}
+            {{ states.sensor.motion_configuration_network.attributes.cameras | length }}
+          {% else %}null{% endif %}
+      motion_configuration_network_camera_names:
+        entity_id:
+          - sensor.motion_configuration_network
+        value_template: >-
+          {% if states.sensor.motion_configuration_network.attributes.cameras is defined %}
+            {%- for camera in states.sensor.motion_configuration_network.attributes.cameras -%}
               {% if loop.first %}[{% else %},{% endif %}
               {{- camera.name | tojson -}}
               {%- if loop.last -%}]{%- endif -%}

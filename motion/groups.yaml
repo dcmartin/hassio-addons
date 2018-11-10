@@ -68,4 +68,8 @@ motion_event_end:
     - sensor.motion_event_end_count
     - sensor.motion_event_end_ago_mean
 
-
+motion_camera_network_status:
+  name motion_camera_network_status
+  entities:
+    - sensor.motion_camera_localhost_status
+    - sensor.motion_camera_network_status
