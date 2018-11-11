@@ -529,28 +529,30 @@ for (( i=0; i<ncamera ; i++)) ; do
   else
     # HANDLE NETCAM
     VALUE=$(jq -r '.cameras['${i}'].url' "${CONFIG_PATH}")
-    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_url'); fi
     # test if file designation for directory
     if [[ "${VALUE}" == ftpd* ]]; then
       # file which motion package will poll; never created
       VALUE="${VALUE%*/}.jpg"
       VALUE=$(echo "${VALUE}" | sed "s/^ftpd/file/")
+      CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
+    else
+      if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_url?'); fi
+      CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
+      echo "Set netcam_url to ${VALUE}" >&2
+      echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
+      # keepalive 
+      VALUE=$(jq -r '.cameras['${i}'].keepalive' "${CONFIG_PATH}")
+      if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_keepalive'); fi
+      echo "Set netcam_keepalive to ${VALUE}" >&2
+      echo "netcam_keepalive ${VALUE}" >> "${CAMERA_CONF}"
+      CAMERAS="${CAMERAS}"',"keepalive":"'"${VALUE}"'"'
+      # userpass 
+      VALUE=$(jq -r '.cameras['${i}'].userpass' "${CONFIG_PATH}")
+      if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="${NETCAM_USERPASS}"; fi
+      echo "Set netcam_userpass to ${VALUE}" >&2
+      echo "netcam_userpass ${VALUE}" >> "${CAMERA_CONF}"
+      # DO NOT RECORD; CAMERAS="${CAMERAS}"',"userpass":"'"${VALUE}"'"'
     fi
-    CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
-    echo "Set netcam_url to ${VALUE}" >&2
-    echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
-    # keepalive 
-    VALUE=$(jq -r '.cameras['${i}'].keepalive' "${CONFIG_PATH}")
-    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_keepalive'); fi
-    echo "Set netcam_keepalive to ${VALUE}" >&2
-    echo "netcam_keepalive ${VALUE}" >> "${CAMERA_CONF}"
-    CAMERAS="${CAMERAS}"',"keepalive":"'"${VALUE}"'"'
-    # userpass 
-    VALUE=$(jq -r '.cameras['${i}'].userpass' "${CONFIG_PATH}")
-    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="${NETCAM_USERPASS}"; fi
-    echo "Set netcam_userpass to ${VALUE}" >&2
-    echo "netcam_userpass ${VALUE}" >> "${CAMERA_CONF}"
-    # DO NOT RECORD; CAMERAS="${CAMERAS}"',"userpass":"'"${VALUE}"'"'
   fi
 
   # stream_quality 

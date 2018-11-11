@@ -22,10 +22,12 @@ RUN apk add --no-cache \
   inotify-tools \
   jq \
   mosquitto-clients \
-  motion@testing \
   python3 \
   tcsh@community \
   git
+
+RUN apk add --no-cache \
+  motion@edge
 
 # RUN apk add ffmpeg-dev autoconf automake pkgconf libtool libjpeg jpeg-dev alpine-sdk build-base libzip-dev gettext libmicrohttpd-dev inotify-tools-dev 
 # ENV MOTION_INOTIFY true
