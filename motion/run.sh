@@ -16,7 +16,7 @@ JSON='{'
 ## host name
 ##
 VALUE=$(jq -r ".name" "${CONFIG_PATH}")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="${HOSTNAME}"-$(hostname -i); fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="${HOSTNAME}"-$(hostname -i | sed 's/\.//g'); fi
 echo "Setting name ${VALUE} [MOTION_DEVICE_NAME]" >&2
 # FIRST ITEM NO COMMA
 JSON="${JSON}"'"name":"'"${VALUE}"'","host":"'"${HOSTNAME}"'","date":'$(/bin/date +%s)
