@@ -414,7 +414,7 @@ echo "  name: ${devicedb} Camera Network Status" >> "$out"
 echo "  view: false" >> "$out"
 echo "  entities:" >> "$out"
 foreach c ( $cameras )
-  set mac = ( `jq -r '.cameras[]|select(.name=="'${c}'").mac?' "$CONFIG_PATH"` )
+  set mac = ( `jq -r '.cameras[]|select(.name=="'${c}'").mac' "$CONFIG_PATH"` )
   if ($#mac && "$mac" != "null") then
     echo "    - device_tracker.${devicedb}_${name}_${c}" >> "$out"
   endif
@@ -435,7 +435,7 @@ echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $
 
 # 192.168.1.163 00:22:6B:F0:92:60 (Cisco-Linksys)
 foreach c ( $cameras )
-  set mac = ( `jq -r '.cameras[]|select(.name=="'${c}'").mac?' "$CONFIG_PATH"` )
+  set mac = ( `jq -r '.cameras[]|select(.name=="'${c}'").mac' "$CONFIG_PATH"` )
   if ($#mac && "$mac" != "null") then
     echo "${devicedb}_${name}_${c}:" >> "$out"
     echo "  mac: ${mac}" >> "$out"

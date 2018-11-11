@@ -1,7 +1,7 @@
 #!/bin/tcsh
-unsetenv DEBUG
-unsetenv VERBOSE
-unsetenv USE_MQTT
+setenv DEBUG
+setenv VERBOSE
+setenv USE_MQTT
 
 if ($?VERBOSE) echo "$0:t $$ -- START" `date` >& /dev/stderr
 
@@ -14,7 +14,7 @@ else
   exit
 endif
 
-if ($?VERBOSE && $?USE_MQTT) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "debug" -m '{"INFO":"'$0:t'","pid":"'$$'","info":"moving '$image' to '$output'"}'
+if ($?VERBOSE && $?USE_MQTT) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "${MOTION_DEVICE_DB}/${MOTION_DEVICE_NAME}/debug" -m '{"INFO":"'$0:t'","pid":"'$$'","info":"moving '$image' to '$output'"}'
 
 if ($?VERBOSE) echo "$0:t moving $image to $output" >& /dev/stderr
 

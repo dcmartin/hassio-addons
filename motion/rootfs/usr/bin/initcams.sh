@@ -1,7 +1,8 @@
 #!/bin/tcsh 
 
-unsetenv DEBUG
-unsetenv VERBOSE
+setenv DEBUG
+setenv VERBOSE
+setenv USE_MQTT
 
 if ($?VERBOSE) echo "$0:t $$ -- START $*" >& /dev/stderr
 
@@ -25,7 +26,7 @@ else if ( -e /usr/bin/dateconv ) then
 else if ( -e /usr/local/bin/dateconv ) then
    set dateconv = /usr/local/bin/dateconv
 else
-  if ($?USE_MQTT && $?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"ERROR":"'$0:t'","pid":'$$',"error":"no date converter; install dateutils"}'
+  if ($?USE_MQTT && $?DEBUG) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "${MOTION_DEVICE_DB}/${MOTION_DEVICE_NAME}/debug" -m '{"ERROR":"'$0:t'","pid":'$$',"error":"no date converter; install dateutils"}'
   if ($?DEBUG) echo "$0:t $$ -- no dateutils(1) found; exiting" >& /dev/stderr
   goto done
 endif

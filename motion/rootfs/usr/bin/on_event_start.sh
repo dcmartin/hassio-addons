@@ -1,7 +1,7 @@
 #!/bin/tcsh
-unsetenv DEBUG
-unsetenv VERBOSE
-unsetenv USE_MQTT
+setenv DEBUG
+setenv VERBOSE
+setenv USE_MQTT
 
 if ($?VERBOSE) echo "$0:t $$ -- START" `date` >& /dev/stderr
 
@@ -13,7 +13,7 @@ else if ( -e /usr/bin/dateconv ) then
 else if ( -e /usr/local/bin/dateconv ) then
    set dateconv = /usr/local/bin/dateconv
 else
-  if ($?DEBUG && $?USE_MQTT) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"ERROR":"'$0:t'","pid":"'$$'","error":"no date converter; install dateutils"}'
+  if ($?DEBUG && $?USE_MQTT) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "${MOTION_DEVICE_DB}/${MOTION_DEVICE_NAME}/debug" -m '{"ERROR":"'$0:t'","pid":"'$$'","error":"no date converter; install dateutils"}'
   goto done
 endif
 
@@ -48,7 +48,7 @@ set dir = "${MOTION_DATA_DIR}/${CN}"
 
 set EJ = "${dir}/${TS}-${EN}.json"
 
-if ($?VERBOSE && $?USE_MQTT) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","dir":"'${dir}'","camera":"'$CN'","event":"'$EN'","start":'$NOW',"timestamp":"'"$TS"'","json":"'"$EJ"'"}'
+if ($?VERBOSE && $?USE_MQTT) mosquitto_pub -h "${MOTION_MQTT_HOST}" -t "${MOTION_DEVICE_DB}/${MOTION_DEVICE_NAME}/debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","dir":"'${dir}'","camera":"'$CN'","event":"'$EN'","start":'$NOW',"timestamp":"'"$TS"'","json":"'"$EJ"'"}'
 
 echo '{"device":"'${MOTION_DEVICE_NAME}'","camera":"'${CN}'","event":"'${EN}'","start":'$NOW'}' >! "${EJ}"
 
