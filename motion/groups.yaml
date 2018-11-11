@@ -33,10 +33,11 @@ motion_notify_controls:
 motion_last_cameras:
   name: motion_last_cameras
   entities:
-#    - camera.motion_last_image
+    - camera.motion_last_image
     - camera.motion_last_animated
-#    - camera.motion_last_animated_mask
     - camera.motion_last_composite
+#    - camera.motion_last_image
+#    - camera.motion_last_animated_mask
 #    - camera.motion_last_average
 #    - camera.motion_last_blend
 #    - camera.motion_last_annotated
@@ -46,10 +47,10 @@ motion_localhost_cameras:
   name: motion_localhost_cameras
   entities:
     - camera.motion_localhost_live
-#    - camera.motion_localhost_image
     - camera.motion_localhost_animated
-#    - camera.motion_localhost_animated_mask
     - camera.motion_localhost_composite
+#    - camera.motion_localhost_image
+#    - camera.motion_localhost_animated_mask
 #    - camera.motion_localhost_average
 #    - camera.motion_localhost_blend
 #    - camera.motion_localhost_annotated
@@ -69,7 +70,7 @@ motion_event_end:
     - sensor.motion_event_end_ago_mean
 
 motion_camera_network_status:
-  name motion_camera_network_status
+  name: motion_camera_network_status
   entities:
     - sensor.motion_camera_localhost_status
     - sensor.motion_camera_network_status

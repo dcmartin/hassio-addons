@@ -16,7 +16,7 @@ JSON='{'
 ## host name
 ##
 VALUE=$(jq -r ".name" "${CONFIG_PATH}")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="${HOSTNAME}"; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE=$(hostname)"; fi
 echo "Setting name ${VALUE} [MOTION_DEVICE_NAME]" >&2
 # FIRST ITEM NO COMMA
 JSON="${JSON}"'"name":"'"${VALUE}"'","host":"'"${HOSTNAME}"'","date":'$(/bin/date +%s)
@@ -24,7 +24,7 @@ export MOTION_DEVICE_NAME="${VALUE}"
 
 ## web
 VALUE=$(jq -r ".www" "${CONFIG_PATH}")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="${MOTION_DEVICE_NAME}.local"; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE=($(hostname -I))"; fi
 echo "Setting www ${VALUE}" >&2
 JSON="${JSON}"',"www":"'"${VALUE}"'"'
 
@@ -532,12 +532,11 @@ for (( i=0; i<ncamera ; i++)) ; do
     if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_url'); fi
     # test if file designation for directory
     if [[ "${VALUE}" == ftpd* ]]; then
+      # file which motion package will poll; never created
       VALUE="${VALUE%*/}.jpg"
-      # capture specified
-      CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
       VALUE=$(echo "${VALUE}" | sed "s/^ftpd/file/")
-      # file which motion package will poll and will be created
     fi
+    CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
     echo "Set netcam_url to ${VALUE}" >&2
     echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
     # keepalive 
