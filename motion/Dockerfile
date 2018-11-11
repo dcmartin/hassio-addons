@@ -5,8 +5,9 @@ FROM $BUILD_FROM
 ENV LANG C.UTF-8
 
 RUN echo "@testing http://nl.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
-RUN echo "@community http://nl.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
-#RUN echo "@edge http://nl.alpinelinux.org/alpine/edge/edge" >> /etc/apk/repositories
+#RUN echo "@community http://nl.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
+RUN echo "@edge http://nl.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories
+
 RUN apk update
 
 RUN apk add --no-cache \
@@ -23,41 +24,44 @@ RUN apk add --no-cache \
   jq \
   mosquitto-clients \
   python3 \
-  tcsh@community \
+  tcsh \
   git
 
-RUN apk add --no-cache \
-  motion@edge
+## CVSKIT
 
-# RUN apk add ffmpeg-dev autoconf automake pkgconf libtool libjpeg jpeg-dev alpine-sdk build-base libzip-dev gettext libmicrohttpd-dev inotify-tools-dev 
-# ENV MOTION_INOTIFY true
-# RUN git clone https://github.com/dcmartin/motion.git
-# RUN cd motion && autoreconf -fiv && ./configure && make && make install
+#RUN apk add --update \
+#    python \
+#    python-dev \
+#    py-pip \
+#    build-base
+#
+#RUN pip install --upgrade pip \
+#    && pip install --upgrade setuptools \
+#    && pip install --upgrade csvkit --ignore-installed six \
+#    && rm -rf /var/cache/apk/*
 
-RUN apk add --update \
-    python \
-    python-dev \
-    py-pip \
-    build-base
 
-RUN pip install --upgrade pip \
-    && pip install --upgrade setuptools \
-    && pip install --upgrade csvkit --ignore-installed six \
-    && rm -rf /var/cache/apk/*
+## FFMPEG & MOTION
 
-# args
-ARG MOTION_CONF=/etc/motion/motion.conf 
-ARG LOCAL_BIN=/usr/local/bin
+RUN apk -v add --no-cache \
+  ffmpeg@edge
+
+RUN apk -v add --no-cache \
+  motion@testing
 
 # environment
 ENV CONFIG_PATH /data/options.json
-ENV MOTION_CONF "${MOTION_CONF}"
+ENV MOTION_CONF /etc/motion/motion.conf
+
+# Copy rootts
+COPY rootfs /
 
 # Copy "motion" scripts 
-COPY motion.conf "${MOTION_CONF}"
-RUN mkdir -p "${LOCAL_BIN}" 
-COPY *.sh "${LOCAL_BIN}"/
-RUN chmod 755 "${LOCAL_BIN}"/*.sh
+# ARG LOCAL_BIN=/usr/local/bin
+# COPY motion.conf "${MOTION_CONF}"
+# RUN mkdir -p "${LOCAL_BIN}" 
+# COPY *.sh "${LOCAL_BIN}"/
+# RUN chmod 755 "${LOCAL_BIN}"/*.sh
 
 ## APACHE
 
@@ -75,14 +79,14 @@ ENV MOTION_APACHE_HOST "${MOTION_APACHE_HOST}"
 ENV MOTION_APACHE_PORT "${MOTION_APACHE_PORT}"
 ENV MOTION_APACHE_ADMIN "${MOTION_APACHE_ADMIN}"
 
-COPY ./public/ "${MOTION_APACHE_HTDOCS}"
-COPY ./cgi/ "${MOTION_APACHE_CGIBIN}"
+# COPY ./public/ "${MOTION_APACHE_HTDOCS}"
+# COPY ./cgi/ "${MOTION_APACHE_CGIBIN}"
 
 # copy sample image
-COPY sample.jpg /etc/motion/sample.jpg
-COPY sample.gif /etc/motion/sample.gif
-COPY test.jpg /etc/motion/test.jpg
-COPY test.gif /etc/motion/test.gif
+# COPY sample.jpg /etc/motion/sample.jpg
+# COPY sample.gif /etc/motion/sample.gif
+# COPY test.jpg /etc/motion/test.jpg
+# COPY test.gif /etc/motion/test.gif
 
 # Ports for motion (control and stream)
 EXPOSE ${MOTION_APACHE_PORT}
@@ -91,7 +95,7 @@ EXPOSE 8090 8091 8092 8093 8094 8095 8096 8097 8099 8099
 EXPOSE 8100 8101 8102 8103 8104 8105 8106 8107 8109 8109
 EXPOSE 8110 8111 8112 8113 8114 8115 8116 8117 8119 8119
 
-CMD [ "/usr/local/bin/run.sh" ]
+CMD [ "/usr/bin/run.sh" ]
 
 # Build arugments
 ARG BUILD_ARCH

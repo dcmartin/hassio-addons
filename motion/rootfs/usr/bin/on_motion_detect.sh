@@ -15,7 +15,7 @@ DEBUG=true
 # %n = number indicating filetype
 # %$ = camera name
 
-# on_motion_detected /usr/local/bin/on_motion_detect.sh %$ %v %Y %m %d %H %M %S
+# on_motion_detected /usr/bin/on_motion_detect.sh %$ %v %Y %m %d %H %M %S
 
 
 # get arguments
