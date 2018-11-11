@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.4.11",
+  "version": "0.4.13",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -103,9 +103,13 @@
       "height": 480,
       "fps": 5
     }
-    ]
+    ],
+    "camera_type": "wcv80n",
+    "log_level":"info",
+    "log_motion": 2
   },
   "schema": {
+    "log_level": "match(^(trace|debug|info|notice|warning|error|fatal)$)",
     "devicedb": "str",
     "name": "str?",
     "elevation": "int?",
@@ -118,6 +122,7 @@
     "port": "port?",
     "email": "email?",
     "timezone": "str?",
+    "camera_type": "str?",
     "cameras": [
       {
         "name": "str",
@@ -146,7 +151,7 @@
     ],
     "webcontrol_port": "port?",
     "stream_port": "port?",
-    "log_level": "int?",
+    "log_motion": "int?",
     "log_type": "str?",
     "videodevice": "str?",
     "v412_pallette": "int?",

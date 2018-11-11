@@ -1,14 +1,8 @@
-ARG BUILD_FROM=hassioaddons/base:2.0.1
+ARG BUILD_FROM=hassioaddons/base:2.3.0
 
 FROM $BUILD_FROM
 
 ENV LANG C.UTF-8
-
-RUN echo "@testing http://nl.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
-#RUN echo "@community http://nl.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories
-RUN echo "@edge http://nl.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories
-
-RUN apk update
 
 RUN apk add --no-cache \
   apache2 \
@@ -18,6 +12,8 @@ RUN apk add --no-cache \
   curl \
   dateutils \
   findutils \
+  ffmpeg@edge \
+  motion@edge \
   gawk \
   imagemagick \
   inotify-tools \
@@ -40,14 +36,6 @@ RUN apk add --no-cache \
 #    && pip install --upgrade csvkit --ignore-installed six \
 #    && rm -rf /var/cache/apk/*
 
-
-## FFMPEG & MOTION
-
-RUN apk -v add --no-cache \
-  ffmpeg@edge
-
-RUN apk -v add --no-cache \
-  motion@testing
 
 # environment
 ENV CONFIG_PATH /data/options.json
