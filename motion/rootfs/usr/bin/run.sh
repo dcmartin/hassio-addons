@@ -533,9 +533,10 @@ for (( i=0; i<ncamera ; i++)) ; do
       # file which motion package will poll; never created
       VALUE="${VALUE%*/}.jpg"
       VALUE=$(echo "${VALUE}" | sed "s/^ftpd/file/")
+    else
+      echo "Set netcam_url to ${VALUE}" >&2
+      echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
     fi
-    echo "Set netcam_url to ${VALUE}" >&2
-    echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
     CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
     # keepalive 
     VALUE=$(jq -r '.cameras['${i}'].keepalive' "${CONFIG_PATH}")
