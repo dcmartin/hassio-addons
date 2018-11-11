@@ -16,7 +16,7 @@ JSON='{'
 ## host name
 ##
 VALUE=$(jq -r ".name" "${CONFIG_PATH}")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="${HOSTNAME}"-($(hostname -i)); fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="${HOSTNAME}"-$(hostname -i); fi
 echo "Setting name ${VALUE} [MOTION_DEVICE_NAME]" >&2
 # FIRST ITEM NO COMMA
 JSON="${JSON}"'"name":"'"${VALUE}"'","host":"'"${HOSTNAME}"'","date":'$(/bin/date +%s)
@@ -24,7 +24,7 @@ export MOTION_DEVICE_NAME="${VALUE}"
 
 ## web
 VALUE=$(jq -r ".www" "${CONFIG_PATH}")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE=($(hostname -i))"; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE=$(hostname -i)"; fi
 echo "Setting www ${VALUE}" >&2
 JSON="${JSON}"',"www":"'"${VALUE}"'"'
 
