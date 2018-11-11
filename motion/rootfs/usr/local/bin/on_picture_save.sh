@@ -29,7 +29,7 @@ endif
 # %n = number indicating filetype
 # Both %f and %n are only defined for on_picture_save, on_movie_start and on_movie_end
 #
-# on_picture_save /usr/bin/on_picture_save.sh %$ %v %f %n %K %L %i %J %D %N
+# on_picture_save /usr/local/bin/on_picture_save.sh %$ %v %f %n %K %L %i %J %D %N
 #
 
 # get arguments
