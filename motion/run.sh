@@ -24,7 +24,7 @@ export MOTION_DEVICE_NAME="${VALUE}"
 
 ## web
 VALUE=$(jq -r ".www" "${CONFIG_PATH}")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE=$(hostname -i)"; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE=$(hostname -i); fi
 echo "Setting www ${VALUE}" >&2
 JSON="${JSON}"',"www":"'"${VALUE}"'"'
 
