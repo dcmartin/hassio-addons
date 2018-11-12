@@ -1,7 +1,7 @@
 {
   "name": "Open Horizon Shared SDR",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/sdr2msghub",
-  "version": "0.0.82",
+  "version": "0.0.83",
   "slug": "sdr2msghub",
   "description": "Routes Kakfa messages from Open Horizon (github.com/open-horizon) distributed system to MQTT for consumption by Home-Assistant",
   "startup": "before",
@@ -32,11 +32,40 @@
     "log_level": "info",
     "listen": "only",
     "timezone": "America/Los_Angeles",
-    "horizon": {},
-    "mqtt": { "host": "core-mosquitto", "port": 1883 },
-    "watson_stt": {},
-    "watson_nlu": {},
-    "kafka": {}
+    "horizon": {
+      "username": "",
+      "password": "",
+      "device": "",
+      "token": "",
+      "organization": "cgiroua@us.ibm.com",
+      "exchange": "https://stg-edge-cluster.us-south.containers.appdomain.cloud/v1"
+    },
+    "mqtt": {
+      "host": "core-mosquitto",
+      "port": 1883
+    },
+    "watson_stt": {
+      "url": "https://stream.watsonplatform.net/speech-to-text/api/v1/recognize",
+      "apikey": ""
+    },
+    "watson_nlu": {
+      "url": "https://gateway.watsonplatform.net/natural-language-understanding/api/v1/analyze?version=2018-03-19",
+      "apikey": ""
+    },
+    "kafka": {
+      "instance_id": "b5f8df99-d3f6-47b8-b1dc-12806d63ae61",
+      "mqlight_lookup_url": "https://mqlight-lookup-prod02.messagehub.services.us-south.bluemix.net/Lookup?serviceId=b5f8df99-d3f6-47b8-b1dc-12806d63ae61",
+      "api_key": "",
+      "kafka_admin_url": "https://kafka-admin-prod02.messagehub.services.us-south.bluemix.net:443",
+      "kafka_rest_url": "https://kafka-rest-prod02.messagehub.services.us-south.bluemix.net:443",
+      "kafka_brokers_sasl": [
+        "kafka04-prod02.messagehub.services.us-south.bluemix.net:9093",
+        "kafka03-prod02.messagehub.services.us-south.bluemix.net:9093",
+        "kafka02-prod02.messagehub.services.us-south.bluemix.net:9093",
+        "kafka01-prod02.messagehub.services.us-south.bluemix.net:9093",
+        "kafka05-prod02.messagehub.services.us-south.bluemix.net:9093"
+      ]
+    }
   },
   "schema": {
     "log_level": "match(^(trace|debug|info|notice|warning|error|fatal)$)",

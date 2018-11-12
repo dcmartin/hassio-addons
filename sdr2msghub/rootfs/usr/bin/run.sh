@@ -173,62 +173,65 @@ if [[ $(hass.config.exists "mqtt.username") && $(hass.config.exists "mqtt.passwo
   MQTT="${MQTT} -u $(hass.config.get 'mqtt.username') -P (hass.config.get 'mqtt.password')"
 fi
 
-## STT
+## WATSON
 
-hass.log.trace "Watson STT: " $(hass.config.get "watson_stt")
-if [[ -z $(hass.config.get 'watson_stt') ]]; then
-  hass.log.fatal "No Watson STT credentials; exiting"
-  hass.die
-fi
-if [[ -n $(hass.config.get 'watson_stt.url') ]]; then
-  WATSON_STT_URL=$(hass.config.get "watson_stt.url")
-  hass.log.debug "Watson STT URL: ${WATSON_STT_URL}"
+if [[ ${LISTEN_MODE} == "false" ]]; then
+  hass.log.info "Listen mode is false; not doing Watson"
 else
-  hass.log.fatal "No Watson STT URL; exiting"
-  hass.die
-fi
-if [[ -n $(hass.config.get 'watson_nlu.apikey') ]]; then
-  WATSON_STT_USERNAME="apikey"
-  hass.log.debug "Watson STT username: ${WATSON_STT_USERNAME}"
-  WATSON_STT_PASSWORD=$(hass.config.get 'watson_stt.apikey')
-  hass.log.trace "Watson STT password: ${WATSON_STT_PASSWORD}"
-elif [[ -n $(hass.config.get 'watson_stt.username') && -n $(hass.config.get 'watson_stt.password') ]]; then
-  WATSON_STT_USERNAME=$(hass.config.get 'watson_stt.username')
-  hass.log.trace "Watson STT username: ${WATSON_STT_USERNAME}"
-  WATSON_STT_PASSWORD=$(hass.config.get 'watson_stt.password')
-  hass.log.trace "Watson STT password: ${WATSON_STT_PASSWORD}"
-else
-  hass.log.fatal "Watson STT no apikey or username and password; exiting"
-  hass.die
-fi
-
-## NLU
-
-hass.log.trace "Watson NLU: " $(hass.config.get "watson_nlu")
-if [[ -z $(hass.config.get 'watson_nlu') ]]; then
-  hass.log.fatal "No Watson NLU credentials; exiting"
-  hass.die
-fi
-if [[ -n $(hass.config.get 'watson_nlu.url') ]]; then
-  WATSON_NLU_URL=$(hass.config.get "watson_nlu.url")
-  hass.log.debug "Watson NLU URL: ${WATSON_NLU_URL}"
-else
-  hass.log.fatal "No Watson NLU URL specified; exiting"
-  hass.die
-fi
-if [[ -n $(hass.config.get 'watson_nlu.apikey') ]]; then
-  WATSON_NLU_USERNAME="apikey"
-  hass.log.debug "Watson NLU username: ${WATSON_NLU_USERNAME}"
-  WATSON_NLU_PASSWORD=$(hass.config.get "watson_nlu.apikey")
-  hass.log.trace "Watson NLU password: ${WATSON_NLU_PASSWORD}"
-elif [[ -n $(hass.config.get 'watson_nlu.username') && -n $(hass.config.get 'watson_nlu.password') ]]; then
-  WATSON_NLU_USERNAME=$(hass.config.get "watson_nlu.username")
-  hass.log.debug "Watson NLU username: ${WATSON_NLU_USERNAME}"
-  WATSON_NLU_PASSWORD=$(hass.config.get "watson_nlu.password")
-  hass.log.trace "Watson NLU password: ${WATSON_NLU_PASSWORD}"
-else
-  hass.log.fatal "Watson NLU no apikey or username and password; exiting"
-  hass.die
+  # STT
+  hass.log.trace "Watson STT: " $(hass.config.get "watson_stt")
+  if [[ -z $(hass.config.get 'watson_stt') ]]; then
+    hass.log.fatal "No Watson STT credentials; exiting"
+    hass.die
+  fi
+  if [[ -n $(hass.config.get 'watson_stt.url') ]]; then
+    WATSON_STT_URL=$(hass.config.get "watson_stt.url")
+    hass.log.debug "Watson STT URL: ${WATSON_STT_URL}"
+  else
+    hass.log.fatal "No Watson STT URL; exiting"
+    hass.die
+  fi
+  if [[ -n $(hass.config.get 'watson_nlu.apikey') ]]; then
+    WATSON_STT_USERNAME="apikey"
+    hass.log.debug "Watson STT username: ${WATSON_STT_USERNAME}"
+    WATSON_STT_PASSWORD=$(hass.config.get 'watson_stt.apikey')
+    hass.log.trace "Watson STT password: ${WATSON_STT_PASSWORD}"
+  elif [[ -n $(hass.config.get 'watson_stt.username') && -n $(hass.config.get 'watson_stt.password') ]]; then
+    WATSON_STT_USERNAME=$(hass.config.get 'watson_stt.username')
+    hass.log.trace "Watson STT username: ${WATSON_STT_USERNAME}"
+    WATSON_STT_PASSWORD=$(hass.config.get 'watson_stt.password')
+    hass.log.trace "Watson STT password: ${WATSON_STT_PASSWORD}"
+  else
+    hass.log.fatal "Watson STT no apikey or username and password; exiting"
+    hass.die
+  fi
+  # NLU
+  hass.log.trace "Watson NLU: " $(hass.config.get "watson_nlu")
+  if [[ -z $(hass.config.get 'watson_nlu') ]]; then
+    hass.log.fatal "No Watson NLU credentials; exiting"
+    hass.die
+  fi
+  if [[ -n $(hass.config.get 'watson_nlu.url') ]]; then
+    WATSON_NLU_URL=$(hass.config.get "watson_nlu.url")
+    hass.log.debug "Watson NLU URL: ${WATSON_NLU_URL}"
+  else
+    hass.log.fatal "No Watson NLU URL specified; exiting"
+    hass.die
+  fi
+  if [[ -n $(hass.config.get 'watson_nlu.apikey') ]]; then
+    WATSON_NLU_USERNAME="apikey"
+    hass.log.debug "Watson NLU username: ${WATSON_NLU_USERNAME}"
+    WATSON_NLU_PASSWORD=$(hass.config.get "watson_nlu.apikey")
+    hass.log.trace "Watson NLU password: ${WATSON_NLU_PASSWORD}"
+  elif [[ -n $(hass.config.get 'watson_nlu.username') && -n $(hass.config.get 'watson_nlu.password') ]]; then
+    WATSON_NLU_USERNAME=$(hass.config.get "watson_nlu.username")
+    hass.log.debug "Watson NLU username: ${WATSON_NLU_USERNAME}"
+    WATSON_NLU_PASSWORD=$(hass.config.get "watson_nlu.password")
+    hass.log.trace "Watson NLU password: ${WATSON_NLU_PASSWORD}"
+  else
+    hass.log.fatal "Watson NLU no apikey or username and password; exiting"
+    hass.die
+  fi
 fi
 
 ###
