@@ -152,7 +152,7 @@ endif
 # document
 if ($?json) then
   # identify original video
-  identify -verbose -moments -unique "$video" | convert rose: json:- | jq '.[]|.image.name="'"${input}"'"|.frames=['"$frames"']' >! "$json"
+  identify -verbose -moments -unique "$video" | convert rose: json:- | jq -c '.[]|.image.name="'"${input}"'"|.frames=['"$frames"']' >! "$json"
   if ($?VERBOSE && $?USE_MQTT) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "${MOTION_DEVICE_DB}/${MOTION_DEVICE_NAME}/debug" -f "$json"
 endif
 
