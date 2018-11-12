@@ -589,9 +589,9 @@ for (( i=0; i<ncamera ; i++)) ; do
   # process models string to array of strings
   VALUE=$(jq -r '.cameras['${i}'].models' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then 
-    W=$(echo "${WATSON}" | jq -r '.models[]'| sed 's/\([^,]*\)\([,]*\)/"wvr:\1"\2/g' | fmt -1000)
+    W=$(echo "${WATSON:-}" | jq -r '.models[]'| sed 's/\([^,]*\)\([,]*\)/"wvr:\1"\2/g' | fmt -1000)
     # echo "WATSON: ${WATSON} ${W}" >&2
-    D=$(echo "${DIGITS}" | jq -r '.models[]'| sed 's/\([^,]*\)\([,]*\)/"digits:\1"\2/g' | fmt -1000)
+    D=$(echo "${DIGITS:-}" | jq -r '.models[]'| sed 's/\([^,]*\)\([,]*\)/"digits:\1"\2/g' | fmt -1000)
     # echo "DIGITS: ${DIGITS} ${D}" >&2
     VALUE=$(echo ${W} ${D})
     VALUE=$(echo "${VALUE}" | sed "s/ /,/g")
