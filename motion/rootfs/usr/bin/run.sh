@@ -393,9 +393,8 @@ VALUE=$(jq -r ".netcam_userpass" "${CONFIG_PATH}")
 if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
   echo "Set netcam_userpass to ${VALUE}" >&2
   sed -i "s/.*netcam_userpass .*/netcam_userpass ${VALUE}/" "${MOTION_CONF}"
-  # DO NOT RECORD; MOTION="${MOTION}"',"netcam_userpass":"'"${VALUE}"'"'
-  NETCAM_USERPASS="${VALUE}"
 fi
+NETCAM_USERPASS="${VALUE}"
 
 # MOTION_DATA_DIR defined for all cameras base path
 VALUE=$(jq -r ".target_dir" "${CONFIG_PATH}")
