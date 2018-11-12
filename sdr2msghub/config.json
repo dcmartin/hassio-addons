@@ -1,7 +1,7 @@
 {
   "name": "Open Horizon Shared SDR",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/sdr2msghub",
-  "version": "0.0.81",
+  "version": "0.0.82",
   "slug": "sdr2msghub",
   "description": "Routes Kakfa messages from Open Horizon (github.com/open-horizon) distributed system to MQTT for consumption by Home-Assistant",
   "startup": "before",
@@ -32,10 +32,7 @@
     "log_level": "info",
     "listen": "only",
     "timezone": "America/Los_Angeles",
-    "horizon": {
-      "username": "",
-      "password": ""
-    },
+    "horizon": {},
     "mqtt": { "host": "core-mosquitto", "port": 1883 },
     "watson_stt": {},
     "watson_nlu": {},
@@ -49,10 +46,10 @@
     "mock": "bool?",
     "transcripts": "bool?",
     "horizon": {
-      "device": "str?",
-      "token": "str?",
       "username": "str?",
       "password": "str?",
+      "device": "str?",
+      "token": "str?",
       "exchange": "url?",
       "organization": "str?"
     },
@@ -64,27 +61,27 @@
       "topic": "str?"
     },
     "watson_stt": {
-      "url": "str",
+      "url": "str?",
       "apikey": "str?",
       "username": "str?",
       "password": "str?"
     },
     "watson_nlu": {
-      "url": "str",
+      "url": "str?",
       "apikey": "str?",
       "username": "str?",
       "password": "str?"
     },
     "kafka": {
-      "user": "str",
-      "password": "str",
-      "instance_id": "str",
-      "mqlight_lookup_url": "url",
-      "api_key": "str",
-      "kafka_admin_url": "url",
-      "kafka_rest_url": "url",
+      "user": "str?",
+      "password": "str?",
+      "instance_id": "str?",
+      "mqlight_lookup_url": "url?",
+      "api_key": "str?",
+      "kafka_admin_url": "url?",
+      "kafka_rest_url": "url?",
       "kafka_brokers_sasl": [
-        "str",
+        "str?",
         "str?",
         "str?",
         "str?",
