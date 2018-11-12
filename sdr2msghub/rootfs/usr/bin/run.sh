@@ -408,7 +408,8 @@ while [[ "${LISTEN_MODE}" != "false" ]]; do
   hass.log.warning "Unexpected failure of kafkacat"
 done
 
-  # test conditions
+# test conditions
+if [[ "${LISTEN_MODE}" == "false" ]]; then
   while [[ NODE=$(hzn node list) \
     && EXCHANGE_FOUND=$(echo "${NODE}" | jq '.id?=="'"${EXCHANGE_ID}"'"') \
     && EXCHANGE_CONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="configured"') \
@@ -429,9 +430,9 @@ done
       hass.die
     fi
   done
-
   hass.log.fatal "FAILURE: NODE" $(echo "$NODE" | jq -c '.') "AGREEMENTS" $(echo "$AGREEMENTS" | jq -c '.')
   hass.die
+fi
 
 }
 
