@@ -64,7 +64,7 @@ if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
   export MOTION_MQTT_HOST="${VALUE}"
 fi
 
-if [ -n "${MQTT}" ]; then
+if [ -n "${MQTT:-}" ]; then
   VALUE=$(jq -r ".mqtt.port" "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1883; fi
   echo "Using MQTT port: ${VALUE}" >&2
@@ -74,7 +74,7 @@ else
   echo "MQTT undefined; continuing" >&2
 fi
 
-if [ -n "${MQTT}" ]; then
+if [ -n "${MQTT:-}" ]; then
   JSON="${JSON}"',"mqtt":'"${MQTT}"
 else
   JSON="${JSON}"',"mqtt":null'
@@ -102,7 +102,7 @@ if [ ! -z "${WVR_URL}" ] && [ ! -z "${WVR_APIKEY}" ] && [ ! -z "${WVR_DATE}" ] &
   # make available
   export MOTION_WATSON_APIKEY="${WVR_APIKEY}"
 fi
-if [ -n "${WATSON}" ]; then
+if [ -n "${WATSON:-}" ]; then
   JSON="${JSON}"',"watson":'"${WATSON}"
 else
   echo "Watson Visual Recognition not specified" >&2
@@ -124,7 +124,7 @@ if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
   fi
   DIGITS="${DIGITS}"'}'
 fi
-if [ -n "${DIGITS}" ]; then
+if [ -n "${DIGITS:-}" ]; then
   JSON="${JSON}"',"digits":'"${DIGITS}"
 else
   echo "DIGITS not specified" >&2
@@ -611,7 +611,7 @@ done
 ### DONE w/ MOTION_CONF
 
 ## append to configuration JSON
-if [ -n "${CAMERAS}" ]; then 
+if [ -n "${CAMERAS:-}" ]; then 
   JSON="${JSON}"',"cameras":'"${CAMERAS}"']'
 fi
 
