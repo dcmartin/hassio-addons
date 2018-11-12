@@ -520,15 +520,14 @@ for (( i=0; i<ncamera ; i++)) ; do
     VALUE='file://'"${VALUE}"
   else
     VALUE=$(jq -r '.cameras['${i}'].url' "${CONFIG_PATH}")
-    CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
     if [[ "${VALUE}" == ftpd* ]]; then
-      # if file designation for directory
+      VALUE="${VALUE%*/}.jpg"
       NETCAM_URL=$(echo "${VALUE}" | sed 's|^ftpd|file|')
-      NETCAM_URL="${NETCAM_URL%*/}.jpg"
     else
       # HANDLE NETCAM
       NETCAM_URL="${VALUE}"
     fi
+    CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
     echo "Set netcam_url to ${NETCAM_URL}" >&2
     echo "netcam_url ${NETCAM_URL}" >> "${CAMERA_CONF}"
   fi
