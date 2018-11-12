@@ -69,7 +69,6 @@
   },
   "schema": {
     "log_level": "match(^(trace|debug|info|notice|warning|error|fatal)$)",
-    "pattern": "str?",
     "timezone": "str?",
     "listen": "match(^(true|false|only)$)?",
     "mock": "bool?",

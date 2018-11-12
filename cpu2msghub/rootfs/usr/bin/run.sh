@@ -19,7 +19,7 @@ hass.log.trace "${FUNCNAME[0]}"
 ###
 
 # START JSON
-JSON='{"host":"'"$(hostname)"'","arch":"'"$(arch)"'","date":'$(/bin/date +%s)
+JSON='{"hostname":"'"$(hostname)"'","arch":"'"$(arch)"'","date":'$(/bin/date +%s)
 # time zone
 VALUE=$(hass.config.get "timezone")
 # Set the correct timezone
@@ -46,7 +46,7 @@ LISTEN_MODE=${VALUE}
 
 # URL
 VALUE=$(hass.config.get "horizon.exchange")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.warning "No exchange URL"; VALUE="null"; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.warning "No horizon exchange"; VALUE="null"; fi
 export HZN_EXCHANGE_URL="${VALUE}"
 hass.log.debug "Setting HZN_EXCHANGE_URL to ${VALUE}" >&2
 JSON="${JSON}"',"exchange":"'"${VALUE}"'"'
@@ -76,7 +76,7 @@ hass.log.debug "EXCHANGE_ID ${VALUE}" >&2
 # TOKEN
 VALUE=$(hass.config.get "horizon.token")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then
-  VALUE==$(echo "${HZN_EXCHANGE_USER_AUTH}" | sed 's/.*://')
+  VALUE=$(echo "${HZN_EXCHANGE_USER_AUTH}" | sed 's/.*://')
 fi
 JSON="${JSON}"',"token":"'"${VALUE}"'"'
 hass.log.debug "EXCHANGE_TOKEN ${VALUE}" >&2

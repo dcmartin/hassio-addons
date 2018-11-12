@@ -46,7 +46,6 @@
   "schema": {
     "log_level": "match(^(trace|debug|info|notice|warning|error|fatal)$)",
     "listen": "match(^(true|false|only)$)?",
-    "pattern": "str?",
     "timezone": "str?",
     "horizon": {
       "device": "str?",
