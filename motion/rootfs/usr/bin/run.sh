@@ -381,7 +381,7 @@ else
 fi
 
 # set netcam_url to be shared across all cameras
-VALUE=$(jq -r ".netcam_url?" "${CONFIG_PATH}")
+VALUE=$(jq -r ".netcam_url" "${CONFIG_PATH}")
 if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
   echo "Set netcam_url to ${VALUE}" >&2
   sed -i "s|.*netcam_url .*|netcam_url ${VALUE}|" "${MOTION_CONF}"
@@ -389,7 +389,7 @@ if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
 fi
 
 # set netcam_userpass across all cameras
-VALUE=$(jq -r ".netcam_userpass?" "${CONFIG_PATH}")
+VALUE=$(jq -r ".netcam_userpass" "${CONFIG_PATH}")
 if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
   echo "Set netcam_userpass to ${VALUE}" >&2
   sed -i "s/.*netcam_userpass .*/netcam_userpass ${VALUE}/" "${MOTION_CONF}"
@@ -398,8 +398,7 @@ if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
 fi
 
 # MOTION_DATA_DIR defined for all cameras base path
-VALUE=$(jq -r ".target_dir?" "${CONFIG_PATH}")
-# if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="/data/cameras"; fi
+VALUE=$(jq -r ".target_dir" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="${MOTION_APACHE_HTDOCS}/cameras"; fi
 echo "Set target_dir to ${VALUE}" >&2
 sed -i "s|.*target_dir.*|target_dir ${VALUE}|" "${MOTION_CONF}"
@@ -513,21 +512,16 @@ for (( i=0; i<ncamera ; i++)) ; do
   CAMERAS="${CAMERAS}"',"port":"'"${VALUE}"'"'
 
   # process videodevice; only "/dev/video0" enabled in config.json
-  VALUE=$(jq -r '.cameras['${i}'].device?' "${CONFIG_PATH}")
+  VALUE=$(jq -r '.cameras['${i}'].device' "${CONFIG_PATH}")
   if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then 
     ## HANDLE DEVICE CAMERA
     echo "Set device to ${VALUE}" >&2
-    CAMERAS="${CAMERAS}"',"device":"'"${VALUE}"'"'
-    CAMERAS="${CAMERAS}"',"url":"file://'"${VALUE}"'"'
     echo "videodevice ${VALUE}" >> "${CAMERA_CONF}"
-    VALUE=$(jq -r '.cameras['${i}'].palette?' "${CONFIG_PATH}")
-    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="17"; fi
-    echo "Set palette to ${VALUE}" >&2
-    CAMERAS="${CAMERAS}"',"palette":'"${VALUE}"
-    echo "v4l2_palette ${VALUE}" >> "${CAMERA_CONF}"
+    CAMERAS="${CAMERAS}"',"device":"'"${VALUE}"'"'
+    VALUE='"file://'"${VALUE}"'"'
   else
     # HANDLE NETCAM
-    VALUE=$(jq -r '.cameras['${i}'].url?' "${CONFIG_PATH}")
+    VALUE=$(jq -r '.cameras['${i}'].url' "${CONFIG_PATH}")
     # test if file designation for directory
     if [[ "${VALUE}" == ftpd* ]]; then
       # file which motion package will poll; never created
@@ -537,62 +531,70 @@ for (( i=0; i<ncamera ; i++)) ; do
       echo "Set netcam_url to ${VALUE}" >&2
       echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
     fi
-    CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
-    # keepalive 
-    VALUE=$(jq -r '.cameras['${i}'].keepalive' "${CONFIG_PATH}")
-    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_keepalive?'); fi
-    echo "Set netcam_keepalive to ${VALUE}" >&2
-    echo "netcam_keepalive ${VALUE}" >> "${CAMERA_CONF}"
-    CAMERAS="${CAMERAS}"',"keepalive":"'"${VALUE}"'"'
-    # userpass 
-    VALUE=$(jq -r '.cameras['${i}'].userpass' "${CONFIG_PATH}")
-    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="${NETCAM_USERPASS}"; fi
-    echo "Set netcam_userpass to ${VALUE}" >&2
-    echo "netcam_userpass ${VALUE}" >> "${CAMERA_CONF}"
-    # DO NOT RECORD; CAMERAS="${CAMERAS}"',"userpass":"'"${VALUE}"'"'
   fi
+  # set URL to result
+  CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
+
+  # palette
+  VALUE=$(jq -r '.cameras['${i}'].palette' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="17"; fi
+  echo "Set palette to ${VALUE}" >&2
+  CAMERAS="${CAMERAS}"',"palette":'"${VALUE}"
+  echo "v4l2_palette ${VALUE}" >> "${CAMERA_CONF}"
+  # keepalive 
+  VALUE=$(jq -r '.cameras['${i}'].keepalive' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_keepalive'); fi
+  echo "Set netcam_keepalive to ${VALUE}" >&2
+  echo "netcam_keepalive ${VALUE}" >> "${CAMERA_CONF}"
+  CAMERAS="${CAMERAS}"',"keepalive":"'"${VALUE}"'"'
+  # userpass 
+  VALUE=$(jq -r '.cameras['${i}'].userpass' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="${NETCAM_USERPASS}"; fi
+  echo "Set netcam_userpass to ${VALUE}" >&2
+  echo "netcam_userpass ${VALUE}" >> "${CAMERA_CONF}"
+  # DO NOT RECORD; CAMERAS="${CAMERAS}"',"userpass":"'"${VALUE}"'"'
 
   # stream_quality 
-  VALUE=$(jq -r '.cameras['${i}'].stream_quality?' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.stream_quality?'); fi
+  VALUE=$(jq -r '.cameras['${i}'].stream_quality' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.stream_quality'); fi
   echo "Set stream_quality to ${VALUE}" >&2
   echo "stream_quality ${VALUE}" >> "${CAMERA_CONF}"
   CAMERAS="${CAMERAS}"',"quality":'"${VALUE}"
 
   # threshold 
-  VALUE=$(jq -r '.cameras['${i}'].threshold?' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.threshold?'); fi
+  VALUE=$(jq -r '.cameras['${i}'].threshold' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.threshold'); fi
   echo "Set threshold to ${VALUE}" >&2
   echo "threshold ${VALUE}" >> "${CAMERA_CONF}"
   CAMERAS="${CAMERAS}"',"threshold":'"${VALUE}"
 
   # width 
-  VALUE=$(jq -r '.cameras['${i}'].width?' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.width?'); fi
+  VALUE=$(jq -r '.cameras['${i}'].width' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.width'); fi
   echo "Set width to ${VALUE}" >&2
   echo "width ${VALUE}" >> "${CAMERA_CONF}"
   CAMERAS="${CAMERAS}"',"width":'"${VALUE}"
 
   # height 
-  VALUE=$(jq -r '.cameras['${i}'].height?' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.height?'); fi
+  VALUE=$(jq -r '.cameras['${i}'].height' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.height'); fi
   echo "Set height to ${VALUE}" >&2
   echo "height ${VALUE}" >> "${CAMERA_CONF}"
   CAMERAS="${CAMERAS}"',"height":'"${VALUE}"
 
   # rotate 
-  VALUE=$(jq -r '.cameras['${i}'].rotate?' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.rotate?'); fi
+  VALUE=$(jq -r '.cameras['${i}'].rotate' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.rotate'); fi
   echo "Set rotate to ${VALUE}" >&2
   echo "rotate ${VALUE}" >> "${CAMERA_CONF}"
   CAMERAS="${CAMERAS}"',"rotate":'"${VALUE}"
 
   # process models string to array of strings
-  VALUE=$(jq -r '.cameras['${i}'].models?' "${CONFIG_PATH}")
+  VALUE=$(jq -r '.cameras['${i}'].models' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then 
-    W=$(echo "${WATSON}" | jq -r '.models[]?'| sed 's/\([^,]*\)\([,]*\)/"wvr:\1"\2/g' | fmt -1000)
+    W=$(echo "${WATSON}" | jq -r '.models[]'| sed 's/\([^,]*\)\([,]*\)/"wvr:\1"\2/g' | fmt -1000)
     # echo "WATSON: ${WATSON} ${W}" >&2
-    D=$(echo "${DIGITS}" | jq -r '.models[]?'| sed 's/\([^,]*\)\([,]*\)/"digits:\1"\2/g' | fmt -1000)
+    D=$(echo "${DIGITS}" | jq -r '.models[]'| sed 's/\([^,]*\)\([,]*\)/"digits:\1"\2/g' | fmt -1000)
     # echo "DIGITS: ${DIGITS} ${D}" >&2
     VALUE=$(echo ${W} ${D})
     VALUE=$(echo "${VALUE}" | sed "s/ /,/g")
@@ -617,51 +619,51 @@ if [ -n "${CAMERAS}" ]; then
 fi
 
 # set unit_system for events
-VALUE=$(jq -r '.unit_system?' "${CONFIG_PATH}")
+VALUE=$(jq -r '.unit_system' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="imperial"; fi
 echo "Set unit_system to ${VALUE}" >&2
 JSON="${JSON}"',"unit_system":"'"${VALUE}"'"'
 
 # set latitude for events
-VALUE=$(jq -r '.latitude?' "${CONFIG_PATH}")
+VALUE=$(jq -r '.latitude' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0.0; fi
 echo "Set latitude to ${VALUE}" >&2
 JSON="${JSON}"',"latitude":'"${VALUE}"
 
 # set longitude for events
-VALUE=$(jq -r '.longitude?' "${CONFIG_PATH}")
+VALUE=$(jq -r '.longitude' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0.0; fi
 echo "Set longitude to ${VALUE}" >&2
 JSON="${JSON}"',"longitude":'"${VALUE}"
 
 # set elevation for events
-VALUE=$(jq -r '.elevation?' "${CONFIG_PATH}")
+VALUE=$(jq -r '.elevation' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
 echo "Set elevation to ${VALUE}" >&2
 JSON="${JSON}"',"elevation":'"${VALUE}"
 
 # set interval for events
-VALUE=$(jq -r '.interval?' "${CONFIG_PATH}")
+VALUE=$(jq -r '.interval' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
 echo "Set interval to ${VALUE}" >&2
 JSON="${JSON}"',"interval":'"${VALUE}"
 export MOTION_EVENT_INTERVAL="${VALUE}"
 
 # set minimum_animate; minimum 2
-VALUE=$(jq -r '.minimum_animate?' "${CONFIG_PATH}")
+VALUE=$(jq -r '.minimum_animate' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=2; fi
 echo "Set minimum_animate to ${VALUE}" >&2
 JSON="${JSON}"',"minimum_animate":'"${VALUE}"
 
 # set post_pictures; enumerated [on,center,first,last,best,most]
-VALUE=$(jq -r '.post_pictures?' "${CONFIG_PATH}")
+VALUE=$(jq -r '.post_pictures' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="center"; fi
 echo "Set post_pictures to ${VALUE}" >&2
 JSON="${JSON}"',"post_pictures":"'"${VALUE}"'"'
 export MOTION_POST_PICTURES="${VALUE}"
 
 # MOTION_SHARE_DIR defined for all cameras base path
-VALUE=$(jq -r ".share_dir?" "${CONFIG_PATH}")
+VALUE=$(jq -r ".share_dir" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="/share/$MOTION_DEVICE_DB"; fi
 if [ ! -z ${MOTION_SHARE_DIR:-} ]; then echo "*** MOTION_SHARE_DIR *** ${MOTION_SHARE_DIR}"; VALUE="${MOTION_SHARE_DIR}"; else export MOTION_SHARE_DIR="${VALUE}"; fi
 echo "Set share_dir to ${VALUE}" >&2
@@ -821,7 +823,7 @@ if [ -s "${MOTION_APACHE_CONF}" ]; then
   echo 'PassEnv MOTION_DATA_DIR' >> "${MOTION_APACHE_CONF}"
   echo 'PassEnv MOTION_WATSON_APIKEY' >> "${MOTION_APACHE_CONF}"
   # make /run/apache2 for PID file
-  mkdir /run/apache2
+  mkdir -p /run/apache2
   # start HTTP daemon in foreground
   echo "Starting Apache: ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT} ${MOTION_APACHE_HTDOCS}" >&2
   httpd -E /dev/stderr -e debug -f "${MOTION_APACHE_CONF}" -DFOREGROUND

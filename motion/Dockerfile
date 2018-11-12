@@ -13,7 +13,7 @@ RUN apk add --no-cache \
   dateutils \
   findutils \
   ffmpeg@edge \
-  motion@edge \
+  motion@edge=4.1.1-r1 \
   gawk \
   imagemagick \
   inotify-tools \
