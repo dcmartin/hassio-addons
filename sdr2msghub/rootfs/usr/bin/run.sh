@@ -408,7 +408,30 @@ while [[ "${LISTEN_MODE}" != "false" ]]; do
   hass.log.warning "Unexpected failure of kafkacat"
 done
 
-hass.log.info "SUCCESS"
+  # test conditions
+  while [[ NODE=$(hzn node list) \
+    && EXCHANGE_FOUND=$(echo "${NODE}" | jq '.id?=="'"${EXCHANGE_ID}"'"') \
+    && EXCHANGE_CONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="configured"') \
+    && AGREEMENTS=$(hzn agreement list) ]]; do
+    # check if all still okay
+    PATTERN_FOUND=""
+    WORKLOADS=$(echo "${AGREEMENTS}" | jq -r '.[]|.workload_to_run.url')
+    for WL in ${WORKLOADS}; do
+      if [ "${WL}" == "${PATTERN_URL}" ]; then
+        PATTERN_FOUND=true
+      fi
+    done
+    if [ -n ${PATTERN_FOUND} ]; then
+      hass.log.info $(date) "${EXCHANGE_ID} pattern ${PATTERN_URL}; sleeping 30 ..."
+      sleep 30
+    else
+      hass.log.info $(date) "NO PATTERN: NODE" $(echo "$NODE" | jq -c '.') "AGREEMENTS" $(echo "$AGREEMENTS" | jq -c '.')
+      hass.die
+    fi
+  done
+
+  hass.log.fatal "FAILURE: NODE" $(echo "$NODE" | jq -c '.') "AGREEMENTS" $(echo "$AGREEMENTS" | jq -c '.')
+  hass.die
 
 }
 
