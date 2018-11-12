@@ -13,7 +13,7 @@ RUN apk add --no-cache \
   dateutils \
   findutils \
   ffmpeg@edge \
-  motion@edge=4.1.1-r1 \
+  motion@edge \
   gawk \
   imagemagick \
   inotify-tools \
@@ -44,13 +44,6 @@ ENV MOTION_CONF /etc/motion/motion.conf
 # Copy rootts
 COPY rootfs /
 
-# Copy "motion" scripts 
-# ARG LOCAL_BIN=/usr/local/bin
-# COPY motion.conf "${MOTION_CONF}"
-# RUN mkdir -p "${LOCAL_BIN}" 
-# COPY *.sh "${LOCAL_BIN}"/
-# RUN chmod 755 "${LOCAL_BIN}"/*.sh
-
 ## APACHE
 
 ARG MOTION_APACHE_CONF=/etc/apache2/httpd.conf
@@ -67,17 +60,9 @@ ENV MOTION_APACHE_HOST "${MOTION_APACHE_HOST}"
 ENV MOTION_APACHE_PORT "${MOTION_APACHE_PORT}"
 ENV MOTION_APACHE_ADMIN "${MOTION_APACHE_ADMIN}"
 
-# COPY ./public/ "${MOTION_APACHE_HTDOCS}"
-# COPY ./cgi/ "${MOTION_APACHE_CGIBIN}"
-
-# copy sample image
-# COPY sample.jpg /etc/motion/sample.jpg
-# COPY sample.gif /etc/motion/sample.gif
-# COPY test.jpg /etc/motion/test.jpg
-# COPY test.gif /etc/motion/test.gif
-
 # Ports for motion (control and stream)
 EXPOSE ${MOTION_APACHE_PORT}
+
 EXPOSE 8000 8080 8081 8082 
 EXPOSE 8090 8091 8092 8093 8094 8095 8096 8097 8099 8099
 EXPOSE 8100 8101 8102 8103 8104 8105 8106 8107 8109 8109
