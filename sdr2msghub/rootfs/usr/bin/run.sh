@@ -19,7 +19,7 @@ hass.log.trace "${FUNCNAME[0]}"
 ###
 
 # START JSON
-JSON='{"host":"'"$(hostname)"'","arch":"'"$(arch)"'","date":'$(/bin/date +%s)
+JSON='{"hostname":"'"$(hostname)"'","arch":"'"$(arch)"'","date":'$(/bin/date +%s)
 # time zone
 VALUE=$(hass.config.get "timezone")
 # Set the correct timezone
@@ -92,7 +92,7 @@ hass.log.debug "EXCHANGE_ID ${VALUE}" >&2
 # TOKEN
 VALUE=$(hass.config.get "horizon.token")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then
-  VALUE==$(echo "${HZN_EXCHANGE_USER_AUTH}" | sed 's/.*://')
+  VALUE=$(echo "${HZN_EXCHANGE_USER_AUTH}" | sed 's/.*://')
 fi
 JSON="${JSON}"',"token":"'"${VALUE}"'"'
 hass.log.debug "EXCHANGE_TOKEN ${VALUE}" >&2
@@ -407,6 +407,8 @@ while [[ "${LISTEN_MODE}" != "false" ]]; do
   done
   hass.log.warning "Unexpected failure of kafkacat"
 done
+
+hass.log.info "SUCCESS"
 
 }
 
