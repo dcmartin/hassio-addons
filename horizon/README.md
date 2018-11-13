@@ -2,7 +2,7 @@
 
 This add-on is for the CPU2MSGHUB [pattern][cpu-pattern]
 
-This add-on may require the installation of [Open Horizon][open-horizon], a distibuted, decentralized, zero-ops, method and apparatus to deploy containers.
+This add-on requires the installation of [Open Horizon][open-horizon], a distibuted, decentralized, zero-ops, method and apparatus to deploy containers.
 
 Detailed [documentation][edge-fabric] for the IBM Edge Fabric is available on-line.  A Slack [channel][edge-slack] is also available.
 
@@ -12,7 +12,7 @@ If the addon is configured with CPU and Open Horizon is installed, the options f
 
 ## Installation
 
-### Install Open Horizon (OPTIONAL)
+### Install Open Horizon
 
 To install on Ubuntu and most Debian LINUX systems, a [script][hzn-setup] run as root from the command line will install the appropriate packages on your LINUX machine or VM:
 
@@ -33,7 +33,7 @@ More detailed instructions are [available][edge-install].  Installation package 
 ## Configuration
 
 ### Option: `exchange`
-Credentials required for interacting with the Open Horizon exchange; currently the only organization defined is cgiroua@us.ibm.com.  These options are ignored if Open Horizon is not installed or if `listen` option is set to `only`
+Credentials required for interacting with the Open Horizon exchange; currently the only organization defined is cgiroua@us.ibm.com.
 
 The `device` and `token` values are optional and will default to the hostname with MAC address appended and the exchange password.
 
