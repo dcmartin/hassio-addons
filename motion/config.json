@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.4.24",
+  "version": "0.4.25",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -66,12 +66,14 @@
     "8119/tcp": 8119
   },
   "options": {
+    "log_level": "info",
+    "log_motion": 2,
     "devicedb": "motion",
+    "name": "hostname",
     "username": "",
     "password": "",
     "timezone": "America/Los_Angeles",
     "unit_system": "imperial",
-    "reload": "false",
     "cloudant": {
       "url": "",
       "username": "",
@@ -89,24 +91,21 @@
       "jobid": ""
     },
     "mqtt": {
-      "host": "",
+      "host": "core-mosquitto",
       "port": 1883
     },
     "cameras": [
-    {
-      "name": "sample",
-      "device": "/dev/video0",
-      "type": "ps3eye",
-      "palette": 8,
-      "fov": 75,
-      "width": 640,
-      "height": 480,
-      "fps": 5
-    }
-    ],
-    "camera_type": "wcv80n",
-    "log_level":"info",
-    "log_motion": 2
+      {
+        "name": "sample",
+        "device": "/dev/video0",
+        "type": "ps3eye",
+        "palette": 8,
+        "fov": 75,
+        "width": 640,
+        "height": 480,
+        "fps": 5
+      }
+    ]
   },
   "schema": {
     "log_level": "match(^(trace|debug|info|notice|warning|error|fatal)$)",
@@ -212,5 +211,8 @@
     "reload": "str?",
     "target_dir": "str?",
     "share_dir": "str?"
+  },
+  "environment": {
+    "LOG_FORMAT": "{LEVEL}: {MESSAGE}"
   }
 }
