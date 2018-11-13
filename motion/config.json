@@ -99,7 +99,7 @@
         "name": "sample",
         "device": "/dev/video0",
         "type": "ps3eye",
-        "palette": 8,
+        "palette": 15,
         "fov": 75,
         "width": 640,
         "height": 480,

@@ -1,8 +1,8 @@
 {
-  "name": "Example base addon for open-horizon",
+  "name": "Horizon Example",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/horizon",
   "version": "0.0.2",
-  "slug": "open-horizon",
+  "slug": "horizon",
   "description": "Example base addon for horizon",
   "startup": "before",
   "boot": "auto",
