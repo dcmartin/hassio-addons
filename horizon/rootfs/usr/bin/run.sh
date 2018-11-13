@@ -80,7 +80,7 @@ main() {
   if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No pattern org"; hass.die; fi
   JSON="${JSON}"',"url":"'"${VALUE}"'"'
   # variables special case
-  VALUE=$(jq -r '.variables' "${CONFIG_PATH}")
+  VALUE=$(jq -r '.variables' "/data/options.json")
   JSON="${JSON}"',"variables":'"${VALUE}"
   JSON="${JSON}"'}'
 
