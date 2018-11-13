@@ -4,13 +4,7 @@ This add-on is for the CPU2MSGHUB [pattern][cpu-pattern]
 
 This add-on may require the installation of [Open Horizon][open-horizon], a distibuted, decentralized, zero-ops, method and apparatus to deploy containers.
 
-This addon is designed to produce and consume messages containing audio fragments and GPS coordinates (latitude, longitude) from software-defined-radios (CPU) attached to participating nodes.  Messages received are processed using IBM Watson Speech-to-Text (STT) and Natural Language Understanding (NLU) to produce a JSON payload sent to a MQTT broker, e.g. `core-mosquitto` from the HASSIO addons catalog.
-
 Detailed [documentation][edge-fabric] for the IBM Edge Fabric is available on-line.  A Slack [channel][edge-slack] is also available.
-
-The add-on listens to Kafka messages from an IBM Message Hub operating in the IBM Cloud; messages received include an ASCII representation of a MP3 audio sequence captured from the CPU listening to local FM radio stations.
-
-By default the system will only listen for messages, process using STT and NLU, and publish results using MQTT to the local `core-mosquitto` broker on port 1883 with topic `kafka/cpu-audio` (`username` and `password` are also supported).
 
 If the addon is configured with CPU and Open Horizon is installed, the options for `device` and `token` will default to hostname with MAC address appended and exchange password.
 
@@ -29,12 +23,11 @@ More detailed instructions are [available][edge-install].  Installation package 
 ### Install addon
 
 1. [Add our Hass.io add-ons repository][repository] to your Hass.io instance.
-1. Install the "cpu2msghub" add-on
-1. Setup the "cpu2msghub" add-on
-1. Configure `kafka` for [IBM MessageHub][kafka-creds]
-1. Optionally change `horizon` to Open Horizon exchange credentials; `device` and `token` default to: `hostname`-MAC and exchange password.
-1. Optionally change `mqtt` if not using `host: core-mosquitto` on `port: 1883` with topic `kafka/cgiroua_us.ibm.com.IBM_cpu2msghub` 
-1. Start the "cpu2msghub" add-on
+1. Install the "horizon" add-on
+1. Setup the "horizon" add-on
+1. Configure `MSGHUB_API_KEY` for [IBM MessageHub][kafka-creds]
+1. Change `exchange` to Open Horizon exchange credentials; `device` and `token` default to: `hostname`-IP and exchange password.
+1. Start the "horizon" add-on
 1. Check the logs of the add-on for failures :-(
 
 ## Configuration
@@ -62,19 +55,12 @@ The `device` and `token` values are optional and will default to the hostname wi
 **Note**: _You must obtain [credentials][kafka-creds] for IBM MessageHub for alpha phase_
 
 ```
-  "pattern": {
-    "pattern": {
-      "id": "cpu2msghub",
-      "org": "IBM",
-      "url": "https://github.com/open-horizon/examples/wiki/service-cpu2msghub",
-      "variables": [
-        {
-          "env": "MSGHUB_API_KEY",
-          "value": ""
-        }
-      ]
-    },
-  }
+  "variables": [
+    {
+      "env": "MSGHUB_API_KEY",
+      "value": ""
+    }
+  ]
 ```
 
 ## Changelog & Releases
