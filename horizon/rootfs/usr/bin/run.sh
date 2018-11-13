@@ -80,7 +80,7 @@ main() {
   if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No pattern org"; hass.die; fi
   JSON="${JSON}"',"url":"'"${VALUE}"'"'
   # variables special case
-  VALUE=$(jq -r '.pattern.variables' "${CONFIG_PATH}")
+  VALUE=$(jq -r '.variables' "${CONFIG_PATH}")
   JSON="${JSON}"',"variables":'"${VALUE}"
   JSON="${JSON}"'}'
 
@@ -96,7 +96,7 @@ main() {
   PATTERN_ORG=$(echo "${JSON}" | jq -r '.pattern.org?')
   PATTERN_ID=$(echo "${JSON}" | jq -r '.pattern.id?')
   PATTERN_URL=$(echo "${JSON}" | jq -r '.pattern.url?')
-  PATTERN_VARS=$(echo "${JSON}" | jq -r '.pattern.variables?')
+  PATTERN_VARS=$(echo "${JSON}" | jq -r '.variables?')
   EXCHANGE_ID=$(echo "$JSON" | jq -r '.exchange.device?' )
   EXCHANGE_TOKEN=$(echo "$JSON" | jq -r '.exchange.token?')
   EXCHANGE_ORG=$(echo "$JSON" | jq -r '.exchange.organization?')
