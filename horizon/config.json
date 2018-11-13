@@ -35,18 +35,6 @@
       "id": "cpu2msghub",
       "org": "IBM",
       "url": "https://github.com/open-horizon/examples/wiki/service-cpu2msghub",
-      "services": [
-        {
-          "id": "cpu2msghub",
-          "org": "IBM",
-          "url": "https://github.com/open-horizon/examples/wiki/service-cpu"
-        },
-        {
-          "id": "gps2msghub",
-          "org": "IBM",
-          "url": "https://github.com/open-horizon/examples/wiki/service-gps"
-        }
-      ],
       "variables": [
         {
           "env": "MSGHUB_API_KEY",
@@ -69,13 +57,6 @@
       "id": "str",
       "org": "str",
       "url": "url",
-      "services": [
-        {
-          "id": "str?",
-          "org": "str?",
-          "url": "url?"
-        }
-      ],
       "variables": [
         {
           "env": "str?",

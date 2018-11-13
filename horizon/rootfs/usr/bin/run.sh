@@ -12,98 +12,96 @@ source /usr/lib/hassio-addons/base.sh
 # RUN LOGIC
 # ------------------------------------------------------------------------------
 main() {
-hass.log.trace "${FUNCNAME[0]}"
+  hass.log.trace "${FUNCNAME[0]}"
 
-###
-### A HOST at DATE on ARCH
-###
+  ###
+  ### A HOST at DATE on ARCH
+  ###
 
-# START JSON
-JSON='{"hostname":"'"$(hostname)"'","arch":"'"$(arch)"'","date":'$(/bin/date +%s)
-# time zone
-VALUE=$(hass.config.get "timezone")
-# Set the correct timezone
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="GMT"; fi
-hass.log.info "Setting TIMEZONE ${VALUE}" >&2
-cp /usr/share/zoneinfo/${VALUE} /etc/localtime
-JSON="${JSON}"',"timezone":"'"${VALUE}"'"'
+  # START JSON
+  JSON='{"hostname":"'"$(hostname)"'","arch":"'"$(arch)"'","date":'$(/bin/date +%s)
+  # time zone
+  VALUE=$(hass.config.get "timezone")
+  # Set the correct timezone
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="GMT"; fi
+  hass.log.info "Setting TIMEZONE ${VALUE}" >&2
+  cp /usr/share/zoneinfo/${VALUE} /etc/localtime
+  JSON="${JSON}"',"timezone":"'"${VALUE}"'"'
 
-###
-### HORIZON 
-###
+  ###
+  ### HORIZON 
+  ###
 
-# credentials
-VALUE=$(hass.config.get "exchange.url")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No exchange url"; hass.die; fi
-export HZN_EXCHANGE_URL="${VALUE}"
-VALUE=$(hass.config.get "exchange.username")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No exchange username"; hass.die; fi
-HZN_EXCHANGE_USER_AUTH="${VALUE}"
-VALUE=$(hass.config.get "exchange.password")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No exchange password"; hass.die; fi
-export HZN_EXCHANGE_USER_AUTH="${HZN_EXCHANGE_USER_AUTH}:${VALUE}"
+  # credentials
+  VALUE=$(hass.config.get "exchange.url")
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No exchange url"; hass.die; fi
+  export HZN_EXCHANGE_URL="${VALUE}"
+  VALUE=$(hass.config.get "exchange.username")
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No exchange username"; hass.die; fi
+  HZN_EXCHANGE_USER_AUTH="${VALUE}"
+  VALUE=$(hass.config.get "exchange.password")
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No exchange password"; hass.die; fi
+  export HZN_EXCHANGE_USER_AUTH="${HZN_EXCHANGE_USER_AUTH}:${VALUE}"
 
-## EXCHANGE
+  ## EXCHANGE
 
-# URL
-JSON="${JSON}"',"exchange":{"url":"'"${HZN_EXCHANGE_URL}"'"'
-# ORGANIZATION
-VALUE=$(hass.config.get "exchange.organization")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No horizon organization"; hass.die; fi
-JSON="${JSON}"',"organization":"'"${VALUE}"'"'
-# DEVICE
-VALUE=$(hass.config.get "horizon.device")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then
-  VALUE=($(hostname -I | sed 's/\.//g'))
-  VALUE="$(hostname)-${VALUE}"
-fi
-JSON="${JSON}"',"device":"'"${VALUE}"'"'
-# TOKEN
-VALUE=$(hass.config.get "horizon.token")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then
-  VALUE=$(echo "${HZN_EXCHANGE_USER_AUTH}" | sed 's/.*://')
-fi
-JSON="${JSON}"',"token":"'"${VALUE}"'"'
-## done w/ exchange
-JSON="${JSON}"'}'
+  # URL
+  JSON="${JSON}"',"exchange":{"url":"'"${HZN_EXCHANGE_URL}"'"'
+  # ORGANIZATION
+  VALUE=$(hass.config.get "exchange.organization")
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No horizon organization"; hass.die; fi
+  JSON="${JSON}"',"organization":"'"${VALUE}"'"'
+  # DEVICE
+  VALUE=$(hass.config.get "horizon.device")
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then
+    VALUE=($(hostname -I | sed 's/\.//g'))
+    VALUE="$(hostname)-${VALUE}"
+  fi
+  JSON="${JSON}"',"device":"'"${VALUE}"'"'
+  # TOKEN
+  VALUE=$(hass.config.get "horizon.token")
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then
+    VALUE=$(echo "${HZN_EXCHANGE_USER_AUTH}" | sed 's/.*://')
+  fi
+  JSON="${JSON}"',"token":"'"${VALUE}"'"'
+  ## done w/ exchange
+  JSON="${JSON}"'}'
 
-## PATTERN
+  ## PATTERN
 
-# ID
-VALUE=$(hass.config.get "pattern.id")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No pattern id"; hass.die; fi
-JSON="${JSON}"',"pattern":{"id":"'"${VALUE}"'"'
-VALUE=$(hass.config.get "pattern.org")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No pattern org"; hass.die; fi
-JSON="${JSON}"',"organization":"'"${VALUE}"'"'
-VALUE=$(hass.config.get "pattern.url")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No pattern org"; hass.die; fi
-JSON="${JSON}"',"url":"'"${VALUE}"'"'
+  # ID
+  VALUE=$(hass.config.get "pattern.id")
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No pattern id"; hass.die; fi
+  JSON="${JSON}"',"pattern":{"id":"'"${VALUE}"'"'
+  VALUE=$(hass.config.get "pattern.org")
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No pattern org"; hass.die; fi
+  JSON="${JSON}"',"organization":"'"${VALUE}"'"'
+  VALUE=$(hass.config.get "pattern.url")
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No pattern org"; hass.die; fi
+  JSON="${JSON}"',"url":"'"${VALUE}"'"'
+  # variables special case
+  VALUE=$(jq -r '.pattern.variables' "${CONFIG_PATH}")
+  JSON="${JSON}"',"variables":'"${VALUE}"
+  JSON="${JSON}"'}'
 
-PATTERN_VARIABLES=$(jq -r '.pattern.variables?' "${CONFIG_PATH}")
-for PV in ${PATTERN_VARIABLES}; do
-done
-## done w/ exchange
-JSON="${JSON}"'}'
+  ## DONE w/ JSON
+  JSON="${JSON}"'}'
 
-## DONE w/ JSON
-JSON="${JSON}"'}'
+  hass.log.debug "CONFIGURATION:" $(echo "${JSON}" | jq -c '.')
 
-hass.log.debug "CONFIGURATION:" $(echo "${JSON}" | jq -c '.')
+  ###
+  ### REVIEW
+  ###
 
-###
-### REVIEW
-###
+  PATTERN_ORG=$(echo "${JSON}" | jq -r '.pattern.org?')
+  PATTERN_ID=$(echo "${JSON}" | jq -r '.pattern.id?')
+  PATTERN_URL=$(echo "${JSON}" | jq -r '.pattern.url?')
+  PATTERN_VARS=$(echo "${JSON}" | jq -r '.pattern.variables?')
+  EXCHANGE_ID=$(echo "$JSON" | jq -r '.exchange.device?' )
+  EXCHANGE_TOKEN=$(echo "$JSON" | jq -r '.exchange.token?')
+  EXCHANGE_ORG=$(echo "$JSON" | jq -r '.exchange.organization?')
 
-PATTERN_ORG=$(jq -r '.pattern.org?' "${CONFIG_PATH}")
-PATTERN_ID=$(jq -r '.pattern.id?' "${CONFIG_PATH}")
-PATTERN_URL=$(jq -r '.pattern.url?' "${CONFIG_PATH}")
-
-EXCHANGE_ID=$(echo "$JSON" | jq -r '.exchange.device?' )
-EXCHANGE_TOKEN=$(echo "$JSON" | jq -r '.exchange.token?')
-EXCHANGE_ORG=$(echo "$JSON" | jq -r '.exchange.organization?')
-
-# check for outstanding agreements
+  # check for outstanding agreements
   AGREEMENTS=$(hzn agreement list)
   COUNT=$(echo "${AGREEMENTS}" | jq '.?|length')
   hass.log.debug "Found ${COUNT} agreements"
@@ -116,11 +114,13 @@ EXCHANGE_ORG=$(echo "$JSON" | jq -r '.exchange.organization?')
       fi
     done
   fi
+
   # get node status from horizon
   NODE=$(hzn node list)
   EXCHANGE_FOUND=$(echo "${NODE}" | jq '.id?=="'"${EXCHANGE_ID}"'"')
   EXCHANGE_CONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="configured"')
   EXCHANGE_UNCONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="unconfigured"')
+
   # test conditions
   if [[ ${PATTERN_FOUND} == true && ${EXCHANGE_FOUND} == true && ${EXCHANGE_CONFIGURED} == true ]]; then
     hass.log.info "Device ${EXCHANGE_ID} found with pattern ${PATTERN_URL} in a configured state; skipping registration"
@@ -138,9 +138,13 @@ EXCHANGE_ORG=$(echo "$JSON" | jq -r '.exchange.organization?')
 
     # perform registration
     INPUT=$(mktemp)
-
     echo '{"services": [{"org": "'"${PATTERN_ORG}"'","url": "'"${PATTERN_URL}"'","versionRange": "[0.0.0,INFINITY)","variables": {' >> "${INPUT}"
-    echo '"MSGHUB_API_KEY": "'"${KAFKA_API_KEY}"'"' >> "${INPUT}"
+    PVS=$(echo "${PATTERN_VARS}" | jq -r '.[].env')
+    for PV in ${PVS}; do
+      VALUE=$(echo "${PATTERN_VARS}" | jq -r '.[]|select(.env="'"${PV}"'").value')
+      echo '"'"${PV}"':"'"${VALUE}"'"' >> "${INPUT}"
+      hass.log.trace'{"env":"'"${PV}"'","value":"'"${VALUE}"'"}'
+    done
     echo '}}]}' >> "${INPUT}"
 
     hass.log.debug "Registering device ${EXCHANGE_ID} organization ${EXCHANGE_ORG} with pattern ${PATTERN_ORG}/${PATTERN_ID} using input " $(jq -c '.' "${INPUT}")
@@ -160,6 +164,7 @@ EXCHANGE_ORG=$(echo "$JSON" | jq -r '.exchange.organization?')
     && EXCHANGE_FOUND=$(echo "${NODE}" | jq '.id?=="'"${EXCHANGE_ID}"'"') \
     && EXCHANGE_CONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="configured"') \
     && AGREEMENTS=$(hzn agreement list) ]]; do
+
     # check if all still okay
     PATTERN_FOUND=""
     WORKLOADS=$(echo "${AGREEMENTS}" | jq -r '.[]|.workload_to_run.url')
