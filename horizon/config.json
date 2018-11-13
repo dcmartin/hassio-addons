@@ -34,9 +34,9 @@
     "pattern": {
       "id": "cpu2msghub",
       "org": "IBM",
-      "url": "https://github.com/open-horizon/examples/wiki/service-cpu2msghub",
-      "variables": [ { "env": "MSGHUB_API_KEY", "value": "" } ]
+      "url": "https://github.com/open-horizon/examples/wiki/service-cpu2msghub"
     },
+    "variables": [ { "env": "MSGHUB_API_KEY", "value": "" } ]
     "exchange": {
       "device": "",
       "username": "",
@@ -51,9 +51,9 @@
     "pattern": {
       "id": "str",
       "org": "str",
-      "url": "url",
-      "variables": []
+      "url": "url"
     },
+    "variables": [ { "env":"str?", "value":"str?" } ],
     "exchange": {
       "device": "str?",
       "token": "str?",
