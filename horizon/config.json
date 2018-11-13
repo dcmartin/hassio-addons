@@ -52,7 +52,7 @@
       "id": "str",
       "org": "str",
       "url": "url",
-      "variables": [ { "env": "str?", "value": "str?" } ]
+      "variables": []
     },
     "exchange": {
       "device": "str?",
