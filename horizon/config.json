@@ -58,7 +58,7 @@
       "device": "",
       "username": "",
       "password": "",
-      "exchange": "https://stg-edge-cluster.us-south.containers.appdomain.cloud/v1",
+      "url": "https://stg-edge-cluster.us-south.containers.appdomain.cloud/v1",
       "organization": "cgiroua@us.ibm.com"
     }
   },
@@ -88,7 +88,7 @@
       "token": "str?",
       "username": "str",
       "password": "str",
-      "exchange": "url",
+      "url": "url",
       "organization": "str"
     }
   },
