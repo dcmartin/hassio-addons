@@ -22,7 +22,7 @@ If the addon is configured with SDR and Open Horizon is installed, the options f
 
 To install on Ubuntu and most Debian LINUX systems, a [script][hzn-setup] run as root from the command line will install the appropriate packages on your LINUX machine or VM:
 
-`wget - ibm.biz/horizon-setup | bash`
+`wget -qO - ibm.biz/horizon-setup | bash`
 
 More detailed instructions are [available][edge-install].  Installation package for macOS is also [available][macos-install]
 
