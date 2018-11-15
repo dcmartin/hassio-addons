@@ -14,7 +14,7 @@ RUN apt-get update \
   && ARCH="${BUILD_ARCH}" \
   && if [ "${BUILD_ARCH}" = "aarch64" ]; then ARCH="arm64"; fi \
   \
-  && HORIZON_CLI="2.19.2" \
+  && HORIZON_CLI="2.20.0" \
   && HORIZON_URL="http://pkg.bluehorizon.network/linux/ubuntu/pool/main/h/horizon/horizon-cli" \
   && HORIZON_PKG="${HORIZON_URL}_${HORIZON_CLI}~ppa~ubuntu.xenial_${ARCH}.deb" \
   && curl -fsSL -o /tmp/horizon-cli.deb  "${HORIZON_PKG}" \
