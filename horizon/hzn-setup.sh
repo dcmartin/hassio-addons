@@ -25,7 +25,7 @@ if [ "${ARCH}" == "aarch64" ]; then
 elif [ "${ARCH}" == "x86_64" ]; then
   ARCH="amd64"
 elif [ "${ARCH}" == "armv7l" ]; then
-  ARCH="arm"
+  ARCH=$(dpkg --print-architecture)
 else
   echo "Cannot automagically identify architecture (${ARCH}); options are: arm, arm64, amd64, ppc64el"
   read -p 'Architecture: ' ARCH
@@ -76,12 +76,6 @@ CMD=$(command -v hzn)
 if [ ! -z "${CMD}" ]; then
   echo "*** WARN: Open Horizon already installed as ${CMD}; skipping"
 else
-  # update
-  # echo "+++ INFO: Updating via apt"
-  # apt-get update -y
-  # echo "+++ INFO: Upgrading via apt"
-  # apt-get upgrade -y
-
   if [ ! -n "${APT_REPO}" ]; then
     APT_REPO=testing
     echo "*** WARN: Using default APT_REPO = ${APT_REPO}"
