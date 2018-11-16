@@ -141,6 +141,6 @@ else
   echo "*** WARN: The horizon.service is already active" >&2
 fi
 
-echo '{"repository":"'$APT_REPO'","version":"'`hzn version`'"}'
+echo '{"repository":"'$APT_REPO'","horizon":"'`hzn version`'","docker":"'`docker --version`'"}'
 
 exit 0
