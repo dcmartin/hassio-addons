@@ -52,7 +52,7 @@ if [ -e "/run/systemd/resolve/resolv.conf" ]; then
 fi
 
 # install pre-requisites
-for CMD in jq curl ssh kafkacat; do
+for CMD in jq curl ssh expect; do
   C=$(command -v $CMD)
   if [ -z "${C}" ]; then
     echo "+++ INFO: Installing ${CMD}" >&2
