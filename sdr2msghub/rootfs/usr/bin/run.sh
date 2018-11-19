@@ -295,7 +295,8 @@ else
     EXCHANGE_UNCONFIGURED="true"
     hass.log.debug "Reset agreements, count, and workloads"
   elif [[ ${EXCHANGE_UNCONFIGURING} == true ]]; then
-    hass.log.debug "Node ${EXCHANGE_ID} is unconfiguring"
+    hass.log.fatal "Node ${EXCHANGE_ID} is unconfiguring: ${NODE}"
+    hass.die
   fi
   if [[ ${EXCHANGE_UNCONFIGURED} == true ]]; then
     # setup input file
