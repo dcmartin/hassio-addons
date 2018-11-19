@@ -202,10 +202,12 @@ else
   EXCHANGE_FOUND=$(echo "${NODE}" | jq '.id?=="'"${EXCHANGE_ID}"'"')
   EXCHANGE_CONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="configured"')
   EXCHANGE_UNCONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="unconfigured"')
+  EXCHANGE_CONFIGURING=$(echo "${NODE}" | jq '.configstate.state?=="configuring"')
+  EXCHANGE_UNCONFIGURING=$(echo "${NODE}" | jq '.configstate.state?=="unconfiguring"')
   # test conditions
   if [[ ${PATTERN_FOUND} == true && ${EXCHANGE_FOUND} == true && ${EXCHANGE_CONFIGURED} == true ]]; then
     hass.log.info "Node ${EXCHANGE_ID} configured: ${NODE}"
-  elif [[ ${EXCHANGE_UNCONFIGURED} != true ]]; then
+  elif [[ ${EXCHANGE_CONFIGURED} == true || ${EXCHANGE_UNCONFIGURING} == true ]]; then
     hass.log.debug "Node ${EXCHANGE_ID} not configured for pattern ${PATTERN_URL}; unregistering..."
     hzn unregister -f
     while [[ $(hzn node list | jq '.configstate.state?=="unconfigured"') == false ]]; do hass.log.debug "Waiting for unregistration to complete (10)"; sleep 10; done
@@ -214,7 +216,11 @@ else
     PATTERN_FOUND=""
     EXCHANGE_CONFIGURED="false"
     EXCHANGE_UNCONFIGURED="true"
-    hass.log.debug "Reseting agreements, count, and workloads"
+    hass.log.debug "Reset agreements, count, and workloads"
+  elif [[ ${EXCHANGE_CONFIGURING} == true ]]; then
+    hass.log.debug "Node ${EXCHANGE_ID} is configuring"
+  else
+    hass.log.warning "Node ${EXCHANGE_ID} is unknown ${NODE}"
   fi
   if [[ ${EXCHANGE_UNCONFIGURED} == true ]]; then
     # setup input file
