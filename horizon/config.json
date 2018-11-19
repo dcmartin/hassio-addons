@@ -1,7 +1,7 @@
 {
   "name": "Horizon Example",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/horizon",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "slug": "horizon",
   "description": "Example base addon for horizon",
   "startup": "before",
@@ -34,7 +34,7 @@
     "pattern": {
       "id": "cpu2msghub",
       "org": "IBM",
-      "url": "https://github.com/open-horizon/examples/wiki/service-cpu2msghub"
+      "url": "github.com.open-horizon.examples.cpu2msghub"
     },
     "variables": [ { "env": "MSGHUB_API_KEY", "value": "" } ],
     "exchange": {

@@ -80,6 +80,10 @@ fi
 CMD=$(command -v hzn)
 if [ ! -z "${CMD}" ]; then
   echo "*** WARN: Open Horizon already installed as ${CMD}; skipping" >&2
+  echo "+++ INFO: Updating apt" >&2
+  apt-get update -y
+  echo "+++ INFO: Upgrading apt" >&2
+  apt-get upgrade -y
 else
   if [ ! -n "${APT_LIST}" ]; then
     APT_LIST=/etc/apt/sources.list.d/bluehorizon.list
