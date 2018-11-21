@@ -33,15 +33,15 @@
     "listen": "only",
     "timezone": "America/Los_Angeles",
     "horizon": {
-      "username": "",
+      "username": "iamapikey",
       "password": "",
-      "exchange": "https://stg-edge-cluster.us-south.containers.appdomain.cloud/v1",
-      "organization": "cgiroua@us.ibm.com"
+      "exchange": "https://stg.edge-fabric.com/v1",
+      "organization": ""
     },
     "mqtt": {
       "host": "core-mosquitto", "port": 1883
     },
-    "kafka": {}
+    "kafka": { "api_key": "", "brokers":"" } 
   },
   "schema": {
     "log_level": "match(^(trace|debug|info|notice|warning|error|fatal)$)",
@@ -62,20 +62,8 @@
       "password": "str?"
     },
     "kafka": {
-      "user": "str",
-      "password": "str",
-      "instance_id": "str",
-      "mqlight_lookup_url": "url",
       "api_key": "str",
-      "kafka_admin_url": "url",
-      "kafka_rest_url": "url",
-      "kafka_brokers_sasl": [
-        "str",
-        "str?",
-        "str?",
-        "str?",
-        "str?"
-      ]
+      "brokers": "str"
     }
   },
   "environment": {
