@@ -1,7 +1,7 @@
 {
   "name": "Open Horizon Shared CPU and GPS",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/cpu2msghub",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "slug": "cpu2msghub",
   "description": "Routes Kakfa messages from Open Horizon (github.com/open-horizon) distributed system to MQTT for consumption by Home-Assistant",
   "startup": "before",
@@ -63,8 +63,8 @@
       "topic":"str?"
     },
     "kafka": {
-      "api_key": "str",
-      "brokers": "str"
+      "api_key": "str?",
+      "broker": "kafka03-prod02.messagehub.services.us-south.bluemix.net:9093,kafka04-prod02.messagehub.services.us-south.bluemix.net:9093,kafka01-prod02.messagehub.services.us-south.bluemix.net:9093,kafka02-prod02.messagehub.services.us-south.bluemix.net:9093,kafka05-prod02.messagehub.services.us-south.bluemix.net:9093"
     }
   },
   "environment": {

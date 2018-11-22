@@ -1,7 +1,7 @@
 {
   "name": "Open Horizon Shared SDR",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/sdr2msghub",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "slug": "sdr2msghub",
   "description": "Routes Kakfa messages from Open Horizon (github.com/open-horizon) distributed system to MQTT for consumption by Home-Assistant",
   "startup": "before",
@@ -52,7 +52,7 @@
     },
     "kafka": {
       "api_key": "",
-      "brokers": "str"
+      "broker": "kafka03-prod02.messagehub.services.us-south.bluemix.net:9093,kafka04-prod02.messagehub.services.us-south.bluemix.net:9093,kafka01-prod02.messagehub.services.us-south.bluemix.net:9093,kafka02-prod02.messagehub.services.us-south.bluemix.net:9093,kafka05-prod02.messagehub.services.us-south.bluemix.net:9093"
     }
   },
   "schema": {
@@ -66,7 +66,7 @@
       "password": "str",
       "device": "str?",
       "token": "str?",
-      "exchange": "url?",
+      "exchange": "url",
       "organization": "str"
     },
     "mqtt": {
@@ -90,7 +90,7 @@
     },
     "kafka": {
       "api_key": "str?",
-      "brokers": "str?"
+      "broker": "str"
     }
   },
   "environment": {
