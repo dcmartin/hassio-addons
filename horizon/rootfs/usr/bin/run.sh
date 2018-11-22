@@ -117,12 +117,11 @@ main() {
 
   # get node status from horizon
   NODE=$(hzn node list)
-  EXCHANGE_FOUND=$(echo "${NODE}" | jq '.id?=="'"${EXCHANGE_ID}"'"')
   EXCHANGE_CONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="configured"')
   EXCHANGE_UNCONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="unconfigured"')
 
   # test conditions
-  if [[ ${PATTERN_FOUND} == true && ${EXCHANGE_FOUND} == true && ${EXCHANGE_CONFIGURED} == true ]]; then
+  if [[ ${PATTERN_FOUND} == true && ${EXCHANGE_CONFIGURED} == true ]]; then
     hass.log.info "Device ${EXCHANGE_ID} found with pattern ${PATTERN_URL} in a configured state; skipping registration"
   else
     # unregister if currently registered
@@ -141,8 +140,10 @@ main() {
     echo '{"services": [{"org": "'"${PATTERN_ORG}"'","url": "'"${PATTERN_URL}"'","versionRange": "[0.0.0,INFINITY)","variables": {' >> "${INPUT}"
     PVS=$(echo "${PATTERN_VARS}" | jq -r '.[].env')
     for PV in ${PVS}; do
-      VALUE=$(echo "${PATTERN_VARS}" | jq -r '.[]|select(.env="'"${PV}"'").value')
+      VALUE=$(echo "${PATTERN_VARS}" | jq -r '.[]|select(.env=="'"${PV}"'").value')
+      if [ -n "${FIRST:-}" ]; then echo ',' >> "${INPUT}"; fi
       echo '"'"${PV}"':"'"${VALUE}"'"' >> "${INPUT}"
+      FIRST='false'
       hass.log.trace'{"env":"'"${PV}"'","value":"'"${VALUE}"'"}'
     done
     echo '}}]}' >> "${INPUT}"
@@ -161,7 +162,6 @@ main() {
 
   # wait on termination
   while [[ NODE=$(hzn node list) \
-    && EXCHANGE_FOUND=$(echo "${NODE}" | jq '.id?=="'"${EXCHANGE_ID}"'"') \
     && EXCHANGE_CONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="configured"') \
     && AGREEMENTS=$(hzn agreement list) ]]; do
 

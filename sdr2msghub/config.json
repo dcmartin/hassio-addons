@@ -1,7 +1,7 @@
 {
   "name": "Open Horizon Shared SDR",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/sdr2msghub",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "slug": "sdr2msghub",
   "description": "Routes Kakfa messages from Open Horizon (github.com/open-horizon) distributed system to MQTT for consumption by Home-Assistant",
   "startup": "before",
@@ -13,8 +13,8 @@
     "i386"
   ],
   "hassio_role": "default",
-  "hassio_api": true,
-  "homeassistant_api": true,
+  "hassio_api": false,
+  "homeassistant_api": false,
   "host_network": true,
   "privileged": [
     "NET_ADMIN",
@@ -33,12 +33,10 @@
     "listen": "only",
     "timezone": "America/Los_Angeles",
     "horizon": {
-      "username": "",
+      "username": "iamapikey",
       "password": "",
-      "device": "",
-      "token": "",
-      "organization": "cgiroua@us.ibm.com",
-      "exchange": "https://stg-edge-cluster.us-south.containers.appdomain.cloud/v1"
+      "organization": "",
+      "exchange": "https://alpha.edge-fabric.com/v1"
     },
     "mqtt": {
       "host": "core-mosquitto",
@@ -53,18 +51,8 @@
       "apikey": ""
     },
     "kafka": {
-      "instance_id": "b5f8df99-d3f6-47b8-b1dc-12806d63ae61",
-      "mqlight_lookup_url": "https://mqlight-lookup-prod02.messagehub.services.us-south.bluemix.net/Lookup?serviceId=b5f8df99-d3f6-47b8-b1dc-12806d63ae61",
       "api_key": "",
-      "kafka_admin_url": "https://kafka-admin-prod02.messagehub.services.us-south.bluemix.net:443",
-      "kafka_rest_url": "https://kafka-rest-prod02.messagehub.services.us-south.bluemix.net:443",
-      "kafka_brokers_sasl": [
-        "kafka04-prod02.messagehub.services.us-south.bluemix.net:9093",
-        "kafka03-prod02.messagehub.services.us-south.bluemix.net:9093",
-        "kafka02-prod02.messagehub.services.us-south.bluemix.net:9093",
-        "kafka01-prod02.messagehub.services.us-south.bluemix.net:9093",
-        "kafka05-prod02.messagehub.services.us-south.bluemix.net:9093"
-      ]
+      "brokers": "str"
     }
   },
   "schema": {
@@ -74,12 +62,12 @@
     "mock": "bool?",
     "transcripts": "bool?",
     "horizon": {
-      "username": "str?",
-      "password": "str?",
+      "username": "str",
+      "password": "str",
       "device": "str?",
       "token": "str?",
-      "exchange": "url?",
-      "organization": "str?"
+      "exchange": "url",
+      "organization": "str"
     },
     "mqtt": {
       "host": "str?",
@@ -101,20 +89,8 @@
       "password": "str?"
     },
     "kafka": {
-      "user": "str?",
-      "password": "str?",
-      "instance_id": "str?",
-      "mqlight_lookup_url": "url?",
       "api_key": "str?",
-      "kafka_admin_url": "url?",
-      "kafka_rest_url": "url?",
-      "kafka_brokers_sasl": [
-        "str?",
-        "str?",
-        "str?",
-        "str?",
-        "str?"
-      ]
+      "brokers": "str?"
     }
   },
   "environment": {

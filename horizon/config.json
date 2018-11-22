@@ -13,8 +13,8 @@
     "i386"
   ],
   "hassio_role": "default",
-  "hassio_api": true,
-  "homeassistant_api": true,
+  "hassio_api": false,
+  "homeassistant_api": false,
   "host_network": true,
   "privileged": [
     "NET_ADMIN",
@@ -36,13 +36,12 @@
       "org": "IBM",
       "url": "github.com.open-horizon.examples.cpu2msghub"
     },
-    "variables": [ { "env": "MSGHUB_API_KEY", "value": "" } ],
+    "variables": [ { "env": "MSGHUB_API_KEY", "value": "" }, { "env": "MSGHUB_BROKER", "value": "" } ],
     "exchange": {
-      "device": "",
-      "username": "",
+      "username": "iamapikey",
       "password": "",
-      "url": "https://stg-edge-cluster.us-south.containers.appdomain.cloud/v1",
-      "organization": "cgiroua@us.ibm.com"
+      "url": "https://alpha.edge-fabric.com/v1",
+      "organization": ""
     }
   },
   "schema": {

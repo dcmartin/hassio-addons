@@ -84,12 +84,30 @@ hass.log.debug "EXCHANGE_TOKEN ${VALUE}" >&2
 ## DONE w/ horizon
 JSON="${JSON}"'}'
 
+###
+### REVIEW
+###
+
+PATTERN_ORG=$(echo "$JSON" | jq -r '.horizon.pattern.org')
+PATTERN_ID=$(echo "$JSON" | jq -r '.horizon.pattern.id')
+PATTERN_URL=$(echo "$JSON" | jq -r '.horizon.pattern.url')
+
+KAFKA_BROKER_URL=$(echo "$JSON" | jq -j '.kafka.brokers')
+KAFKA_API_KEY=$(echo "$JSON" | jq -r '.kafka.api_key')
+
+EXCHANGE_ID=$(echo "$JSON" | jq -r '.horizon.device' )
+EXCHANGE_TOKEN=$(echo "$JSON" | jq -r '.horizon.token')
+EXCHANGE_ORG=$(echo "$JSON" | jq -r '.horizon.organization')
+
+# KAFKA TOPIC
+KAFKA_TOPIC=$(echo "${EXCHANGE_ORG}.${PATTERN_ORG}_${PATTERN_ID}" | sed 's/@/_/g')
+
 ##
 ## KAFKA OPTIONS
 ##
 
-JSON="${JSON}"',"kafka":{"id":"'$(hass.config.get 'kafka.instance_id')'"'
-# brokers
+JSON="${JSON}"',"kafka":{"topic":"'"${KAFKA_TOPIC}"'"'
+# BROKERS
 VALUE=$(hass.config.get "kafka.brokers")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.brokers"; hass.die; fi
 hass.log.debug "Kafka brokers: ${VALUE}"
@@ -108,24 +126,6 @@ JSON="${JSON}"'}'
 
 hass.log.debug "CONFIGURATION:" $(echo "${JSON}" | jq -c '.')
 
-###
-### REVIEW
-###
-
-PATTERN_ORG=$(echo "$JSON" | jq -r '.horizon.pattern.org?')
-PATTERN_ID=$(echo "$JSON" | jq -r '.horizon.pattern.id?')
-PATTERN_URL=$(echo "$JSON" | jq -r '.horizon.pattern.url?')
-
-KAFKA_BROKER_URL=$(echo "$JSON" | jq -j '.kafka.brokers')
-KAFKA_API_KEY=$(echo "$JSON" | jq -r '.kafka.api_key?')
-
-EXCHANGE_ID=$(echo "$JSON" | jq -r '.horizon.device?' )
-EXCHANGE_TOKEN=$(echo "$JSON" | jq -r '.horizon.token?')
-EXCHANGE_ORG=$(echo "$JSON" | jq -r '.horizon.organization?')
-
-# KAFKA TOPIC
-KAFKA_TOPIC=$(echo "${EXCHANGE_ORG}.${PATTERN_ORG}_${PATTERN_ID}" | sed 's/@/_/g')
-
 ## MQTT
 
 VALUE=$(hass.config.get "mqtt.host")
@@ -139,7 +139,7 @@ hass.log.debug "MQTT port: ${VALUE}"
 MQTT_PORT=${VALUE}
 
 VALUE=$(hass.config.get "mqtt.topic")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="kafka/${KAFKA_TOPIC}"; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="kafka/cpu-load"; fi
 hass.log.debug "MQTT topic: ${VALUE}"
 MQTT_TOPIC=${VALUE}
 
@@ -189,9 +189,6 @@ else
   elif [[ ${EXCHANGE_UNCONFIGURING} == true ]]; then
     hass.log.fatal "Node ${EXCHANGE_ID} is unconfiguring: ${NODE}"
     hass.die
-  fi
-  else
-    hass.log.warning "Node ${EXCHANGE_ID} is unknown ${NODE}"
   fi
   if [[ ${EXCHANGE_UNCONFIGURED} == true ]]; then
     # setup input file

@@ -25,7 +25,7 @@ RUN apt-get update \
       /var/lib/apt/lists/*
 
 # the pattern we expect to run
-ENV HORIZON_PATTERN='{"id":"cpu2msghub","org":"IBM","url":"github.com.open-horizon.examples.cpu2msghub","services":[{"id":"cpu2msghub","org":"IBM","url":"https://github.com/open-horizon/examples/wiki/service-cpu"},{"id":"gps2msghub","org":"IBM","url":"https://github.com/open-horizon/examples/wiki/service-gps"}]}'
+ENV HORIZON_PATTERN='{"id":"cpu2msghub","org":"IBM","url":"github.com.open-horizon.examples.cpu2msghub"}'
 
 # Copy root filesystem
 COPY rootfs /

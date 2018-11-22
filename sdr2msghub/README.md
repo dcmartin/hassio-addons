@@ -50,10 +50,10 @@ The `device` and `token` values are optional and will default to the hostname wi
 
 ```
   "horizon": {
-    "exchange": "<url>",
-    "username": "<username>",
-    "password": "<password>",
-    "organization": "<organization>",
+    "exchange": "https://alpha.edge-fabric.com/v1",
+    "username": "iamapikey",
+    "password": "",
+    "organization": "",
     "device": "",
     "token": ""
   }
@@ -65,18 +65,8 @@ The `device` and `token` values are optional and will default to the hostname wi
 
 ```
   "kafka": {
-    "instance_id": "<instance_id>",
-    "mqlight_lookup_url": "<url>",
-    "api_key": "<apikey>",
-    "kafka_admin_url": "<url>",
-    "kafka_rest_url": "<url>",
-    "kafka_brokers_sasl": [
-      "<url>",
-      "<url>",
-      ...
-    ],
-    "user": "<username>",
-    "password": "<password>"
+    "api_key": "",
+    "brokers": ""
   }
 ```
 
