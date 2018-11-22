@@ -19,7 +19,7 @@ group cpu2msghub:
 sensor cpu2msghub_event:
   - platform: mqtt
     name: cpu2msghub_event
-    state_topic: 'kafka/cgiroua_us.ibm.com.IBM_cpu2msghub'
+    state_topic: 'kafka/cpu-load'
     force_update: true
     expire_after: 1
     json_attributes:
