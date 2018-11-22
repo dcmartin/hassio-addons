@@ -1,7 +1,7 @@
 {
   "name": "Open Horizon Shared CPU and GPS",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/cpu2msghub",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "slug": "cpu2msghub",
   "description": "Routes Kakfa messages from Open Horizon (github.com/open-horizon) distributed system to MQTT for consumption by Home-Assistant",
   "startup": "before",
@@ -35,13 +35,17 @@
     "horizon": {
       "username": "iamapikey",
       "password": "",
-      "exchange": "https://alpha.edge-fabric.com/v1",
-      "organization": ""
+      "organization": "",
+      "exchange": "https://alpha.edge-fabric.com/v1"
     },
     "mqtt": {
-      "host": "core-mosquitto", "port": 1883
+      "host": "core-mosquitto",
+      "port": 1883
     },
-    "kafka": { "api_key": "", "brokers":"" } 
+    "kafka": {
+      "api_key": "",
+      "broker": "kafka03-prod02.messagehub.services.us-south.bluemix.net:9093,kafka04-prod02.messagehub.services.us-south.bluemix.net:9093,kafka01-prod02.messagehub.services.us-south.bluemix.net:9093,kafka02-prod02.messagehub.services.us-south.bluemix.net:9093,kafka05-prod02.messagehub.services.us-south.bluemix.net:9093"
+    }
   },
   "schema": {
     "log_level": "match(^(trace|debug|info|notice|warning|error|fatal)$)",
@@ -60,11 +64,11 @@
       "port": "port?",
       "username": "str?",
       "password": "str?",
-      "topic":"str?"
+      "topic": "str?"
     },
     "kafka": {
       "api_key": "str?",
-      "broker": "kafka03-prod02.messagehub.services.us-south.bluemix.net:9093,kafka04-prod02.messagehub.services.us-south.bluemix.net:9093,kafka01-prod02.messagehub.services.us-south.bluemix.net:9093,kafka02-prod02.messagehub.services.us-south.bluemix.net:9093,kafka05-prod02.messagehub.services.us-south.bluemix.net:9093"
+      "broker": "str"
     }
   },
   "environment": {
