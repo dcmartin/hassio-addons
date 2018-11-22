@@ -10,7 +10,7 @@ Detailed [documentation][edge-fabric] for the IBM Edge Fabric is available on-li
 
 The add-on listens to Kafka messages from an IBM Message Hub operating in the IBM Cloud; messages received include an ASCII representation of a MP3 audio sequence captured from the CPU listening to local FM radio stations.
 
-By default the system will only listen for messages, process using STT and NLU, and publish results using MQTT to the local `core-mosquitto` broker on port 1883 with topic `kafka/cpu-audio` (`username` and `password` are also supported).
+By default the system will only listen for messages, process using STT and NLU, and publish results using MQTT to the local `core-mosquitto` broker on port 1883 with topic `kafka/cpu-load` (`username` and `password` are also supported).
 
 If the addon is configured with CPU and Open Horizon is installed, the options for `device` and `token` will default to hostname with MAC address appended and exchange password.
 
@@ -48,10 +48,10 @@ The `device` and `token` values are optional and will default to the hostname wi
 
 ```
   "horizon": {
-    "username": "<username>",
-    "password": "<password>",
-    "organization": "cgiroua@us.ibm.com",
-    "exchange": "https://stg-edge-cluster.us-south.containers.appdomain.cloud/v1",
+    "username": "iamapikey",
+    "password": "",
+    "organization": "",
+    "exchange": "https://alpha.edge-fabric.com/v1",
     "device": "",
     "token": ""
   }
@@ -63,18 +63,8 @@ The `device` and `token` values are optional and will default to the hostname wi
 
 ```
   "kafka": {
-    "instance_id": "<instance_id>",
-    "mqlight_lookup_url": "<url>",
-    "api_key": "<apikey>",
-    "kafka_admin_url": "<url>",
-    "kafka_rest_url": "<url>",
-    "kafka_brokers_sasl": [
-      "<url>",
-      "<url>",
-      ...
-    ],
-    "user": "<username>",
-    "password": "<password>"
+    "api_key": "",
+    "brokers": ""
   }
 ```
 

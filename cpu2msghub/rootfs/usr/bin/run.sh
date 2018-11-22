@@ -84,21 +84,34 @@ hass.log.debug "EXCHANGE_TOKEN ${VALUE}" >&2
 ## DONE w/ horizon
 JSON="${JSON}"'}'
 
+###
+### REVIEW
+###
+
+PATTERN_ORG=$(echo "$JSON" | jq -r '.horizon.pattern.org')
+PATTERN_ID=$(echo "$JSON" | jq -r '.horizon.pattern.id')
+PATTERN_URL=$(echo "$JSON" | jq -r '.horizon.pattern.url')
+
+KAFKA_BROKER_URL=$(echo "$JSON" | jq -j '.kafka.brokers')
+KAFKA_API_KEY=$(echo "$JSON" | jq -r '.kafka.api_key')
+
+EXCHANGE_ID=$(echo "$JSON" | jq -r '.horizon.device' )
+EXCHANGE_TOKEN=$(echo "$JSON" | jq -r '.horizon.token')
+EXCHANGE_ORG=$(echo "$JSON" | jq -r '.horizon.organization')
+
+# KAFKA TOPIC
+KAFKA_TOPIC=$(echo "${EXCHANGE_ORG}.${PATTERN_ORG}_${PATTERN_ID}" | sed 's/@/_/g')
+
 ##
 ## KAFKA OPTIONS
 ##
 
-JSON="${JSON}"',"kafka":{"id":"'$(hass.config.get 'kafka.instance_id')'"'
-# BROKERS_SASL
-VALUE=$(jq -r '.kafka.kafka_brokers_sasl' "/data/options.json")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.kafka_brokers_sasl"; hass.die; fi
+JSON="${JSON}"',"kafka":{"topic":"'"${KAFKA_TOPIC}"'"'
+# BROKERS
+VALUE=$(hass.config.get "kafka.brokers")
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.brokers"; hass.die; fi
 hass.log.debug "Kafka brokers: ${VALUE}"
-JSON="${JSON}"',"brokers":'"${VALUE}"
-# ADMIN_URL
-VALUE=$(hass.config.get "kafka.kafka_admin_url")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.kafka_admin_url"; hass.die; fi
-hass.log.debug "Kafka admin URL: ${VALUE}"
-JSON="${JSON}"',"admin_url":"'"${VALUE}"'"'
+JSON="${JSON}"',"brokers":"'"${VALUE}"'"'
 # API_KEY
 VALUE=$(hass.config.get "kafka.api_key")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.api_key"; hass.die; fi
@@ -113,25 +126,6 @@ JSON="${JSON}"'}'
 
 hass.log.debug "CONFIGURATION:" $(echo "${JSON}" | jq -c '.')
 
-###
-### REVIEW
-###
-
-PATTERN_ORG=$(echo "$JSON" | jq -r '.horizon.pattern.org?')
-PATTERN_ID=$(echo "$JSON" | jq -r '.horizon.pattern.id?')
-PATTERN_URL=$(echo "$JSON" | jq -r '.horizon.pattern.url?')
-
-KAFKA_BROKER_URL=$(echo "$JSON" | jq -j '.kafka.brokers[]?|.,","')
-KAFKA_ADMIN_URL=$(echo "$JSON" | jq -r '.kafka.admin_url?')
-KAFKA_API_KEY=$(echo "$JSON" | jq -r '.kafka.api_key?')
-
-EXCHANGE_ID=$(echo "$JSON" | jq -r '.horizon.device?' )
-EXCHANGE_TOKEN=$(echo "$JSON" | jq -r '.horizon.token?')
-EXCHANGE_ORG=$(echo "$JSON" | jq -r '.horizon.organization?')
-
-# KAFKA TOPIC
-KAFKA_TOPIC=$(echo "${EXCHANGE_ORG}.${PATTERN_ORG}_${PATTERN_ID}" | sed 's/@/_/g')
-
 ## MQTT
 
 VALUE=$(hass.config.get "mqtt.host")
@@ -145,7 +139,7 @@ hass.log.debug "MQTT port: ${VALUE}"
 MQTT_PORT=${VALUE}
 
 VALUE=$(hass.config.get "mqtt.topic")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="kafka/${KAFKA_TOPIC}"; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="kafka/cpu-load"; fi
 hass.log.debug "MQTT topic: ${VALUE}"
 MQTT_TOPIC=${VALUE}
 
@@ -155,30 +149,6 @@ MQTT="mosquitto_pub -h ${MQTT_HOST} -p ${MQTT_PORT}"
 if [[ $(hass.config.exists "mqtt.username") && $(hass.config.exists "mqtt.password") ]]; then
   # update command
   MQTT="${MQTT} -u $(hass.config.get 'mqtt.username') -P (hass.config.get 'mqtt.password')"
-fi
-
-###
-### CHECK KAFKA
-###
-
-# FIND TOPICS
-TOPIC_NAMES=$(curl -sL -H "X-Auth-Token: $KAFKA_API_KEY" $KAFKA_ADMIN_URL/admin/topics | jq -j '.[]|.name," "')
-if [ $? != 0 ]; then hass.log.fatal "Unable to retrieve Kafka topics; exiting"; hass.die; fi
-hass.log.debug "Topics availble: ${TOPIC_NAMES}"
-TOPIC_FOUND=""
-for TN in ${TOPIC_NAMES}; do
-  if [ ${TN} == "${KAFKA_TOPIC}" ]; then
-    TOPIC_FOUND=true
-  fi
-done
-if [ -z "${TOPIC_FOUND}" ]; then
-  hass.log.fatal "Topic ${KAFKA_TOPIC} not found; exiting"
-  hass.die
-  hass.log.debug "Creating topic ${KAFKA_TOPIC} at ${KAFKA_ADMIN_URL} using /admin/topics"
-  curl -sL -H "X-Auth-Token: $KAFKA_API_KEY" -d "{ \"name\": \"$KAFKA_TOPIC\", \"partitions\": 2 }" $KAFKA_ADMIN_URL/admin/topics
-  if [ $? != 0 ]; then hass.log.fatal "Unable to create Kafka topic ${KAFKA_TOPIC}; exiting"; hass.die; fi
-else
-  hass.log.info "Topic found: ${KAFKA_TOPIC}"
 fi
 
 if [[ ${LISTEN_MODE} == "only" ]]; then
@@ -199,13 +169,12 @@ else
   fi
   # get node status from horizon
   NODE=$(hzn node list)
-  EXCHANGE_FOUND=$(echo "${NODE}" | jq '.id?=="'"${EXCHANGE_ID}"'"')
   EXCHANGE_CONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="configured"')
   EXCHANGE_UNCONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="unconfigured"')
   EXCHANGE_CONFIGURING=$(echo "${NODE}" | jq '.configstate.state?=="configuring"')
   EXCHANGE_UNCONFIGURING=$(echo "${NODE}" | jq '.configstate.state?=="unconfiguring"')
   # test conditions
-  if [[ ${PATTERN_FOUND} == true && ${EXCHANGE_FOUND} == true && ${EXCHANGE_CONFIGURED} == true ]]; then
+  if [[ ${PATTERN_FOUND} == true && ${EXCHANGE_CONFIGURED} == true ]]; then
     hass.log.info "Node ${EXCHANGE_ID} configured: ${NODE}"
   elif [[ ${EXCHANGE_CONFIGURED} == true || ${EXCHANGE_CONFIGURING} == true ]]; then
     hass.log.debug "Node ${EXCHANGE_ID} not configured for pattern ${PATTERN_URL}; unregistering..."
@@ -220,9 +189,6 @@ else
   elif [[ ${EXCHANGE_UNCONFIGURING} == true ]]; then
     hass.log.fatal "Node ${EXCHANGE_ID} is unconfiguring: ${NODE}"
     hass.die
-  fi
-  else
-    hass.log.warning "Node ${EXCHANGE_ID} is unknown ${NODE}"
   fi
   if [[ ${EXCHANGE_UNCONFIGURED} == true ]]; then
     # setup input file
@@ -262,7 +228,7 @@ while [[ "${LISTEN_MODE}" != "false" ]]; do
       continue
     fi
     hass.log.debug "POSTING: " $(echo "${PAYLOAD}" | jq -c '.')
-    echo "${PAYLOAD}" | jq --unbuffered -c ".date="$(date '+%s') | ${MQTT} -l -t "${MQTT_TOPIC}"
+    echo "${PAYLOAD}" | jq -c '.date='$(date '+%s') | ${MQTT} -l -t "${MQTT_TOPIC}"
   done
   hass.log.warning "Unexpected failure of kafkacat"
 done
@@ -270,7 +236,6 @@ done
 # test conditions
 if [[ "${LISTEN_MODE}" == "false" ]]; then
   while [[ NODE=$(hzn node list) \
-    && EXCHANGE_FOUND=$(echo "${NODE}" | jq '.id?=="'"${EXCHANGE_ID}"'"') \
     && EXCHANGE_CONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="configured"') \
     && AGREEMENTS=$(hzn agreement list) ]]; do
     # check if all still okay

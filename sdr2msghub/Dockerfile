@@ -25,7 +25,7 @@ RUN apt-get update \
       /var/lib/apt/lists/*
 
 # the pattern we expect to run
-ENV HORIZON_PATTERN='{"id":"sdr2msghub","org":"IBM","url":"github.com.open-horizon.examples.sdr2msghub","services":[{"id":"sdr2msghub","org":"IBM","url":"https://github.com/open-horizon/examples/wiki/service-sdr"}]}'
+ENV HORIZON_PATTERN='{"id":"sdr2msghub","org":"IBM","url":"github.com.open-horizon.examples.sdr2msghub"}'
 
 # Copy root filesystem
 COPY rootfs /
@@ -39,18 +39,18 @@ ARG BUILD_VERSION
 
 # Labels
 LABEL \
-    io.hass.name="cpu2msghub" \
-    io.hass.description="Example Horizon-based addon to share CPU statistics" \
+    io.hass.name="sdr2msghub" \
+    io.hass.description="Example Horizon-based addon to share SDR audio" \
     io.hass.arch="${BUILD_ARCH}" \
     io.hass.type="addon" \
     io.hass.version=${BUILD_VERSION} \
     maintainer="David C Martin <github@dcmartin.com>" \
     org.label-schema.description="Example Horizon based addon" \
     org.label-schema.build-date=${BUILD_DATE} \
-    org.label-schema.name="cpu2msghub" \
+    org.label-schema.name="sdr2msghub" \
     org.label-schema.schema-version="1.0" \
     org.label-schema.url="https://addons.community" \
-    org.label-schema.usage="https://github.com/dcmartin/hassio-addons/horizon/tree/master/README.md" \
+    org.label-schema.usage="https://github.com/dcmartin/hassio-addons/sdr2msghub/tree/master/README.md" \
     org.label-schema.vcs-ref=${BUILD_REF} \
-    org.label-schema.vcs-url="https://github.com/dcmartin/hassio-addons/horizon" \
+    org.label-schema.vcs-url="https://github.com/dcmartin/hassio-addons/sdr2msghub" \
     org.label-schema.vendor="DCMARTIN"
