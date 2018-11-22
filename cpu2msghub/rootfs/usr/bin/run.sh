@@ -195,7 +195,7 @@ else
     echo '{"services": [{"org": "'"${PATTERN_ORG}"'","url": "'"${PATTERN_URL}"'","versionRange": "[0.0.0,INFINITY)","variables": {' >> "${INPUT}"
     echo '"MSGHUB_API_KEY": "'"${KAFKA_API_KEY}"'"' >> "${INPUT}"
     echo ',' >> "${INPUT}"
-    echo '"MSGHUB_BROKER": "'"${KAFKA_BROKER}"'"' >> "${INPUT}"
+    echo '"MSGHUB_BROKER": "'"${KAFKA_BROKER_URL}"'"' >> "${INPUT}"
     echo '}}]}' >> "${INPUT}"
     hass.log.debug "Registering device ${EXCHANGE_ID} organization ${EXCHANGE_ORG} with pattern ${PATTERN_ORG}/${PATTERN_ID} using input " $(jq -c '.' "${INPUT}")
     # register
