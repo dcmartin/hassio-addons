@@ -244,12 +244,13 @@ else
   fi
   # get node status from horizon
   NODE=$(hzn node list)
+  EXCHANGE_ID_FOUND=$(echo "${NODE}" | jq '.id?=="'"${EXCHANGE_ID}"'"')
   EXCHANGE_CONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="configured"')
   EXCHANGE_UNCONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="unconfigured"')
   EXCHANGE_CONFIGURING=$(echo "${NODE}" | jq '.configstate.state?=="configuring"')
   EXCHANGE_UNCONFIGURING=$(echo "${NODE}" | jq '.configstate.state?=="unconfiguring"')
   # test conditions
-  if [[ ${PATTERN_FOUND} == true && ${EXCHANGE_CONFIGURED} == true ]]; then
+  if [[ ${PATTERN_FOUND} == true && ${EXCHANGE_ID_FOUND} == true && ${EXCHANGE_CONFIGURED} == true ]]; then
     hass.log.info "Node ${EXCHANGE_ID} configured: ${NODE}"
   elif [[ ${EXCHANGE_CONFIGURED} == true || ${EXCHANGE_CONFIGURING} == true ]]; then
     hass.log.debug "Node ${EXCHANGE_ID} not configured for pattern ${PATTERN_URL}; unregistering..."
