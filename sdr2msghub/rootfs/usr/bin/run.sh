@@ -108,7 +108,7 @@ PATTERN_ORG=$(echo "$JSON" | jq -r '.horizon.pattern.org')
 PATTERN_ID=$(echo "$JSON" | jq -r '.horizon.pattern.id')
 PATTERN_URL=$(echo "$JSON" | jq -r '.horizon.pattern.url')
 
-KAFKA_BROKER_URL=$(echo "$JSON" | jq -j '.kafka.brokers')
+KAFKA_BROKER_URL=$(echo "$JSON" | jq -r '.kafka.broker')
 KAFKA_API_KEY=$(echo "$JSON" | jq -r '.kafka.api_key')
 
 EXCHANGE_ID=$(echo "$JSON" | jq -r '.horizon.device' )
@@ -124,10 +124,10 @@ KAFKA_TOPIC="sdr-audio" # alternatively $(echo "${EXCHANGE_ORG}.${PATTERN_ORG}_$
 
 JSON="${JSON}"',"kafka":{"topic":"'"${KAFKA_TOPIC}"'"'
 # BROKERS
-VALUE=$(hass.config.get "kafka.brokers")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.brokers"; hass.die; fi
-hass.log.debug "Kafka brokers: ${VALUE}"
-JSON="${JSON}"',"brokers":"'"${VALUE}"'"'
+VALUE=$(hass.config.get "kafka.broker")
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.broker"; hass.die; fi
+hass.log.debug "Kafka broker: ${VALUE}"
+JSON="${JSON}"',"broker":"'"${VALUE}"'"'
 # API_KEY
 VALUE=$(hass.config.get "kafka.api_key")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.api_key"; hass.die; fi
