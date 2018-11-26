@@ -33,14 +33,14 @@ More detailed instructions are [available][edge-install].  Installation package 
 1. Setup the "cpu2msghub" add-on
 1. Configure `kafka` for [IBM MessageHub][kafka-creds]
 1. Optionally change `horizon` to Open Horizon exchange credentials; `device` and `token` default to: `hostname`-MAC and exchange password.
-1. Optionally change `mqtt` if not using `host: core-mosquitto` on `port: 1883` with topic `kafka/cgiroua_us.ibm.com.IBM_cpu2msghub` 
+1. Optionally change `mqtt` if not using `host: core-mosquitto` on `port: 1883` with topic `kafka/cpu-load` 
 1. Start the "cpu2msghub" add-on
 1. Check the logs of the add-on for failures :-(
 
 ## Configuration
 
 ### Option: `horizon`
-Credentials required for interacting with the Open Horizon exchange; currently the only organization defined is cgiroua@us.ibm.com.  These options are ignored if Open Horizon is not installed or if `listen` option is set to `only`
+Credentials required for interacting with the Open Horizon exchange. These options are ignored if Open Horizon is not installed or if `listen` option is set to `only`
 
 The `device` and `token` values are optional and will default to the hostname with MAC address appended and the exchange password.
 
@@ -90,7 +90,7 @@ Listen mode; (`true`|`false`|`only`); `false` will not listen; `only` will not a
 
 Listen to the MQTT host and port to receive JSON payload of the processed CPU audio.
 
-1. `kafka/cgiroua_us.ibm.com.IBM_cpu2msghub`
+1. `kafka/cpu-load`
 
 Configuration examples are provided for processing the JSON:
 
