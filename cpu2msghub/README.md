@@ -97,6 +97,10 @@ Configuration examples are provided for processing the JSON:
 1. Edit your HomeAssistant configuration YAML to include [cpu2msghub][cpu-yaml]
 1. Edit your `ui-lovelace.yaml` configuration for [display][cpu-lovelace]
 
+# Sample output
+
+![cpu2msghub cpu](cpu2msghub_cpu.png?raw=true "CPU2MSGHUB")
+
 ## Changelog & Releases
 
 Releases are based on Semantic Versioning, and use the format

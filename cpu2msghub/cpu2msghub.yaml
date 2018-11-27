@@ -1,5 +1,13 @@
 # CPU
 
+group default_view:
+  view: true
+  name: Default View
+  icon: mdi:home-variant
+  control: hidden
+  entities:
+    - group.cpu2msghub
+
 group cpu2msghub:
   name: cpu2msghub
   entities:
@@ -16,22 +24,6 @@ group cpu2msghub:
     - history_graph.cpu2msghub_cpu
     - history_graph.cpu2msghub_count
 
-sensor cpu2msghub_event:
-  - platform: mqtt
-    name: cpu2msghub_event
-    state_topic: 'kafka/cpu-load'
-    force_update: true
-    expire_after: 1
-    json_attributes:
-      - name
-      - date
-      - cpu
-      - longitude
-      - latitude
-      - altitude
-    value_template: >
-      {% if value_json is defined and value_json.cpu > 0 %} True {% else %} False {% endif %}
-
 history_graph:
   cpu2msghub_cpu:
     name: cpu2msghub_cpu
@@ -47,81 +39,93 @@ history_graph:
     entities:
       - sensor.cpu2msghub_count
 
-sensor cpu2msghub_template:
-  platform: template
-  sensors:
-    cpu2msghub_date:
-      entity_id:
-        - sensor.cpu2msghub_event
-      value_template: >
-        {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.date is defined %}
-          {{ states.sensor.cpu2msghub_event.attributes.date | timestamp_custom("%a %b %d %I:%M %p") }}
-        {% else %} null {% endif %}
-    cpu2msghub_name:
-      entity_id:
-        - sensor.cpu2msghub_event
-      value_template: >
-        {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.name is defined %}
-          {{ states.sensor.cpu2msghub_event.attributes.name}}
-        {% else %} null {% endif %}
-    cpu2msghub_cpu:
-      entity_id:
-        - sensor.cpu2msghub_event
-      unit_of_measurement: load
-      value_template: >
-        {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.cpu is defined %}
-          {{ states.sensor.cpu2msghub_event.attributes.cpu}}
-        {% else %} null {% endif %}
-    cpu2msghub_latitude:
-      entity_id:
-        - sensor.cpu2msghub_event
-      unit_of_measurement: degrees
-      value_template: >
-        {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.latitude is defined %}
-          {{ states.sensor.cpu2msghub_event.attributes.latitude}}
-        {% else %} null {% endif %}
-    cpu2msghub_longitude:
-      entity_id:
-        - sensor.cpu2msghub_event
-      unit_of_measurement: degrees
-      value_template: >
-        {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.longitude is defined %}
-          {{ states.sensor.cpu2msghub_event.attributes.longitude}}
-        {% else %} null {% endif %}
-    cpu2msghub_altitude:
-      entity_id:
-        - sensor.cpu2msghub_event
-      unit_of_measurement: feet
-      value_template: >
-        {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.altitude is defined %}
-          {{ states.sensor.cpu2msghub_event.attributes.altitude}}
-        {% else %} null {% endif %}
-    cpu2msghub_ratio:
-      entity_id:
-        - sensor.cpu2msghub_event_ratio
-      unit_of_measurement: '%'
-      value_template: >
-        {% if states.sensor.cpu2msghub_event_ratio is defined %}
-          {{ states.sensor.cpu2msghub_event_ratio.state }}
-        {%- else -%}null{%- endif -%}
-    cpu2msghub_count:
-      entity_id:
-        - sensor.cpu2msghub_event_count
-      unit_of_measurement: events
-      value_template: >
-        {% if states.sensor.cpu2msghub_event_count is defined %}
-          {{ states.sensor.cpu2msghub_event_count.state }}
-        {%- else -%}null{%- endif -%}
-    cpu2msghub_cpu_mean:
-      entity_id:
-        - sensor.cpu2msghub_cpu_statistics_mean
-      unit_of_measurement: load
-      value_template: >
-        {% if states.sensor.cpu2msghub_cpu is defined %}
-          {{ states.sensor.cpu2msghub_cpu_statistics_mean.state }}
-        {%- else -%}null{%- endif -%}
-
-sensor cpu2msghub_event_ratio:
+sensor cpu2msghub:
+  - platform: mqtt
+    name: cpu2msghub_event
+    state_topic: 'kafka/cpu-load'
+    force_update: true
+    expire_after: 1
+    json_attributes:
+      - name
+      - date
+      - cpu
+      - longitude
+      - latitude
+      - altitude
+    value_template: >
+      {% if value_json is defined and value_json.cpu > 0 %} True {% else %} False {% endif %}
+  - platform: template
+    sensors:
+      cpu2msghub_date:
+        entity_id:
+          - sensor.cpu2msghub_event
+        value_template: >
+          {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.date is defined %}
+            {{ states.sensor.cpu2msghub_event.attributes.date | timestamp_custom("%a %b %d %I:%M %p") }}
+          {% else %} null {% endif %}
+      cpu2msghub_name:
+        entity_id:
+          - sensor.cpu2msghub_event
+        value_template: >
+          {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.name is defined %}
+            {{ states.sensor.cpu2msghub_event.attributes.name}}
+          {% else %} null {% endif %}
+      cpu2msghub_cpu:
+        entity_id:
+          - sensor.cpu2msghub_event
+        unit_of_measurement: '%'
+        value_template: >
+          {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.cpu is defined %}
+            {{ states.sensor.cpu2msghub_event.attributes.cpu}}
+          {% else %} null {% endif %}
+      cpu2msghub_latitude:
+        entity_id:
+          - sensor.cpu2msghub_event
+        unit_of_measurement: degrees
+        value_template: >
+          {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.latitude is defined %}
+            {{ states.sensor.cpu2msghub_event.attributes.latitude}}
+          {% else %} null {% endif %}
+      cpu2msghub_longitude:
+        entity_id:
+          - sensor.cpu2msghub_event
+        unit_of_measurement: degrees
+        value_template: >
+          {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.longitude is defined %}
+            {{ states.sensor.cpu2msghub_event.attributes.longitude}}
+          {% else %} null {% endif %}
+      cpu2msghub_altitude:
+        entity_id:
+          - sensor.cpu2msghub_event
+        unit_of_measurement: feet
+        value_template: >
+          {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.altitude is defined %}
+            {{ states.sensor.cpu2msghub_event.attributes.altitude}}
+          {% else %} null {% endif %}
+      cpu2msghub_ratio:
+        entity_id:
+          - sensor.cpu2msghub_event_ratio
+        unit_of_measurement: '%'
+        value_template: >
+          {% if states.sensor.cpu2msghub_event_ratio is defined %}
+            {{ states.sensor.cpu2msghub_event_ratio.state }}
+          {%- else -%}null{%- endif -%}
+      cpu2msghub_count:
+        entity_id:
+          - sensor.cpu2msghub_event_count
+        unit_of_measurement: events
+        value_template: >
+          {% if states.sensor.cpu2msghub_event_count is defined %}
+            {{ states.sensor.cpu2msghub_event_count.state }}
+          {%- else -%}null{%- endif -%}
+      cpu2msghub_cpu_mean:
+        entity_id:
+          - sensor.cpu2msghub_cpu_statistics_mean
+        unit_of_measurement: '%'
+        value_template: >
+          {% if states.sensor.cpu2msghub_cpu is defined %}
+            {{ states.sensor.cpu2msghub_cpu_statistics_mean.state }}
+          {%- else -%}null{%- endif -%}
   - platform: history_stats
     icon: mdi:percent
     name: cpu2msghub_event_ratio
@@ -130,8 +134,6 @@ sensor cpu2msghub_event_ratio:
     type: ratio
     start: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
     end: '{{ now() }}'
-
-sensor cpu2msghub_event_count:
   - platform: history_stats
     icon: mdi:sigma
     name: cpu2msghub_event_count
@@ -140,12 +142,9 @@ sensor cpu2msghub_event_count:
     type: count
     start: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
     end: '{{ now() }}'
-
-sensor cpu2msghub_cpu_statistics:
   - platform: statistics
     entity_id: sensor.cpu2msghub_cpu
     name: cpu2msghub_cpu_statistics
     sampling_size: 1000
     max_age:
       hours: 24
-
