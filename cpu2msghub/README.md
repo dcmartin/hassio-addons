@@ -8,11 +8,11 @@ This addon is designed to produce and consume messages containing audio fragment
 
 Detailed [documentation][edge-fabric] for the IBM Edge Fabric is available on-line.  A Slack [channel][edge-slack] is also available.
 
-The add-on listens to Kafka messages from an IBM Message Hub operating in the IBM Cloud; messages received include an ASCII representation of a MP3 audio sequence captured from the CPU listening to local FM radio stations.
+The add-on listens to Kafka messages from an IBM Message Hub operating in the IBM Cloud.
 
-By default the system will only listen for messages, process using STT and NLU, and publish results using MQTT to the local `core-mosquitto` broker on port 1883 with topic `kafka/cpu-load` (`username` and `password` are also supported).
+By default the system will only listen for messages and publish results using MQTT to the local `core-mosquitto` broker on port 1883 with topic `kafka/cpu-load` (`username` and `password` are also supported).
 
-If the addon is configured with CPU and Open Horizon is installed, the options for `device` and `token` will default to hostname with MAC address appended and exchange password.
+If the addon is configured with CPU and Open Horizon is installed, the options for `device` and `token` will default to hostname and exchange password.
 
 **Note**: _You will need an IBM Cloud [account][ibm-registration]_
 
@@ -21,9 +21,9 @@ If the addon is configured with CPU and Open Horizon is installed, the options f
 ### Install Open Horizon (OPTIONAL)
 
 To install on Ubuntu and most Debian LINUX systems, a [script][hzn-setup] run as root from the command line will install the appropriate packages on your LINUX machine or VM:
-
-`wget -qO - ibm.biz/horizon-setup | bash`
-
+```
+curl -fsSL ibm.biz/horizon-setup | bash
+```
 More detailed instructions are [available][edge-install].  Installation package for macOS is also [available][macos-install]
 
 ### Install addon
@@ -33,14 +33,14 @@ More detailed instructions are [available][edge-install].  Installation package 
 1. Setup the "cpu2msghub" add-on
 1. Configure `kafka` for [IBM MessageHub][kafka-creds]
 1. Optionally change `horizon` to Open Horizon exchange credentials; `device` and `token` default to: `hostname`-MAC and exchange password.
-1. Optionally change `mqtt` if not using `host: core-mosquitto` on `port: 1883` with topic `kafka/cgiroua_us.ibm.com.IBM_cpu2msghub` 
+1. Optionally change `mqtt` if not using `host: core-mosquitto` on `port: 1883` with topic `kafka/cpu-load` 
 1. Start the "cpu2msghub" add-on
 1. Check the logs of the add-on for failures :-(
 
 ## Configuration
 
 ### Option: `horizon`
-Credentials required for interacting with the Open Horizon exchange; currently the only organization defined is cgiroua@us.ibm.com.  These options are ignored if Open Horizon is not installed or if `listen` option is set to `only`
+Credentials required for interacting with the Open Horizon exchange. These options are ignored if Open Horizon is not installed or if `listen` option is set to `only`
 
 The `device` and `token` values are optional and will default to the hostname with MAC address appended and the exchange password.
 
@@ -76,7 +76,7 @@ This option provides the information required for MQTT service.
   "mqtt": {
     "host": "core-mosquitto",
     "port": 1883,
-    "topic": "kafka/cpu-audio"
+    "topic": "kafka/cpu-load"
     "username": "",
     "password": ""
   }
@@ -90,7 +90,7 @@ Listen mode; (`true`|`false`|`only`); `false` will not listen; `only` will not a
 
 Listen to the MQTT host and port to receive JSON payload of the processed CPU audio.
 
-1. `kafka/cgiroua_us.ibm.com.IBM_cpu2msghub`
+1. `kafka/cpu-load`
 
 Configuration examples are provided for processing the JSON:
 
