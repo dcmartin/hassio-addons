@@ -8,11 +8,11 @@ This addon is designed to produce and consume messages containing audio fragment
 
 Detailed [documentation][edge-fabric] for the IBM Edge Fabric is available on-line.  A Slack [channel][edge-slack] is also available.
 
-The add-on listens to Kafka messages from an IBM Message Hub operating in the IBM Cloud; messages received include an ASCII representation of a MP3 audio sequence captured from the CPU listening to local FM radio stations.
+The add-on listens to Kafka messages from an IBM Message Hub operating in the IBM Cloud.
 
-By default the system will only listen for messages, process using STT and NLU, and publish results using MQTT to the local `core-mosquitto` broker on port 1883 with topic `kafka/cpu-load` (`username` and `password` are also supported).
+By default the system will only listen for messages and publish results using MQTT to the local `core-mosquitto` broker on port 1883 with topic `kafka/cpu-load` (`username` and `password` are also supported).
 
-If the addon is configured with CPU and Open Horizon is installed, the options for `device` and `token` will default to hostname with MAC address appended and exchange password.
+If the addon is configured with CPU and Open Horizon is installed, the options for `device` and `token` will default to hostname and exchange password.
 
 **Note**: _You will need an IBM Cloud [account][ibm-registration]_
 
@@ -21,9 +21,9 @@ If the addon is configured with CPU and Open Horizon is installed, the options f
 ### Install Open Horizon (OPTIONAL)
 
 To install on Ubuntu and most Debian LINUX systems, a [script][hzn-setup] run as root from the command line will install the appropriate packages on your LINUX machine or VM:
-
-`wget -qO - ibm.biz/horizon-setup | bash`
-
+```
+curl -fsSL ibm.biz/horizon-setup | bash
+```
 More detailed instructions are [available][edge-install].  Installation package for macOS is also [available][macos-install]
 
 ### Install addon
@@ -76,7 +76,7 @@ This option provides the information required for MQTT service.
   "mqtt": {
     "host": "core-mosquitto",
     "port": 1883,
-    "topic": "kafka/cpu-audio"
+    "topic": "kafka/cpu-load"
     "username": "",
     "password": ""
   }
