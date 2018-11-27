@@ -14,10 +14,6 @@ This addon is designed to produce and consume messages containing CPU usage and 
 
 Detailed [documentation][edge-fabric] for the IBM Edge Fabric is available on-line.  A Slack [channel][edge-slack] is also available.
 
-By default the system will only listen for messages and publish results using MQTT to the local `core-mosquitto` broker on port 1883 with topic `kafka/cpu-load` (`username` and `password` are also supported, but unspecified).
-
-If the addon is configured with CPU and Open Horizon is installed, the options for `device` and `token` will default to hostname and exchange password.
-
 ## Installation
 
 ### Install Open Horizon (OPTIONAL)
