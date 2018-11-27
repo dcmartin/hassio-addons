@@ -6,15 +6,15 @@ This add-on requires the [setup][dcm-oh] of Horizon, a distibuted, decentralized
 
 **Note**: _You will need an IBM Cloud [account][ibm-registration]_
 
+**Note**: _You must obtain a Kafka API key; request one in the IBM Edge Fabric [Slack][edge-slack]_
+
 ## About
 
-This addon is designed to produce and consume messages containing audio fragments and GPS coordinates (latitude, longitude) from software-defined-radios (CPU) attached to participating nodes.  Messages received are processed using IBM Watson Speech-to-Text (STT) and Natural Language Understanding (NLU) to produce a JSON payload sent to a MQTT broker, e.g. `core-mosquitto` from the HASSIO addons catalog.
+This addon is designed to produce and consume messages containing CPU usage and GPS coordinates (latitude, longitude) from  participating nodes on a _private_ Kafka topic using IBM Message Hub in the IBM Cloud.  Kafka CPU messages from the `cpu2msghub` pattern are captured and processed by this addon to produce a JSON payload sent to a MQTT broker, e.g. [`core-mosquitto`][core-mosquitto] from the HASSIO addons catalog.
 
 Detailed [documentation][edge-fabric] for the IBM Edge Fabric is available on-line.  A Slack [channel][edge-slack] is also available.
 
-The add-on listens to Kafka messages from an IBM Message Hub operating in the IBM Cloud.
-
-By default the system will only listen for messages and publish results using MQTT to the local `core-mosquitto` broker on port 1883 with topic `kafka/cpu-load` (`username` and `password` are also supported).
+By default the system will only listen for messages and publish results using MQTT to the local `core-mosquitto` broker on port 1883 with topic `kafka/cpu-load` (`username` and `password` are also supported, but unspecified).
 
 If the addon is configured with CPU and Open Horizon is installed, the options for `device` and `token` will default to hostname and exchange password.
 
@@ -29,36 +29,31 @@ Please refer to the [`open-horizon`][dcm-oh] repository.
 1. [Add this repository][repository] to your Hass.io addon store.
 1. Install the "cpu2msghub" add-on
 1. Setup the "cpu2msghub" add-on
-  - Configure `kafka` with your IBM MessageHub API key (n.b. default username is `iamapikey`)
-  - Configure `horizon` with your IBM Cloud username (e.g. `dcmartin@us.ibm.com`) and [Platform API key][ibm-apikeys]
-
-  - Optionally change `mqtt` if not using `host: core-mosquitto` on `port: 1883` with topic `kafka/cpu-load` 
+  - Configure `kafka` with your IBM MessageHub API key
+  - Configure `horizon` with your IBM Cloud username and [Platform API key][ibm-apikeys]
+  - Optionally change `mqtt` for `host`, `port`, `topic`, `username`, and `password`
 1. Start the "cpu2msghub" add-on
 1. Check the logs of the add-on for failures :-(
 
 ## Configuration
 
+### Option: `listen`
+
+Listen mode; (`true`|`false`|`only`); `false` will not listen; *default* is `only` and does not register pattern.
+
 ### Option: `horizon`
-Credentials required for interacting with the Open Horizon exchange. These options are ignored if Open Horizon is not installed or if `listen` option is set to `only`
-
-The `device` and `token` values are optional and will default to the hostname with MAC address appended and the exchange password.
-
-**Note**: _Obtain credentials and URL for the Open Horizon exchange from cgiroua@us.ibm.com_
-
+Credentials required for interacting with the Open Horizon exchange. These options are ignored if Open Horizon is not installed or if `listen` option is set to `only`.  Options for `device` and `token` may be specified, but default to the hostname and the exchange password.
 ```
   "horizon": {
     "password": "<Your IBM Cloud Platform API key>",
     "organization": "<Your IBM Cloud login email address>",
     "username": "iamapikey",
     "exchange": "https://alpha.edge-fabric.com/v1"
-
   }
 ```
 
 ### Option: `kafka`
-
-**Note**: _You must obtain an API key; request one in the IBM Edge Fabric [Slack][edge-slack]_
-
+Credentials required for sending and receiving messages using the IBM Cloud MessageHub.
 ```
   "kafka": {
     "api_key": "<Your IBM Edge Fabric MessageHub API key>",
@@ -67,9 +62,7 @@ The `device` and `token` values are optional and will default to the hostname wi
 ```
 
 ### Option: `mqtt`
-
-This option provides the information required for MQTT service.
-
+This option provides the information required for MQTT service; defaults are as specified below.
 ```
   "mqtt": {
     "host": "core-mosquitto",
@@ -79,10 +72,6 @@ This option provides the information required for MQTT service.
     "password": ""
   }
 ```
-
-### Option: `listen`
-
-Listen mode; (`true`|`false`|`only`); `false` will not listen; `only` will not attempt to register pattern.
 
 ## USE
 
@@ -121,6 +110,8 @@ David C Martin (github@dcmartin.com)
 [releases]: https://github.com/dcmartin/hassio-addons/cpu2msghub/releases
 [repository]: https://github.com/dcmartin/hassio-addons
 [home-assistant]: https://home-assistant.io/
+[core-mosquitto]: https://github.com/hassio-addons/repository/tree/master/mqtt
+
 
 [dcm-oh]: https://github.com/dcmartin/open-horizon
 
