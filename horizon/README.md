@@ -1,12 +1,10 @@
 ## About
 
-This add-on is for the CPU2MSGHUB [pattern][cpu-pattern]
+This add-on is for either [CPU2MSGHUB][cpu-pattern] pattern or the [SDR2MSGHUB][sdr-pattern] pattern.
 
 This add-on requires the installation of [Open Horizon][open-horizon], a distibuted, decentralized, zero-ops, method and apparatus to deploy containers.
 
 Detailed [documentation][edge-fabric] for the IBM Edge Fabric is available on-line.  A Slack [channel][edge-slack] is also available.
-
-If the addon is configured with CPU and Open Horizon is installed, the options for `device` and `token` will default to hostname with MAC address appended and exchange password.
 
 **Note**: _You will need an IBM Cloud [account][ibm-registration]_
 
@@ -36,8 +34,6 @@ More detailed instructions are [available][edge-install].  Installation package 
 Credentials required for interacting with the Open Horizon exchange; currently the only organization defined is cgiroua@us.ibm.com.
 
 The `device` and `token` values are optional and will default to the hostname with MAC address appended and the exchange password.
-
-**Note**: _Obtain credentials and URL for the Open Horizon exchange from cgiroua@us.ibm.com_
 
 ```
   "exchange": {
