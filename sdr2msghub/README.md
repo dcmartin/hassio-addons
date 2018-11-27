@@ -125,6 +125,10 @@ Configuration examples are provided for processing the JSON:
 1. Edit your HomeAssistant configuration YAML to include [sdr2msghub][sdr-yaml]
 1. Edit your `ui-lovelace.yaml` configuration for [display][sdr-lovelace]
 
+# Sample output
+
+![sdr2msghub sentiment](sdr2msghub_sentiment.png?raw=true "SDR2MSGHUB")
+
 ## Changelog & Releases
 
 Releases are based on Semantic Versioning, and use the format
