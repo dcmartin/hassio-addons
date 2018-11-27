@@ -38,7 +38,7 @@ Please refer to the [`open-horizon`][dcm-oh] repository.
 Listen mode; (`true`|`false`|`only`); `false` will not listen; *default* is `only` and does not register pattern.
 
 ### Option: `horizon`
-Credentials required for interacting with the Open Horizon exchange. These options are ignored if Open Horizon is not installed or if `listen` option is set to `only`.  Options for `device` and `token` may be specified, but default to the hostname and the exchange password.
+Credentials required for interacting with the Open Horizon exchange. These options are ignored if Open Horizon is not installed or if `listen` option is set to `only`.  Options for `device` and `token` may be specified, but default to the hostname and the exchange password.  Changing the `device` identifier will force unregistration and re-registration of the pattern.
 ```
   "horizon": {
     "password": "<Your IBM Cloud Platform API key>",
