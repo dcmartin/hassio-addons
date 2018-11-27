@@ -100,28 +100,26 @@ David C Martin (github@dcmartin.com)
 
 [commits]: https://github.com/dcmartin/hassio-addons/cpu2msghub/commits/master
 [contributors]: https://github.com/dcmartin/hassio-addons/cpu2msghub/graphs/contributors
-[dcmartin]: https://github.com/dcmartin
 [issue]: https://github.com/dcmartin/hassio-addons/cpu2msghub/issues
-[keepchangelog]: http://keepachangelog.com/en/1.0.0/
 [releases]: https://github.com/dcmartin/hassio-addons/cpu2msghub/releases
-[repository]: https://github.com/dcmartin/hassio-addons
-[home-assistant]: https://home-assistant.io/
-[core-mosquitto]: https://github.com/hassio-addons/repository/tree/master/mqtt
-
-
-[dcm-oh]: https://github.com/dcmartin/open-horizon
-
-[watson-nlu]: https://console.bluemix.net/catalog/services/natural-language-understanding
-[watson-stt]: https://console.bluemix.net/catalog/services/speech-to-text
-[edge-slack]: https://ibm-appsci.slack.com/messages/edge-fabric-users/
-[ibm-registration]: https://console.bluemix.net/registration/
-[ibm-apikeys]: https://console.bluemix.net/iam/#/apikeys
 
 [cpu-yaml]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/cpu2msghub/cpu2msghub.yaml
 [cpu-lovelace]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/cpu2msghub/ui-lovelace.yaml
-[open-horizon]: https://github.com/open-horizon
 [cpu-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/cpu2msghub
+
+[core-mosquitto]: https://github.com/hassio-addons/repository/tree/master/mqtt
+[dcm-oh]: https://github.com/dcmartin/open-horizon
+[dcmartin]: https://github.com/dcmartin
 [edge-fabric]: https://console.test.cloud.ibm.com/docs/services/edge-fabric/getting-started.html
 [edge-install]: https://console.test.cloud.ibm.com/docs/services/edge-fabric/adding-devices.html
-[macos-install]: https://github.com/open-horizon/anax/releases
+[edge-slack]: https://ibm-appsci.slack.com/messages/edge-fabric-users/
+[home-assistant]: https://home-assistant.io/
 [hzn-setup]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/horizon/hzn-setup.sh
+[ibm-apikeys]: https://console.bluemix.net/iam/#/apikeys
+[ibm-registration]: https://console.bluemix.net/registration/
+[keepchangelog]: http://keepachangelog.com/en/1.0.0/
+[macos-install]: https://github.com/open-horizon/anax/releases
+[open-horizon]: https://github.com/open-horizon
+[repository]: https://github.com/dcmartin/hassio-addons
+[watson-nlu]: https://console.bluemix.net/catalog/services/natural-language-understanding
+[watson-stt]: https://console.bluemix.net/catalog/services/speech-to-text
