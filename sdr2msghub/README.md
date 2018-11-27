@@ -1,77 +1,76 @@
-## About
+# SDR2MSGHUB addon for Home Assistant
 
-This add-on is for the SDR2MSGHUB [pattern][sdr-pattern]
 
-This add-on may require the installation of [Open Horizon][open-horizon], a distibuted, decentralized, zero-ops, method and apparatus to deploy containers.
+This [Home Assistant][home-assistant] add-on is for the [Open Horizon][open-horizon] [`sdr2msghub`][sdr-pattern] pattern
 
-This addon is designed to produce and consume messages containing audio fragments and GPS coordinates (latitude, longitude) from software-defined-radios (SDR) attached to participating nodes.  Messages received are processed using IBM Watson Speech-to-Text (STT) and Natural Language Understanding (NLU) to produce a JSON payload sent to a MQTT broker, e.g. `core-mosquitto` from the HASSIO addons catalog.
-
-Detailed [documentation][edge-fabric] for the IBM Edge Fabric is available on-line.  A Slack [channel][edge-slack] is also available.
-
-The add-on listens to Kafka messages from an IBM Message Hub operating in the IBM Cloud; messages received include an ASCII representation of a MP3 audio sequence captured from the SDR listening to local FM radio stations.
-
-By default the system will only listen for messages, process using STT and NLU, and publish results using MQTT to the local `core-mosquitto` broker on port 1883 with topic `kafka/sdr-audio` (`username` and `password` are also supported).
-
-If the addon is configured with SDR and Open Horizon is installed, the options for `device` and `token` will default to hostname with MAC address appended and exchange password.
+This add-on requires the [setup][dcm-oh] of Horizon, a distibuted, decentralized, zero-ops, method and apparatus to deploy containers from the IBM Cloud.
 
 **Note**: _You will need an IBM Cloud [account][ibm-registration]_
+
+**Note**: _You must obtain a Kafka API key; request one in the IBM Edge Fabric [Slack][edge-slack]_
+
+## About
+
+This addon is designed to produce and consume messages containing SDR usage and GPS coordinates (latitude, longitude) from  participating nodes on a _shared_ Kafka topic using IBM Message Hub in the IBM Cloud.  Kafka SDR messages from the `sdr2msghub` pattern are captured and processed by this addon to produce a JSON payload sent to a MQTT broker, e.g. [`core-mosquitto`][core-mosquitto] from the HASSIO addons catalog.
+
+Detailed [documentation][edge-fabric] for the IBM Edge Fabric is available on-line.  A Slack [channel][edge-slack] is also available.
 
 ## Installation
 
 ### Install Open Horizon (OPTIONAL)
 
-To install on Ubuntu and most Debian LINUX systems, a [script][hzn-setup] run as root from the command line will install the appropriate packages on your LINUX machine or VM:
-
-`wget -qO - ibm.biz/horizon-setup | bash`
-
-More detailed instructions are [available][edge-install].  Installation package for macOS is also [available][macos-install]
+Please refer to the [`open-horizon`][dcm-oh] repository.
 
 ### Install addon
 
-1. [Add our Hass.io add-ons repository][repository] to your Hass.io instance.
+1. [Add this repository][repository] to your Hass.io addon store.
 1. Install the "sdr2msghub" add-on
 1. Setup the "sdr2msghub" add-on
-1. Configure `kafka` for [IBM MessageHub][kafka-creds]
-1. Configure `watson_stt` to your IBM Cloud Watson Speech-to-Text [service][watson-stt]
-1. Configure `watson_nlu` to your IBM Cloud Watson Natural Language Understanding [service][watson-nlu]
-1. Optionally change `horizon` to Open Horizon exchange credentials; `device` and `token` default to: `hostname`-MAC and exchange password.
-1. Optionally change `mqtt` if not using `host: core-mosquitto` on `port: 1883` with topic `kafka/sdr-audio` 
+  - Configure `kafka` with your IBM MessageHub API key
+  - Configure `horizon` with your IBM Cloud username and [Platform API key][ibm-apikeys]
+  - Optionally change `mqtt` for `host`, `port`, `topic`, `username`, and `password`
 1. Start the "sdr2msghub" add-on
 1. Check the logs of the add-on for failures :-(
 
 ## Configuration
 
+### Option: `listen`
+
+Listen mode; (`true`|`false`|`only`); `false` will not listen; *default* is `only` and does not register pattern.
+
 ### Option: `horizon`
-Credentials required for interacting with the Open Horizon exchange; currently the only organization defined is cgiroua@us.ibm.com.  These options are ignored if Open Horizon is not installed or if `listen` option is set to `only`
-
-The `device` and `token` values are optional and will default to the hostname with MAC address appended and the exchange password.
-
-**Note**: _Obtain credentials and URL for the Open Horizon exchange from cgiroua@us.ibm.com_
-
+Credentials required for interacting with the Open Horizon exchange. These options are ignored if Open Horizon is not installed or if `listen` option is set to `only`.  Options for `device` and `token` may be specified, but will *default* to the hostname  (e.g. `cb7b3237_cpu2msghub-192168140`) and the exchange password.  Changing the `device` identifier will force unregistration and re-registration of the pattern.
 ```
   "horizon": {
-    "exchange": "https://alpha.edge-fabric.com/v1",
+    "password": "<Your IBM Cloud Platform API key>",
+    "organization": "<Your IBM Cloud login email address>",
     "username": "iamapikey",
-    "password": "",
-    "organization": "",
-    "device": "",
-    "token": ""
+    "exchange": "https://alpha.edge-fabric.com/v1"
   }
 ```
 
 ### Option: `kafka`
-
-**Note**: _You must obtain [credentials][kafka-creds] for IBM MessageHub for alpha phase_
-
+Credentials required for sending and receiving messages using the IBM Cloud MessageHub.
 ```
   "kafka": {
-    "api_key": "",
-    "brokers": ""
+    "api_key": "<Your IBM Edge Fabric MessageHub API key>",
+    "brokers": "kafka03-prod02.messagehub.services.us-south.bluemix.net:9093,kafka04-prod02.messagehub.services.us-south.bluemix.net:9093,kafka01-prod02.messagehub.services.us-south.bluemix.net:9093,kafka02-prod02.messagehub.services.us-south.bluemix.net:9093,kafka05-prod02.messagehub.services.us-south.bluemix.net:9093"
+  }
+```
+
+### Option: `mqtt`
+This option provides the information required for MQTT service; defaults are as specified below.
+```
+  "mqtt": {
+    "host": "core-mosquitto",
+    "port": 1883,
+    "topic": "kafka/cpu-load"
+    "username": "",
+    "password": ""
   }
 ```
 
 ### Option: `watson_stt`
-
 This option provides the information required to use the Watson STT service.
 
 ```
@@ -82,7 +81,6 @@ This option provides the information required to use the Watson STT service.
 ```
 
 ### Option: `watson_nlu`
-
 This option provides the information required to use the Watson NLU service.
 
 ```
@@ -91,24 +89,6 @@ This option provides the information required to use the Watson NLU service.
     "apikey": "<apikey>"
   }
 ```
-
-### Option: `mqtt`
-
-This option provides the information required for MQTT service.
-
-```
-  "mqtt": {
-    "host": "core-mosquitto",
-    "port": 1883,
-    "topic": "kafka/sdr-audio"
-    "username": "",
-    "password": ""
-  }
-```
-
-### Option: `listen`
-
-Listen mode; (`true`|`false`|`only`); `false` will not listen; `only` will not attempt to register pattern.
 
 ### Option: `mock`
 
@@ -143,24 +123,28 @@ based on the following:
 
 David C Martin (github@dcmartin.com)
 
+[sdr-lovelace]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/sdr2msghub/ui-lovelace.yaml
+[sdr-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/sdr2msghub
+[sdr-yaml]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/sdr2msghub/sdr2msghub.yaml
+
 [commits]: https://github.com/dcmartin/hassio-addons/sdr2msghub/commits/master
 [contributors]: https://github.com/dcmartin/hassio-addons/sdr2msghub/graphs/contributors
-[dcmartin]: https://github.com/dcmartin
-[issue]: https://github.com/dcmartin/hassio-addons/sdr2msghub/issues
-[keepchangelog]: http://keepachangelog.com/en/1.0.0/
 [releases]: https://github.com/dcmartin/hassio-addons/sdr2msghub/releases
-[repository]: https://github.com/dcmartin/hassio-addons
+[issue]: https://github.com/dcmartin/hassio-addons/sdr2msghub/issues
 
-[watson-nlu]: https://console.bluemix.net/catalog/services/natural-language-understanding
-[watson-stt]: https://console.bluemix.net/catalog/services/speech-to-text
-[edge-slack]: https://ibm-appsci.slack.com/messages/edge-fabric-users/
-[ibm-registration]: https://console.bluemix.net/registration/
-[kafka-creds]: https://console.bluemix.net/services/messagehub/b5f8df99-d3f6-47b8-b1dc-12806d63ae61/?paneId=credentials&new=true&env_id=ibm:yp:us-south&org=51aea963-6924-4a71-81d5-5f8c313328bd&space=f965a097-fcb8-4768-953e-5e86ea2d66b4
-[sdr-yaml]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/sdr2msghub/sdr2msghub.yaml
-[sdr-lovelace]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/sdr2msghub/ui-lovelace.yaml
-[open-horizon]: https://github.com/open-horizon
-[sdr-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/sdr2msghub
+[core-mosquitto]: https://github.com/hassio-addons/repository/tree/master/mqtt
+[dcm-oh]: https://github.com/dcmartin/open-horizon
+[dcmartin]: https://github.com/dcmartin
 [edge-fabric]: https://console.test.cloud.ibm.com/docs/services/edge-fabric/getting-started.html
 [edge-install]: https://console.test.cloud.ibm.com/docs/services/edge-fabric/adding-devices.html
-[macos-install]: https://github.com/open-horizon/anax/releases
+[edge-slack]: https://ibm-appsci.slack.com/messages/edge-fabric-users/
+[home-assistant]: https://home-assistant.io/
 [hzn-setup]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/horizon/hzn-setup.sh
+[ibm-apikeys]: https://console.bluemix.net/iam/#/apikeys
+[ibm-registration]: https://console.bluemix.net/registration/
+[keepchangelog]: http://keepachangelog.com/en/1.0.0/
+[macos-install]: https://github.com/open-horizon/anax/releases
+[open-horizon]: https://github.com/open-horizon
+[repository]: https://github.com/dcmartin/hassio-addons
+[watson-nlu]: https://console.bluemix.net/catalog/services/natural-language-understanding
+[watson-stt]: https://console.bluemix.net/catalog/services/speech-to-text
