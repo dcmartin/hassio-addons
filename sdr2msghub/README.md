@@ -29,6 +29,8 @@ Please refer to the [`open-horizon`][dcm-oh] repository.
   - Configure `kafka` with your IBM MessageHub API key
   - Configure `horizon` with your IBM Cloud username and [Platform API key][ibm-apikeys]
   - Optionally change `mqtt` for `host`, `port`, `topic`, `username`, and `password`
+  - Optionally change `watson_stt` for `apikey`; needed when `listen` is `true` or `only`
+  - Optionally change `watson_nlu` for `apikey`; needed when `listen` is `true` or `only`
 1. Start the "sdr2msghub" add-on
 1. Check the logs of the add-on for failures :-(
 
