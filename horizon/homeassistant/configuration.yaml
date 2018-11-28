@@ -1,0 +1,788 @@
+homeassistant:
+  name: Horizon POC
+  latitude: 16.766574
+  longitude: -3.003045
+  elevation: 100
+  unit_system: imperial
+  time_zone: America/Los_Angeles
+
+hassio:
+cloud:
+frontend:
+config:
+updater:
+conversation:
+history:
+logbook:
+map:
+sun:
+tts:
+  - platform: google
+
+mqtt:
+  broker: core-mosquitto
+
+group: !include groups.yaml
+automation: !include automations.yaml
+
+###
+### HISTORY GRAPH
+###
+
+history_graph:
+  sdr2msghub_sentiment:
+    name: sdr2msghub_sentiment
+    hours_to_show: 1
+    refresh: 10
+    entities:
+      - sensor.sdr2msghub_sentiment_score
+      - sensor.sdr2msghub_sentiment_mean
+  sdr2msghub_count:
+    name: sdr2msghub_count
+    hours_to_show: 1
+    refresh: 10
+    entities:
+      - sensor.sdr2msghub_count
+  cpu2msghub_cpu:
+    name: cpu2msghub_cpu
+    hours_to_show: 1
+    refresh: 10
+    entities:
+      - sensor.cpu2msghub_cpu
+      - sensor.cpu2msghub_cpu_mean
+  cpu2msghub_count:
+    name: cpu2msghub_count
+    hours_to_show: 1
+    refresh: 10
+    entities:
+      - sensor.cpu2msghub_count
+  intranet_test:
+    name: Intranet Test
+    hours_to_show: 24
+    refresh: 30
+    entities:
+      - sensor.intranet_test_receive
+      - sensor.intranet_receive_mean
+      - sensor.intranet_receive_min_value
+      - sensor.intranet_receive_max_value
+      - sensor.intranet_test_send
+      - sensor.intranet_send_mean
+      - sensor.intranet_send_min_value
+      - sensor.intranet_send_max_value
+  internet_receive:
+    name: Internet Receive
+    hours_to_show: 24
+    refresh: 30
+    entities:
+      - sensor.internet_test_receive
+      - sensor.internet_receive_mean
+      - sensor.internet_receive_min_value
+      - sensor.internet_receive_max_value
+  internet_send:
+    name: Internet Send
+    hours_to_show: 24
+    refresh: 30
+    entities:
+      - sensor.internet_test_send
+      - sensor.internet_send_mean
+      - sensor.internet_send_min_value
+      - sensor.internet_send_max_value
+
+###
+### SDR
+###
+
+input_number:
+  sdr2msghub_confidence:
+    name: Confidence
+    mode: slider
+    initial: 0
+    min: 0
+    max: 1
+    step: 0.01
+    icon: mdi:target
+  sdr2msghub_relevance:
+    name: Relevance
+    mode: slider
+    initial: 0
+    min: 0
+    max: 1
+    step: 0.01
+    icon: mdi:target
+  internet_deviation:
+    name: Internet deviation
+    mode: slider
+    initial: 1
+    min: 0.1
+    max: 3
+    step: 0.1
+    icon: mdi:target
+
+sensor sdr2msghub:
+  - platform: mqtt
+    name: sdr2msghub_event
+    state_topic: 'kafka/sdr-audio'
+    force_update: True
+    expire_after: 1
+    json_attributes:
+      - name
+      - date
+      - latitude
+      - longitude
+      - frequency
+      - value 
+      - bytes
+      - stt
+    value_template: >
+      {% if value_json is defined and value_json.bytes > 0 %} True {% else %} False {% endif %}
+  - platform: template
+    sensors:
+      sdr2msghub_date:
+        entity_id:
+          - sensor.sdr2msghub_event
+        value_template: >
+          {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.date is defined %}
+            {{ states.sensor.sdr2msghub_event.attributes.date | timestamp_custom("%a %b %d %I:%M %p") }}
+          {% else %} null {% endif %}
+      sdr2msghub_name:
+        entity_id:
+          - sensor.sdr2msghub_event
+        value_template: >
+          {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.name is defined %}
+            {{ states.sensor.sdr2msghub_event.attributes.name }}
+          {% else %} null {% endif %}
+      sdr2msghub_latitude:
+        entity_id:
+          - sensor.sdr2msghub_event
+        unit_of_measurement: degrees
+        value_template: >
+          {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.latitude is defined %}
+            {{ states.sensor.sdr2msghub_event.attributes.latitude }}
+          {% else %} null {% endif %}
+      sdr2msghub_longitude:
+        entity_id:
+          - sensor.sdr2msghub_event
+        unit_of_measurement: degrees
+        value_template: >
+          {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.longitude is defined %}
+            {{ states.sensor.sdr2msghub_event.attributes.longitude }}
+          {% else %} null {% endif %}
+      sdr2msghub_frequency:
+        entity_id:
+          - sensor.sdr2msghub_event
+        unit_of_measurement: MHz
+        value_template: >
+          {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.frequency is defined %}
+            {{ states.sensor.sdr2msghub_event.attributes.frequency / 1000000.0 }}
+          {% else %} null {% endif %}
+      sdr2msghub_bytes:
+        entity_id:
+          - sensor.sdr2msghub_event
+        unit_of_measurement: bytes
+        value_template: >
+          {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.bytes is defined %}
+            {{ states.sensor.sdr2msghub_event.attributes.bytes }}
+          {% else %} null {% endif %}
+      sdr2msghub_results:
+        entity_id:
+          - sensor.sdr2msghub_event
+        unit_of_measurement: RC
+        value_template: >-
+          {%- if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.stt is defined and states.sensor.sdr2msghub_event.attributes.stt.results is defined -%}
+            {{- states.sensor.sdr2msghub_event.attributes.stt.results|length -}}
+          {%- else -%} null {%- endif -%}
+      sdr2msghub_sentiments:
+        entity_id:
+          - sensor.sdr2msghub_event
+          - input_number.sdr2msghub_confidence
+        value_template: >-
+          {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.stt is defined and states.sensor.sdr2msghub_event.attributes.stt.results is defined %}
+            {% set results = states.sensor.sdr2msghub_event.attributes.stt.results %}
+            {% for result in results %}
+              {%- if loop.first -%}{%- else -%},{%- endif -%}
+              {%- for alternative in result.alternatives -%}
+                {%- if loop.first -%}{%- else -%},{%- endif -%}
+                {%- if alternative.confidence|float > states.input_number.sdr2msghub_confidence|float -%}
+                  {%- if alternative.nlu is defined and alternative.nlu.sentiment is defined -%}
+                    {%- if alternative.nlu.sentiment.document.label is defined -%}
+                      {{- alternative.nlu.sentiment.document.label -}}
+                    {%- else -%}null{%- endif -%}
+                  {%- else -%}null{%- endif -%}
+                {%- else -%}null{%- endif -%}
+              {%- endfor -%}
+            {%- endfor %}
+          {%- else -%} null {%- endif -%}
+      sdr2msghub_languages:
+        entity_id:
+          - sensor.sdr2msghub_event
+          - input_number.sdr2msghub_confidence
+        value_template: >-
+          {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.stt is defined and states.sensor.sdr2msghub_event.attributes.stt.results is defined %}
+            {% set results = states.sensor.sdr2msghub_event.attributes.stt.results %}
+            {% for result in results %}
+              {%- if loop.first -%}{%- else -%},{%- endif -%}
+              {%- for alternative in result.alternatives -%}
+                {%- if loop.first -%}{%- else -%},{%- endif -%}
+                {%- if alternative.confidence > states.input_number.sdr2msghub_confidence|float -%}
+                  {%- if alternative.nlu is defined and alternative.nlu.language is defined -%}
+                    {{- alternative.nlu.language -}}
+                  {%- else -%}null{%- endif -%}
+                {%- else -%}null{%- endif -%}
+              {%- endfor -%}
+            {%- endfor %}
+          {%- else -%} null {%- endif -%}
+      sdr2msghub_confidence_minimum:
+        entity_id:
+          - input_number.sdr2msghub_confidence
+        unit_of_measurement: CV
+        value_template: >
+          {{ states.input_number.sdr2msghub_confidence.state }}
+      sdr2msghub_relevance_minimum:
+        entity_id:
+          - input_number.sdr2msghub_relevance
+        unit_of_measurement: RV
+        value_template: >
+          {{ states.input_number.sdr2msghub_relevance.state }}
+      sdr2msghub_all_keywords:
+        entity_id:
+          - sensor.sdr2msghub_event
+          - sensor.sdr2msghub_confidence_minimum
+          - sensor.sdr2msghub_relevance_minimum
+        value_template: >-
+          {% if states.sensor.sdr2msghub_event is defined and states.sensor.sdr2msghub_event.attributes.stt is defined and states.sensor.sdr2msghub_event.attributes.stt.results is defined %}
+            {% set results = states.sensor.sdr2msghub_event.attributes.stt.results %}
+            {% for result in results %}
+              {%- if loop.first -%}{% else %},{% endif %}
+              {%- for alternative in result.alternatives -%}
+                {%- if loop.first -%}{% else %},{% endif %}
+                {%- if alternative.confidence|float > states.sensor.sdr2msghub_confidence_minimum.state|float  -%}
+                  {%- if alternative.nlu is defined and alternative.nlu.keywords is defined and alternative.nlu.keywords != null -%}
+                    {%- for keyword in alternative.nlu.keywords -%}
+                      {%- if loop.first -%}{% else %},{% endif %}
+                      {%- if keyword.text is defined and keyword.relevance|float > states.sensor.sdr2msghub_relevance_minimum.state|float -%}
+                        {{- keyword.text -}}
+                      {%- else -%}null{%- endif -%}
+                    {%- endfor -%}
+                  {%- else -%}null{%- endif -%}
+                {%- else -%}null{%- endif -%}
+              {%- endfor -%}
+            {%- endfor -%}
+          {%- else -%}null{%- endif -%}
+      sdr2msghub_characters:
+        entity_id:
+          - sensor.sdr2msghub_event
+        unit_of_measurement: characters
+        value_template: >
+          {% if states.sensor.sdr2msghub_event.attributes.stt is defined and states.sensor.sdr2msghub_event.attributes.stt.nlu is defined and states.sensor.sdr2msghub_event.attributes.stt.nlu != null %}
+            {% set nlu = states.sensor.sdr2msghub_event.attributes.stt.nlu %}
+            {{ nlu.usage.text_characters|int }}
+          {%- else -%}null{%- endif -%}
+      sdr2msghub_language:
+        entity_id:
+          - sensor.sdr2msghub_event
+        value_template: >
+          {% if states.sensor.sdr2msghub_event.attributes.stt is defined and states.sensor.sdr2msghub_event.attributes.stt.nlu is defined and states.sensor.sdr2msghub_event.attributes.stt.nlu != null %}
+            {% set nlu = states.sensor.sdr2msghub_event.attributes.stt.nlu %}
+            {{ nlu.language }}
+          {%- else -%}null{%- endif -%}
+      sdr2msghub_sentiment_score:
+        entity_id:
+          - sensor.sdr2msghub_event
+        unit_of_measurement: SS
+        value_template: >
+          {% if states.sensor.sdr2msghub_event.attributes.stt is defined and states.sensor.sdr2msghub_event.attributes.stt.nlu is defined and states.sensor.sdr2msghub_event.attributes.stt.nlu != null %}
+            {% set nlu = states.sensor.sdr2msghub_event.attributes.stt.nlu %}
+            {{ nlu.sentiment.document.score|float }}
+          {%- else -%}null{%- endif -%}
+      sdr2msghub_sentiment_label:
+        entity_id:
+          - sensor.sdr2msghub_event
+        value_template: >
+          {% if states.sensor.sdr2msghub_event.attributes.stt is defined and states.sensor.sdr2msghub_event.attributes.stt.nlu is defined and states.sensor.sdr2msghub_event.attributes.stt.nlu != null %}
+            {% set nlu = states.sensor.sdr2msghub_event.attributes.stt.nlu %}
+            {{ nlu.sentiment.document.label }}
+          {%- else -%}null{%- endif -%}
+      sdr2msghub_keywords:
+        entity_id:
+          - sensor.sdr2msghub_event
+          - sensor.sdr2msghub_relevance_minimum
+        value_template: >
+          {% if states.sensor.sdr2msghub_event.attributes.stt is defined and states.sensor.sdr2msghub_event.attributes.stt.nlu is defined and states.sensor.sdr2msghub_event.attributes.stt.nlu != null %}
+            {% set nlu = states.sensor.sdr2msghub_event.attributes.stt.nlu %}
+            {% for keyword in nlu.keywords %}
+             {%- if loop.first -%}{% else %},{% endif %}
+             {%- if keyword.text is defined and keyword.relevance|float > states.sensor.sdr2msghub_relevance_minimum.state|float -%}
+               {{- keyword.text -}}
+             {%- else -%}null{%- endif -%}
+           {%- endfor -%}
+          {%- else -%}null{%- endif -%}
+      sdr2msghub_count:
+        entity_id:
+          - sensor.sdr2msghub_event_count
+        unit_of_measurement: events
+        value_template: >
+          {% if states.sensor.sdr2msghub_event_count is defined %}
+            {{ states.sensor.sdr2msghub_event_count.state }}
+          {%- else -%}null{%- endif -%}
+      sdr2msghub_ratio:
+        entity_id:
+          - sensor.sdr2msghub_event_ratio
+        unit_of_measurement: '%'
+        value_template: >
+          {% if states.sensor.sdr2msghub_event_ratio is defined %}
+            {{ states.sensor.sdr2msghub_event_ratio.state }}
+          {%- else -%}null{%- endif -%}
+      sdr2msghub_sentiment_mean:
+        entity_id:
+          - sensor.sdr2msghub_sentiment_statistics_mean
+        unit_of_measurement: SS 
+        value_template: >
+          {% if states.sensor.sdr2msghub_event_sentiment_mean is defined %}
+            {{ states.sensor.sdr2msghub_sentiment_statistics_mean.state }}
+          {%- else -%}null{%- endif -%}
+  - platform: history_stats
+    icon: mdi:percent
+    name: sdr2msghub_event_ratio
+    entity_id: sensor.sdr2msghub_event
+    state: True
+    type: ratio
+    start: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
+    end: '{{ now() }}'
+  - platform: history_stats
+    icon: mdi:sigma
+    name: sdr2msghub_event_count
+    entity_id: sensor.sdr2msghub_event
+    state: True
+    type: count
+    start: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
+    end: '{{ now() }}'
+  - platform: statistics
+    entity_id: sensor.sdr2msghub_sentiment_score
+    name: sdr2msghub_sentiment_statistics
+    max_age:
+      hours: 24
+
+###
+### CPU
+###
+  
+sensor cpu2msghub:
+  - platform: mqtt
+    name: cpu2msghub_event
+    state_topic: 'kafka/cpu-load'
+    force_update: True
+    expire_after: 1
+    json_attributes:
+      - name
+      - date
+      - cpu
+      - longitude
+      - latitude
+      - altitude
+    value_template: >
+      {% if value_json is defined and value_json.cpu > 0 %} True {% else %} False {% endif %}
+  - platform: template
+    sensors:
+      cpu2msghub_date:
+        entity_id:
+          - sensor.cpu2msghub_event
+        value_template: >
+          {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.date is defined %}
+            {{ states.sensor.cpu2msghub_event.attributes.date | timestamp_custom("%a %b %d %I:%M %p") }}
+          {% else %} null {% endif %}
+      cpu2msghub_name:
+        entity_id:
+          - sensor.cpu2msghub_event
+        value_template: >
+          {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.name is defined %}
+            {{ states.sensor.cpu2msghub_event.attributes.name}}
+          {% else %} null {% endif %}
+      cpu2msghub_cpu:
+        entity_id:
+          - sensor.cpu2msghub_event
+        unit_of_measurement: '%'
+        value_template: >
+          {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.cpu is defined %}
+            {{ states.sensor.cpu2msghub_event.attributes.cpu}}
+          {% else %} null {% endif %}
+      cpu2msghub_latitude:
+        entity_id:
+          - sensor.cpu2msghub_event
+        unit_of_measurement: degrees
+        value_template: >
+          {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.latitude is defined %}
+            {{ states.sensor.cpu2msghub_event.attributes.latitude}}
+          {% else %} null {% endif %}
+      cpu2msghub_longitude:
+        entity_id:
+          - sensor.cpu2msghub_event
+        unit_of_measurement: degrees
+        value_template: >
+          {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.longitude is defined %}
+            {{ states.sensor.cpu2msghub_event.attributes.longitude}}
+          {% else %} null {% endif %}
+      cpu2msghub_altitude:
+        entity_id:
+          - sensor.cpu2msghub_event
+        unit_of_measurement: feet
+        value_template: >
+          {% if states.sensor.cpu2msghub_event is defined and states.sensor.cpu2msghub_event.attributes.altitude is defined %}
+            {{ states.sensor.cpu2msghub_event.attributes.altitude}}
+          {% else %} null {% endif %}
+      cpu2msghub_ratio:
+        entity_id:
+          - sensor.cpu2msghub_event_ratio
+        unit_of_measurement: '%'
+        value_template: >
+          {% if states.sensor.cpu2msghub_event_ratio is defined %}
+            {{ states.sensor.cpu2msghub_event_ratio.state }}
+          {%- else -%}null{%- endif -%}
+      cpu2msghub_count:
+        entity_id:
+          - sensor.cpu2msghub_event_count
+        unit_of_measurement: events
+        value_template: >
+          {% if states.sensor.cpu2msghub_event_count is defined %}
+            {{ states.sensor.cpu2msghub_event_count.state }}
+          {%- else -%}null{%- endif -%}
+      cpu2msghub_cpu_mean:
+        entity_id:
+          - sensor.cpu2msghub_cpu_statistics_mean
+        unit_of_measurement: '%'
+        value_template: >
+          {% if states.sensor.cpu2msghub_cpu is defined %}
+            {{ states.sensor.cpu2msghub_cpu_statistics_mean.state }}
+          {%- else -%}null{%- endif -%}
+  - platform: history_stats
+    icon: mdi:percent
+    name: cpu2msghub_event_ratio
+    entity_id: sensor.cpu2msghub_event
+    state: True
+    type: ratio
+    start: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
+    end: '{{ now() }}'
+  - platform: history_stats
+    icon: mdi:sigma
+    name: cpu2msghub_event_count
+    entity_id: sensor.cpu2msghub_event
+    state: True
+    type: count
+    start: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
+    end: '{{ now() }}'
+  - platform: statistics
+    entity_id: sensor.cpu2msghub_cpu
+    name: cpu2msghub_cpu_statistics
+    sampling_size: 1000
+    max_age:
+      hours: 24
+
+###
+### INTERNET TEST
+###
+
+sensor internet_test:
+  - platform: command_line
+    command: speedtest --csv --csv-delimiter '|' | xargs -I '%' echo $(date +%s)"|%" | awk -F'|' '{ printf("{\"date\":%d,\"server\":\"%s\",\"timestamp\":\"%s\",\"distance\":%d,\"ping\":%d,\"receive\":%f,\"send\":%f }\n", $1, $2, $5, $6, $7, $8, $9 ) }'
+    name: internet_test
+    scan_interval: 120
+    command_timeout: 60
+    json_attributes:
+      - server
+      - date
+      - timestamp
+      - distance
+      - ping
+      - receive
+      - send
+    value_template: >
+      {%- if value_json is defined -%}
+        {{ value_json.date | timestamp_custom("%a %b %d @ %I:%M %p") }}
+      {%- else -%}null{%- endif -%}
+    icon_template: >-
+      {%- if value_json is defined -%}
+      {% if (value_json.send >= state.sensor.internet_send_mean and value_json.receive >= state.sensor.internet_receive_mean) %}
+        mdi:emoticon:happy
+      {% else %}
+        mdi:emoticon:sad
+      {% endif %}
+  - platform: template
+    sensors:
+      internet_test_receive:
+        entity_id:
+          - sensor.internet_test
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.internet_test.attributes.receive is defined and states.sensor.internet_test.attributes.receive != null %}
+            {{ '%0.2f' | format(states.sensor.internet_test.attributes.receive / 1000000.0) }}
+          {%- else -%}null{%- endif -%}
+      internet_test_send:
+        entity_id:
+          - sensor.internet_test
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.internet_test.attributes.send is defined and states.sensor.internet_test.attributes.send != null %}
+            {{ '%0.2f' | format(states.sensor.internet_test.attributes.send / 1000000.0) }}
+          {%- else -%}null{%- endif -%}
+      internet_receive_mean:
+        entity_id:
+          - sensor.internet_receive_statistics_mean
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.internet_receive_statistics_mean is defined %}
+            {{ states.sensor.internet_receive_statistics_mean.state }}
+          {%- else -%}null{%- endif -%}
+      internet_receive_min_value:
+        entity_id:
+          - sensor.internet_receive_statistics_mean
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.internet_receive_statistics_mean is defined %}
+            {{ states.sensor.internet_receive_statistics_mean.attributes.min_value }}
+          {%- else -%}null{%- endif -%}
+      internet_receive_max_value:
+        entity_id:
+          - sensor.internet_receive_statistics_mean
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.internet_receive_statistics_mean is defined %}
+            {{ states.sensor.internet_receive_statistics_mean.attributes.max_value }}
+          {%- else -%}null{%- endif -%}
+      internet_receive_standard_deviation:
+        entity_id:
+          - sensor.internet_receive_statistics_mean
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.internet_receive_statistics_mean is defined %}
+            {{ states.sensor.internet_receive_statistics_mean.attributes.standard_deviation }}
+          {%- else -%}null{%- endif -%}
+      internet_send_mean:
+        entity_id:
+          - sensor.internet_send_statistics_mean
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.internet_send_statistics_mean is defined %}
+            {{ states.sensor.internet_send_statistics_mean.state }}
+          {%- else -%}null{%- endif -%}
+      internet_send_min_value:
+        entity_id:
+          - sensor.internet_send_statistics_mean
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.internet_send_statistics_mean is defined %}
+            {{ states.sensor.internet_send_statistics_mean.attributes.min_value }}
+          {%- else -%}null{%- endif -%}
+      internet_send_max_value:
+        entity_id:
+          - sensor.internet_send_statistics_mean
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.internet_send_statistics_mean is defined %}
+            {{ states.sensor.internet_send_statistics_mean.attributes.max_value }}
+          {%- else -%}null{%- endif -%}
+      internet_send_standard_deviation:
+        entity_id:
+          - sensor.internet_send_statistics_mean
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.internet_send_statistics_mean is defined %}
+            {{ states.sensor.internet_send_statistics_mean.attributes.standard_deviation }}
+          {%- else -%}null{%- endif -%}
+      internet_test_ago:
+        entity_id:
+          - sensor.internet_test
+          - sun.sun
+        unit_of_measurement: seconds
+        value_template: '{{ (now().timestamp()|int) - (states.sensor.internet_test.attributes.date|int) }}'
+      internet_test_state:
+        entity_id:
+          - sensor.internet_test_ago
+        value_template: >
+          {% if states.sensor.internet_test_ago.state|int > 30 %}False{% else %}True{% endif %}
+      internet_count:
+        entity_id:
+          - sensor.internet_test_count
+        unit_of_measurement: tests
+        value_template: >
+          {% if states.sensor.internet_test_count is defined %}
+            {{ states.sensor.internet_test_count.state }}
+          {%- else -%}null{%- endif -%}
+      internet_slow:
+        entity_id:
+          - sensor.internet_test_receive
+          - sensor.internet_receive_statistics_mean
+          - input_number.internet_deviation
+        value_template: >
+          {% if (((states.sensor.internet_receive_mean.state|float) - (states.sensor.internet_test_receive.state|float))
+               / (states.sensor.internet_receive_statistics_mean.attributes.standard_deviation|float) 
+             > (states.input_number.internet_deviation.state|float)) %}True{% else %}False{% endif %}
+      internet_fast:
+        entity_id:
+          - sensor.internet_test_receive
+          - sensor.internet_receive_statistics_mean
+          - input_number.internet_deviation
+        value_template: >
+          {% if (((states.sensor.internet_test_receive.state|float) - (states.sensor.internet_receive_mean.state|float))
+               / (states.sensor.internet_receive_statistics_mean.attributes.standard_deviation|float)) 
+             > (states.input_number.internet_deviation.state|float) %}True{% else %}False{% endif %}
+  - platform: statistics
+    entity_id: sensor.internet_test_send
+    name: internet_send_statistics
+    max_age:
+      hours: 24
+  - platform: statistics
+    entity_id: sensor.internet_test_receive
+    name: internet_receive_statistics
+    max_age:
+      hours: 24
+  - platform: history_stats
+    name: internet_test_count
+    entity_id: sensor.internet_test_state
+    state: True
+    type: count
+    start: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
+    end: '{{ now() }}'
+
+###
+### INTRANET TEST
+###
+
+sensor intranet_test:
+  - platform: command_line
+    command: iperf3 -c 192.168.1.32 -J | jq '{"date":.start.timestamp.timesecs,"send":.end.sum_sent.bits_per_second,"receive":.end.sum_received.bits_per_second}'
+    name: intranet_test
+    scan_interval: 120
+    command_timeout: 60
+    json_attributes:
+      - date
+      - send
+      - receive
+    value_template: >
+      {%- if value_json is defined -%}
+        {{ value_json.date | timestamp_custom("%a %b %d @ %I:%M %p") }}
+      {%- else -%}null{%- endif -%}
+    icon_template: >-
+      {%- if value_json is defined -%}
+      {% if (value_json.send >= state.sensor.intranet_send_mean and value_json.receive >= state.sensor.intranet_receive_mean) %}
+        mdi:emoticon:happy
+      {% else %}
+        mdi:emoticon:sad
+      {% endif %}
+  - platform: template
+    sensors:
+      intranet_test_receive:
+        entity_id:
+          - sensor.intranet_test
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.intranet_test.attributes.receive is defined and states.sensor.intranet_test.attributes.receive != null %}
+            {{ '%0.2f' | format(states.sensor.intranet_test.attributes.receive / 1000000.0) }}
+          {%- else -%}null{%- endif -%}
+      intranet_test_send:
+        entity_id:
+          - sensor.intranet_test
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.intranet_test.attributes.send is defined and states.sensor.intranet_test.attributes.send != null %}
+            {{ '%0.2f' | format(states.sensor.intranet_test.attributes.send / 1000000.0) }}
+          {%- else -%}null{%- endif -%}
+      intranet_receive_mean:
+        entity_id:
+          - sensor.intranet_receive_statistics_mean
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.intranet_receive_statistics_mean is defined %}
+            {{ states.sensor.intranet_receive_statistics_mean.state }}
+          {%- else -%}null{%- endif -%}
+      intranet_receive_min_value:
+        entity_id:
+          - sensor.intranet_receive_statistics_mean
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.intranet_receive_statistics_mean is defined %}
+            {{ states.sensor.intranet_receive_statistics_mean.attributes.min_value }}
+          {%- else -%}null{%- endif -%}
+      intranet_receive_max_value:
+        entity_id:
+          - sensor.intranet_receive_statistics_mean
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.intranet_receive_statistics_mean is defined %}
+            {{ states.sensor.intranet_receive_statistics_mean.attributes.max_value }}
+          {%- else -%}null{%- endif -%}
+      intranet_receive_standard_deviation:
+        entity_id:
+          - sensor.intranet_receive_statistics_mean
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.intranet_receive_statistics_mean is defined %}
+            {{ states.sensor.intranet_receive_statistics_mean.attributes.standard_deviation }}
+          {%- else -%}null{%- endif -%}
+      intranet_send_mean:
+        entity_id:
+          - sensor.intranet_send_statistics_mean
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.intranet_send_statistics_mean is defined %}
+            {{ states.sensor.intranet_send_statistics_mean.state }}
+          {%- else -%}null{%- endif -%}
+      intranet_send_min_value:
+        entity_id:
+          - sensor.intranet_send_statistics_mean
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.intranet_send_statistics_mean is defined %}
+            {{ states.sensor.intranet_send_statistics_mean.attributes.min_value }}
+          {%- else -%}null{%- endif -%}
+      intranet_send_max_value:
+        entity_id:
+          - sensor.intranet_send_statistics_mean
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.intranet_send_statistics_mean is defined %}
+            {{ states.sensor.intranet_send_statistics_mean.attributes.max_value }}
+          {%- else -%}null{%- endif -%}
+      intranet_send_standard_deviation:
+        entity_id:
+          - sensor.intranet_send_statistics_mean
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.intranet_send_statistics_mean is defined %}
+            {{ states.sensor.intranet_send_statistics_mean.attributes.standard_deviation }}
+          {%- else -%}null{%- endif -%}
+      intranet_test_ago:
+        entity_id:
+          - sensor.intranet_test
+          - sun.sun
+        unit_of_measurement: seconds
+        value_template: '{{ (now().timestamp()|int) - (states.sensor.intranet_test.attributes.date|int) }}'
+      intranet_test_state:
+        entity_id:
+          - sensor.intranet_test_ago
+        value_template: >
+          {% if states.sensor.intranet_test_ago.state|int > 30 %}False{% else %}True{% endif %}
+      intranet_count:
+        entity_id:
+          - sensor.intranet_test_count
+        unit_of_measurement: tests
+        value_template: >
+          {% if states.sensor.intranet_test_count is defined %}
+            {{ states.sensor.intranet_test_count.state }}
+          {%- else -%}null{%- endif -%}
+  - platform: statistics
+    entity_id: sensor.intranet_test_send
+    name: intranet_send_statistics
+    max_age:
+      hours: 24
+  - platform: statistics
+    entity_id: sensor.intranet_test_receive
+    name: intranet_receive_statistics
+    max_age:
+      hours: 24
+  - platform: history_stats
+    name: intranet_test_count
+    entity_id: sensor.intranet_test_state
+    state: True
+    type: count
+    start: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
+    end: '{{ now() }}'
+
