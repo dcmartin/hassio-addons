@@ -17,6 +17,7 @@
         message: >
           Current: {{ states.sensor.internet_test_receive.state }} Mbps; 
           average {{ states.sensor.internet_receive_mean.state }} Mbps;
+          stdev {{ states.sensor.internet_receive_statistics_mean.attributes.standard_deviation }} Mbps;
           {{ states.sensor.internet_test.attributes.date | timestamp_custom("%a %b %d %I:%M %p") }}
     - service: mqtt.publish
       data_template:
@@ -43,6 +44,7 @@
         message: >
           Current: {{ states.sensor.internet_test_receive.state }} Mbps; 
           average {{ states.sensor.internet_receive_mean.state }} Mbps;
+          stdev {{ states.sensor.internet_receive_statistics_mean.attributes.standard_deviation }} Mbps;
           {{ states.sensor.internet_test.attributes.date | timestamp_custom("%a %b %d %I:%M %p") }}
     - service: mqtt.publish
       data_template:
@@ -50,7 +52,6 @@
         retain: false
         payload: >
           {{ states.sensor.internet_receive_statistics_mean.attributes }}
-
 
 - id: internet_slow_persistent
   alias: internet_slow_persistent
@@ -70,6 +71,7 @@
         message: >
           Current: {{ states.sensor.internet_test_receive.state }} Mbps; 
           average {{ states.sensor.internet_receive_mean.state }} Mbps;
+          average stdev {{ states.sensor.internet_receive_stdev_mean.state }} Mbps;
           {{ states.sensor.internet_test.attributes.date | timestamp_custom("%a %b %d %I:%M %p") }}
     - service: mqtt.publish
       data_template:
@@ -96,6 +98,7 @@
         message: >
           Current: {{ states.sensor.internet_test_receive.state }} Mbps; 
           average {{ states.sensor.internet_receive_mean.state }} Mbps;
+          average stdev {{ states.sensor.internet_receive_stdev_mean.state }} Mbps;
           {{ states.sensor.internet_test.attributes.date | timestamp_custom("%a %b %d %I:%M %p") }}
     - service: mqtt.publish
       data_template:

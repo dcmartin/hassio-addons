@@ -24,7 +24,7 @@ panel_iframe:
   configurator:
     title: Configurator
     icon: mdi:wrench
-    url: http://192.168.1.199:3218
+    url: http://localhost:3218
     
 mqtt:
   broker: core-mosquitto
@@ -555,9 +555,7 @@ sensor horizon:
      - configuration
      - connectivity
     value_template: >
-      {%- if value_json is defined -%}
-        {{ now() | timestamp_custom("%a %b %d @ %I:%M %p") }}
-      {%- else -%}null{%- endif -%}
+      {{ now() | timestamp_custom("%a %b %d @ %I:%M %p") }}
   - platform: template
     sensors:
       horizon_exchange_api:
@@ -616,13 +614,6 @@ sensor internet_test:
       {%- if value_json is defined -%}
         {{ value_json.date | timestamp_custom("%a %b %d @ %I:%M %p") }}
       {%- else -%}null{%- endif -%}
-    icon_template: >-
-      {%- if value_json is defined -%}
-      {% if (value_json.send >= state.sensor.internet_send_mean.state and value_json.receive >= state.sensor.internet_receive_mean.state ) %}
-        mdi:emoticon-happy
-      {% else %}
-        mdi:emoticon-sad
-      {% endif %}
   - platform: template
     sensors:
       internet_test_receive:
@@ -799,11 +790,7 @@ binary_sensor:
                / (states.sensor.internet_receive_statistics_mean.attributes.standard_deviation|float) 
              > (states.input_number.internet_deviation.state|float)) }}
         icon_template: >
-          {% if states.binary_sensor.internet_slow.state == on %}
             mdi:emoticon-sad
-          {% else %}
-            mdi:emoticon-happy
-          {% endif %}
       internet_fast:
         entity_id:
           - sensor.internet_test_receive
@@ -814,11 +801,7 @@ binary_sensor:
                / (states.sensor.internet_receive_statistics_mean.attributes.standard_deviation|float)) 
              > (states.input_number.internet_deviation.state|float) }}
         icon_template: >-
-          {% if states.binary_sensor.internet_fast.state == on %}
             mdi:emoticon-happy
-          {% else %}
-            mdi:emoticon-sad
-          {% endif %}
       internet_slow_persistent:
         entity_id:
           - sensor.internet_test_receive
@@ -829,11 +812,7 @@ binary_sensor:
                / (states.sensor.internet_receive_stdev_mean.state|float) 
              > (states.input_number.internet_deviation.state|float)) }}
         icon_template: >
-          {% if states.binary_sensor.internet_slow_persistent.state == on %}
             mdi:emoticon-sad
-          {% else %}
-            mdi:emoticon-happy
-          {% endif %}
       internet_fast_persistent:
         entity_id:
           - sensor.internet_test_receive
@@ -844,11 +823,7 @@ binary_sensor:
                / (states.sensor.internet_receive_stdev_mean.state|float)) 
              > (states.input_number.internet_deviation.state|float) }}
         icon_template: >-
-          {% if states.binary_sensor.internet_fast_persistent.state == on %}
             mdi:emoticon-happy
-          {% else %}
-            mdi:emoticon-sad
-          {% endif %}
 
 ###
 ### INTRANET TEST
