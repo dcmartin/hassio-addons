@@ -1,6 +1,36 @@
 title: Horizon POC
 
 views:
+  - icon: mdi:weather-sunset
+    id: HORIZON
+    cards:
+      - type: entities
+        entities:
+          - entity: sensor.horizon_status
+            icon: mdi:update
+            name: Last update
+          - entity: sensor.horizon_version
+            icon: mdi:delta
+            name: Version
+          - entity: sensor.horizon_exchange_status
+            icon: mdi:arrow-up-down-bold-outline
+            name: Status
+          - entity: sensor.horizon_exchange_api
+            icon: mdi:cloud
+            name: API
+          - entity: sensor.horizon_exchange_version
+            icon: mdi:delta
+            name: Exchange version
+          - entity: sensor.horizon_architecture
+            icon: mdi:chip
+            name: Architecture
+      - type: map
+        title: DEVICES
+        aspect_ratio: 100%
+        default_zoom: 1
+        entities:
+          - sensor.sdr2msghub_event
+          - sensor.cpu2msghub_event
   - icon: mdi:radio
     id: SDR
     cards:
@@ -134,12 +164,18 @@ views:
         refresh_interval: 10
         hours_to_show: 1 
         entities:
-          - entity: sensor.internet_count
+          - entity: sensor.internet_tests_count
             icon: mdi:sigma
-            name: Tests
+            name: All tests
+          - entity: sensor.internet_slow_count
+            icon: mdi:sigma
+            name: Slow
+          - entity: sensor.internet_fast_count
+            icon: mdi:sigma
+            name: Fast
       - type: entities
         entities:
-          - entity: sensor.internet_count
+          - entity: sensor.internet_tests_count
             name: Count
           - entity: sensor.internet_test
             name: When
@@ -169,6 +205,9 @@ views:
           - entity: sensor.internet_receive_standard_deviation
             icon: mdi:sigma-lower
             name: Download deviation
+          - entity: sensor.internet_receive_stdev_mean
+            icon: mdi:sigma-lower
+            name: Mean deviation
       - type: history-graph
         title: Upload deviation
         refresh_interval: 10
@@ -177,6 +216,9 @@ views:
           - entity: sensor.internet_send_standard_deviation
             icon: mdi:sigma-lower
             name: Upload deviation
+          - entity: sensor.internet_send_stdev_mean
+            icon: mdi:sigma-lower
+            name: Mean deviation
       - type: history-graph
         title: UPLOAD
         refresh_interval: 10
