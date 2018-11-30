@@ -8,18 +8,16 @@
   condition:
     - condition: template
       value_template: >
-        {{ states.binary_sensor.internet_slow.state }}
+        {{ states.binary_sensor.internet_slow.state == 'on' }}
   action:
     - service: persistent_notification.create
       data_template:
-        title: >
-          Internet slow
-        notification_id: >
-          'internet_deviation'
+        title: Internet is slow
+        notification_id: internet_speed
         message: >
-          At {{ states.sensor.internet_test_receive.date | timestamp_custom("%a %b %d %I:%M %p") }} the
-          Internet is slow; current: {{ states.sensor.internet_test_receive.state }} Mbps;
-          average {{ states.sensor.internet_receive_mean.state }} Mbps
+          Current: {{ states.sensor.internet_test_receive.state }} Mbps; 
+          average {{ states.sensor.internet_receive_mean.state }} Mbps;
+          {{ states.sensor.internet_test.attributes.date | timestamp_custom("%a %b %d %I:%M %p") }}
     - service: mqtt.publish
       data_template:
         topic: 'status/internet/download'
@@ -36,18 +34,16 @@
   condition:
     - condition: template
       value_template: >
-        {{ states.binary_sensor.internet_fast.state }}
+        {{ states.binary_sensor.internet_fast.state == 'on' }}
   action:
     - service: persistent_notification.create
       data_template:
-        title: >
-          Internet fast
-        notification_id: >
-          'internet_deviation'
+        title: Internet is fast
+        notification_id: internet_speed
         message: >
-          At {{ states.sensor.internet_test_receive.date | timestamp_custom("%a %b %d %I:%M %p") }} the
-          Internet is fast; current: {{ states.sensor.internet_test_receive.state }} Mbps;
-          average {{ states.sensor.internet_receive_mean.state }} Mbps
+          Current: {{ states.sensor.internet_test_receive.state }} Mbps; 
+          average {{ states.sensor.internet_receive_mean.state }} Mbps;
+          {{ states.sensor.internet_test.attributes.date | timestamp_custom("%a %b %d %I:%M %p") }}
     - service: mqtt.publish
       data_template:
         topic: 'status/internet/download'

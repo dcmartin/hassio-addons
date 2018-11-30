@@ -19,8 +19,9 @@ horizon:
 internet:
   view: false
   entities:
-    - sensor.internet_slow
-    - sensor.internet_fast
+    - binary_sensor.internet_slow
+    - binary_sensor.internet_fast
+    - history_graph.intranet_test
     - history_graph.internet_receive
     - history_graph.internet_send
   
@@ -108,8 +109,8 @@ internet_details:
     - sensor.internet_test_state
     - sensor.internet_count
     - input_number.internet_deviation
-    - sensor.internet_slow
-    - sensor.internet_fast
+    - binary_sensor.internet_slow
+    - binary_sensor.internet_fast
     - automation.internet_slow
     - automation.internet_fast
 
@@ -132,3 +133,33 @@ internet_send:
     - sensor.internet_send_max_value
     - sensor.internet_send_standard_deviation
     - history_graph.internet_send
+
+###
+### INTRANET
+###
+
+intranet_view:
+  name: INTRANET
+  view: true
+  icon: mdi:folder-network
+  entities:
+    - group.intranet_test
+    - history_graph.intranet_test
+
+intranet_test:
+  name: intranet_test
+  entities:
+    - sensor.intranet_test
+    - sensor.intranet_test_receive
+    - sensor.intranet_test_send
+    - sensor.intranet_receive_mean
+    - sensor.intranet_receive_min_value
+    - sensor.intranet_receive_max_value
+    - sensor.intranet_receive_standard_deviation
+    - sensor.intranet_send_mean
+    - sensor.intranet_send_min_value
+    - sensor.intranet_send_max_value
+    - sensor.intranet_send_standard_deviation
+    - sensor.intranet_test_ago
+    - sensor.intranet_test_state
+    - sensor.intranet_count
