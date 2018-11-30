@@ -8,9 +8,10 @@ default_view:
   icon: mdi:home
   entities:
     - group.horizon
+    - group.horizon_patterns
     - group.internet
 
-horizon:
+horizon_patterns:
   view: false
   entities:
     - history_graph.sdr2msghub_sentiment
@@ -19,11 +20,25 @@ horizon:
 internet:
   view: false
   entities:
-    - binary_sensor.internet_slow
-    - binary_sensor.internet_fast
     - history_graph.intranet_test
     - history_graph.internet_receive
     - history_graph.internet_send
+
+###
+### HORIZON
+###
+
+horizon:
+  view: false
+  entities:
+    - sensor.horizon_status
+    - sensor.horizon_exchange_status
+    - sensor.horizon_exchange_api
+    - sensor.horizon_exchange_version
+    - sensor.horizon_required_minimum_exchange_version
+    - sensor.horizon_preferred_exchange_version
+    - sensor.horizon_architecture
+    - sensor.horizon_version
   
 ###
 ### SDR
@@ -99,6 +114,7 @@ internet_view:
     - group.internet_details
     - group.internet_receive
     - group.internet_send
+    - group.internet_automations
 
 internet_details:
   name: Internet Details
@@ -108,11 +124,21 @@ internet_details:
     - sensor.internet_test_ago
     - sensor.internet_test_state
     - sensor.internet_count
+    - sensor.internet_fast_count
+    - sensor.internet_slow_count
     - input_number.internet_deviation
     - binary_sensor.internet_slow
     - binary_sensor.internet_fast
+    - history_graph.internet_tests
+
+internet_automations:
+  name: internet_automations
+  control: hidden
+  entities:
     - automation.internet_slow
     - automation.internet_fast
+    - automation.internet_slow_persistent
+    - automation.internet_fast_persistent
 
 internet_receive:
   name: internet_receive
@@ -123,6 +149,7 @@ internet_receive:
     - sensor.internet_receive_max_value
     - sensor.internet_receive_standard_deviation
     - history_graph.internet_receive
+    - history_graph.internet_recv_stdev
 
 internet_send:
   name: internet_send
@@ -133,6 +160,7 @@ internet_send:
     - sensor.internet_send_max_value
     - sensor.internet_send_standard_deviation
     - history_graph.internet_send
+    - history_graph.internet_send_stdev
 
 ###
 ### INTRANET

@@ -1,10 +1,11 @@
 homeassistant:
-  name: Horizon POC (newman)
-  latitude: 37.174429
-  longitude: -121.816545
+  name: Horizon POC
+  latitude: 16.775532
+  longitude: -3.005361
   elevation: 820
   unit_system: imperial
-  time_zone: America/Los_Angeles
+  time_zone: GMT
+  customize: !include customize.yaml
 
 hassio:
 cloud:
@@ -26,7 +27,7 @@ panel_iframe:
     url: http://192.168.1.199:3218
     
 mqtt:
-  broker: 192.168.1.40
+  broker: core-mosquitto
 
 group: !include groups.yaml
 automation: !include automations.yaml
@@ -67,11 +68,11 @@ history_graph:
     hours_to_show: 24
     refresh: 30
     entities:
-      - sensor.intranet_test_receive
+      # - sensor.intranet_test_receive
       - sensor.intranet_receive_mean
       - sensor.intranet_receive_min_value
       - sensor.intranet_receive_max_value
-      - sensor.intranet_test_send
+      # - sensor.intranet_test_send
       - sensor.intranet_send_mean
       - sensor.intranet_send_min_value
       - sensor.intranet_send_max_value
@@ -80,19 +81,41 @@ history_graph:
     hours_to_show: 24
     refresh: 30
     entities:
-      - sensor.internet_test_receive
+      # - sensor.internet_test_receive
       - sensor.internet_receive_mean
       - sensor.internet_receive_min_value
       - sensor.internet_receive_max_value
+  internet_send_stdev:
+    name: Internet Send Stdev
+    hours_to_show: 24
+    refresh: 30
+    entities:
+      - sensor.internet_send_stdev_mean
+      - sensor.internet_send_standard_deviation
+  internet_recv_stdev:
+    name: Internet Recv Stdev
+    hours_to_show: 24
+    refresh: 30
+    entities:
+      - sensor.internet_receive_stdev_mean
+      - sensor.internet_receive_standard_deviation
   internet_send:
     name: Internet Send
     hours_to_show: 24
     refresh: 30
     entities:
-      - sensor.internet_test_send
+      # - sensor.internet_test_send
       - sensor.internet_send_mean
       - sensor.internet_send_min_value
       - sensor.internet_send_max_value
+  internet_tests:
+    name: Internet Tests
+    hours_to_show: 24
+    refresh: 30
+    entities:
+      - sensor.internet_slow_count
+      - sensor.internet_fast_count
+      - sensor.internet_tests_count
 
 ###
 ### SDR
@@ -118,11 +141,11 @@ input_number:
   internet_deviation:
     name: Internet deviation
     mode: slider
-    initial: 1
+    initial: 1.5
     min: 0.1
     max: 3
     step: 0.1
-    icon: mdi:target
+    icon: mdi:sigma-lower
 
 sensor sdr2msghub:
   - platform: mqtt
@@ -481,6 +504,92 @@ sensor cpu2msghub:
     sampling_size: 1000
     max_age:
       hours: 24
+###
+### HORIZON
+###
+
+sensor horizon:
+  - platform: rest
+    name: horizon_exchange_node_list
+    resource: !secret exchange_nodes
+    method: GET
+    authentication: basic
+    username: !secret exchange_auth
+    password: !secret exchange_api
+    force_update: true
+    json_attributes:
+      - lastIndex
+      - nodes
+    value_template: >
+      {%- if value_json is defined -%}
+        {{ value_json.nodes|length }}
+      {%- else -%}null{%- endif -%}
+  - platform: rest
+    name: horizon_exchange_status
+    resource: !secret exchange_status
+    method: GET
+    authentication: basic
+    username: !secret exchange_auth
+    password: !secret exchange_api
+    force_update: true
+    json_attributes:
+      - dbSchemaVersion
+      - msg
+      - numberOfAgbotAgreements
+      - numberOfAgbotMsgs
+      - numberOfAgbots
+      - numberOfNodeAgreements
+      - numberOfNodeMsgs
+      - numberOfNodes
+      - numberOfUsers
+    value_template: >
+      {%- if value_json is defined -%}
+        {{ value_json.msg }}
+      {%- else -%}null{%- endif -%}
+  - platform: rest
+    name: horizon_status
+    resource: 'http://localhost/status'
+    method: GET
+    force_update: true
+    json_attributes:
+     - configuration
+     - connectivity
+    value_template: >
+      {%- if value_json is defined -%}
+        {{ now() | timestamp_custom("%a %b %d @ %I:%M %p") }}
+      {%- else -%}null{%- endif -%}
+  - platform: template
+    sensors:
+      horizon_exchange_api:
+        entity_id:
+          - sensor.horizon_status
+        value_template: >
+          {{ states.sensor.horizon_status.attributes.configuration.exchange_api }} 
+      horizon_exchange_version:
+        entity_id:
+          - sensor.horizon_status
+        value_template: >
+          {{ states.sensor.horizon_status.attributes.configuration.exchange_version }} 
+      horizon_required_minimum_exchange_version:
+        entity_id:
+          - sensor.horizon_status
+        value_template: >
+          {{ states.sensor.horizon_status.attributes.configuration.required_minimum_exchange_version }} 
+      horizon_preferred_exchange_version:
+        entity_id:
+          - sensor.horizon_status
+        value_template: >
+          {{ states.sensor.horizon_status.attributes.configuration.preferred_exchange_version }} 
+      horizon_architecture:
+        entity_id:
+          - sensor.horizon_status
+        value_template: >
+          {{ states.sensor.horizon_status.attributes.configuration.architecture }} 
+      horizon_version:
+        entity_id:
+          - sensor.horizon_status
+        value_template: >
+          {{ states.sensor.horizon_status.attributes.configuration.horizon_version }} 
 
 ###
 ### INTERNET TEST
@@ -491,6 +600,9 @@ sensor internet_test:
     command: speedtest --csv --csv-delimiter '|' | xargs -I '%' echo $(date +%s)"|%" | awk -F'|' '{ printf("{\"date\":%d,\"server\":\"%s\",\"timestamp\":\"%s\",\"distance\":%d,\"ping\":%d,\"receive\":%f,\"send\":%f }\n", $1, $2, $5, $6, $7, $8, $9 ) }'
     name: internet_test
     scan_interval: 120
+    sampling_size: 60
+    max_age:
+      hours: 24
     command_timeout: 60
     json_attributes:
       - server
@@ -506,10 +618,10 @@ sensor internet_test:
       {%- else -%}null{%- endif -%}
     icon_template: >-
       {%- if value_json is defined -%}
-      {% if (value_json.send >= state.sensor.internet_send_mean and value_json.receive >= state.sensor.internet_receive_mean) %}
-        mdi:emoticon:happy
+      {% if (value_json.send >= state.sensor.internet_send_mean.state and value_json.receive >= state.sensor.internet_receive_mean.state ) %}
+        mdi:emoticon-happy
       {% else %}
-        mdi:emoticon:sad
+        mdi:emoticon-sad
       {% endif %}
   - platform: template
     sensors:
@@ -604,7 +716,7 @@ sensor internet_test:
           - sensor.internet_test_ago
         value_template: >
           {% if states.sensor.internet_test_ago.state|int > 30 %}False{% else %}True{% endif %}
-      internet_count:
+      internet_tests_count:
         entity_id:
           - sensor.internet_test_count
         unit_of_measurement: tests
@@ -612,20 +724,64 @@ sensor internet_test:
           {% if states.sensor.internet_test_count is defined %}
             {{ states.sensor.internet_test_count.state }}
           {%- else -%}null{%- endif -%}
+      internet_slow_count:
+        entity_id:
+          - sensor.internet_slow_test_count
+        unit_of_measurement: tests
+        value_template: >
+          {% if states.sensor.internet_slow_test_count is defined %}
+            {{ states.sensor.internet_slow_test_count.state }}
+          {%- else -%}null{%- endif -%}
+      internet_fast_count:
+        entity_id:
+          - sensor.internet_fast_test_count
+        unit_of_measurement: tests
+        value_template: >
+          {% if states.sensor.internet_fast_test_count is defined %}
+            {{ states.sensor.internet_fast_test_count.state }}
+          {%- else -%}null{%- endif -%}
   - platform: statistics
     entity_id: sensor.internet_test_send
     name: internet_send_statistics
+    sampling_size: 20
     max_age:
       hours: 24
   - platform: statistics
     entity_id: sensor.internet_test_receive
     name: internet_receive_statistics
+    sampling_size: 20
+    max_age:
+      hours: 24
+  - platform: statistics
+    entity_id: sensor.internet_send_standard_deviation
+    name: internet_send_stdev
+    sampling_size: 120
+    max_age:
+      hours: 24
+  - platform: statistics
+    entity_id: sensor.internet_receive_standard_deviation
+    name: internet_receive_stdev
+    sampling_size: 120
     max_age:
       hours: 24
   - platform: history_stats
     name: internet_test_count
     entity_id: sensor.internet_test_state
     state: True
+    type: count
+    start: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
+    end: '{{ now() }}'
+  - platform: history_stats
+    name: internet_slow_test_count
+    entity_id: binary_sensor.internet_slow
+    state: 'on'
+    type: count
+    start: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
+    end: '{{ now() }}'
+  - platform: history_stats
+    name: internet_fast_test_count
+    entity_id: binary_sensor.internet_fast
+    state: 'on'
     type: count
     start: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
     end: '{{ now() }}'
@@ -643,10 +799,10 @@ binary_sensor:
                / (states.sensor.internet_receive_statistics_mean.attributes.standard_deviation|float) 
              > (states.input_number.internet_deviation.state|float)) }}
         icon_template: >
-          {% if states.binary_sensor.internet_slow %}
-            mdi:emoticons:sad
+          {% if states.binary_sensor.internet_slow.state == on %}
+            mdi:emoticon-sad
           {% else %}
-            mdi:emoticon:happy
+            mdi:emoticon-happy
           {% endif %}
       internet_fast:
         entity_id:
@@ -658,10 +814,40 @@ binary_sensor:
                / (states.sensor.internet_receive_statistics_mean.attributes.standard_deviation|float)) 
              > (states.input_number.internet_deviation.state|float) }}
         icon_template: >-
-          {% if states.binary_sensor.internet_fast %}
-            mdi:emoticons:happy
+          {% if states.binary_sensor.internet_fast.state == on %}
+            mdi:emoticon-happy
           {% else %}
-            mdi:emoticon:sad
+            mdi:emoticon-sad
+          {% endif %}
+      internet_slow_persistent:
+        entity_id:
+          - sensor.internet_test_receive
+          - sensor.internet_receive_stdev_mean
+          - input_number.internet_deviation
+        value_template: >-
+          {{ (((states.sensor.internet_receive_mean.state|float) - (states.sensor.internet_test_receive.state|float))
+               / (states.sensor.internet_receive_stdev_mean.state|float) 
+             > (states.input_number.internet_deviation.state|float)) }}
+        icon_template: >
+          {% if states.binary_sensor.internet_slow_persistent.state == on %}
+            mdi:emoticon-sad
+          {% else %}
+            mdi:emoticon-happy
+          {% endif %}
+      internet_fast_persistent:
+        entity_id:
+          - sensor.internet_test_receive
+          - sensor.internet_receive_stdev_mean
+          - input_number.internet_deviation
+        value_template: >-
+          {{ (((states.sensor.internet_test_receive.state|float) - (states.sensor.internet_receive_mean.state|float))
+               / (states.sensor.internet_receive_stdev_mean.state|float)) 
+             > (states.input_number.internet_deviation.state|float) }}
+        icon_template: >-
+          {% if states.binary_sensor.internet_fast_persistent.state == on %}
+            mdi:emoticon-happy
+          {% else %}
+            mdi:emoticon-sad
           {% endif %}
 
 ###

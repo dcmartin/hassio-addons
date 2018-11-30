@@ -50,3 +50,56 @@
         retain: false
         payload: >
           {{ states.sensor.internet_receive_statistics_mean.attributes }}
+
+
+- id: internet_slow_persistent
+  alias: internet_slow_persistent
+  initial_state: on
+  trigger:
+    platform: state
+    entity_id: binary_sensor.internet_slow_persistent
+  condition:
+    - condition: template
+      value_template: >
+        {{ states.binary_sensor.internet_slow_persistent.state == 'on' }}
+  action:
+    - service: persistent_notification.create
+      data_template:
+        title: Internet is staying slow
+        notification_id: internet_speed_persistent
+        message: >
+          Current: {{ states.sensor.internet_test_receive.state }} Mbps; 
+          average {{ states.sensor.internet_receive_mean.state }} Mbps;
+          {{ states.sensor.internet_test.attributes.date | timestamp_custom("%a %b %d %I:%M %p") }}
+    - service: mqtt.publish
+      data_template:
+        topic: 'status/internet/download/stdev'
+        retain: false
+        payload: >
+          {{ states.sensor.internet_receive_stdev_mean.attributes }}
+
+- id: internet_fast_persistent
+  alias: internet_fast_persistent
+  initial_state: on
+  trigger:
+    platform: state
+    entity_id: binary_sensor.internet_fast_persistent
+  condition:
+    - condition: template
+      value_template: >
+        {{ states.binary_sensor.internet_fast_persistent.state == 'on' }}
+  action:
+    - service: persistent_notification.create
+      data_template:
+        title: Internet is staying fast
+        notification_id: internet_speed_persistent
+        message: >
+          Current: {{ states.sensor.internet_test_receive.state }} Mbps; 
+          average {{ states.sensor.internet_receive_mean.state }} Mbps;
+          {{ states.sensor.internet_test.attributes.date | timestamp_custom("%a %b %d %I:%M %p") }}
+    - service: mqtt.publish
+      data_template:
+        topic: 'status/internet/download/stdev'
+        retain: false
+        payload: >
+          {{ states.sensor.internet_receive_stdev_mean.attributes }}
