@@ -189,38 +189,63 @@ main() {
   export HZN_EXCHANGE_URL=$(jq -r '.horizon.url' "${ADDON_CONFIG_FILE}")
   export HZN_EXCHANGE_USER_AUTH=$(jq -j '.horizon.org,"/iamapikey:",.horizon.apikey' "${ADDON_CONFIG_FILE}")
 
-  ## SECRETS
-  sed \
-    -e 's|%%MQTT_USERNAME%%|'"${MQTT_USERNAME}"'|g' \
-    -e 's|%%MQTT_PASSWORD%%|'"${MQTT_PASSWORD}"'|g' \
-    -e 's|%%HZN_EXCHANGE_ORG%%|'"${HORIZON_ORGANIZATION}"'|g' \
-    -e 's|%%HZN_EXCHANGE_URL%%|'"${HZN_EXCHANGE_URL}"'|g' \
-    -e 's|%%HZN_EXCHANGE_API_KEY%%|'"${HORIZON_APIKEY}"'|g' 
-    /root/config/secrets.yaml \
-    > /data/secrets.yaml
-
+  ##
   ## CONFIGURATION
-  sed \
-    -e 's|%%HZN_DEVICE_NAME%%|'"${HORIZON_DEVICE_NAME}"'|g' |
-    -e 's|%%HZN_DEVICE_LATITUDE%%|'"${LATITUDE}"'|g' |
-    -e 's|%%HZN_DEVICE_LONGITUDE%%|'"${LONGITUDE}"'|g' |
-    -e 's|%%HZN_DEVICE_ELEVATION%%|'"${ELEVATION}"'|g' |
-    -e 's|%%MQTT_HOST%%|'"${MQTT_HOST}"'|g' |
-    -e 's|%%MQTT_PORT%%|'"${MQTT_PORT}"'|g' |
-    -e 's|%%UNIT_SYSTEM%%|'"${UNIT_SYSTEM}"'|g' |
-    -e 's|%%TIMEZONE%%|'"${TIMEZONE}"'|g' |
-    -e 's|%%HOST_IPADDR%%|'"${HOST_IPADDR}"'|g' |
-    /root/config/configuration.yaml \
-    > /data/configuration.yaml
+  ##
 
-  ## AUTOMATIONS, GROUPS
-  cp -f /root/config/automations.yaml /data/
-  cp -f /root/config/groups.yaml /data/
+  ROOT_DIR="/root/config"
+  CONFIG_DIR="/data"
+
+  if [[ -d ""${ROOT_DIR}"" ]]; then
+    # AUTOMATIONS, GROUPS
+    for YAML in automations groups; do
+      if [[ -s "${ROOT_DIR}/${YAML}.yaml" ]]; then
+        hass.log.trace "Copying ${ROOT_DIR}/${YAML}.yaml into ${CONFIG_DIR}/${YAML}.yaml"
+	cp -f "${ROOT_DIR}"/${YAML}.yaml "${CONFIG_DIR}"
+      else
+	hass.log.debug "Found no ${ROOT_DIR}/${YAML}.yaml"
+      fi
+    done
+    # SECRETS
+    YAML="secrets"; if [[ -s "${ROOT_DIR}/${YAML}.yaml" ]]; then
+      hass.log.trace "Editting ${ROOT_DIR}/${YAML}.yaml into ${CONFIG_DIR}/${YAML}.yaml"
+      sed \
+        -e 's|%%MQTT_USERNAME%%|'"${MQTT_USERNAME}"'|g' \
+        -e 's|%%MQTT_PASSWORD%%|'"${MQTT_PASSWORD}"'|g' \
+        -e 's|%%HZN_EXCHANGE_ORG%%|'"${HORIZON_ORGANIZATION}"'|g' \
+        -e 's|%%HZN_EXCHANGE_URL%%|'"${HZN_EXCHANGE_URL}"'|g' \
+        -e 's|%%HZN_EXCHANGE_API_KEY%%|'"${HORIZON_APIKEY}"'|g' 
+        "${ROOT_DIR}/${YAML}.yaml" \
+        > "${CONFIG_DIR}/${YAML}.yaml"
+    else
+      hass.log.debug "Found no ${ROOT_DIR}/${YAML}.yaml"
+    fi
+    ## CONFIGURATION
+    YAML="configuration"; if [[ -s "${ROOT_DIR}/${YAML}.yaml" ]]; then
+      hass.log.trace "Editting ${ROOT_DIR}/${YAML}.yaml into ${CONFIG_DIR}/${YAML}.yaml"
+      sed \
+	-e 's|%%HZN_DEVICE_NAME%%|'"${HORIZON_DEVICE_NAME}"'|g' |
+	-e 's|%%HZN_DEVICE_LATITUDE%%|'"${LATITUDE}"'|g' |
+	-e 's|%%HZN_DEVICE_LONGITUDE%%|'"${LONGITUDE}"'|g' |
+	-e 's|%%HZN_DEVICE_ELEVATION%%|'"${ELEVATION}"'|g' |
+	-e 's|%%MQTT_HOST%%|'"${MQTT_HOST}"'|g' |
+	-e 's|%%MQTT_PORT%%|'"${MQTT_PORT}"'|g' |
+	-e 's|%%UNIT_SYSTEM%%|'"${UNIT_SYSTEM}"'|g' |
+	-e 's|%%TIMEZONE%%|'"${TIMEZONE}"'|g' |
+	-e 's|%%HOST_IPADDR%%|'"${HOST_IPADDR}"'|g' |
+        "${ROOT_DIR}/${YAML}.yaml" \
+        > "${CONFIG_DIR}/${YAML}.yaml"
+    else
+      hass.log.debug "Found no ${ROOT_DIR}/${YAML}.yaml"
+    fi 
+  else
+    hass.log.debug "Found no ${ROOT_DIR}"
+  fi
 
   ##
   ## MQTT PUBLISH
   ##
-  hass.log.info "Publishing configuration to ${MQTT_HOST} topic ${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/start"
+  hass.log.info "MQTT publish ${ADDON_CONFIG_FILE} to ${MQTT_HOST} topic ${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/start"
   mosquitto_pub -r -q 2 -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/start" -f "${ADDON_CONFIG_FILE}"
 
   # check for outstanding agreements
