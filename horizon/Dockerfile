@@ -12,6 +12,7 @@ RUN apt-get update \
   && apt-get install -y \
     mosquitto-clients \
     bc \
+    keychain \
     nmap \
   \
   && ARCH="${BUILD_ARCH}" \
