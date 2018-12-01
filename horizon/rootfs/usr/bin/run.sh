@@ -186,7 +186,7 @@ main() {
     | sed 's/%%HZN_EXCHANGE_ORG%%/'"${HORIZON_ORGANIZATION}"'/g' \
     | sed 's/%%HZN_EXCHANGE_URL%%/'"${HZN_EXCHANGE_URL}"'/g' \
     | sed 's/%%HZN_EXCHANGE_API_KEY%%/'"${HORIZON_APIKEY}"'/g' \
-    > /config/secrets.yaml
+    > /data/secrets.yaml
 
   ## CONFIGURATION
   cat /root/config/configuration.yaml \
@@ -199,11 +199,11 @@ main() {
     | sed 's/%%UNIT_SYSTEM%%/'"${UNIT_SYSTEM}"'/g' \
     | sed 's/%%TIMEZONE%%/'"${TIMEZONE}"'/g' \
     | sed 's/%%HOST_IPADDR%%/'"${HOST_IPADDR}"'/g' \
-    > /config/configuration.yaml
+    > /data/configuration.yaml
 
   ## AUTOMATIONS, GROUPS
-  cp -f /root/config/automations.yaml /config/
-  cp -f /root/config/groups.yaml /config/
+  cp -f /root/config/automations.yaml /data/
+  cp -f /root/config/groups.yaml /data/
 
   ##
   ## MQTT PUBLISH
