@@ -1,7 +1,7 @@
 {
   "name": "Horizon Control",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/horizon",
-  "version": "0.1.21",
+  "version": "0.1.22",
   "slug": "horizon",
   "description": "Example base addon for horizon",
   "startup": "before",
@@ -45,7 +45,8 @@
       "device": "",
       "org": "",
       "apikey": "",
-      "url": "https://alpha.edge-fabric.com/v1"
+      "url": "https://alpha.edge-fabric.com/v1",
+      "config": "58f38eddf709fc04ba55019da9cc1913"
     }
   },
   "schema": {
@@ -70,7 +71,8 @@
       "device": "str",
       "org": "str",
       "apikey": "str",
-      "url": "url"
+      "url": "url",
+      "config": "url"
     }
   },
   "environment": {

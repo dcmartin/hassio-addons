@@ -9,6 +9,7 @@ set -o pipefail # Return exit status of the last command in the pipe that failed
 source /usr/lib/hassio-addons/base.sh
 
 CONFIG_PATH="/data/options.json"
+HZN_CONFIG_DB="hzn-config"
 
 # ==============================================================================
 # RUN LOGIC
@@ -27,6 +28,7 @@ main() {
   VALUE=$(hass.config.get "timezone")
   if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then VALUE="GMT"; fi
   ADDON_CONFIG="${ADDON_CONFIG}"',"timezone":"'"${VALUE}"'"'
+  # set timezone
   cp /usr/share/zoneinfo/${VALUE} /etc/localtime
 
   # LATITUDE
@@ -49,8 +51,6 @@ main() {
   VALUE=$(hostname -I | awk '{ print $1 }')
   ADDON_CONFIG="${ADDON_CONFIG}"',"host_ipaddr":"'"${VALUE}"'"'
 
-  hass.log.trace "CONFIGURATION: ${ADDON_CONFIG}"
-
   ## HORIZON
   VALUE=$(hass.config.get "horizon.org")
   if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then hass.log.fatal "No horizon organization"; hass.die; fi
@@ -69,8 +69,6 @@ main() {
   ADDON_CONFIG="${ADDON_CONFIG}"',"device":"'"${VALUE}"'"'
   ## DONE w/ HORIZON
   ADDON_CONFIG="${ADDON_CONFIG}"'}'
-
-  hass.log.trace "CONFIGURATION: ${ADDON_CONFIG}"
 
   # HOST
   VALUE=$(hass.config.get "mqtt.host")
@@ -91,11 +89,8 @@ main() {
   ## DONE w/ MQTT
   ADDON_CONFIG="${ADDON_CONFIG}"'}'
 
-  hass.log.trace "CONFIGURATION: ${ADDON_CONFIG}"
-
   ## DONE w/ ADDON_CONFIG
   ADDON_CONFIG="${ADDON_CONFIG}"'}'
-
   hass.log.debug "CONFIGURATION:" $(echo "${ADDON_CONFIG}" | jq -c '.')
 
   ## REVIEW
@@ -109,6 +104,23 @@ main() {
     hass.log.fatal "Invalid addon configuration: ${ADDON_CONFIG}"
     hass.die
   fi
+
+  ##
+  ## HORIZON CHECK
+  ##
+
+  # command line environment
+  export HZN_EXCHANGE_URL=$(jq -r '.horizon.url' "${ADDON_CONFIG_FILE}")
+  export HZN_EXCHANGE_USER_AUTH=$(jq -j '.horizon.org,"/iamapikey:",.horizon.apikey' "${ADDON_CONFIG_FILE}")
+  # agreements
+  AGREEMENTS=$(hzn agreement list)
+  hass.log.info "Horizon agreements: " $(echo "${AGREEMENTS}" | jq -c '.')
+  # node
+  NODE=$(hzn node list)
+  hass.log.info "Horizon node list: " $(echo "${NODE}" | jq -c '.')
+  # update configuration
+  jq '.agreements='"${AGREEMENTS}"'|.node='"${NODE}" "${ADDON_CONFIG_FILE}" > "${ADDON_CONFIG_FILE}.$$"; mv -f "${ADDON_CONFIG_FILE}.$$" "${ADDON_CONFIG_FILE}"
+
   # report success
   hass.log.info "Configuration for ${HORIZON_DEVICE_NAME} at ${ADDON_CONFIG_FILE}" $(jq -c '.' "${ADDON_CONFIG_FILE}") >&2
 
@@ -128,7 +140,6 @@ main() {
   VALUE=$(hass.config.get "cloudant.password")
   if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then hass.log.fatal "No cloudant password"; hass.die; fi
   PASSWORD="${VALUE}"
-
   # test database access
   hass.log.debug "Testing CLOUDANT with ${USERNAME}:${PASSWORD} at ${URL}"
   OK=$(curl -sL "${URL}" -u "${USERNAME}":"${PASSWORD}" | jq -r '.couchdb')
@@ -137,36 +148,71 @@ main() {
     hass.die
   fi
   hass.log.debug "CLOUDANT found at ${URL}"
-  # base URL
+
+  ## BASE URL
   CLOUDANT_URL="${URL%:*}"'://'"${USERNAME}"':'"${PASSWORD}"'@'"${USERNAME}"."${URL#*.}"
   hass.log.debug "Using CLOUDANT_URL: ${CLOUDANT_URL}"
-  # find database (or create)
-  URL="${CLOUDANT_URL}/${HORIZON_DEVICE_DB}"
-  hass.log.debug "Looking for DB ${HORIZON_DEVICE_DB} at ${URL}"
+
+  ## CONFIGURATION DATABASE
+  # find configuration database (or create)
+  URL="${CLOUDANT_URL}/${HZN_CONFIG_DB}"
+  hass.log.debug "Looking for configuration database ${HORIZON_CONFIG_DB} at ${URL}"
   DB=$(curl -sL "${URL}" | jq -r '.db_name')
-  if [[ "${DB}" != "${HORIZON_DEVICE_DB}" ]]; then
-    hass.log.debug "Creating Cloudant database ${HORIZON_DEVICE_DB}"
+  if [[ "${DB}" != "${HORIZON_CONFIG_DB}" ]]; then
+    hass.log.debug "Creating configuration database ${HORIZON_CONFIG_DB}"
     OK=$(curl -sL -X PUT "${URL}" | jq '.ok')
     if [[ "${OK}" != "true" ]]; then
-      hass.log.fatal "Could not create Cloudant DB ${HORIZON_DEVICE_DB}" >&2
+      hass.log.fatal "Could not create configuration database ${HORIZON_CONFIG_DB}" >&2
       hass.die
     fi 
   fi
   hass.log.info "Cloudant DB ${HORIZON_DEVICE_DB} exists"
-  URL="${URL}/${HORIZON_DEVICE_NAME}"
-  hass.log.debug "Looking for previous revision at ${URL}"
-  REV=$(curl -sL "${URL}" | jq -r '._rev')
-  if [[ "${REV}" != "null" && ! -z "${REV}" ]]; then
-    hass.log.debug "Prior record exists ${REV}"
-    URL="${URL}?rev=${REV}"
-  fi
-  hass.log.debug "Updating configuration ${ADDON_CONFIG_FILE} at ${URL}"
-  OK=$(curl -sL "${URL}" -X PUT -d "@${ADDON_CONFIG_FILE}" | jq '.ok')
-  if [[ "${OK}" != "true" ]]; then
-    hass.log.fatal "Failed to update ${URL}" $(jq -c '.' "${ADDON_CONFIG_FILE}")
+  # find configuration entry
+  URL="${URL}/${HORIZON_CONFIG_NAME}"
+  hass.log.debug "Looking for configurtion ${HORIZON_CONFIG_NAME} at ${URL}"
+  if [[ -z VALUE=$(curl -sL "${URL}") || $(echo "${VALUE}" | jq -r '._id=="'"${HORIZON_CONFIG_NAME}"'")') == "false" ]]; then
+    hass.log.fatal "Found no configuration ${HORIZON_CONFIG_NAME}"
     hass.die
   fi
-  hass.log.debug "Updated ${URL} with " $(jq -c '.' "${ADDON_CONFIG_FILE}")
+  HORIZON_CONFIG="${VALUE}"
+  hass.log.debug "Found configuration ${HORIZON_CONFIG_NAME}"
+  HORIZON_CONFIG_FILE="${CONFIG_PATH%/*}/${HORIZON_CONFIG_NAME}.json"
+  echo "${HORIZON_CONFIG}" | jq '.' > "${HORIZON_CONFIG_FILE}"
+  if [ ! -s "${HORIZON_CONFIG_FILE}" ]; then
+    hass.log.fatal "Invalid addon configuration: ${HORIZON_CONFIG}"
+    hass.die
+  fi
+
+  ## DEVICE DATABASE
+  # find/create device database (or create)
+  URL="${CLOUDANT_URL}/${HORIZON_DEVICE_DB}"
+  hass.log.debug "Looking for device database ${HORIZON_DEVICE_DB} at ${URL}"
+  DB=$(curl -sL "${URL}" | jq -r '.db_name')
+  if [[ "${DB}" != "${HORIZON_DEVICE_DB}" ]]; then
+    hass.log.debug "Creating device database ${HORIZON_DEVICE_DB}"
+    OK=$(curl -sL -X PUT "${URL}" | jq '.ok')
+    if [[ "${OK}" != "true" ]]; then
+      hass.log.fatal "Could not create device database ${HORIZON_DEVICE_DB}" >&2
+      hass.die
+    fi 
+  fi
+  hass.log.info "Device database ${HORIZON_DEVICE_DB} exists"
+  # update/create device
+  URL="${CLOUDANT_URL}/{${HORIZON_DEVICE_DB}/${HORIZON_DEVICE_NAME}"
+  hass.log.debug "Looking for device ${HORIZON_DEVICE_NAME} at ${URL}"
+  REV=$(curl -sL "${URL}" | jq -r '._rev')
+  if [[ "${REV}" != "null" && ! -z "${REV}" ]]; then
+    hass.log.debug "Prior device with revision ${REV}"
+    URL="${URL}?rev=${REV}"
+  fi
+  # create/update device 
+  hass.log.debug "Updating device ${HORIZON_DEVICE_NAME} with ${ADDON_CONFIG_FILE} at ${URL}"
+  OK=$(curl -sL "${URL}" -X PUT -d "@${ADDON_CONFIG_FILE}" | jq '.ok')
+  if [[ "${OK}" != "true" ]]; then
+    hass.log.fatal "Failed to update device ${HORIZON_DEVICE_NAME} at ${URL}"
+    hass.die
+  fi
+  hass.log.debug "Updated device ${HORIZON_DEVICE_NAME} at ${URL} with " $(jq -c '.' "${ADDON_CONFIG_FILE}")
 
   ##
   ## CONFIGURATION
@@ -184,14 +230,6 @@ main() {
   LONGITUDE=$(jq -r '.longitude' "${ADDON_CONFIG_FILE}")
   LATITUDE=$(jq -r '.latitude' "${ADDON_CONFIG_FILE}")
   ELEVATION=$(jq -r '.elevation' "${ADDON_CONFIG_FILE}")
-
-  # command line environment
-  export HZN_EXCHANGE_URL=$(jq -r '.horizon.url' "${ADDON_CONFIG_FILE}")
-  export HZN_EXCHANGE_USER_AUTH=$(jq -j '.horizon.org,"/iamapikey:",.horizon.apikey' "${ADDON_CONFIG_FILE}")
-
-  ##
-  ## CONFIGURATION
-  ##
 
   TEMPLATE_DIR="/var/config"
   CONFIG_DIR="/data" # "/config"
@@ -257,23 +295,32 @@ main() {
   mosquitto_pub -r -q 2 -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/start" -f "${ADDON_CONFIG_FILE}"
 
   ##
-  ## HORIZON CHECK
-  ##
-  AGREEMENTS=$(hzn agreement list)
-  hass.log.info "Horizon agreements: " $(echo "${AGREEMENTS}" | jq -c '.')
-  NODE=$(hzn node list)
-  hass.log.info "Horizon node list: " $(echo "${NODE}" | jq -c '.')
-
-  ##
   ## RESTART HOMEASSISTANT
   ##
   if [[ -n ${HASSIO_TOKEN:-} ]]; then
     HASSIO_HOST="hassio/homeassistant"
-    hass.log.info "Reloading core configuration for $HASSIO_HOST ... "
+    hass.log.info "Reloading core configuration for ${HASSIO_HOST}"
     curl -sL -H "X-HA-ACCESS: ${HASSIO_TOKEN}" -X POST -H "Content-Type: application/json" "http://${HASSIO_HOST}/api/services/homeassistant/reload_core_config"
   else
     hass.log.warning "Did not issue reload; HASSIO_TOKEN unspecified"
   fi
+
+  # update/create configuration
+  URL="${CLOUDANT_URL}/{${HORIZON_CONFIG_DB}/${HORIZON_CONFIG_NAME}"
+  hass.log.debug "Looking for configuration ${HORIZON_CONFIG_NAME} at ${URL}"
+  REV=$(curl -sL "${URL}" | jq -r '._rev')
+  if [[ "${REV}" != "null" && ! -z "${REV}" ]]; then
+    hass.log.debug "Prior configuration with revision ${REV}"
+    URL="${URL}?rev=${REV}"
+  fi
+  # create/update device 
+  hass.log.debug "Updating configuration ${HORIZON_CONFIG_NAME} with ${HORIZON_CONFIG_FILE} at ${URL}"
+  OK=$(curl -sL "${URL}" -X PUT -d "@${HORIZON_CONFIG_FILE}" | jq '.ok')
+  if [[ "${OK}" != "true" ]]; then
+    hass.log.fatal "Failed to update configuration ${HORIZON_CONFIG_NAME} at ${URL}"
+    hass.die
+  fi
+  hass.log.debug "Updated configuration ${HORIZON_CONFIG_NAME} at ${URL} with " $(jq -c '.' "${HORIZON_CONFIG_FILE}")
 
 }
 
