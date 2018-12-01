@@ -359,7 +359,7 @@ main() {
     bash -- "${EXECPATH}" "${HORIZON_CONFIG_FILE}" "${HOST_LAN}" &> "${LOG_FILE}"
 
     # update/create configuration
-    URL="${CLOUDANT_URL}/{${HORIZON_CONFIG_DB}/${HORIZON_CONFIG_NAME}"
+    URL="${CLOUDANT_URL}/${HORIZON_CONFIG_DB}/${HORIZON_CONFIG_NAME}"
     hass.log.debug "Looking for configuration ${HORIZON_CONFIG_NAME} at ${URL}"
     REV=$(curl -sL "${URL}" | jq -r '._rev')
     if [[ "${REV}" != "null" && ! -z "${REV}" ]]; then

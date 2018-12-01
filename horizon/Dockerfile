@@ -11,6 +11,7 @@ ARG BUILD_ARCH=amd64
 RUN apt-get update \
   && apt-get install -y \
     mosquitto-clients \
+    bc \
     nmap \
   \
   && ARCH="${BUILD_ARCH}" \
