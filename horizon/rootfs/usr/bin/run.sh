@@ -185,6 +185,10 @@ main() {
   LATITUDE=$(jq -r '.latitude' "${ADDON_CONFIG_FILE}")
   ELEVATION=$(jq -r '.elevation' "${ADDON_CONFIG_FILE}")
 
+  # command line environment
+  export HZN_EXCHANGE_URL=$(jq -r '.horizon.url' "${ADDON_CONFIG_FILE}")
+  export HZN_EXCHANGE_USER_AUTH=$(jq -j '.horizon.org,"/iamapikey:",.horizon.apikey' "${ADDON_CONFIG_FILE}")
+
   ## SECRETS
   cat /root/config/secrets.yaml \
     | sed 's/%%MQTT_USERNAME%%/'"${MQTT_USERNAME}"'/g' \
@@ -216,10 +220,6 @@ main() {
   ##
   hass.log.info "Publishing configuration to ${MQTT_HOST} topic ${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/start"
   mosquitto_pub -r -q 2 -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/start" -f "${ADDON_CONFIG_FILE}"
-
-  # command line environment
-  export HZN_EXCHANGE_URL=$(jq -r '.horizon.url' "${ADDON_CONFIG_FILE}")
-  export HZN_EXCHANGE_USER_AUTH=$(jq -j '.horizon.org,"/iamapikey:",.horizon.apikey' "${ADDON_CONFIG_FILE}")
 
   # check for outstanding agreements
   AGREEMENTS=$(hzn agreement list)
