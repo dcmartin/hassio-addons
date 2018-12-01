@@ -329,21 +329,20 @@ main() {
   ##
 
   REFRESH=$(jq -r '.refresh' "${ADDON_CONFIG_FILE}")
+  HOST_LAN=$(jq -r '.host_ipaddr' "${ADDON_CONFIG_FILE}" | sed 's|\(.*\)\.[0-9]*|\1.0/24|')
   SCRIPT_URL="https://raw.githubusercontent.com/dcmartin/open-horizon/master/setup/${SCRIPT}"
   BINDIR="/usr/bin"
   SCRIPT="init-devices.sh"
   EXECPATH="${BINDIR}/${SCRIPT}"
-  curl -sL "${SCRIPT_URL}" -o "${BINDIR}/${SCRIPT}"
-  chmod 755 "${BINDIR}/${SCRIPT}"
-  HOST_LAN=$(echo "${HOST_IPADDR}" | sed 's|\(.*\)\.[0-9]*|\1.0/24|')
+  curl -sL "${SCRIPT_URL}" -o "${EXECPATH}"
+  chmod 755 "${EXECPATH}"
   LOG_FILE="${CONFIG_PATH%/*}/${SCRIPT}.$(date +%s).log"
-
 
   while [[ NODE=$(hzn node list) ]]; do
     hass.log.debug "Node state: " $(echo "${NODE}" | jq '.configstate.state') "; workloads:" $(hzn agreement list | jq -r '.[]|.workload_to_run.url')
 
     hass.log.info $(date) "${EXECPATH} on ${HORIZON_CONFIG_FILE} for ${HOST_LAN}; logging to ${LOG_FILE}"
-    STATUS=$(${EXECPATH} "${HORIZON_CONFIG_FILE}" "${HOST_LAN}" &> "${LOG_FILE}")
+    eval "${EXECPATH}" "${HORIZON_CONFIG_FILE}" "${HOST_LAN}" &> "${LOG_FILE}"
     hass.log.debug $(date) "${EXECPATH} returned ${STATUS}"
 
     # update/create configuration
