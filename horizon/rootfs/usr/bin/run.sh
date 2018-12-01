@@ -32,11 +32,11 @@ main() {
   # LATITUDE
   VALUE=$(hass.config.get "latitude")
   if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then VALUE="0"; hass.log.warning "Using default latitude: ${VALUE}"; fi
-  ADDON_CONFIG="${ADDON_CONFIG}"',"latitude":"'"${VALUE}"'"'
+  ADDON_CONFIG="${ADDON_CONFIG}"',"latitude":'"${VALUE}"
   # LONGITUDE
   VALUE=$(hass.config.get "longitude")
   if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then VALUE="0"; hass.log.warning "Using default longitude: ${VALUE}"; fi
-  ADDON_CONFIG="${ADDON_CONFIG}"',"longitude":"'"${VALUE}"'"'
+  ADDON_CONFIG="${ADDON_CONFIG}"',"longitude":'"${VALUE}"
   # ELEVATION
   VALUE=$(hass.config.get "elevation")
   if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then VALUE="0"; hass.log.warning "Using default elevation: ${VALUE}"; fi
@@ -256,16 +256,19 @@ main() {
   hass.log.info "MQTT publish ${ADDON_CONFIG_FILE} to ${MQTT_HOST} topic ${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/start"
   mosquitto_pub -r -q 2 -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/start" -f "${ADDON_CONFIG_FILE}"
 
-  # check for outstanding agreements
+  ##
+  ## HORIZON CHECK
+  ##
   AGREEMENTS=$(hzn agreement list)
+  hass.log.info "Horizon agreements: " $(echo "${AGREEMENTS}" | jq -c '.')
   NODE=$(hzn node list)
+  hass.log.info "Horizon node list: " $(echo "${NODE}" | jq -c '.')
 
   ##
-  ## restart homeassistant
+  ## RESTART HOMEASSISTANT
   ##
-
   if [[ -n ${HASSIO_TOKEN:-} ]]; then
-    HASSIO_HOST = "hassio/homeassistant"
+    HASSIO_HOST="hassio/homeassistant"
     hass.log.info "Reloading core configuration for $HASSIO_HOST ... "
     curl -sL -H "X-HA-ACCESS: ${HASSIO_TOKEN}" -X POST -H "Content-Type: application/json" "http://${HASSIO_HOST}/api/services/homeassistant/reload_core_config"
   else
