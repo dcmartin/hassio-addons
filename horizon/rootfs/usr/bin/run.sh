@@ -178,10 +178,15 @@ main() {
     fi 
   fi
   hass.log.info "Configuration database: ${HORIZON_CONFIG_DB}"
+
   # find configuration entry
-  URL="${URL}/${HORIZON_CONFIG_NAME}"
+  URL="${CLOUDANT_URL}/${HORIZON_CONFIG_DB}/${HORIZON_CONFIG_NAME}"
   hass.log.debug "Looking for configurtion ${HORIZON_CONFIG_NAME} at ${URL}"
-  if [[ VALUE=$(curl -sL "${URL}") && $(echo "${VALUE}" | jq '._id=="'"${HORIZON_CONFIG_NAME}"'"') == "true" ]]; then
+  VALUE=$(curl -sL "${URL}")
+  hass.log.trace "Received: ${VALUE}"
+  FOUND=$(echo "${VALUE}" | jq '._id=="'${HORIZON_CONFIG_NAME}'"') 
+  hass.log.trace "Match: ${FOUND}"
+  if [[ "${FOUND}" == "true" ]]; then
     HORIZON_CONFIG="${VALUE}"
   else
     hass.log.fatal "Found no configuration ${HORIZON_CONFIG_NAME}"
