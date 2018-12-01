@@ -100,7 +100,7 @@ main() {
 
   ## REVIEW
   HORIZON_ORGANIZATION=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.org')
-  HORIZON_DEVICE_DB=$(echo "${HORIZON_ORGANIZATION}" | sed 's/@/-AT-/g')
+  HORIZON_DEVICE_DB=$(echo "${HORIZON_ORGANIZATION}" | sed 's/@.*//')
   HORIZON_DEVICE_NAME=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.device')
 
   export ADDON_CONFIG_FILE="${CONFIG_PATH%/*}/${HORIZON_DEVICE_NAME}.json"
@@ -142,7 +142,7 @@ main() {
   hass.log.debug "Using CLOUDANT_URL: ${CLOUDANT_URL}"
   # find database (or create)
   URL="${CLOUDANT_URL}/${HORIZON_DEVICE_DB}"
-  hass.log.debug "Looking for DB at ${URL}"
+  hass.log.debug "Looking for DB ${HORIZON_DEVICE_DB} at ${CLOUDANT_URL}"
   DB=$(curl -s -q -f -L "${URL}" | jq -r '.db_name')
   if [ "${DB}" != "${HORIZON_DEVICE_DB}" ]; then
     hass.log.debug "Creating Cloudant database ${HORIZON_DEVICE_DB}"
