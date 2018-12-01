@@ -8,6 +8,8 @@ set -o pipefail # Return exit status of the last command in the pipe that failed
 # shellcheck disable=SC1091
 source /usr/lib/hassio-addons/base.sh
 
+CONFIG_PATH="/data/options.json"
+
 # ==============================================================================
 # RUN LOGIC
 # ------------------------------------------------------------------------------
