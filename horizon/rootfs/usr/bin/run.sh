@@ -215,12 +215,13 @@ main() {
       hass.log.trace "Permissions on ${CONFIG_DIR}/${YAML}.yaml are:" $(ls -al "${CONFIG_DIR}/${YAML}.yaml")
       hass.log.trace "Editting ${CONFIG_DIR}/${YAML}.yaml"
       sed -i \
-        -e 's|%%MQTT_USERNAME%%|'"${MQTT_USERNAME}"'|g' \
-        -e 's|%%MQTT_PASSWORD%%|'"${MQTT_PASSWORD}"'|g' \
-        -e 's|%%HZN_EXCHANGE_ORG%%|'"${HORIZON_ORGANIZATION}"'|g' \
-        -e 's|%%HZN_EXCHANGE_URL%%|'"${HZN_EXCHANGE_URL}"'|g' \
-        -e 's|%%HZN_EXCHANGE_API_KEY%%|'"${HORIZON_APIKEY}"'|g' 
+        -e "s|%%MQTT_USERNAME%%|${MQTT_USERNAME}|g" \
+        -e "s|%%MQTT_PASSWORD%%|${MQTT_PASSWORD}|g" \
+        -e "s|%%HZN_EXCHANGE_ORG%%|${HORIZON_ORGANIZATION}|g" \
+        -e "s|%%HZN_EXCHANGE_URL%%|${HZN_EXCHANGE_URL}|g" \
+        -e "s|%%HZN_EXCHANGE_API_KEY%%|${HORIZON_APIKEY}|g" \
         "${CONFIG_DIR}/${YAML}.yaml"
+      hass.log.trace "Modified ${CONFIG_DIR}/${YAML}.yaml"
     else
       hass.log.debug "Found no ${TEMPLATE_DIR}/${YAML}.yaml"
     fi
@@ -231,16 +232,17 @@ main() {
       hass.log.trace "Permissions on ${CONFIG_DIR}/${YAML}.yaml are:" $(ls -al "${CONFIG_DIR}/${YAML}.yaml")
       hass.log.trace "Editting ${CONFIG_DIR}/${YAML}.yaml"
       sed -i \
-	-e 's|%%HZN_DEVICE_NAME%%|'"${HORIZON_DEVICE_NAME}"'|g' |
-	-e 's|%%HZN_DEVICE_LATITUDE%%|'"${LATITUDE}"'|g' |
-	-e 's|%%HZN_DEVICE_LONGITUDE%%|'"${LONGITUDE}"'|g' |
-	-e 's|%%HZN_DEVICE_ELEVATION%%|'"${ELEVATION}"'|g' |
-	-e 's|%%MQTT_HOST%%|'"${MQTT_HOST}"'|g' |
-	-e 's|%%MQTT_PORT%%|'"${MQTT_PORT}"'|g' |
-	-e 's|%%UNIT_SYSTEM%%|'"${UNIT_SYSTEM}"'|g' |
-	-e 's|%%TIMEZONE%%|'"${TIMEZONE}"'|g' |
-	-e 's|%%HOST_IPADDR%%|'"${HOST_IPADDR}"'|g'
+	-e "s|%%HZN_DEVICE_NAME%%|${HORIZON_DEVICE_NAME}|g" | \
+	-e "s|%%HZN_DEVICE_LATITUDE%%|${LATITUDE}|g" | \
+	-e "s|%%HZN_DEVICE_LONGITUDE%%|${LONGITUDE}|g" | \
+	-e "s|%%HZN_DEVICE_ELEVATION%%|${ELEVATION}|g" | \
+	-e "s|%%MQTT_HOST%%|${MQTT_HOST}|g" | \
+	-e "s|%%MQTT_PORT%%|${MQTT_PORT}|g" | \
+	-e "s|%%UNIT_SYSTEM%%|${UNIT_SYSTEM}|g" | \
+	-e "s|%%TIMEZONE%%|${TIMEZONE}|g" | \
+	-e "s|%%HOST_IPADDR%%|${HOST_IPADDR}|g" \
         "${CONFIG_DIR}/${YAML}.yaml"
+      hass.log.trace "Modified ${CONFIG_DIR}/${YAML}.yaml"
     else
       hass.log.debug "Found no ${TEMPLATE_DIR}/${YAML}.yaml"
     fi 
