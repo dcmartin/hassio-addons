@@ -351,12 +351,15 @@ main() {
     hass.log.debug "Executable permissions:" $(ls -al "${EXECPATH}")
   fi
 
+  hass.log.debug "Changing directories to: ${CONFIG_PATH%/*}"
+  cd "${CONFIG_PATH%/*}"
+
   while [[ NODE=$(hzn node list) ]]; do
     hass.log.debug "Node state: " $(echo "${NODE}" | jq '.configstate.state') "; workloads:" $(hzn agreement list | jq -r '.[]|.workload_to_run.url')
 
     ## EVALUATE
     hass.log.info $(date) "${EXECPATH} on ${HORIZON_CONFIG_FILE} for ${HOST_LAN}; logging to ${LOG_FILE}"
-    bash -- "${EXECPATH}" "${HORIZON_CONFIG_FILE}" "${HOST_LAN}" &> "${LOG_FILE}"
+    bash -- "${EXECPATH}" "${HORIZON_CONFIG_FILE}" "${HOST_LAN}" &> "${LOG_FILE}" && true
 
     # update/create configuration
     URL="${CLOUDANT_URL}/${HORIZON_CONFIG_DB}/${HORIZON_CONFIG_NAME}"
