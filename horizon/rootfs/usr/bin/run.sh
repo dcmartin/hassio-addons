@@ -190,25 +190,27 @@ main() {
   export HZN_EXCHANGE_USER_AUTH=$(jq -j '.horizon.org,"/iamapikey:",.horizon.apikey' "${ADDON_CONFIG_FILE}")
 
   ## SECRETS
-  cat /root/config/secrets.yaml \
-    | sed 's/%%MQTT_USERNAME%%/'"${MQTT_USERNAME}"'/g' \
-    | sed 's/%%MQTT_PASSWORD%%/'"${MQTT_PASSWORD}"'/g' \
-    | sed 's/%%HZN_EXCHANGE_ORG%%/'"${HORIZON_ORGANIZATION}"'/g' \
-    | sed 's/%%HZN_EXCHANGE_URL%%/'"${HZN_EXCHANGE_URL}"'/g' \
-    | sed 's/%%HZN_EXCHANGE_API_KEY%%/'"${HORIZON_APIKEY}"'/g' \
+  sed \
+    -e 's|%%MQTT_USERNAME%%|'"${MQTT_USERNAME}"'|g' \
+    -e 's|%%MQTT_PASSWORD%%|'"${MQTT_PASSWORD}"'|g' \
+    -e 's|%%HZN_EXCHANGE_ORG%%|'"${HORIZON_ORGANIZATION}"'|g' \
+    -e 's|%%HZN_EXCHANGE_URL%%|'"${HZN_EXCHANGE_URL}"'|g' \
+    -e 's|%%HZN_EXCHANGE_API_KEY%%|'"${HORIZON_APIKEY}"'|g' 
+    /root/config/secrets.yaml \
     > /data/secrets.yaml
 
   ## CONFIGURATION
-  cat /root/config/configuration.yaml \
-    | sed 's/%%HZN_DEVICE_NAME%%/'"${HORIZON_DEVICE_NAME}"'/g' \
-    | sed 's/%%HZN_DEVICE_LATITUDE%%/'"${LATITUDE}"'/g' \
-    | sed 's/%%HZN_DEVICE_LONGITUDE%%/'"${LONGITUDE}"'/g' \
-    | sed 's/%%HZN_DEVICE_ELEVATION%%/'"${ELEVATION}"'/g' \
-    | sed 's/%%MQTT_HOST%%/'"${MQTT_HOST}"'/g' \
-    | sed 's/%%MQTT_PORT%%/'"${MQTT_PORT}"'/g' \
-    | sed 's/%%UNIT_SYSTEM%%/'"${UNIT_SYSTEM}"'/g' \
-    | sed 's/%%TIMEZONE%%/'"${TIMEZONE}"'/g' \
-    | sed 's/%%HOST_IPADDR%%/'"${HOST_IPADDR}"'/g' \
+  sed \
+    -e 's|%%HZN_DEVICE_NAME%%|'"${HORIZON_DEVICE_NAME}"'|g' |
+    -e 's|%%HZN_DEVICE_LATITUDE%%|'"${LATITUDE}"'|g' |
+    -e 's|%%HZN_DEVICE_LONGITUDE%%|'"${LONGITUDE}"'|g' |
+    -e 's|%%HZN_DEVICE_ELEVATION%%|'"${ELEVATION}"'|g' |
+    -e 's|%%MQTT_HOST%%|'"${MQTT_HOST}"'|g' |
+    -e 's|%%MQTT_PORT%%|'"${MQTT_PORT}"'|g' |
+    -e 's|%%UNIT_SYSTEM%%|'"${UNIT_SYSTEM}"'|g' |
+    -e 's|%%TIMEZONE%%|'"${TIMEZONE}"'|g' |
+    -e 's|%%HOST_IPADDR%%|'"${HOST_IPADDR}"'|g' |
+    /root/config/configuration.yaml \
     > /data/configuration.yaml
 
   ## AUTOMATIONS, GROUPS
