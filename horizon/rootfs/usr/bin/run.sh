@@ -181,11 +181,11 @@ main() {
   # find configuration entry
   URL="${URL}/${HORIZON_CONFIG_NAME}"
   hass.log.debug "Looking for configurtion ${HORIZON_CONFIG_NAME} at ${URL}"
-  if [[ -z VALUE=$(curl -sL "${URL}") || $(echo "${VALUE}" | jq -r '._id=="'"${HORIZON_CONFIG_NAME}"'"') == "false" ]]; then
+  if [[ VALUE=$(curl -sL "${URL}") && $(echo "${VALUE}" | jq '._id=="'"${HORIZON_CONFIG_NAME}"'"') == "true" ]]; then
+    HORIZON_CONFIG="${VALUE}"
+  else
     hass.log.fatal "Found no configuration ${HORIZON_CONFIG_NAME}"
     hass.die
-  else
-    HORIZON_CONFIG="${VALUE}"
   fi
   hass.log.debug "Found configuration ${HORIZON_CONFIG_NAME} with ${HORIZON_CONFIG}"
   # make file
