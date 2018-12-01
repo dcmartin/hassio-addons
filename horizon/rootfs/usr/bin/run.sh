@@ -181,7 +181,7 @@ main() {
   # find configuration entry
   URL="${URL}/${HORIZON_CONFIG_NAME}"
   hass.log.debug "Looking for configurtion ${HORIZON_CONFIG_NAME} at ${URL}"
-  if [[ -z VALUE=$(curl -sL "${URL}") || $(echo "${VALUE}" | jq -r '._id=="'"${HORIZON_CONFIG_NAME}"'")') == "false" ]]; then
+  if [[ -z VALUE=$(curl -sL "${URL}") || $(echo "${VALUE}" | jq -r '._id=="'"${HORIZON_CONFIG_NAME}"'"') == "false" ]]; then
     hass.log.fatal "Found no configuration ${HORIZON_CONFIG_NAME}"
     hass.die
   else
@@ -191,7 +191,7 @@ main() {
   # make file
   HORIZON_CONFIG_FILE="${CONFIG_PATH%/*}/${HORIZON_CONFIG_NAME}.json"
   echo "${HORIZON_CONFIG}" | jq '.' > "${HORIZON_CONFIG_FILE}"
-  if [ ! -s "${HORIZON_CONFIG_FILE}" ]; then
+  if [[ ! -s "${HORIZON_CONFIG_FILE}" ]]; then
     hass.log.fatal "Invalid addon configuration: ${HORIZON_CONFIG}"
     hass.die
   fi
