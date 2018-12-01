@@ -25,25 +25,25 @@ main() {
 
   # TIMEZONE
   VALUE=$(hass.config.get "timezone")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="GMT"; fi
+  if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then VALUE="GMT"; fi
   ADDON_CONFIG="${ADDON_CONFIG}"',"timezone":"'"${VALUE}"'"'
   cp /usr/share/zoneinfo/${VALUE} /etc/localtime
 
   # LATITUDE
   VALUE=$(hass.config.get "latitude")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="0"; hass.log.warning "Using default latitude: ${VALUE}"; fi
+  if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then VALUE="0"; hass.log.warning "Using default latitude: ${VALUE}"; fi
   ADDON_CONFIG="${ADDON_CONFIG}"',"latitude":"'"${VALUE}"'"'
   # LONGITUDE
   VALUE=$(hass.config.get "longitude")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="0"; hass.log.warning "Using default longitude: ${VALUE}"; fi
+  if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then VALUE="0"; hass.log.warning "Using default longitude: ${VALUE}"; fi
   ADDON_CONFIG="${ADDON_CONFIG}"',"longitude":"'"${VALUE}"'"'
   # ELEVATION
   VALUE=$(hass.config.get "elevation")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="0"; hass.log.warning "Using default elevation: ${VALUE}"; fi
+  if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then VALUE="0"; hass.log.warning "Using default elevation: ${VALUE}"; fi
   ADDON_CONFIG="${ADDON_CONFIG}"',"elevation":'"${VALUE}"
   # UNIT SYSTEM
   VALUE=$(hass.config.get "unit_system")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="imperial"; hass.log.warning "Using default unit_system: ${VALUE}"; fi
+  if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then VALUE="imperial"; hass.log.warning "Using default unit_system: ${VALUE}"; fi
   ADDON_CONFIG="${ADDON_CONFIG}"',"unit_system":"'"${VALUE}"'"'
   # HOST IPADDR
   VALUE=$(hostname -I | awk '{ print $1 }')
@@ -53,19 +53,19 @@ main() {
 
   ## HORIZON
   VALUE=$(hass.config.get "horizon.org")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No horizon organization"; hass.die; fi
+  if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then hass.log.fatal "No horizon organization"; hass.die; fi
   ADDON_CONFIG="${ADDON_CONFIG}"',"horizon":{"org":"'"${VALUE}"'"'
   # APIKEY
   VALUE=$(hass.config.get "horizon.apikey")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No horizon apikey"; hass.die; fi
+  if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then hass.log.fatal "No horizon apikey"; hass.die; fi
   ADDON_CONFIG="${ADDON_CONFIG}"',"apikey":"'"${VALUE}"'"'
   # URL
   VALUE=$(hass.config.get "horizon.url")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No horizon url"; hass.die; fi
+  if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then hass.log.fatal "No horizon url"; hass.die; fi
   ADDON_CONFIG="${ADDON_CONFIG}"',"url":"'"${VALUE}"'"'
   # ORG
   VALUE=$(hass.config.get "horizon.device")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No horizon device"; hass.die; fi
+  if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then hass.log.fatal "No horizon device"; hass.die; fi
   ADDON_CONFIG="${ADDON_CONFIG}"',"device":"'"${VALUE}"'"'
   ## DONE w/ HORIZON
   ADDON_CONFIG="${ADDON_CONFIG}"'}'
@@ -74,19 +74,19 @@ main() {
 
   # HOST
   VALUE=$(hass.config.get "mqtt.host")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="core-mosquitto"; hass.log.warning "Using default MQTT host: ${VALUE}"; fi
+  if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then VALUE="core-mosquitto"; hass.log.warning "Using default MQTT host: ${VALUE}"; fi
   ADDON_CONFIG="${ADDON_CONFIG}"',"mqtt":{"host":"'"${VALUE}"'"'
   # PORT
   VALUE=$(hass.config.get "mqtt.port")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="1883"; hass.log.warning "Using default MQTT port: ${VALUE}"; fi
+  if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then VALUE="1883"; hass.log.warning "Using default MQTT port: ${VALUE}"; fi
   ADDON_CONFIG="${ADDON_CONFIG}"',"port":'"${VALUE}"
   # USERNAME
   VALUE=$(hass.config.get "mqtt.username")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE=""; hass.log.warning "Using default MQTT username: ${VALUE}"; fi
+  if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then VALUE=""; hass.log.warning "Using default MQTT username: ${VALUE}"; fi
   ADDON_CONFIG="${ADDON_CONFIG}"',"username":"'"${VALUE}"'"'
   # PASSWORD
   VALUE=$(hass.config.get "mqtt.password")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE=""; hass.log.warning "Using default MQTT password: ${VALUE}"; fi
+  if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then VALUE=""; hass.log.warning "Using default MQTT password: ${VALUE}"; fi
   ADDON_CONFIG="${ADDON_CONFIG}"',"password":"'"${VALUE}"'"'
   ## DONE w/ MQTT
   ADDON_CONFIG="${ADDON_CONFIG}"'}'
@@ -118,20 +118,20 @@ main() {
 
   # URL
   VALUE=$(hass.config.get "cloudant.url")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No cloudant url"; hass.die; fi
+  if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then hass.log.fatal "No cloudant url"; hass.die; fi
   URL="${VALUE}"
   # USERNAME
   VALUE=$(hass.config.get "cloudant.username")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No cloudant username"; hass.die; fi
+  if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then hass.log.fatal "No cloudant username"; hass.die; fi
   USERNAME="${VALUE}"
   # PASSWORD
   VALUE=$(hass.config.get "cloudant.password")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No cloudant password"; hass.die; fi
+  if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then hass.log.fatal "No cloudant password"; hass.die; fi
   PASSWORD="${VALUE}"
 
   # test database access
   hass.log.debug "Testing CLOUDANT with ${USERNAME}:${PASSWORD} at ${URL}"
-  OK=$(curl -s -q -f -L "${URL}" -u "${USERNAME}":"${PASSWORD}" | jq -r '.couchdb')
+  OK=$(curl -sL "${URL}" -u "${USERNAME}":"${PASSWORD}" | jq -r '.couchdb')
   if [[ "${OK}" == "null" || -z "${OK}" ]]; then
     hass.log.fatal "Cloudant failed at ${URL} with ${USERNAME} and ${PASSWORD}; exiting"
     hass.die
@@ -142,12 +142,12 @@ main() {
   hass.log.debug "Using CLOUDANT_URL: ${CLOUDANT_URL}"
   # find database (or create)
   URL="${CLOUDANT_URL}/${HORIZON_DEVICE_DB}"
-  hass.log.debug "Looking for DB ${HORIZON_DEVICE_DB} at ${CLOUDANT_URL}"
-  DB=$(curl -s -q -f -L "${URL}" | jq -r '.db_name')
-  if [ "${DB}" != "${HORIZON_DEVICE_DB}" ]; then
+  hass.log.debug "Looking for DB ${HORIZON_DEVICE_DB} at ${URL}"
+  DB=$(curl -sL "${URL}" | jq -r '.db_name')
+  if [[ "${DB}" != "${HORIZON_DEVICE_DB}" ]]; then
     hass.log.debug "Creating Cloudant database ${HORIZON_DEVICE_DB}"
-    OK=$(curl -s -q -f -L -X PUT "${URL}" | jq '.ok')
-    if [ "${OK}" != "true" ]; then
+    OK=$(curl -sL -X PUT "${URL}" | jq '.ok')
+    if [[ "${OK}" != "true" ]]; then
       hass.log.fatal "Could not create Cloudant DB ${HORIZON_DEVICE_DB}" >&2
       hass.die
     fi 
@@ -155,14 +155,14 @@ main() {
   hass.log.info "Cloudant DB ${HORIZON_DEVICE_DB} exists"
   URL="${URL}/${HORIZON_DEVICE_NAME}"
   hass.log.debug "Looking for previous revision at ${URL}"
-  REV=$(curl -s -q -f -L "${URL}" | jq -r '._rev')
-  if [ "${REV}" != "null" ] && [ ! -z "${REV}" ]; then
+  REV=$(curl -sL "${URL}" | jq -r '._rev')
+  if [[ "${REV}" != "null" && ! -z "${REV}" ]]; then
     hass.log.debug "Prior record exists ${REV}"
     URL="${URL}?rev=${REV}"
   fi
   hass.log.debug "Updating configuration ${ADDON_CONFIG_FILE} at ${URL}"
-  OK=$(curl -s -q -f -L "${URL}" -X PUT -d "@${ADDON_CONFIG_FILE}" | jq '.ok')
-  if [ "${OK}" != "true" ]; then
+  OK=$(curl -sL "${URL}" -X PUT -d "@${ADDON_CONFIG_FILE}" | jq '.ok')
+  if [[ "${OK}" != "true" ]]; then
     hass.log.fatal "Failed to update ${URL}" $(jq -c '.' "${ADDON_CONFIG_FILE}")
     hass.die
   fi
@@ -232,7 +232,7 @@ main() {
   if [[ -n ${HASSIO_TOKEN:-} ]]; then
     HASSIO_HOST = "hassio/homeassistant"
     hass.log.info "Reloading core configuration for $HASSIO_HOST ... "
-    curl -s -q -f -L -H "X-HA-ACCESS: ${HASSIO_TOKEN}" -X POST -H "Content-Type: application/json" "http://${HASSIO_HOST}/api/services/homeassistant/reload_core_config"
+    curl -sL -H "X-HA-ACCESS: ${HASSIO_TOKEN}" -X POST -H "Content-Type: application/json" "http://${HASSIO_HOST}/api/services/homeassistant/reload_core_config"
   else
     hass.log.warning "Did not issue reload; HASSIO_TOKEN unspecified"
   fi
