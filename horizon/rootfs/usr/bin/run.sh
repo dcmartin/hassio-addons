@@ -197,6 +197,7 @@ main() {
   CONFIG_DIR="/data" # "/config"
 
   if [[ -d ""${TEMPLATE_DIR}"" ]]; then
+    hass.log.trace "Found template directory ${TEMPLATE_DIR}"
     # AUTOMATIONS, GROUPS
     for YAML in automations groups; do
       if [[ -s "${TEMPLATE_DIR}/${YAML}.yaml" ]]; then
@@ -208,21 +209,24 @@ main() {
     done
     # SECRETS
     YAML="secrets"; if [[ -s "${TEMPLATE_DIR}/${YAML}.yaml" ]]; then
-      hass.log.trace "Editting ${TEMPLATE_DIR}/${YAML}.yaml into ${CONFIG_DIR}/${YAML}.yaml"
+      hass.log.trace "Copying ${TEMPLATE_DIR}/${YAML}.yaml into ${CONFIG_DIR}/${YAML}.yaml"
+      cp -f "${TEMPLATE_DIR}"/${YAML}.yaml "${CONFIG_DIR}"
+      hass.log.trace "Editting ${CONFIG_DIR}/${YAML}.yaml"
       sed \
         -e 's|%%MQTT_USERNAME%%|'"${MQTT_USERNAME}"'|g' \
         -e 's|%%MQTT_PASSWORD%%|'"${MQTT_PASSWORD}"'|g' \
         -e 's|%%HZN_EXCHANGE_ORG%%|'"${HORIZON_ORGANIZATION}"'|g' \
         -e 's|%%HZN_EXCHANGE_URL%%|'"${HZN_EXCHANGE_URL}"'|g' \
         -e 's|%%HZN_EXCHANGE_API_KEY%%|'"${HORIZON_APIKEY}"'|g' 
-        "${TEMPLATE_DIR}/${YAML}.yaml" \
-        > "${CONFIG_DIR}/${YAML}.yaml"
+        "${CONFIG_DIR}/${YAML}.yaml"
     else
       hass.log.debug "Found no ${TEMPLATE_DIR}/${YAML}.yaml"
     fi
     ## CONFIGURATION
     YAML="configuration"; if [[ -s "${TEMPLATE_DIR}/${YAML}.yaml" ]]; then
-      hass.log.trace "Editting ${TEMPLATE_DIR}/${YAML}.yaml into ${CONFIG_DIR}/${YAML}.yaml"
+      hass.log.trace "Copying ${TEMPLATE_DIR}/${YAML}.yaml into ${CONFIG_DIR}/${YAML}.yaml"
+      cp -f "${TEMPLATE_DIR}"/${YAML}.yaml "${CONFIG_DIR}"
+      hass.log.trace "Editting ${CONFIG_DIR}/${YAML}.yaml"
       sed \
 	-e 's|%%HZN_DEVICE_NAME%%|'"${HORIZON_DEVICE_NAME}"'|g' |
 	-e 's|%%HZN_DEVICE_LATITUDE%%|'"${LATITUDE}"'|g' |
@@ -232,9 +236,8 @@ main() {
 	-e 's|%%MQTT_PORT%%|'"${MQTT_PORT}"'|g' |
 	-e 's|%%UNIT_SYSTEM%%|'"${UNIT_SYSTEM}"'|g' |
 	-e 's|%%TIMEZONE%%|'"${TIMEZONE}"'|g' |
-	-e 's|%%HOST_IPADDR%%|'"${HOST_IPADDR}"'|g' |
-        "${TEMPLATE_DIR}/${YAML}.yaml" \
-        > "${CONFIG_DIR}/${YAML}.yaml"
+	-e 's|%%HOST_IPADDR%%|'"${HOST_IPADDR}"'|g'
+        "${CONFIG_DIR}/${YAML}.yaml"
     else
       hass.log.debug "Found no ${TEMPLATE_DIR}/${YAML}.yaml"
     fi 
