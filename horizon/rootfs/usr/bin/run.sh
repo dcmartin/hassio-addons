@@ -330,9 +330,9 @@ main() {
 
   REFRESH=$(jq -r '.refresh' "${ADDON_CONFIG_FILE}")
   HOST_LAN=$(jq -r '.host_ipaddr' "${ADDON_CONFIG_FILE}" | sed 's|\(.*\)\.[0-9]*|\1.0/24|')
+  SCRIPT="init-devices.sh"
   SCRIPT_URL="https://raw.githubusercontent.com/dcmartin/open-horizon/master/setup/${SCRIPT}"
   BINDIR="/usr/bin"
-  SCRIPT="init-devices.sh"
   EXECPATH="${BINDIR}/${SCRIPT}"
   curl -sL "${SCRIPT_URL}" -o "${EXECPATH}"
   chmod 755 "${EXECPATH}"
