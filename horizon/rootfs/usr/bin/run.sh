@@ -135,10 +135,13 @@ main() {
     hass.log.fatal "Cloudant failed at ${URL} with ${USERNAME} and ${PASSWORD}; exiting"
     hass.die
   fi
+  hass.log.debug "CLOUDANT OK"
   # base URL
   CLOUDANT_URL="${URL%:*}"'://'"${USERNAME}"':'"${PASSWORD}"'@'"${USERNAME}"."${URL#*.}"
+  hass.log.debug "Using CLOUDANT_URL: ${CLOUDANT_URL}"
   # find database (or create)
   URL="${CLOUDANT_URL}/${HORIZON_ORGANIZATION}"
+  hass.log.debug "Looking for DB at ${URL}"
   DB=$(curl -s -q -f -L "${URL}" | jq -r '.db_name')
   if [ "${DB}" != "${HORIZON_ORGANIZATION}" ]; then
     hass.log.debug "Creating Cloudant database ${HORIZON_ORGANIZATION}"
@@ -150,11 +153,13 @@ main() {
   fi
   hass.log.info "Cloudant DB ${HORIZON_ORGANIZATION} exists"
   URL="${URL}/${HORIZON_DEVICE_NAME}"
+  hass.log.debug "Looking for previous revision at ${URL}"
   REV=$(curl -s -q -f -L "${URL}" | jq -r '._rev')
   if [ "${REV}" != "null" ] && [ ! -z "${REV}" ]; then
     hass.log.debug "Prior record exists ${REV}"
     URL="${URL}?rev=${REV}"
   fi
+  hass.log.debug "Updating configuration ${ADDON_CONFIG_FILE} at ${URL}"
   OK=$(curl -s -q -f -L "${URL}" -X PUT -d "@${ADDON_CONFIG_FILE}" | jq '.ok')
   if [ "${OK}" != "true" ]; then
     hass.log.fatal "Failed to update ${URL}" $(jq -c '.' "${ADDON_CONFIG_FILE}")
