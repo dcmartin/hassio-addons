@@ -203,6 +203,7 @@ main() {
       if [[ -s "${TEMPLATE_DIR}/${YAML}.yaml" ]]; then
         hass.log.trace "Copying ${TEMPLATE_DIR}/${YAML}.yaml into ${CONFIG_DIR}/${YAML}.yaml"
 	cp -f "${TEMPLATE_DIR}"/${YAML}.yaml "${CONFIG_DIR}"
+        hass.log.trace "Permissions on ${CONFIG_DIR}/${YAML}.yaml are:" $(ls -al "${CONFIG_DIR}/${YAML}.yaml")
       else
 	hass.log.debug "Found no ${TEMPLATE_DIR}/${YAML}.yaml"
       fi
@@ -211,8 +212,9 @@ main() {
     YAML="secrets"; if [[ -s "${TEMPLATE_DIR}/${YAML}.yaml" ]]; then
       hass.log.trace "Copying ${TEMPLATE_DIR}/${YAML}.yaml into ${CONFIG_DIR}/${YAML}.yaml"
       cp -f "${TEMPLATE_DIR}"/${YAML}.yaml "${CONFIG_DIR}"
+      hass.log.trace "Permissions on ${CONFIG_DIR}/${YAML}.yaml are:" $(ls -al "${CONFIG_DIR}/${YAML}.yaml")
       hass.log.trace "Editting ${CONFIG_DIR}/${YAML}.yaml"
-      sed \
+      sed -i \
         -e 's|%%MQTT_USERNAME%%|'"${MQTT_USERNAME}"'|g' \
         -e 's|%%MQTT_PASSWORD%%|'"${MQTT_PASSWORD}"'|g' \
         -e 's|%%HZN_EXCHANGE_ORG%%|'"${HORIZON_ORGANIZATION}"'|g' \
@@ -226,8 +228,9 @@ main() {
     YAML="configuration"; if [[ -s "${TEMPLATE_DIR}/${YAML}.yaml" ]]; then
       hass.log.trace "Copying ${TEMPLATE_DIR}/${YAML}.yaml into ${CONFIG_DIR}/${YAML}.yaml"
       cp -f "${TEMPLATE_DIR}"/${YAML}.yaml "${CONFIG_DIR}"
+      hass.log.trace "Permissions on ${CONFIG_DIR}/${YAML}.yaml are:" $(ls -al "${CONFIG_DIR}/${YAML}.yaml")
       hass.log.trace "Editting ${CONFIG_DIR}/${YAML}.yaml"
-      sed \
+      sed -i \
 	-e 's|%%HZN_DEVICE_NAME%%|'"${HORIZON_DEVICE_NAME}"'|g' |
 	-e 's|%%HZN_DEVICE_LATITUDE%%|'"${LATITUDE}"'|g' |
 	-e 's|%%HZN_DEVICE_LONGITUDE%%|'"${LONGITUDE}"'|g' |
