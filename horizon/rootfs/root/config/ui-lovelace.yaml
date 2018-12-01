@@ -24,6 +24,15 @@ views:
           - entity: sensor.horizon_architecture
             icon: mdi:chip
             name: Architecture
+          - entity: sensor.horizon_agreement_active
+            icon: mdi:file-document
+            name: Workload
+          - entity: sensor.horizon_agreements_count_active
+            icon: mdi:run
+            name: Active
+          - entity: sensor.horizon_agreements_count_archived
+            icon: mdi:archive
+            name: Archived
       - type: map
         title: DEVICES
         aspect_ratio: 100%

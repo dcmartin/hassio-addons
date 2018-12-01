@@ -39,6 +39,9 @@ horizon:
     - sensor.horizon_preferred_exchange_version
     - sensor.horizon_architecture
     - sensor.horizon_version
+    - sensor.horizon_agreement_active
+    - sensor.horizon_agreements_count_active
+    - sensor.horizon_agreements_count_archived
   
 ###
 ### SDR

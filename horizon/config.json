@@ -28,49 +28,49 @@
   "options": {
     "log_level": "info",
     "timezone": "America/Los_Angeles",
-    "pattern": {
-      "id": "cpu2msghub",
-      "org": "IBM",
-      "url": "github.com.open-horizon.examples.cpu2msghub"
+    "unit_system": "imperial",
+    "latitude": 16.775532,
+    "longitude": -3.005361,
+    "elevation": 0,
+    "mqtt": {
+      "host": "core-mosquitto",
+      "port": 1883
     },
-    "variables": [
-      {
-        "env": "MSGHUB_API_KEY",
-        "value": ""
-      },
-      {
-        "env": "MSGHUB_BROKER_URL",
-        "value": "kafka03-prod02.messagehub.services.us-south.bluemix.net:9093,kafka04-prod02.messagehub.services.us-south.bluemix.net:9093,kafka01-prod02.messagehub.services.us-south.bluemix.net:9093,kafka02-prod02.messagehub.services.us-south.bluemix.net:9093,kafka05-prod02.messagehub.services.us-south.bluemix.net:9093"
-      }
-    ],
-    "exchange": {
-      "username": "iamapikey",
-      "password": "",
-      "organization": "",
+    "cloudant": {
+      "url": "",
+      "username": "",
+      "password": ""
+    },
+    "horizon": {
+      "device": "",
+      "org": "",
+      "apikey": "",
       "url": "https://alpha.edge-fabric.com/v1"
     }
   },
   "schema": {
     "log_level": "match(^(trace|debug|info|notice|warning|error|fatal)$)",
     "timezone": "str?",
-    "pattern": {
-      "id": "str",
-      "org": "str",
-      "url": "url"
-    },
-    "variables": [
-      {
-        "env": "str?",
-        "value": "str?"
-      }
-    ],
-    "exchange": {
-      "device": "str?",
-      "token": "str?",
-      "username": "str",
-      "password": "str",
+    "unit_system": "match(^(imperial|metric)$)?",
+    "latitude": "float?",
+    "longitude": "float?",
+    "elevation": "int?",
+    "cloudant": {
       "url": "url",
-      "organization": "str"
+      "username": "str",
+      "password": "str"
+    },
+    "mqtt": {
+      "host": "str",
+      "port": "port?",
+      "username": "str?",
+      "password": "str?"
+    },
+    "horizon": {
+      "device": "str",
+      "org": "str",
+      "apikey": "str",
+      "url": "url"
     }
   },
   "environment": {

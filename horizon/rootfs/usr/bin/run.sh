@@ -18,171 +18,213 @@ main() {
   ### A HOST at DATE on ARCH
   ###
 
-  # START JSON
-  JSON='{"hostname":"'"$(hostname)"'","arch":"'"$(arch)"'","date":'$(/bin/date +%s)
-  # time zone
+  # START ADDON_CONFIG
+  ADDON_CONFIG='{"hostname":"'"$(hostname)"'","arch":"'"$(arch)"'","date":'$(/bin/date +%s)
+
+  # TIMEZONE
   VALUE=$(hass.config.get "timezone")
-  # Set the correct timezone
   if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="GMT"; fi
-  hass.log.info "Setting TIMEZONE ${VALUE}" >&2
+  ADDON_CONFIG="${ADDON_CONFIG}"',"timezone":"'"${VALUE}"'"'
   cp /usr/share/zoneinfo/${VALUE} /etc/localtime
-  JSON="${JSON}"',"timezone":"'"${VALUE}"'"'
 
-  ###
-  ### HORIZON 
-  ###
+  # DEVICE
+  VALUE=$(hass.config.get "device")
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No device name"; hass.die; fi
+  ADDON_CONFIG="${ADDON_CONFIG}"',"device":"'"${VALUE}"'"'
+  # LATITUDE
+  VALUE=$(hass.config.get "latitude")
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="0"; hass.log.warning "Using default latitude: ${VALUE}"; fi
+  ADDON_CONFIG="${ADDON_CONFIG}"',"latitude":"'"${VALUE}"'"'
+  # LONGITUDE
+  VALUE=$(hass.config.get "longitude")
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="0"; hass.log.warning "Using default longitude: ${VALUE}"; fi
+  ADDON_CONFIG="${ADDON_CONFIG}"',"longitude":"'"${VALUE}"'"'
+  # ELEVATION
+  VALUE=$(hass.config.get "elevation")
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="0"; hass.log.warning "Using default elevation: ${VALUE}"; fi
+  ADDON_CONFIG="${ADDON_CONFIG}"',"elevation":'"${VALUE}"
+  # UNIT SYSTEM
+  VALUE=$(hass.config.get "unit_system")
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="imperial"; hass.log.warning "Using default unit_system: ${VALUE}"; fi
+  ADDON_CONFIG="${ADDON_CONFIG}"',"unit_system":"'"${VALUE}"'"'
+  # HOST IPADDR
+  VALUE=$(hostname -I | awk '{ print $1 }')
+  ADDON_CONFIG="${ADDON_CONFIG}"',"host_ipaddr":"'"${VALUE}"'"'
 
-  # credentials
-  VALUE=$(hass.config.get "exchange.url")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No exchange url"; hass.die; fi
-  export HZN_EXCHANGE_URL="${VALUE}"
-  VALUE=$(hass.config.get "exchange.username")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No exchange username"; hass.die; fi
-  HZN_EXCHANGE_USER_AUTH="${VALUE}"
-  VALUE=$(hass.config.get "exchange.password")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No exchange password"; hass.die; fi
-  export HZN_EXCHANGE_USER_AUTH="${HZN_EXCHANGE_USER_AUTH}:${VALUE}"
+  VALUE=$(hass.config.get "horizon.org")
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No horizon organization"; hass.die; fi
+  ADDON_CONFIG="${ADDON_CONFIG}"',"horizon":{"org":"'"${VALUE}"'"'
+  # APIKEY
+  VALUE=$(hass.config.get "horizon.apikey")
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No horizon apikey"; hass.die; fi
+  ADDON_CONFIG="${ADDON_CONFIG}"',"apikey":"'"${VALUE}"'"'
+  # URL
+  VALUE=$(hass.config.get "horizon.url")
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No horizon url"; hass.die; fi
+  ADDON_CONFIG="${ADDON_CONFIG}"',"url":"'"${VALUE}"'"'
+  # ORG
+  VALUE=$(hass.config.get "horizon.device")
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No horizon device"; hass.die; fi
+  ADDON_CONFIG="${ADDON_CONFIG}"',"device":"'"${VALUE}"'"'
+  ## DONE w/ HORIZON
+  ADDON_CONFIG="${ADDON_CONFIG}"'}'
 
-  ## EXCHANGE
+  # HOST
+  VALUE=$(hass.config.get "mqtt.host")
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="core-mosquitto"; hass.log.warning "Using default MQTT host: ${VALUE}"; fi
+  ADDON_CONFIG="${ADDON_CONFIG}"',"mqtt":{"host":"'"${VALUE}"'"'
+  # PORT
+  VALUE=$(hass.config.get "mqtt.port")
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="1883"; hass.log.warning "Using default MQTT port: ${VALUE}"; fi
+  ADDON_CONFIG="${ADDON_CONFIG}"',"port":'"${VALUE}"
+  # USERNAME
+  VALUE=$(hass.config.get "mqtt.username")
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE=""; hass.log.warning "Using default MQTT username: ${VALUE}"; fi
+  ADDON_CONFIG="${ADDON_CONFIG}"',"username":"'"${VALUE}"'"'
+  # PASSWORD
+  VALUE=$(hass.config.get "mqtt.password")
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE=""; hass.log.warning "Using default MQTT password: ${VALUE}"; fi
+  ADDON_CONFIG="${ADDON_CONFIG}"',"password":"'"${VALUE}"'"'
+  ## DONE w/ MQTT
+  ADDON_CONFIG="${ADDON_CONFIG}"'}'
+
+  ## DONE w/ ADDON_CONFIG
+  ADDON_CONFIG="${ADDON_CONFIG}"'}'
+
+  hass.log.debug "CONFIGURATION:" $(echo "${ADDON_CONFIG}" | jq -c '.')
+
+  ## REVIEW
+  HORIZON_ORGANIZATION=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.org')
+  HORIZON_DEVICE_NAME=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.device')
+
+  export ADDON_CONFIG_FILE="${CONFIG_PATH%/*}/${HORIZON_DEVICE_NAME}.json"
+  echo "${ADDON_CONFIG}" | jq '.' > "${ADDON_CONFIG_FILE}"
+  if [ ! -s "${ADDON_CONFIG_FILE}" ]; then
+    hass.log.fatal "Invalid addon configuration: ${ADDON_CONFIG}"
+    hass.die
+  endif
+  # report success
+  hass.log.info "Configuration for ${HORIZON_DEVICE_NAME} at ${ADDON_CONFIG_FILE}" $(jq -c '.' "${ADDON_CONFIG_FILE}") >&2
+
+  ##
+  ## CLOUDANT
+  ##
 
   # URL
-  JSON="${JSON}"',"exchange":{"url":"'"${HZN_EXCHANGE_URL}"'"'
-  # ORGANIZATION
-  VALUE=$(hass.config.get "exchange.organization")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No horizon organization"; hass.die; fi
-  JSON="${JSON}"',"organization":"'"${VALUE}"'"'
-  # DEVICE
-  VALUE=$(hass.config.get "horizon.device")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then
-    VALUE=($(hostname -I | sed 's/\.//g'))
-    VALUE="$(hostname)-${VALUE}"
+  VALUE=$(hass.config.get "cloudant.url")
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No cloudant url"; hass.die; fi
+  URL="${VALUE}"
+  # USERNAME
+  VALUE=$(hass.config.get "cloudant.username")
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No cloudant username"; hass.die; fi
+  USERNAME="${VALUE}"
+  # PASSWORD
+  VALUE=$(hass.config.get "cloudant.password")
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No cloudant password"; hass.die; fi
+  PASSWORD=$(hass.config.get "cloudant.password")
+  # test database access
+  hass.log.debug "Testing CLOUDANT"
+  OK=$(curl -s -q -f -L "${URL}" -u "${USERNAME}:${PASSWORD}" | jq -r '.couchdb')
+  if [ "${OK}" == "null" ] || [ -z "${OK}" ]; then
+    hass.log.fatal "Cloudant failed at ${URL} with ${USERNAME} and ${PASSWORD}; exiting"
+    hass.die
   fi
-  JSON="${JSON}"',"device":"'"${VALUE}"'"'
-  # TOKEN
-  VALUE=$(hass.config.get "horizon.token")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then
-    VALUE=$(echo "${HZN_EXCHANGE_USER_AUTH}" | sed 's/.*://')
+  # base URL
+  CLOUDANT_URL="${URL%:*}"'://'"${USERNAME}"':'"${PASSWORD}"'@'"${USERNAME}"."${URL#*.}"
+  # find database (or create)
+  URL="${CLOUDANT_URL}/${HORIZON_ORGANIZATION}"
+  DB=$(curl -s -q -f -L "${URL}" | jq -r '.db_name')
+  if [ "${DB}" != "${HORIZON_ORGANIZTION}" ]; then
+    hass.log.debug "Creating Cloudant database ${HORIZON_ORGANIZATION}"
+    OK=$(curl -s -q -f -L -X PUT "${URL}" | jq '.ok')
+    if [ "${OK}" != "true" ]; then
+      hass.log.fatal "Could not create Cloudant DB ${HORIZON_ORGANIZTION}" >&2
+      hass.die
+    fi 
+  endif
+  hass.log.info "Cloudant DB ${HORIZON_ORGANIZTION} exists"
+  URL="${URL}/${HORIZON_DEVICE_NAME}"
+  REV=$(curl -s -q -f -L "${URL}" | jq -r '._rev')
+  if [ "${REV}" != "null" ] && [ ! -z "${REV}" ]; then
+    hass.log.debug "Prior record exists ${REV}"
+    URL="${URL}?rev=${REV}"
   fi
-  JSON="${JSON}"',"token":"'"${VALUE}"'"'
-  ## done w/ exchange
-  JSON="${JSON}"'}'
+  OK=$(curl -s -q -f -L "${URL}" -X PUT -d "@${ADDON_CONFIG_FILE}" | jq '.ok')
+  if [ "${OK}" != "true" ]; then
+    hass.log.fatal "Failed to update ${URL}" $(jq -c '.' "${ADDON_CONFIG_FILE}")
+    hass.die
+  fi
+  hass.log.debug "Updated ${URL} with " $(jq -c '.' "${ADDON_CONFIG_FILE}")
 
-  ## PATTERN
+  ##
+  ## CONFIGURATION
+  ##
 
-  # ID
-  VALUE=$(hass.config.get "pattern.id")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No pattern id"; hass.die; fi
-  JSON="${JSON}"',"pattern":{"id":"'"${VALUE}"'"'
-  VALUE=$(hass.config.get "pattern.org")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No pattern org"; hass.die; fi
-  JSON="${JSON}"',"organization":"'"${VALUE}"'"'
-  VALUE=$(hass.config.get "pattern.url")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No pattern org"; hass.die; fi
-  JSON="${JSON}"',"url":"'"${VALUE}"'"'
-  # variables special case
-  VALUE=$(jq -r '.variables' "/data/options.json")
-  JSON="${JSON}"',"variables":'"${VALUE}"
-  JSON="${JSON}"'}'
+  MQTT_HOST=$(jq -r '.mqtt.host' "${ADDON_CONFIG_FILE}")
+  MQTT_PORT=$(jq -r '.mqtt.port' "${ADDON_CONFIG_FILE}")
+  MQTT_USERNAME=$(jq -r '.mqtt.username' "${ADDON_CONFIG_FILE}")
+  MQTT_PASSWORD=$(jq -r '.mqtt.password' "${ADDON_CONFIG_FILE}")
 
-  ## DONE w/ JSON
-  JSON="${JSON}"'}'
+  HORIZON_APIKEY=$(jq -r '.horizon.apikey' "${ADDON_CONFIG_FILE}")
+  UNIT_SYSTEM=$(jq -r '.unit_system' "${ADDON_CONFIG_FILE}")
+  TIMEZONE=$(jq -r '.timezone' "${ADDON_CONFIG_FILE}")
+  HOST_IPADDR=$(jq -r '.host_ipaddr' "${ADDON_CONFIG_FILE}")
+  LONGITUDE=$(jq -r '.longitude' "${ADDON_CONFIG_FILE}")
+  LATITUDE=$(jq -r '.latitude' "${ADDON_CONFIG_FILE}")
+  ELEVATION=$(jq -r '.elevation' "${ADDON_CONFIG_FILE}")
 
-  hass.log.debug "CONFIGURATION:" $(echo "${JSON}" | jq -c '.')
+  ## SECRETS
+  cat /root/config/secrets.yaml \
+    | sed 's/%%MQTT_USERNAME%%/'"${MQTT_USERNAME}"'/g' \
+    | sed 's/%%MQTT_PASSWORD%%/'"${MQTT_PASSWORD}"'/g' \
+    | sed 's/%%HZN_EXCHANGE_ORG%%/'"${HORIZON_ORGANIZATION}"'/g' \
+    | sed 's/%%HZN_EXCHANGE_URL%%/'"${HZN_EXCHANGE_URL}"'/g' \
+    | sed 's/%%HZN_EXCHANGE_API_KEY%%/'"${HORIZON_APIKEY}"'/g' \
+    > /config/secrets.yaml
 
-  ###
-  ### REVIEW
-  ###
+  ## CONFIGURATION
+  cat /root/config/configuration.yaml \
+    | sed 's/%%HZN_DEVICE_NAME%%/'"${HORIZON_DEVICE_NAME}"'/g' \
+    | sed 's/%%HZN_DEVICE_LATITUDE%%/'"${LATITUDE}"'/g' \
+    | sed 's/%%HZN_DEVICE_LONGITUDE%%/'"${LONGITUDE}"'/g' \
+    | sed 's/%%HZN_DEVICE_ELEVATION%%/'"${ELEVATION}"'/g' \
+    | sed 's/%%MQTT_HOST%%/'"${MQTT_HOST}"'/g' \
+    | sed 's/%%MQTT_PORT%%/'"${MQTT_PORT}"'/g' \
+    | sed 's/%%UNIT_SYSTEM%%/'"${UNIT_SYSTEM}"'/g' \
+    | sed 's/%%TIMEZONE%%/'"${TIMEZONE}"'/g' \
+    | sed 's/%%HOST_IPADDR%%/'"${HOST_IPADDR}"'/g' \
+    > /config/configuration.yaml
 
-  PATTERN_ORG=$(echo "${JSON}" | jq -r '.pattern.org?')
-  PATTERN_ID=$(echo "${JSON}" | jq -r '.pattern.id?')
-  PATTERN_URL=$(echo "${JSON}" | jq -r '.pattern.url?')
-  PATTERN_VARS=$(echo "${JSON}" | jq -r '.variables?')
-  EXCHANGE_ID=$(echo "$JSON" | jq -r '.exchange.device?' )
-  EXCHANGE_TOKEN=$(echo "$JSON" | jq -r '.exchange.token?')
-  EXCHANGE_ORG=$(echo "$JSON" | jq -r '.exchange.organization?')
+  ## AUTOMATIONS, GROUPS
+  cp -f /root/config/automations.yaml /config/
+  cp -f /root/config/groups.yaml /config/
+
+  ##
+  ## MQTT PUBLISH
+  ##
+  hass.log.info "Publishing configuration to ${MQTT_HOST} topic ${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/start"
+  mosquitto_pub -r -q 2 -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/start" -f "${ADDON_CONFIG_FILE}"
+
+  # command line environment
+  export HZN_EXCHANGE_URL=$(jq -r '.horizon.url' "${ADDON_CONFIG_FILE}")
+  export HZN_EXCHANGE_USER_AUTH=$(jq -j '.horizon.org,"/iamapikey:",.horizon.apikey' "${ADDON_CONFIG_FILE}")
 
   # check for outstanding agreements
   AGREEMENTS=$(hzn agreement list)
-  COUNT=$(echo "${AGREEMENTS}" | jq '.?|length')
-  hass.log.debug "Found ${COUNT} agreements"
-  PATTERN_FOUND=""
-  if [[ ${COUNT} > 0 ]]; then
-    WORKLOADS=$(echo "${AGREEMENTS}" | jq -r '.[]|.workload_to_run.url')
-    for WL in ${WORKLOADS}; do
-      if [ "${WL}" == "${PATTERN_URL}" ]; then
-	PATTERN_FOUND=true
-      fi
-    done
-  fi
-
-  # get node status from horizon
   NODE=$(hzn node list)
-  EXCHANGE_CONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="configured"')
-  EXCHANGE_UNCONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="unconfigured"')
 
-  # test conditions
-  if [[ ${PATTERN_FOUND} == true && ${EXCHANGE_CONFIGURED} == true ]]; then
-    hass.log.info "Device ${EXCHANGE_ID} found with pattern ${PATTERN_URL} in a configured state; skipping registration"
+  ##
+  ## restart homeassistant
+  ##
+
+  if [[ -n ${HASSIO_TOKEN:-} ]]; then
+    set HASSIO_HOST = "hassio/homeassistant"
+    hass.log.info "Reloading core configuration for $HASSIO_HOST ... "
+    curl -s -q -f -L -H "X-HA-ACCESS: ${HASSIO_TOKEN}" -X POST -H "Content-Type: application/json" "http://${HASSIO_HOST}/api/services/homeassistant/reload_core_config"
   else
-    # unregister if currently registered
-    if [[ ${EXCHANGE_UNCONFIGURED} != true ]]; then
-      hass.log.debug "Device ${EXCHANGE_ID} not configured for pattern ${PATTERN_URL}; unregistering..."
-      hzn unregister -f
-      while [[ $(hzn node list | jq '.configstate.state?=="unconfigured"') == false ]]; do hass.log.debug "Waiting for unregistration to complete (10)"; sleep 10; done
-      COUNT=0
-      AGREEMENTS=""
-      PATTERN_FOUND=""
-      hass.log.debug "Reseting agreements, count, and workloads"
-    fi
-
-    # perform registration
-    INPUT=$(mktemp)
-    echo '{"services": [{"org": "'"${PATTERN_ORG}"'","url": "'"${PATTERN_URL}"'","versionRange": "[0.0.0,INFINITY)","variables": {' >> "${INPUT}"
-    PVS=$(echo "${PATTERN_VARS}" | jq -r '.[].env')
-    for PV in ${PVS}; do
-      VALUE=$(echo "${PATTERN_VARS}" | jq -r '.[]|select(.env=="'"${PV}"'").value')
-      if [ -n "${FIRST:-}" ]; then echo ',' >> "${INPUT}"; fi
-      echo '"'"${PV}"':"'"${VALUE}"'"' >> "${INPUT}"
-      FIRST='false'
-      hass.log.trace'{"env":"'"${PV}"'","value":"'"${VALUE}"'"}'
-    done
-    echo '}}]}' >> "${INPUT}"
-
-    hass.log.debug "Registering device ${EXCHANGE_ID} organization ${EXCHANGE_ORG} with pattern ${PATTERN_ORG}/${PATTERN_ID} using input " $(jq -c '.' "${INPUT}")
-
-    # register
-    hzn register -n "${EXCHANGE_ID}:${EXCHANGE_TOKEN}" "${EXCHANGE_ORG}" "${PATTERN_ORG}/${PATTERN_ID}" -f "${INPUT}"
-    # wait for registration
-    while [[ $(hzn node list | jq '.id?=="'"${EXCHANGE_ID}"'"') == false ]]; do hass.log.debug "Waiting on registration (60)"; sleep 60; done
-    hass.log.debug "Registration complete for ${EXCHANGE_ORG}/${EXCHANGE_ID}"
-    # wait for agreement
-    while [[ $(hzn agreement list | jq '.?==[]') == true ]]; do hass.log.info "Waiting on agreement (10)"; sleep 10; done
-    hass.log.debug "Agreement complete for ${PATTERN_URL}"
+    hass.log.warning "Did not issue reload; HASSIO_TOKEN unspecified"
   fi
 
-  # wait on termination
-  while [[ NODE=$(hzn node list) \
-    && EXCHANGE_CONFIGURED=$(echo "${NODE}" | jq '.configstate.state?=="configured"') \
-    && AGREEMENTS=$(hzn agreement list) ]]; do
-
-    # check if all still okay
-    PATTERN_FOUND=""
-    WORKLOADS=$(echo "${AGREEMENTS}" | jq -r '.[]|.workload_to_run.url')
-    for WL in ${WORKLOADS}; do
-      if [ "${WL}" == "${PATTERN_URL}" ]; then
-        PATTERN_FOUND=true
-      fi
-    done
-    if [ -n ${PATTERN_FOUND} ]; then
-      hass.log.info $(date) "${EXCHANGE_ID} pattern ${PATTERN_URL}; sleeping 30 ..."
-      sleep 30
-    else
-      hass.log.info $(date) "NO PATTERN: NODE" $(echo "$NODE" | jq -c '.') "AGREEMENTS" $(echo "$AGREEMENTS" | jq -c '.')
-      hass.die
-    fi
-  done
-  hass.log.fatal "FAILURE: NODE" $(echo "$NODE" | jq -c '.') "AGREEMENTS" $(echo "$AGREEMENTS" | jq -c '.')
-  hass.die
 }
 
 main "$@"

@@ -1,10 +1,10 @@
 homeassistant:
-  name: Horizon POC
-  latitude: 16.775532
-  longitude: -3.005361
-  elevation: 820
-  unit_system: imperial
-  time_zone: GMT
+  name: %%HZN_DEVICE_NAME%%
+  latitude: %%HZN_DEVICE_LATITUDE%%
+  longitude: %%HZN_DEVICE_LONGITUDE%%
+  elevation: %%HZN_DEVICE_ELEVATION%%
+  unit_system: %%UNIT_SYSTEM%%
+  time_zone: %%TIMEZONE%%
   customize: !include customize.yaml
 
 hassio:
@@ -24,10 +24,13 @@ panel_iframe:
   configurator:
     title: Configurator
     icon: mdi:wrench
-    url: http://localhost:3218
+    url: http://%%HOST_IPADDR%%:3218
     
 mqtt:
-  broker: core-mosquitto
+  broker: %%MQTT_HOST%%
+  port: %%MQTT_PORT%%
+  username: !secret mqtt_username
+  password: !secret mqtt_password
 
 group: !include groups.yaml
 automation: !include automations.yaml
@@ -555,9 +558,41 @@ sensor horizon:
      - configuration
      - connectivity
     value_template: >
-      {{ now() | timestamp_custom("%a %b %d @ %I:%M %p") }}
+      {{ now().strftime("%a %b %d @ %I:%M %p") }}
+  - platform: rest
+    name: horizon_agreements
+    resource: 'http://localhost/agreement'
+    method: GET
+    force_update: true
+    json_attributes:
+     - agreements
+    value_template: >
+      {% if value_json is defined and value_json != '[]' %}
+        {{ now().strftime("%a %b %d @ %I:%M %p") }}
+      {% else %}null{% endif %}
   - platform: template
     sensors:
+      horizon_agreement_active:
+        entity_id:
+          - sensor.horizon_agreements_count_active
+        value_template: >
+          {% if states.sensor.horizon_agreements_count_active.state|int > 0 %}
+            {{ states.sensor.horizon_agreements.attributes.agreements.active[0].workload_to_run.url }}
+          {% else %}null{% endif %}
+      horizon_agreements_count_active:
+        entity_id:
+          - sensor.horizon_agreements
+        value_template: >
+          {% if states.sensor.horizon_agreements.attributes.agreements is defined and states.sensor.horizon_agreements.attributes.agreements.active != '[]' %}
+            {{ states.sensor.horizon_agreements.attributes.agreements.active|length }}
+          {% else %}null{% endif %}
+      horizon_agreements_count_archived:
+        entity_id:
+          - sensor.horizon_agreements
+        value_template: >
+          {% if states.sensor.horizon_agreements.attributes.agreements is defined and states.sensor.horizon_agreements.attributes.agreements.archived != '[]' %}
+            {{ states.sensor.horizon_agreements.attributes.agreements.archived|length }}
+          {% else %}null{% endif %}
       horizon_exchange_api:
         entity_id:
           - sensor.horizon_status
