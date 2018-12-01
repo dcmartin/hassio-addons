@@ -13,6 +13,7 @@ RUN apt-get update \
     mosquitto-clients \
     bc \
     keychain \
+    expect \
     nmap \
   \
   && ARCH="${BUILD_ARCH}" \
