@@ -217,7 +217,7 @@ main() {
   fi
   hass.log.info "Device database ${HORIZON_DEVICE_DB} exists"
   # update/create device
-  URL="${CLOUDANT_URL}/{${HORIZON_DEVICE_DB}/${HORIZON_DEVICE_NAME}"
+  URL="${CLOUDANT_URL}/${HORIZON_DEVICE_DB}/${HORIZON_DEVICE_NAME}"
   hass.log.debug "Looking for device ${HORIZON_DEVICE_NAME} at ${URL}"
   REV=$(curl -sL "${URL}" | jq -r '._rev')
   if [[ "${REV}" != "null" && ! -z "${REV}" ]]; then
