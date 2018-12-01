@@ -100,6 +100,7 @@ main() {
 
   ## REVIEW
   HORIZON_ORGANIZATION=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.org')
+  HORIZON_DEVICE_DB=$(echo "${HORIZON_ORGANIZATION}" | sed 's/@/-AT-/g')
   HORIZON_DEVICE_NAME=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.device')
 
   export ADDON_CONFIG_FILE="${CONFIG_PATH%/*}/${HORIZON_DEVICE_NAME}.json"
@@ -140,18 +141,18 @@ main() {
   CLOUDANT_URL="${URL%:*}"'://'"${USERNAME}"':'"${PASSWORD}"'@'"${USERNAME}"."${URL#*.}"
   hass.log.debug "Using CLOUDANT_URL: ${CLOUDANT_URL}"
   # find database (or create)
-  URL="${CLOUDANT_URL}/${HORIZON_ORGANIZATION}"
+  URL="${CLOUDANT_URL}/${HORIZON_DEVICE_DB}"
   hass.log.debug "Looking for DB at ${URL}"
   DB=$(curl -s -q -f -L "${URL}" | jq -r '.db_name')
-  if [ "${DB}" != "${HORIZON_ORGANIZATION}" ]; then
-    hass.log.debug "Creating Cloudant database ${HORIZON_ORGANIZATION}"
+  if [ "${DB}" != "${HORIZON_DEVICE_DB}" ]; then
+    hass.log.debug "Creating Cloudant database ${HORIZON_DEVICE_DB}"
     OK=$(curl -s -q -f -L -X PUT "${URL}" | jq '.ok')
     if [ "${OK}" != "true" ]; then
-      hass.log.fatal "Could not create Cloudant DB ${HORIZON_ORGANIZATION}" >&2
+      hass.log.fatal "Could not create Cloudant DB ${HORIZON_DEVICE_DB}" >&2
       hass.die
     fi 
   fi
-  hass.log.info "Cloudant DB ${HORIZON_ORGANIZATION} exists"
+  hass.log.info "Cloudant DB ${HORIZON_DEVICE_DB} exists"
   URL="${URL}/${HORIZON_DEVICE_NAME}"
   hass.log.debug "Looking for previous revision at ${URL}"
   REV=$(curl -s -q -f -L "${URL}" | jq -r '._rev')
