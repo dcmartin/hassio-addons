@@ -19,7 +19,7 @@ main() {
   ###
 
   # START ADDON_CONFIG
-  ADDON_CONFIG='{"hostname":"'"$(hostname)"'","arch":"'"$(arch)"'","date":'$(/bin/date +%s)
+  ADDON_CONFIG='^"hostname":"'"$(hostname)"'","arch":"'"$(arch)"'","date":'$(/bin/date +%s)
 
   # TIMEZONE
   VALUE=$(hass.config.get "timezone")
@@ -27,10 +27,6 @@ main() {
   ADDON_CONFIG="${ADDON_CONFIG}"',"timezone":"'"${VALUE}"'"'
   cp /usr/share/zoneinfo/${VALUE} /etc/localtime
 
-  # DEVICE
-  VALUE=$(hass.config.get "device")
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No device name"; hass.die; fi
-  ADDON_CONFIG="${ADDON_CONFIG}"',"device":"'"${VALUE}"'"'
   # LATITUDE
   VALUE=$(hass.config.get "latitude")
   if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="0"; hass.log.warning "Using default latitude: ${VALUE}"; fi
@@ -51,9 +47,10 @@ main() {
   VALUE=$(hostname -I | awk '{ print $1 }')
   ADDON_CONFIG="${ADDON_CONFIG}"',"host_ipaddr":"'"${VALUE}"'"'
 
+  ## HORIZON
   VALUE=$(hass.config.get "horizon.org")
   if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No horizon organization"; hass.die; fi
-  ADDON_CONFIG="${ADDON_CONFIG}"',"horizon":{"org":"'"${VALUE}"'"'
+  ADDON_CONFIG="${ADDON_CONFIG}"',"horizon":^"org":"'"${VALUE}"'"'
   # APIKEY
   VALUE=$(hass.config.get "horizon.apikey")
   if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No horizon apikey"; hass.die; fi
@@ -67,12 +64,12 @@ main() {
   if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No horizon device"; hass.die; fi
   ADDON_CONFIG="${ADDON_CONFIG}"',"device":"'"${VALUE}"'"'
   ## DONE w/ HORIZON
-  ADDON_CONFIG="${ADDON_CONFIG}"'}'
+  ADDON_CONFIG="${ADDON_CONFIG}"'^'
 
   # HOST
   VALUE=$(hass.config.get "mqtt.host")
   if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="core-mosquitto"; hass.log.warning "Using default MQTT host: ${VALUE}"; fi
-  ADDON_CONFIG="${ADDON_CONFIG}"',"mqtt":{"host":"'"${VALUE}"'"'
+  ADDON_CONFIG="${ADDON_CONFIG}"',"mqtt":^"host":"'"${VALUE}"'"'
   # PORT
   VALUE=$(hass.config.get "mqtt.port")
   if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="1883"; hass.log.warning "Using default MQTT port: ${VALUE}"; fi
@@ -86,10 +83,10 @@ main() {
   if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE=""; hass.log.warning "Using default MQTT password: ${VALUE}"; fi
   ADDON_CONFIG="${ADDON_CONFIG}"',"password":"'"${VALUE}"'"'
   ## DONE w/ MQTT
-  ADDON_CONFIG="${ADDON_CONFIG}"'}'
+  ADDON_CONFIG="${ADDON_CONFIG}"'^'
 
   ## DONE w/ ADDON_CONFIG
-  ADDON_CONFIG="${ADDON_CONFIG}"'}'
+  ADDON_CONFIG="${ADDON_CONFIG}"'^'
 
   hass.log.debug "CONFIGURATION:" $(echo "${ADDON_CONFIG}" | jq -c '.')
 
@@ -102,7 +99,7 @@ main() {
   if [ ! -s "${ADDON_CONFIG_FILE}" ]; then
     hass.log.fatal "Invalid addon configuration: ${ADDON_CONFIG}"
     hass.die
-  endif
+  fi
   # report success
   hass.log.info "Configuration for ${HORIZON_DEVICE_NAME} at ${ADDON_CONFIG_FILE}" $(jq -c '.' "${ADDON_CONFIG_FILE}") >&2
 
@@ -121,7 +118,8 @@ main() {
   # PASSWORD
   VALUE=$(hass.config.get "cloudant.password")
   if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No cloudant password"; hass.die; fi
-  PASSWORD=$(hass.config.get "cloudant.password")
+  PASSWORD="${VALUE}"
+
   # test database access
   hass.log.debug "Testing CLOUDANT"
   OK=$(curl -s -q -f -L "${URL}" -u "${USERNAME}:${PASSWORD}" | jq -r '.couchdb')
@@ -134,15 +132,15 @@ main() {
   # find database (or create)
   URL="${CLOUDANT_URL}/${HORIZON_ORGANIZATION}"
   DB=$(curl -s -q -f -L "${URL}" | jq -r '.db_name')
-  if [ "${DB}" != "${HORIZON_ORGANIZTION}" ]; then
+  if [ "${DB}" != "${HORIZON_ORGANIZATION}" ]; then
     hass.log.debug "Creating Cloudant database ${HORIZON_ORGANIZATION}"
     OK=$(curl -s -q -f -L -X PUT "${URL}" | jq '.ok')
     if [ "${OK}" != "true" ]; then
-      hass.log.fatal "Could not create Cloudant DB ${HORIZON_ORGANIZTION}" >&2
+      hass.log.fatal "Could not create Cloudant DB ${HORIZON_ORGANIZATION}" >&2
       hass.die
     fi 
-  endif
-  hass.log.info "Cloudant DB ${HORIZON_ORGANIZTION} exists"
+  fi
+  hass.log.info "Cloudant DB ${HORIZON_ORGANIZATION} exists"
   URL="${URL}/${HORIZON_DEVICE_NAME}"
   REV=$(curl -s -q -f -L "${URL}" | jq -r '._rev')
   if [ "${REV}" != "null" ] && [ ! -z "${REV}" ]; then
@@ -218,7 +216,7 @@ main() {
   ##
 
   if [[ -n ${HASSIO_TOKEN:-} ]]; then
-    set HASSIO_HOST = "hassio/homeassistant"
+    HASSIO_HOST = "hassio/homeassistant"
     hass.log.info "Reloading core configuration for $HASSIO_HOST ... "
     curl -s -q -f -L -H "X-HA-ACCESS: ${HASSIO_TOKEN}" -X POST -H "Content-Type: application/json" "http://${HASSIO_HOST}/api/services/homeassistant/reload_core_config"
   else
