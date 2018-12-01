@@ -193,36 +193,36 @@ main() {
   ## CONFIGURATION
   ##
 
-  ROOT_DIR="/root/config"
-  CONFIG_DIR="/data"
+  TEMPLATE_DIR="/var/config"
+  CONFIG_DIR="/data" # "/config"
 
-  if [[ -d ""${ROOT_DIR}"" ]]; then
+  if [[ -d ""${TEMPLATE_DIR}"" ]]; then
     # AUTOMATIONS, GROUPS
     for YAML in automations groups; do
-      if [[ -s "${ROOT_DIR}/${YAML}.yaml" ]]; then
-        hass.log.trace "Copying ${ROOT_DIR}/${YAML}.yaml into ${CONFIG_DIR}/${YAML}.yaml"
-	cp -f "${ROOT_DIR}"/${YAML}.yaml "${CONFIG_DIR}"
+      if [[ -s "${TEMPLATE_DIR}/${YAML}.yaml" ]]; then
+        hass.log.trace "Copying ${TEMPLATE_DIR}/${YAML}.yaml into ${CONFIG_DIR}/${YAML}.yaml"
+	cp -f "${TEMPLATE_DIR}"/${YAML}.yaml "${CONFIG_DIR}"
       else
-	hass.log.debug "Found no ${ROOT_DIR}/${YAML}.yaml"
+	hass.log.debug "Found no ${TEMPLATE_DIR}/${YAML}.yaml"
       fi
     done
     # SECRETS
-    YAML="secrets"; if [[ -s "${ROOT_DIR}/${YAML}.yaml" ]]; then
-      hass.log.trace "Editting ${ROOT_DIR}/${YAML}.yaml into ${CONFIG_DIR}/${YAML}.yaml"
+    YAML="secrets"; if [[ -s "${TEMPLATE_DIR}/${YAML}.yaml" ]]; then
+      hass.log.trace "Editting ${TEMPLATE_DIR}/${YAML}.yaml into ${CONFIG_DIR}/${YAML}.yaml"
       sed \
         -e 's|%%MQTT_USERNAME%%|'"${MQTT_USERNAME}"'|g' \
         -e 's|%%MQTT_PASSWORD%%|'"${MQTT_PASSWORD}"'|g' \
         -e 's|%%HZN_EXCHANGE_ORG%%|'"${HORIZON_ORGANIZATION}"'|g' \
         -e 's|%%HZN_EXCHANGE_URL%%|'"${HZN_EXCHANGE_URL}"'|g' \
         -e 's|%%HZN_EXCHANGE_API_KEY%%|'"${HORIZON_APIKEY}"'|g' 
-        "${ROOT_DIR}/${YAML}.yaml" \
+        "${TEMPLATE_DIR}/${YAML}.yaml" \
         > "${CONFIG_DIR}/${YAML}.yaml"
     else
-      hass.log.debug "Found no ${ROOT_DIR}/${YAML}.yaml"
+      hass.log.debug "Found no ${TEMPLATE_DIR}/${YAML}.yaml"
     fi
     ## CONFIGURATION
-    YAML="configuration"; if [[ -s "${ROOT_DIR}/${YAML}.yaml" ]]; then
-      hass.log.trace "Editting ${ROOT_DIR}/${YAML}.yaml into ${CONFIG_DIR}/${YAML}.yaml"
+    YAML="configuration"; if [[ -s "${TEMPLATE_DIR}/${YAML}.yaml" ]]; then
+      hass.log.trace "Editting ${TEMPLATE_DIR}/${YAML}.yaml into ${CONFIG_DIR}/${YAML}.yaml"
       sed \
 	-e 's|%%HZN_DEVICE_NAME%%|'"${HORIZON_DEVICE_NAME}"'|g' |
 	-e 's|%%HZN_DEVICE_LATITUDE%%|'"${LATITUDE}"'|g' |
@@ -233,13 +233,13 @@ main() {
 	-e 's|%%UNIT_SYSTEM%%|'"${UNIT_SYSTEM}"'|g' |
 	-e 's|%%TIMEZONE%%|'"${TIMEZONE}"'|g' |
 	-e 's|%%HOST_IPADDR%%|'"${HOST_IPADDR}"'|g' |
-        "${ROOT_DIR}/${YAML}.yaml" \
+        "${TEMPLATE_DIR}/${YAML}.yaml" \
         > "${CONFIG_DIR}/${YAML}.yaml"
     else
-      hass.log.debug "Found no ${ROOT_DIR}/${YAML}.yaml"
+      hass.log.debug "Found no ${TEMPLATE_DIR}/${YAML}.yaml"
     fi 
   else
-    hass.log.debug "Found no ${ROOT_DIR}"
+    hass.log.debug "Found no ${TEMPLATE_DIR}"
   fi
 
   ##
