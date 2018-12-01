@@ -9,7 +9,7 @@ set -o pipefail # Return exit status of the last command in the pipe that failed
 source /usr/lib/hassio-addons/base.sh
 
 CONFIG_PATH="/data/options.json"
-HZN_CONFIG_DB="hzn-config"
+HORIZON_CONFIG_DB="hzn-config"
 
 # ==============================================================================
 # RUN LOGIC
@@ -155,7 +155,7 @@ main() {
 
   ## CONFIGURATION DATABASE
   # find configuration database (or create)
-  URL="${CLOUDANT_URL}/${HZN_CONFIG_DB}"
+  URL="${CLOUDANT_URL}/${HORIZON_CONFIG_DB}"
   hass.log.debug "Looking for configuration database ${HORIZON_CONFIG_DB} at ${URL}"
   DB=$(curl -sL "${URL}" | jq -r '.db_name')
   if [[ "${DB}" != "${HORIZON_CONFIG_DB}" ]]; then
