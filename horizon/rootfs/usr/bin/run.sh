@@ -19,7 +19,7 @@ main() {
   ###
 
   # START ADDON_CONFIG
-  ADDON_CONFIG='^"hostname":"'"$(hostname)"'","arch":"'"$(arch)"'","date":'$(/bin/date +%s)
+  ADDON_CONFIG='{"hostname":"'"$(hostname)"'","arch":"'"$(arch)"'","date":'$(/bin/date +%s)
 
   # TIMEZONE
   VALUE=$(hass.config.get "timezone")
@@ -47,10 +47,12 @@ main() {
   VALUE=$(hostname -I | awk '{ print $1 }')
   ADDON_CONFIG="${ADDON_CONFIG}"',"host_ipaddr":"'"${VALUE}"'"'
 
+  hass.log.trace "CONFIGURATION: ${ADDON_CONFIG}"
+
   ## HORIZON
   VALUE=$(hass.config.get "horizon.org")
   if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No horizon organization"; hass.die; fi
-  ADDON_CONFIG="${ADDON_CONFIG}"',"horizon":^"org":"'"${VALUE}"'"'
+  ADDON_CONFIG="${ADDON_CONFIG}"',"horizon":{"org":"'"${VALUE}"'"'
   # APIKEY
   VALUE=$(hass.config.get "horizon.apikey")
   if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No horizon apikey"; hass.die; fi
@@ -64,12 +66,14 @@ main() {
   if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No horizon device"; hass.die; fi
   ADDON_CONFIG="${ADDON_CONFIG}"',"device":"'"${VALUE}"'"'
   ## DONE w/ HORIZON
-  ADDON_CONFIG="${ADDON_CONFIG}"'^'
+  ADDON_CONFIG="${ADDON_CONFIG}"'}'
+
+  hass.log.trace "CONFIGURATION: ${ADDON_CONFIG}"
 
   # HOST
   VALUE=$(hass.config.get "mqtt.host")
   if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="core-mosquitto"; hass.log.warning "Using default MQTT host: ${VALUE}"; fi
-  ADDON_CONFIG="${ADDON_CONFIG}"',"mqtt":^"host":"'"${VALUE}"'"'
+  ADDON_CONFIG="${ADDON_CONFIG}"',"mqtt":{"host":"'"${VALUE}"'"'
   # PORT
   VALUE=$(hass.config.get "mqtt.port")
   if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="1883"; hass.log.warning "Using default MQTT port: ${VALUE}"; fi
@@ -83,10 +87,12 @@ main() {
   if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE=""; hass.log.warning "Using default MQTT password: ${VALUE}"; fi
   ADDON_CONFIG="${ADDON_CONFIG}"',"password":"'"${VALUE}"'"'
   ## DONE w/ MQTT
-  ADDON_CONFIG="${ADDON_CONFIG}"'^'
+  ADDON_CONFIG="${ADDON_CONFIG}"'}'
+
+  hass.log.trace "CONFIGURATION: ${ADDON_CONFIG}"
 
   ## DONE w/ ADDON_CONFIG
-  ADDON_CONFIG="${ADDON_CONFIG}"'^'
+  ADDON_CONFIG="${ADDON_CONFIG}"'}'
 
   hass.log.debug "CONFIGURATION:" $(echo "${ADDON_CONFIG}" | jq -c '.')
 
