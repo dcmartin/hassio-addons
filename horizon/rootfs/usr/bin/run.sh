@@ -129,13 +129,13 @@ main() {
   PASSWORD="${VALUE}"
 
   # test database access
-  hass.log.debug "Testing CLOUDANT"
-  OK=$(curl -s -q -f -L "${URL}" -u "${USERNAME}:${PASSWORD}" | jq -r '.couchdb')
-  if [ "${OK}" == "null" ] || [ -z "${OK}" ]; then
+  hass.log.debug "Testing CLOUDANT with ${USERNAME}:${PASSWORD} at ${URL}"
+  OK=$(curl -s -q -f -L "${URL}" -u "${USERNAME}":"${PASSWORD}" | jq -r '.couchdb')
+  if [[ "${OK}" == "null" || -z "${OK}" ]]; then
     hass.log.fatal "Cloudant failed at ${URL} with ${USERNAME} and ${PASSWORD}; exiting"
     hass.die
   fi
-  hass.log.debug "CLOUDANT OK"
+  hass.log.debug "CLOUDANT found at ${URL}"
   # base URL
   CLOUDANT_URL="${URL%:*}"'://'"${USERNAME}"':'"${PASSWORD}"'@'"${USERNAME}"."${URL#*.}"
   hass.log.debug "Using CLOUDANT_URL: ${CLOUDANT_URL}"
