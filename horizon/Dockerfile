@@ -9,7 +9,9 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ARG BUILD_ARCH=amd64
 
 RUN apt-get update \
-  && apt-get install -y mosquitto-clients \
+  && apt-get install -y \
+    mosquitto-clients \
+    nmap \
   \
   && ARCH="${BUILD_ARCH}" \
   && if [ "${BUILD_ARCH}" = "aarch64" ]; then ARCH="arm64"; fi \
