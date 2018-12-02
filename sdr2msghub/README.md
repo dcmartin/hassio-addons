@@ -126,7 +126,6 @@ based on the following:
 David C Martin (github@dcmartin.com)
 
 [sdr-lovelace]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/sdr2msghub/ui-lovelace.yaml
-[sdr-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/sdr2msghub
 [sdr-yaml]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/sdr2msghub/sdr2msghub.yaml
 
 [commits]: https://github.com/dcmartin/hassio-addons/sdr2msghub/commits/master
@@ -135,8 +134,17 @@ David C Martin (github@dcmartin.com)
 [issue]: https://github.com/dcmartin/hassio-addons/sdr2msghub/issues
 
 [core-mosquitto]: https://github.com/hassio-addons/repository/tree/master/mqtt
-[dcm-oh]: https://github.com/dcmartin/open-horizon
+
 [dcmartin]: https://github.com/dcmartin
+[repository]: https://github.com/dcmartin/hassio-addons
+[dcm-oh]: https://github.com/dcmartin/open-horizon
+[dcm-oh-setup]: https://github.com/dcmartin/open-horizon/tree/master/setup
+[cpu-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/cpu2msghub
+[sdr-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/sdr2msghub
+[cpu-addon]: https://github.com/dcmartin/hassio-addons/tree/master/cpu2msghub
+[sdr-addon]: https://github.com/dcmartin/hassio-addons/tree/master/sdr2msghub
+[horizon-addon]: https://github.com/dcmartin/hassio-addons/tree/master/horizon
+
 [edge-fabric]: https://console.test.cloud.ibm.com/docs/services/edge-fabric/getting-started.html
 [edge-install]: https://console.test.cloud.ibm.com/docs/services/edge-fabric/adding-devices.html
 [edge-slack]: https://ibm-appsci.slack.com/messages/edge-fabric-users/
