@@ -98,6 +98,9 @@ based on the following:
 
 David C Martin (github@dcmartin.com)
 
+[cpu-lovelace]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/cpu2msghub/ui-lovelace.yaml
+[cpu-yaml]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/cpu2msghub/cpu2msghub.yaml
+
 [commits]: https://github.com/dcmartin/hassio-addons/cpu2msghub/commits/master
 [contributors]: https://github.com/dcmartin/hassio-addons/cpu2msghub/graphs/contributors
 [issue]: https://github.com/dcmartin/hassio-addons/cpu2msghub/issues
@@ -112,7 +115,6 @@ David C Martin (github@dcmartin.com)
 [cpu-addon]: https://github.com/dcmartin/hassio-addons/tree/master/cpu2msghub
 [sdr-addon]: https://github.com/dcmartin/hassio-addons/tree/master/sdr2msghub
 [horizon-addon]: https://github.com/dcmartin/hassio-addons/tree/master/horizon
-
 
 [core-mosquitto]: https://github.com/hassio-addons/repository/tree/master/mqtt
 [edge-fabric]: https://console.test.cloud.ibm.com/docs/services/edge-fabric/getting-started.html
