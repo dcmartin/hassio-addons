@@ -1,6 +1,10 @@
 # Horizon Control Addon
 
-This repository contains an [Open Horizon][open-horizon] `control` addon to periodically scan the local-area-network (LAN) and automatically configured nodes identified by MAC address; currently only RaspberryPi model 3/3+ running Raspbian Stretch are supported.  More information about the initialization script is [here][dcm-oh-setup]. Detailed documentation for the IBM Cloud Edge Fabric is available [on-line][edge-fabric].  A Slack [channel][edge-slack] is also available.  Refer to the [examples][examples] available on GitHub.
+This repository contains an [Open Horizon][open-horizon] `horizon` control addon to periodically scan the local-area-network (LAN) and automatically configured nodes identified by MAC address; currently only RaspberryPi model 3/3+ running Raspbian Stretch are supported.  More information about the initialization script is [here][dcm-oh-setup]. Detailed documentation for the IBM Cloud Edge Fabric is available [on-line][edge-fabric].  A Slack [channel][edge-slack] is also available.  Refer to the [examples][examples] available on GitHub.
+
+Currently there are two supported patterns:
+1. [`cpu2msghub`][cpu-pattern] - Private CPU pattern (see also corresponding [addon][cpu-addon])
+1. [`sdr2msghub`][cpu-pattern] - Shared SDR pattern (see also corresponding [addon][sdr-addon])
 
 **Note**: _You will need an IBM Cloud [account][ibm-registration]_
 
