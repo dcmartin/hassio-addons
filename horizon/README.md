@@ -24,12 +24,12 @@ Please refer to the Horizon setup [instructions][dcm-oh].  More detailed instruc
 
 ### Options: Home Assistant
 These options are for the Home Assistant environment hosting this control addon.  These values will be specified in the modifications to the HA environment, ***which will be replaced***.
-#### : `log-level`
-#### : `timezone`
-#### : `unit_system`
-#### : `latitude`
-#### : `longitude`
-#### : `elevation`
+#### `log-level`
+#### `timezone`
+#### `unit_system`
+#### `latitude`
+#### `longitude`
+#### `elevation`
 
 ### Option: `refresh`
 Number of seconds between scans for new devices on the LAN and installation or update as appropriate.
@@ -56,7 +56,7 @@ Database required to store node (`hzn-config`) and addon configuration informati
 ```
 
 ### Option: `horizon`
-Credentials required for controlling and interacting with the Open Horizon exchange.  For more information about the `horizon.config` reference specification, please refer [here][dcm-oh-setup].
+Credentials required for controlling and interacting with the Open Horizon exchange.  For more information about the `horizon.config` reference [specification][template], please refer [here][dcm-oh-setup].
 ```
 "horizon": {
     "apikey": "<HORIZON_API_KEY>",
@@ -134,3 +134,4 @@ David C Martin (github@dcmartin.com)
 [dcm-oh]: https://github.com/dcmartin/open-horizon/tree/master/README.md
 [dcm-oh-setup]: https://github.com/dcmartin/open-horizon/tree/master/setup
 [examples]: https://github.com/open-horizon/examples
+[template]: https://github.com/dcmartin/open-horizon/blob/master/setup/template.json
