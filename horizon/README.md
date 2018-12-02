@@ -1,70 +1,70 @@
 # Horizon Control Addon
 
-This repository contains sample scripts to automatically setup nodes for [Open Horizon][open-horizon] as provided in the IBM Cloud.  Detailed [documentation][edge-fabric] for the IBM Cloud Edge Fabric is available on-line.  A Slack [channel][edge-slack] is also available.
-
-You may create and publish your patterns to your organization.  Refer to the [examples][examples] available on GitHub.
-
-## Setup
-
-Please see the Horizon setup [instructions][dcm-oh]
-
-## About
-
-This add-on requires the installation of [Open Horizon][open-horizon], a distibuted, decentralized, zero-ops, method and apparatus to deploy containers.
-
-Detailed [documentation][edge-fabric] for the IBM Edge Fabric is available on-line.  A Slack [channel][edge-slack] is also available.
+This repository contains an [Open Horizon][open-horizon] `control` addon to periodically scan the local-area-network (LAN) and automatically configured nodes identified by MAC address; currently only RaspberryPi model 3/3+ running Raspbian Stretch are supported.  More information about the initialization script is [here][dcm-oh-setup]. Detailed documentation for the IBM Cloud Edge Fabric is available [on-line][edge-fabric].  A Slack [channel][edge-slack] is also available.  Refer to the [examples][examples] available on GitHub.
 
 **Note**: _You will need an IBM Cloud [account][ibm-registration]_
 
-## Installation
+## Install Open Horizon
 
-### Install Open Horizon
-
-To install on Ubuntu and most Debian LINUX systems, a [script][hzn-setup] run as root from the command line will install the appropriate packages on your LINUX machine or VM:
-
-`wget -qO - ibm.biz/horizon-setup | bash`
-
+Please refer to the Horizon setup [instructions][dcm-oh].  To install on Ubuntu and most Debian LINUX systems, a [script][hzn-setup] run as root from the command line will install the appropriate packages on your LINUX machine or VM:
+```
+wget -qO - ibm.biz/horizon-setup | bash
+```
 More detailed instructions are [available][edge-install].  Installation package for macOS is also [available][macos-install]
 
-### Install addon
+# Install addon
 
 1. [Add our Hass.io add-ons repository][repository] to your Hass.io instance.
 1. Install the "horizon" add-on
-1. Setup the "horizon" add-on
-1. Configure `MSGHUB_API_KEY` for [IBM MessageHub][kafka-creds]
-1. Change `exchange` to Open Horizon exchange credentials; `device` and `token` default to: `hostname`-IP and exchange password.
+1. Configure the "horizon" add-on (see below)
 1. Start the "horizon" add-on
 1. Check the logs of the add-on for failures :-(
 
-## Configuration
+## Configure addon
 
-### Option: `exchange`
-Credentials required for interacting with the Open Horizon exchange; currently the only organization defined is cgiroua@us.ibm.com.
+### Options: Home Assistant
+These options are for the Home Assistant environment hosting this control addon.  These values will be specified in the modifications to the HA environment, ***which will be replaced***.
+#### : `log-level`
+#### : `timezone`
+#### : `unit_system`
+#### : `latitude`
+#### : `longitude`
+#### : `elevation`
 
-The `device` and `token` values are optional and will default to the hostname with MAC address appended and the exchange password.
+### Option: `refresh`
+Number of seconds between scans for new devices on the LAN and installation or update as appropriate.
 
+### Option: `mqtt`
+Server required to send and receive MQTT messages between clients and servers on the LAN.  Defaults are as below:
 ```
-  "exchange": {
-    "username": "<username>",
-    "password": "<password>",
-    "organization": "cgiroua@us.ibm.com",
-    "url": "https://stg-edge-cluster.us-south.containers.appdomain.cloud/v1",
-    "device": "",
-    "token": ""
+"mqtt": {
+    "host": "core-mosquitto",
+    "port": 1883,
+    "username": "",
+    "password": ""
+}
+```
+
+### Option: `cloudant`
+Database required to store node (`hzn-config` database) and addon (`<IBM_CLOUD_LOGIN_EMAIL>` database) configuration information. Configurations specified in the `horizon.config` attribute (see _Option: `horizon`_) refer to records in the `hzn-config` database.
+```
+"cloudant": {
+    "url": "<CLOUDANT URL>",
+    "username": "CLOUDANT USERNAME>",
+    "password": "<CLOUDANT PASSWORD>"
   }
 ```
 
-### Option: `MSGHUB_API_KEY`
-
-**Note**: _You must obtain [credentials][kafka-creds] for IBM MessageHub for alpha phase_
-
+### Option: `horizon`
+Credentials required for controlling and interacting with the Open Horizon exchange.  For more information about the `horizon.config` reference specification, please refer [here][dcm-oh-setup].
 ```
-  "variables": [
-    {
-      "env": "MSGHUB_API_KEY",
-      "value": ""
-    }
-  ]
+"horizon": {
+    "apikey": "<HORIZON_API_KEY>",
+    "org": "<IBM_CLOUD_LOGIN_EMAIL>",
+    "device": "<YOUR DEVICE NAME>",
+    "url": "https://alpha.edge-fabric.com/v1",
+    "config": "<CLOUDANT CONFIGURATION ID>"
+}
 ```
 
 ## Changelog & Releases
@@ -93,13 +93,18 @@ David C Martin (github@dcmartin.com)
 [watson-stt]: https://console.bluemix.net/catalog/services/speech-to-text
 [edge-slack]: https://ibm-appsci.slack.com/messages/edge-fabric-users/
 [ibm-registration]: https://console.bluemix.net/registration/
-[sdr-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/sdr2msghub
 
 [open-horizon]: https://github.com/open-horizon
+[sdr-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/sdr2msghub
 [cpu-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/cpu2msghub
+[cpu-addon]: https://github.com/dcmartin/hassio-addons/tree/master/cpu2msghub
+[sdr-addon]: https://github.com/dcmartin/hassio-addons/tree/master/sdr2msghub
+
 [edge-fabric]: https://console.test.cloud.ibm.com/docs/services/edge-fabric/getting-started.html
 [edge-install]: https://console.test.cloud.ibm.com/docs/services/edge-fabric/adding-devices.html
 [macos-install]: https://github.com/open-horizon/anax/releases
 [hzn-setup]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/horizon/hzn-setup.sh
 [template]: https://github.com/dcmartin/open-horizon/blob/master/setup/template.json
 [dcm-oh]: https://github.com/dcmartin/open-horizon/tree/master/README.md
+[dcm-oh-setup]: https://github.com/dcmartin/open-horizon/tree/master/setup
+[examples]: https://github.com/open-horizon/examples
