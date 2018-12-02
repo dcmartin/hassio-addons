@@ -9,6 +9,7 @@ set -o pipefail # Return exit status of the last command in the pipe that failed
 source /usr/lib/hassio-addons/base.sh
 
 CONFIG_PATH="/data/options.json"
+CONFIG_DIR="${CONFIG_PATH%/*}"
 HORIZON_CONFIG_DB="hzn-config"
 
 # ==============================================================================
@@ -106,7 +107,7 @@ main() {
   HORIZON_DEVICE_DB=$(echo "${HORIZON_ORGANIZATION}" | sed 's/@.*//')
   HORIZON_DEVICE_NAME=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.device')
   HORIZON_CONFIG_NAME=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.config')
-  ADDON_CONFIG_FILE="${CONFIG_PATH%/*}/${HORIZON_DEVICE_NAME}.json"
+  ADDON_CONFIG_FILE="${CONFIG_DIR}/${HORIZON_DEVICE_NAME}.json"
   # check it
   echo "${ADDON_CONFIG}" | jq '.' > "${ADDON_CONFIG_FILE}"
   if [ ! -s "${ADDON_CONFIG_FILE}" ]; then
@@ -194,7 +195,7 @@ main() {
   fi
   hass.log.debug "Found configuration ${HORIZON_CONFIG_NAME} with ${HORIZON_CONFIG}"
   # make file
-  HORIZON_CONFIG_FILE="${CONFIG_PATH%/*}/${HORIZON_CONFIG_NAME}.json"
+  HORIZON_CONFIG_FILE="${CONFIG_DIR}/${HORIZON_CONFIG_NAME}.json"
   echo "${HORIZON_CONFIG}" | jq '.' > "${HORIZON_CONFIG_FILE}"
   if [[ ! -s "${HORIZON_CONFIG_FILE}" ]]; then
     hass.log.fatal "Invalid addon configuration: ${HORIZON_CONFIG}"
@@ -331,35 +332,33 @@ main() {
   REFRESH=$(jq -r '.refresh' "${ADDON_CONFIG_FILE}")
   HOST_LAN=$(jq -r '.host_ipaddr' "${ADDON_CONFIG_FILE}" | sed 's|\(.*\)\.[0-9]*|\1.0/24|')
   SCRIPT="init-devices.sh"
-  SCRIPT_URL="https://raw.githubusercontent.com/dcmartin/open-horizon/master/setup/${SCRIPT}"
-  BINDIR="/usr/bin"
-  EXECPATH="${BINDIR}/${SCRIPT}"
-  curl -sL "${SCRIPT_URL}" -o "${EXECPATH}"
-  chmod 755 "${EXECPATH}"
-  LOG_FILE="${CONFIG_PATH%/*}/${SCRIPT}.$(date +%s).log"
-
+  SCRIPT_URL="https://raw.githubusercontent.com/dcmartin/open-horizon/master/setup"
+  LOG_FILE="${CONFIG_DIR}/${SCRIPT}.$(date +%s).log"
+  FILES="${SCRIPT} config-ssh.tmpl ssh-copy-id.tmpl wpa_supplicant.tmpl"
+  FILES=($(echo ${FILES}))
+  for F in ${FILES}; do
+    curl -sL "${SCRIPT_URL}/${F}" -o "${CONFIG_DIR}/${F}"
+    if [[ ! -s "${CONFIG_DIR}/${F}" ]]; then
+      hass.log.warning "Failed to retrieve ${CONFIG_DIR}/${F} from ${SCRIPT_URL}/${F}"
+    else
+      hass.log.debug "Retrieved ${CONFIG_DIR}/${F} from ${SCRIPT_URL}/${F}"
+    fi
+  done
   # check for configuration file
   if [[ ! -s "${HORIZON_CONFIG_FILE}" ]]; then
     hass.log.fatal "Configuration file not found: ${HORIZON_CONFIG_FILE}"
     hass.die
   fi
-  # check for executable
-  if [[ ! -s "${EXECPATH}" ]]; then
-    hass.log.fatal "Executable file not found: ${EXECPATH}"
-    hass.die
-  else
-    hass.log.debug "Executable permissions:" $(ls -al "${EXECPATH}")
-  fi
 
-  hass.log.debug "Changing directories to: ${CONFIG_PATH%/*}"
-  cd "${CONFIG_PATH%/*}"
+  hass.log.debug "Changing directories to: ${CONFIG_DIR} and starting loop"
+  pushd "${CONFIG_DIR}"
 
   while [[ NODE=$(hzn node list) ]]; do
     hass.log.debug "Node state: " $(echo "${NODE}" | jq '.configstate.state') "; workloads:" $(hzn agreement list | jq -r '.[]|.workload_to_run.url')
 
     ## EVALUATE
-    hass.log.info $(date) "${EXECPATH} on ${HORIZON_CONFIG_FILE} for ${HOST_LAN}; logging to ${LOG_FILE}"
-    bash -- "${EXECPATH}" "${HORIZON_CONFIG_FILE}" "${HOST_LAN}" &> "${LOG_FILE}" && true
+    hass.log.info $(date) "${SCRIPT} on ${HORIZON_CONFIG_FILE} for ${HOST_LAN}; logging to ${LOG_FILE}"
+    bash -- "./${SCRIPT}" "${HORIZON_CONFIG_FILE}" "${HOST_LAN}" &> "${LOG_FILE}" && true
 
     # update/create configuration
     URL="${CLOUDANT_URL}/${HORIZON_CONFIG_DB}/${HORIZON_CONFIG_NAME}"
@@ -382,6 +381,9 @@ main() {
     hass.log.debug "Sleeping ${REFRESH}"
     sleep ${REFRESH}
   done
+
+  hass.log.debug "Loop complete; returning to home directory"
+  popd
 
 }
 
