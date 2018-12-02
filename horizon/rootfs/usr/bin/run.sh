@@ -333,15 +333,18 @@ main() {
   HOST_LAN=$(jq -r '.host_ipaddr' "${ADDON_CONFIG_FILE}" | sed 's|\(.*\)\.[0-9]*|\1.0/24|')
   SCRIPT="init-devices.sh"
   SCRIPT_URL="https://raw.githubusercontent.com/dcmartin/open-horizon/master/setup"
-  LOG_FILE="${CONFIG_DIR}/${SCRIPT}.$(date +%s).log"
   FILES="${SCRIPT} config-ssh.tmpl ssh-copy-id.tmpl wpa_supplicant.tmpl"
   FILES=($(echo ${FILES}))
+  SCRIPT_DIR="${CONFIG_DIR}/${SCRIPT}"
+  LOG_FILE="${SCRIPT_DIR}/${SCRIPT}.$(date +%s).log"
+
+  mkdir -p "${SCRIPT_DIR}"
   for F in ${FILES}; do
-    curl -sL "${SCRIPT_URL}/${F}" -o "${CONFIG_DIR}/${F}"
-    if [[ ! -s "${CONFIG_DIR}/${F}" ]]; then
-      hass.log.warning "Failed to retrieve ${CONFIG_DIR}/${F} from ${SCRIPT_URL}/${F}"
+    curl -sL "${SCRIPT_URL}/${F}" -o "${SCRIPT_DIR}/${F}"
+    if [[ ! -s "${SCRIPT_DIR}/${F}" ]]; then
+      hass.log.warning "Failed to retrieve ${SCRIPT_DIR}/${F} from ${SCRIPT_URL}/${F}"
     else
-      hass.log.debug "Retrieved ${CONFIG_DIR}/${F} from ${SCRIPT_URL}/${F}"
+      hass.log.debug "Retrieved ${SCRIPT_DIR}/${F} from ${SCRIPT_URL}/${F}"
     fi
   done
   # check for configuration file
@@ -350,15 +353,13 @@ main() {
     hass.die
   fi
 
-  hass.log.debug "Changing directories to: ${CONFIG_DIR} and starting loop"
-  pushd "${CONFIG_DIR}"
-
+  # loop while node is alive
   while [[ NODE=$(hzn node list) ]]; do
     hass.log.debug "Node state: " $(echo "${NODE}" | jq '.configstate.state') "; workloads:" $(hzn agreement list | jq -r '.[]|.workload_to_run.url')
 
     ## EVALUATE
     hass.log.info $(date) "${SCRIPT} on ${HORIZON_CONFIG_FILE} for ${HOST_LAN}; logging to ${LOG_FILE}"
-    bash -- "./${SCRIPT}" "${HORIZON_CONFIG_FILE}" "${HOST_LAN}" &> "${LOG_FILE}" && true
+    cd "${SCRIPT_DIR}" && bash -- "./${SCRIPT}" "${HORIZON_CONFIG_FILE}" "${HOST_LAN}" &> "${LOG_FILE}" && true
 
     # update/create configuration
     URL="${CLOUDANT_URL}/${HORIZON_CONFIG_DB}/${HORIZON_CONFIG_NAME}"
@@ -381,9 +382,6 @@ main() {
     hass.log.debug "Sleeping ${REFRESH}"
     sleep ${REFRESH}
   done
-
-  hass.log.debug "Loop complete; returning to home directory"
-  popd
 
 }
 
