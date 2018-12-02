@@ -6,11 +6,7 @@ This repository contains an [Open Horizon][open-horizon] `control` addon to peri
 
 ## Install Open Horizon
 
-Please refer to the Horizon setup [instructions][dcm-oh].  To install on Ubuntu and most Debian LINUX systems, a [script][hzn-setup] run as root from the command line will install the appropriate packages on your LINUX machine or VM:
-```
-wget -qO - ibm.biz/horizon-setup | bash
-```
-More detailed instructions are [available][edge-install].  Installation package for macOS is also [available][macos-install]
+Please refer to the Horizon setup [instructions][dcm-oh].  More detailed instructions are [available][edge-install].  Installation package for macOS is also [available][macos-install]
 
 # Install addon
 
