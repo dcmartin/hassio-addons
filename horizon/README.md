@@ -1,6 +1,14 @@
-## About
+# Horizon Control Addon
 
-This add-on is for either [CPU2MSGHUB][cpu-pattern] pattern or the [SDR2MSGHUB][sdr-pattern] pattern.
+This repository contains sample scripts to automatically setup nodes for [Open Horizon][open-horizon] as provided in the IBM Cloud.  Detailed [documentation][edge-fabric] for the IBM Cloud Edge Fabric is available on-line.  A Slack [channel][edge-slack] is also available.
+
+You may create and publish your patterns to your organization.  Refer to the [examples][examples] available on GitHub.
+
+## Setup
+
+Please see the Horizon setup [instructions][dcm-oh]
+
+## About
 
 This add-on requires the installation of [Open Horizon][open-horizon], a distibuted, decentralized, zero-ops, method and apparatus to deploy containers.
 
@@ -85,12 +93,13 @@ David C Martin (github@dcmartin.com)
 [watson-stt]: https://console.bluemix.net/catalog/services/speech-to-text
 [edge-slack]: https://ibm-appsci.slack.com/messages/edge-fabric-users/
 [ibm-registration]: https://console.bluemix.net/registration/
-[kafka-creds]: https://console.bluemix.net/services/messagehub/b5f8df99-d3f6-47b8-b1dc-12806d63ae61/?paneId=credentials&new=true&env_id=ibm:yp:us-south&org=51aea963-6924-4a71-81d5-5f8c313328bd&space=f965a097-fcb8-4768-953e-5e86ea2d66b4
-[cpu-yaml]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/cpu2msghub/cpu2msghub.yaml
-[cpu-lovelace]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/cpu2msghub/ui-lovelace.yaml
+[sdr-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/sdr2msghub
+
 [open-horizon]: https://github.com/open-horizon
 [cpu-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/cpu2msghub
 [edge-fabric]: https://console.test.cloud.ibm.com/docs/services/edge-fabric/getting-started.html
 [edge-install]: https://console.test.cloud.ibm.com/docs/services/edge-fabric/adding-devices.html
 [macos-install]: https://github.com/open-horizon/anax/releases
 [hzn-setup]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/horizon/hzn-setup.sh
+[template]: https://github.com/dcmartin/open-horizon/blob/master/setup/template.json
+[dcm-oh]: https://github.com/dcmartin/open-horizon/tree/master/README.md
