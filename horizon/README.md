@@ -63,6 +63,24 @@ Credentials required for controlling and interacting with the Open Horizon excha
 }
 ```
 
+## USE
+
+Listen to the MQTT host and port to receive JSON payload of nodes.  The _CONFIGURATION_ identifier is from the `horizon.config` option; the _DEVICE_ identifier is from the node specified in that configuration (e.g. `test-cpu-1`).
+
+1. `<CONFIGURATION>/<DEVICE>/start`
+
+A complete configuration is automatically generated from templates modified based on _Options_ specified (per above).
+
+1. [configuration.yaml][horizon-yaml]
+1. [groups.yaml][horizon-groups]
+1. [automations.yaml][horizon-automations]
+1. [secrets.yaml][horizon-secrets]
+1. [ui-lovelace.yaml][horizon-lovelace]
+
+# Sample output
+
+![horizon sample](horizon-sample.png?raw=true "HORIZON")
+
 ## Changelog & Releases
 
 Releases are based on Semantic Versioning, and use the format
@@ -76,6 +94,13 @@ based on the following:
 ## Authors & contributors
 
 David C Martin (github@dcmartin.com)
+
+[horizon-lovelace]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/horizon/rootfs/var/config/ui-lovelace.yaml
+[horizon-yaml]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/horizon/rootfs/var/config/configuration.yaml
+[horizon-groups]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/horizon/rootfs/var/config/groups.yaml
+[horizon-automations]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/horizon/rootfs/var/config/automations.yaml
+[horizon-secrets]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/horizon/rootfs/var/config/secrets.yaml
+
 
 [commits]: https://github.com/dcmartin/hassio-addons/cpu2msghub/commits/master
 [contributors]: https://github.com/dcmartin/hassio-addons/cpu2msghub/graphs/contributors
