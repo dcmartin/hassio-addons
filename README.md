@@ -12,8 +12,9 @@ curl -sL https://raw.githubusercontent.com/home-assistant/hassio-build/master/in
 
 These addons are demonstrations of the IBM Edge Fabric, a distributed, decentralized, zero ops, edge fabric, currently in alpha, which is based on Open Horizon.
 
-1. `cpu2msghub` - Shared CPU addon to run [CPU2MSGHUB][cpu-pattern]
-1. `sdr2msghub` - Shared SDR (software defined radio) addon to run the [SDR2MSGHUB][sdr-pattern]
+1. [`cpu2msghub`][cpu-addon] - Shared CPU addon to run [CPU2MSGHUB][cpu-pattern]
+1. [`sdr2msghub`][sdr-addon] - Shared SDR (software defined radio) addon to run the [SDR2MSGHUB][sdr-pattern]
+1. [`horizon`][horizon-addon] - Horizon control addon for fleets of devices.
 
 ### Home Hacking
 
@@ -94,6 +95,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
+[open-horizon]: https://github.com/open-horizon
+[sdr-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/sdr2msghub
+[cpu-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/cpu2msghub
+[cpu-addon]: https://github.com/dcmartin/hassio-addons/tree/master/cpu2msghub
+[sdr-addon]: https://github.com/dcmartin/hassio-addons/tree/master/sdr2msghub
+[horizon-addon]: https://github.com/dcmartin/hassio-addons/tree/master/horizon
+
 [buymeacoffee-shield]: https://www.buymeacoffee.com/assets/img/guidelines/download-assets-sm-2.svg
 [buymeacoffee]: https://www.buymeacoffee.com/dcmartin
 [commits-shield]: https://img.shields.io/github/commit-activity/y/hassio-addons/addon-motion.svg
@@ -120,6 +128,4 @@ SOFTWARE.
 [ageathome]: http://age-at-home.mybluemix.net
 [motion-url]: https://motion-project.github.io/ 
 [intu-url]: https://github.com/watson-intu
-[cpu-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/cpu2msghub
-[sdr-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/sdr2msghub
 [thisrepo]: https://github.com/dcmartin/hassio-addons
