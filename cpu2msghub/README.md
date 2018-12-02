@@ -98,18 +98,25 @@ based on the following:
 
 David C Martin (github@dcmartin.com)
 
+[cpu-lovelace]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/cpu2msghub/ui-lovelace.yaml
+[cpu-yaml]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/cpu2msghub/cpu2msghub.yaml
+
 [commits]: https://github.com/dcmartin/hassio-addons/cpu2msghub/commits/master
 [contributors]: https://github.com/dcmartin/hassio-addons/cpu2msghub/graphs/contributors
 [issue]: https://github.com/dcmartin/hassio-addons/cpu2msghub/issues
 [releases]: https://github.com/dcmartin/hassio-addons/cpu2msghub/releases
 
-[cpu-yaml]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/cpu2msghub/cpu2msghub.yaml
-[cpu-lovelace]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/cpu2msghub/ui-lovelace.yaml
+[dcmartin]: https://github.com/dcmartin
+[repository]: https://github.com/dcmartin/hassio-addons
+[dcm-oh]: https://github.com/dcmartin/open-horizon
+[dcm-oh-setup]: https://github.com/dcmartin/open-horizon/tree/master/setup
 [cpu-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/cpu2msghub
+[sdr-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/sdr2msghub
+[cpu-addon]: https://github.com/dcmartin/hassio-addons/tree/master/cpu2msghub
+[sdr-addon]: https://github.com/dcmartin/hassio-addons/tree/master/sdr2msghub
+[horizon-addon]: https://github.com/dcmartin/hassio-addons/tree/master/horizon
 
 [core-mosquitto]: https://github.com/hassio-addons/repository/tree/master/mqtt
-[dcm-oh]: https://github.com/dcmartin/open-horizon
-[dcmartin]: https://github.com/dcmartin
 [edge-fabric]: https://console.test.cloud.ibm.com/docs/services/edge-fabric/getting-started.html
 [edge-install]: https://console.test.cloud.ibm.com/docs/services/edge-fabric/adding-devices.html
 [edge-slack]: https://ibm-appsci.slack.com/messages/edge-fabric-users/
@@ -120,6 +127,5 @@ David C Martin (github@dcmartin.com)
 [keepchangelog]: http://keepachangelog.com/en/1.0.0/
 [macos-install]: https://github.com/open-horizon/anax/releases
 [open-horizon]: https://github.com/open-horizon
-[repository]: https://github.com/dcmartin/hassio-addons
 [watson-nlu]: https://console.bluemix.net/catalog/services/natural-language-understanding
 [watson-stt]: https://console.bluemix.net/catalog/services/speech-to-text

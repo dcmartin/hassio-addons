@@ -1,63 +1,85 @@
-## About
+# Horizon Control Addon
 
-This add-on is for either [CPU2MSGHUB][cpu-pattern] pattern or the [SDR2MSGHUB][sdr-pattern] pattern.
-
-This add-on requires the installation of [Open Horizon][open-horizon], a distibuted, decentralized, zero-ops, method and apparatus to deploy containers.
-
-Detailed [documentation][edge-fabric] for the IBM Edge Fabric is available on-line.  A Slack [channel][edge-slack] is also available.
+This repository contains an [Open Horizon][open-horizon] `control` addon to periodically scan the local-area-network (LAN) and automatically configured nodes identified by MAC address; currently only RaspberryPi model 3/3+ running Raspbian Stretch are supported.  More information about the initialization script is [here][dcm-oh-setup]. Detailed documentation for the IBM Cloud Edge Fabric is available [on-line][edge-fabric].  A Slack [channel][edge-slack] is also available.  Refer to the [examples][examples] available on GitHub.
 
 **Note**: _You will need an IBM Cloud [account][ibm-registration]_
 
-## Installation
+## Install Open Horizon
 
-### Install Open Horizon
+Please refer to the Horizon setup [instructions][dcm-oh].  More detailed instructions are [available][edge-install].  Installation package for macOS is also [available][macos-install]
 
-To install on Ubuntu and most Debian LINUX systems, a [script][hzn-setup] run as root from the command line will install the appropriate packages on your LINUX machine or VM:
-
-`wget -qO - ibm.biz/horizon-setup | bash`
-
-More detailed instructions are [available][edge-install].  Installation package for macOS is also [available][macos-install]
-
-### Install addon
+# Install addon
 
 1. [Add our Hass.io add-ons repository][repository] to your Hass.io instance.
 1. Install the "horizon" add-on
-1. Setup the "horizon" add-on
-1. Configure `MSGHUB_API_KEY` for [IBM MessageHub][kafka-creds]
-1. Change `exchange` to Open Horizon exchange credentials; `device` and `token` default to: `hostname`-IP and exchange password.
+1. Configure the "horizon" add-on (see below)
 1. Start the "horizon" add-on
 1. Check the logs of the add-on for failures :-(
 
-## Configuration
+## Configure addon
 
-### Option: `exchange`
-Credentials required for interacting with the Open Horizon exchange; currently the only organization defined is cgiroua@us.ibm.com.
+### Options: Home Assistant
+These options are for the Home Assistant environment hosting this control addon.  These values will be specified in the modifications to the HA environment, ***which will be replaced***.
+#### : `log-level`
+#### : `timezone`
+#### : `unit_system`
+#### : `latitude`
+#### : `longitude`
+#### : `elevation`
 
-The `device` and `token` values are optional and will default to the hostname with MAC address appended and the exchange password.
+### Option: `refresh`
+Number of seconds between scans for new devices on the LAN and installation or update as appropriate.
 
+### Option: `mqtt`
+Server required to send and receive MQTT messages between clients and servers on the LAN.  Defaults are as below:
 ```
-  "exchange": {
-    "username": "<username>",
-    "password": "<password>",
-    "organization": "cgiroua@us.ibm.com",
-    "url": "https://stg-edge-cluster.us-south.containers.appdomain.cloud/v1",
-    "device": "",
-    "token": ""
+"mqtt": {
+    "host": "core-mosquitto",
+    "port": 1883,
+    "username": "",
+    "password": ""
+}
+```
+
+### Option: `cloudant`
+Database required to store node (`hzn-config`) and addon configuration information; the addon database is `<IBM_CLOUD_LOGIN_EMAIL>` without the `@host.tld` appended. Configurations specified in the `horizon.config` attribute (see _Option: `horizon`_) refer to record identifiers in `hzn-config`.
+```
+"cloudant": {
+    "url": "<CLOUDANT URL>",
+    "username": "CLOUDANT USERNAME>",
+    "password": "<CLOUDANT PASSWORD>"
   }
 ```
 
-### Option: `MSGHUB_API_KEY`
-
-**Note**: _You must obtain [credentials][kafka-creds] for IBM MessageHub for alpha phase_
-
+### Option: `horizon`
+Credentials required for controlling and interacting with the Open Horizon exchange.  For more information about the `horizon.config` reference specification, please refer [here][dcm-oh-setup].
 ```
-  "variables": [
-    {
-      "env": "MSGHUB_API_KEY",
-      "value": ""
-    }
-  ]
+"horizon": {
+    "apikey": "<HORIZON_API_KEY>",
+    "org": "<IBM_CLOUD_LOGIN_EMAIL>",
+    "device": "<YOUR DEVICE NAME>",
+    "url": "https://alpha.edge-fabric.com/v1",
+    "config": "<CLOUDANT CONFIGURATION ID>"
+}
 ```
+
+## USE
+
+Listen to the MQTT host and port to receive JSON payload of nodes.  The _CONFIGURATION_ identifier is from the `horizon.config` option; the _DEVICE_ identifier is from the node specified in that configuration (e.g. `test-cpu-1`).
+
+1. `<CONFIGURATION>/<DEVICE>/start`
+
+A complete configuration is automatically generated from templates modified based on _Options_ specified (per above).
+
+1. [configuration.yaml][horizon-yaml]
+1. [groups.yaml][horizon-groups]
+1. [automations.yaml][horizon-automations]
+1. [secrets.yaml][horizon-secrets]
+1. [ui-lovelace.yaml][horizon-lovelace]
+
+# Sample output
+
+![horizon sample](horizon-sample.png?raw=true "HORIZON")
 
 ## Changelog & Releases
 
@@ -73,6 +95,13 @@ based on the following:
 
 David C Martin (github@dcmartin.com)
 
+[horizon-lovelace]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/horizon/rootfs/var/config/ui-lovelace.yaml
+[horizon-yaml]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/horizon/rootfs/var/config/configuration.yaml
+[horizon-groups]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/horizon/rootfs/var/config/groups.yaml
+[horizon-automations]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/horizon/rootfs/var/config/automations.yaml
+[horizon-secrets]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/horizon/rootfs/var/config/secrets.yaml
+
+
 [commits]: https://github.com/dcmartin/hassio-addons/cpu2msghub/commits/master
 [contributors]: https://github.com/dcmartin/hassio-addons/cpu2msghub/graphs/contributors
 [dcmartin]: https://github.com/dcmartin
@@ -85,12 +114,18 @@ David C Martin (github@dcmartin.com)
 [watson-stt]: https://console.bluemix.net/catalog/services/speech-to-text
 [edge-slack]: https://ibm-appsci.slack.com/messages/edge-fabric-users/
 [ibm-registration]: https://console.bluemix.net/registration/
-[kafka-creds]: https://console.bluemix.net/services/messagehub/b5f8df99-d3f6-47b8-b1dc-12806d63ae61/?paneId=credentials&new=true&env_id=ibm:yp:us-south&org=51aea963-6924-4a71-81d5-5f8c313328bd&space=f965a097-fcb8-4768-953e-5e86ea2d66b4
-[cpu-yaml]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/cpu2msghub/cpu2msghub.yaml
-[cpu-lovelace]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/cpu2msghub/ui-lovelace.yaml
+
 [open-horizon]: https://github.com/open-horizon
+[sdr-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/sdr2msghub
 [cpu-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/cpu2msghub
+[cpu-addon]: https://github.com/dcmartin/hassio-addons/tree/master/cpu2msghub
+[sdr-addon]: https://github.com/dcmartin/hassio-addons/tree/master/sdr2msghub
+
 [edge-fabric]: https://console.test.cloud.ibm.com/docs/services/edge-fabric/getting-started.html
 [edge-install]: https://console.test.cloud.ibm.com/docs/services/edge-fabric/adding-devices.html
 [macos-install]: https://github.com/open-horizon/anax/releases
 [hzn-setup]: https://raw.githubusercontent.com/dcmartin/hassio-addons/master/horizon/hzn-setup.sh
+[template]: https://github.com/dcmartin/open-horizon/blob/master/setup/template.json
+[dcm-oh]: https://github.com/dcmartin/open-horizon/tree/master/README.md
+[dcm-oh-setup]: https://github.com/dcmartin/open-horizon/tree/master/setup
+[examples]: https://github.com/open-horizon/examples
