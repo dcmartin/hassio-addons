@@ -46,7 +46,7 @@ Server required to send and receive MQTT messages between clients and servers on
 ```
 
 ### Option: `cloudant`
-Database required to store node (`hzn-config` database) and addon (`<IBM_CLOUD_LOGIN_EMAIL>` database) configuration information. Configurations specified in the `horizon.config` attribute (see _Option: `horizon`_) refer to records in the `hzn-config` database.
+Database required to store node (`hzn-config`) and addon configuration information; the addon database is `<IBM_CLOUD_LOGIN_EMAIL>` without the `@host.tld` appended. Configurations specified in the `horizon.config` attribute (see _Option: `horizon`_) refer to record identifiers in `hzn-config`.
 ```
 "cloudant": {
     "url": "<CLOUDANT URL>",
