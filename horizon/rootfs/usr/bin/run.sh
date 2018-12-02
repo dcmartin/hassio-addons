@@ -342,13 +342,17 @@ main() {
   SCRIPT_LOG="${SCRIPT_DIR}/${SCRIPT}.$(date +%s).log"
   SCRIPT_URL="https://raw.githubusercontent.com/dcmartin/open-horizon/master/setup"
   TMPLS="config-ssh.tmpl ssh-copy-id.tmpl wpa_supplicant.tmpl"
-  FILES=($(echo ${SCRIPT} ${TMPLS}))
+  FILES="${SCRIPT} ${TMPLS}"
 
-  hass.log.debug "Retrieving ${FILES} from ${SCRIPT_URL}"
+
+  # make working directory
+  hass.log.trace "Creating ${SCRIPT_DIR}"
+  mkdir -p "${SCRIPT_DIR}"
 
   # get all the files
-  mkdir -p "${SCRIPT_DIR}"
+  hass.log.debug "Retrieving ${FILES} from ${SCRIPT_URL}"
   for F in ${FILES}; do
+    hass.log.trace "Retrieving ${SCRIPT_URL}/${F}"
     curl -sL "${SCRIPT_URL}/${F}" -o "${SCRIPT_DIR}/${F}"
     if [[ ! -s "${SCRIPT_DIR}/${F}" ]]; then
       hass.log.warning "Failed to retrieve ${SCRIPT_DIR}/${F} from ${SCRIPT_URL}/${F}"
