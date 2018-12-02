@@ -369,7 +369,7 @@ main() {
     hass.log.info $(date) "${SCRIPT} on ${HORIZON_CONFIG_FILE} for ${HOST_LAN}; logging to ${SCRIPT_LOG}"
     cd "${SCRIPT_DIR}" && bash -- "./${SCRIPT}" "${HORIZON_CONFIG_FILE}" "${HOST_LAN}" &> "${SCRIPT_LOG}" && true
 
-    # update/create configuration
+    # update configuration
     URL="${CLOUDANT_URL}/${HORIZON_CONFIG_DB}/${HORIZON_CONFIG_NAME}"
     hass.log.debug "Looking for configuration ${HORIZON_CONFIG_NAME} at ${URL}"
     REV=$(curl -sL "${URL}" | jq -r '._rev')
@@ -379,11 +379,11 @@ main() {
     fi
     # create/update device 
     hass.log.debug "Updating configuration ${HORIZON_CONFIG_NAME} with ${HORIZON_CONFIG_FILE} at ${URL}"
-    OK=$(curl -sL "${URL}" -X PUT -d "@${HORIZON_CONFIG_FILE}" | jq '.ok')
-    if [[ "${OK}" != "true" ]]; then
-      hass.log.warning "Failed to update configuration ${HORIZON_CONFIG_NAME} at ${URL}"
+    RESULT=$(curl -sL "${URL}" -X PUT -d '@'"${HORIZON_CONFIG_FILE}")
+    if [[ $(echo "${RESULT}" | jq '.ok') != "true" ]]; then
+      hass.log.warning "Update failed configuration ${HORIZON_CONFIG_NAME} with error" $(echo "${RESULT}" | jq '.error')
     else
-      hass.log.info "Updated configuration ${HORIZON_CONFIG_NAME}"
+      hass.log.info "Updated succeeded configuration ${HORIZON_CONFIG_NAME}"
     fi
 
     ## SLEEP
