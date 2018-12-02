@@ -120,6 +120,7 @@ David C Martin (github@dcmartin.com)
 [cpu-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/cpu2msghub
 [cpu-addon]: https://github.com/dcmartin/hassio-addons/tree/master/cpu2msghub
 [sdr-addon]: https://github.com/dcmartin/hassio-addons/tree/master/sdr2msghub
+[horizon-addon]: https://github.com/dcmartin/hassio-addons/tree/master/horizon
 
 [edge-fabric]: https://console.test.cloud.ibm.com/docs/services/edge-fabric/getting-started.html
 [edge-install]: https://console.test.cloud.ibm.com/docs/services/edge-fabric/adding-devices.html
