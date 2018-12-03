@@ -338,7 +338,7 @@ main() {
     echo 'PassEnv HORIZON_DATA_DIR' >> "${APACHE_CONF}"
     # echo 'PassEnv HORIZON_WATSON_APIKEY' >> "${APACHE_CONF}"
     # make /run/apache2 for PID file
-    mkdir -p /run/apache2
+    mkdir -p "${APACHE_RUN_DIR}"
     # start HTTP daemon in foreground
     if [[ -n $(command -v "${APACHE_COMMAND}") ]]; then
       hass.log.info "Starting Apache: ${APACHE_CONF} ${APACHE_HOST} ${APACHE_PORT} ${APACHE_HTDOCS}"
