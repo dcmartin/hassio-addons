@@ -1,7 +1,7 @@
 {
   "name": "Horizon Control",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/horizon",
-  "version": "0.1.44",
+  "version": "0.1.45",
   "slug": "horizon",
   "description": "Example base addon for horizon",
   "startup": "before",
@@ -12,6 +12,7 @@
     "armhf",
     "i386"
   ],
+  "webui": "http://[HOST]:[PORT:9999]/",
   "hassio_role": "default",
   "hassio_api": true,
   "homeassistant_api": true,

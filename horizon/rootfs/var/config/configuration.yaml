@@ -21,10 +21,10 @@ tts:
   - platform: google
 
 panel_iframe:
-  configurator:
-    title: Configurator
+  horizon:
+    title: Horizon Control
     icon: mdi:wrench
-    url: http://%%HOST_IPADDR%%:3218
+    url: http://%%HOST_IPADDR%%:9999
     
 mqtt:
   broker: %%MQTT_HOST%%

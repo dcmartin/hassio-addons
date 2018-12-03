@@ -11,10 +11,14 @@ ARG BUILD_ARCH=amd64
 RUN apt-get update \
   && apt-get install -y \
     mosquitto-clients \
+    tcsh \
+    dateutils \
     bc \
     keychain \
     expect \
     nmap \
+    apache2 \
+    apache2-utils \
   \
   && ARCH="${BUILD_ARCH}" \
   && if [ "${BUILD_ARCH}" = "aarch64" ]; then ARCH="arm64"; fi \
@@ -28,6 +32,21 @@ RUN apt-get update \
       /tmp/* \
       /var/{cache,log}/* \
       /var/lib/apt/lists/*
+
+## APACHE
+
+ARG HORIZON_APACHE_CONF=/etc/apache2/httpd.conf
+ARG HORIZON_APACHE_HTDOCS=/var/www/localhost/htdocs
+ARG HORIZON_APACHE_CGIBIN=/var/www/localhost/cgi-bin
+ARG HORIZON_APACHE_PORT=9999
+
+ENV HORIZON_APACHE_CONF "${HORIZON_APACHE_CONF}"
+ENV HORIZON_APACHE_HTDOCS "${HORIZON_APACHE_HTDOCS}"
+ENV HORIZON_APACHE_CGIBIN "${HORIZON_APACHE_CGIBIN}"
+ENV HORIZON_APACHE_PORT "${HORIZON_APACHE_PORT}"
+
+# Ports for motion (control and stream)
+EXPOSE ${HORIZON_APACHE_PORT}
 
 # Copy root filesystem
 COPY rootfs /

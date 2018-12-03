@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<link href="https://fonts.googleapis.com/css?family=IBM+Plex+Sans" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'IBM+Plex+Sans', sans-serif, serif;
+      }
+    </style>
+
+
+<title>Horizon Control</title>
+</head>
+
+<script>
+var devreq = new XMLHttpRequest();
+devreq.onreadystatechange = function() {
+  if (this.readyState == 4 && this.status == 200 && this.responseText != null) {
+    var jobj = JSON.parse(this.responseText);
+
+    jobj.devices.forEach(function(item,index) {
+      devices.innerHTML += '<h2>NAME: ' + item.hostname + '</h2>';
+      devices.innerHTML += '<ul>'
+      devices.innerHTML += '<li><a href="/cgi-bin/horizon-view.cgi?db=' + item.hostname + '">View</a> node details&nbsp;';
+      devices.innerHTML += '<li><a href="/cgi-bin/horizon-change.cgi?db=' + item.hostname + '">Change</a> node pattern&nbsp;';
+      devices.innerHTML += '<li>Trained models: <ul><div id="' + item.name + '_models' + '"></div></ul>';
+      devices.innerHTML += '</ul>';
+    });
+    jobj.devices.forEach(function(item,index) {
+      var modreq = new XMLHttpRequest();
+      modreq.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200 && this.responseText != null) {
+          var jobj = JSON.parse(this.responseText);
+
+          if (jobj != null) {
+            if (jobj["error"] != null) {
+              console.log(jobj.error);
+            } else if (jobj.models != null) {
+              console.log(jobj.models);
+              jobj.models.forEach(function(model,index){
+                did = model.device + '_models';
+                mod = document.getElementById(did)
+                mod.innerHTML += '<li><a href="/horizon-model.html?model=' + model.model + '">' + model.model + '</a>' 
+              });
+            }
+          } else {
+            console.log('null JSON object');
+          }
+        } else {
+          console.log('null responseText');
+        }
+      }
+      modreq.open("GET","/cgi-bin/horizon-models.cgi?db=" + item.name, true);
+      modreq.send();
+    });
+  }
+}
+devreq.open("GET","/cgi-bin/horizon-devices.cgi", true);
+devreq.send();
+</script>
+
+<script>
+var matreq = new XMLHttpRequest();
+matreq.onreadystatechange = function() {
+  if (this.readyState == 4 && this.status == 200 && this.responseText != null) {
+    var jobj = JSON.parse(this.responseText);
+
+    <!-- jobj.models.forEach(function(item,index){ models.innerHTML = models.innerHTML + "matrix#" + index + ": " + item + "<br>" }); -->
+    jobj.models.forEach(function(item,index){ models.innerHTML = models.innerHTML + '<a href="/horizon-model.html?model=' + item + '">' + item + '</a><br>' });
+  }
+}
+matreq.open("GET","/cgi-bin/horizon-models.cgi", true);
+matreq.send();
+</script>
+
+<script>
+
+window.onload = function () {
+  rfr = document.referrer.split('/');
+  prot = rfr[0];
+  site = rfr[2].split(':');
+  port = site[1];
+  site = site[0];
+  cid = document.getElementById("controls");
+  cid.href = prot + "//" + site + ":8080/";
+  cid = document.getElementById("data");
+  cid.href = prot + "//" + site + ":7999/cameras";
+  cid = document.getElementById("cameras");
+  cid.href = prot + "//" + site + ":8123/" + "lovelace";
+}
+
+</script>
+
+<body>
+
+<h1>Horizon Control</h1>
+<ul>
+<li><h2><a id="cameras" href="">Nodes</a></h1><div id="lovelace"></div></li>
+<li><h2><a id="controls" href="">Controls</a></h1><div id="threads"></div></li>
+<li><h2><a id="data" href="">Data</a></h1><div id="datasets"></div></li>
+</ul>
+
+<h1>DEVICES</h1><div id="devices"></div>
+
+<h1>MODELS</h1><div id="models"></div>
+
+</body>
+</html>

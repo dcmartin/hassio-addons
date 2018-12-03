@@ -25,6 +25,10 @@ main() {
   # START ADDON_CONFIG
   ADDON_CONFIG='{"hostname":"'"$(hostname)"'","arch":"'"$(arch)"'","date":'$(/bin/date +%s)
 
+  # HOST IPADDR
+  VALUE=$(hostname -I | awk '{ print $1 }')
+  ADDON_CONFIG="${ADDON_CONFIG}"',"host_ipaddr":"'"${VALUE}"'"'
+
   # TIMEZONE
   VALUE=$(hass.config.get "timezone")
   if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then VALUE="GMT"; fi
@@ -52,9 +56,6 @@ main() {
   VALUE=$(hass.config.get "refresh")
   if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then VALUE="900"; hass.log.warning "Using default refresh: ${VALUE}"; fi
   ADDON_CONFIG="${ADDON_CONFIG}"',"refresh":'"${VALUE}"
-  # HOST IPADDR
-  VALUE=$(hostname -I | awk '{ print $1 }')
-  ADDON_CONFIG="${ADDON_CONFIG}"',"host_ipaddr":"'"${VALUE}"'"'
 
   ## HORIZON
   VALUE=$(hass.config.get "horizon.org")
@@ -103,11 +104,11 @@ main() {
   hass.log.debug "CONFIGURATION:" $(echo "${ADDON_CONFIG}" | jq -c '.')
 
   ## ADDON CONFIGURATION
-  HORIZON_ORGANIZATION=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.org')
-  HORIZON_DEVICE_DB=$(echo "${HORIZON_ORGANIZATION}" | sed 's/@.*//')
-  HORIZON_DEVICE_NAME=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.device')
-  HORIZON_CONFIG_NAME=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.config')
-  ADDON_CONFIG_FILE="${CONFIG_DIR}/${HORIZON_DEVICE_NAME}.json"
+  export HORIZON_ORGANIZATION=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.org')
+  export HORIZON_DEVICE_DB=$(echo "${HORIZON_ORGANIZATION}" | sed 's/@.*//')
+  export HORIZON_DEVICE_NAME=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.device')
+  export HORIZON_CONFIG_NAME=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.config')
+  export ADDON_CONFIG_FILE="${CONFIG_DIR}/${HORIZON_DEVICE_NAME}.json"
   # check it
   echo "${ADDON_CONFIG}" | jq '.' > "${ADDON_CONFIG_FILE}"
   if [ ! -s "${ADDON_CONFIG_FILE}" ]; then
@@ -315,6 +316,36 @@ main() {
   mosquitto_pub -r -q 2 -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/start" -f "${ADDON_CONFIG_FILE}"
 
   ##
+  ## START HTTPD
+  ##
+  if [ -s "${APACHE_CONF}" ]; then
+    # parameters from addon options
+    APACHE_ADMIN=$(jq 'horizon.org' "${ADDON_CONFIG_FILE}")
+    APACHE_HOST=$(jq '.horizon.device' "${ADDON_CONFIG_FILE}")
+    # APACHE_HOST=$(jq '.host_ipaddr' "${ADDON_CONFIG_FILE}")
+    # APACHE_HOST="hassio/addon_cb7b3237_horizon"
+    # edit defaults
+    sed -i 's|^Listen \(.*\)|Listen '${APACHE_PORT}'|' "${APACHE_CONF}"
+    sed -i 's|^ServerName \(.*\)|ServerName '"${APACHE_HOST}:${APACHE_PORT}"'|' "${APACHE_CONF}"
+    sed -i 's|^ServerAdmin \(.*\)|ServerAdmin '"${APACHE_ADMIN}"'|' "${APACHE_CONF}"
+    # sed -i 's|^ServerTokens \(.*\)|ServerTokens '"${APACHE_TOKENS}"'|' "${APACHE_CONF}"
+    # sed -i 's|^ServerSignature \(.*\)|ServerSignature '"${APACHE_SIGNATURE}"'|' "${APACHE_CONF}"
+    # enable CGI
+    sed -i 's|^\([^#]\)#LoadModule cgi|\1LoadModule cgi|' "${APACHE_CONF}"
+    # set environment
+    echo 'PassEnv ADDON_CONFIG_FILE' >> "${APACHE_CONF}"
+    echo 'PassEnv HORIZON_CLOUDANT_URL' >> "${APACHE_CONF}"
+    echo 'PassEnv HORIZON_SHARE_DIR' >> "${APACHE_CONF}"
+    echo 'PassEnv HORIZON_DATA_DIR' >> "${APACHE_CONF}"
+    # echo 'PassEnv HORIZON_WATSON_APIKEY' >> "${APACHE_CONF}"
+    # make /run/apache2 for PID file
+    mkdir -p /run/apache2
+    # start HTTP daemon in foreground
+    hass.log.info "Starting Apache: ${APACHE_CONF} ${APACHE_HOST} ${APACHE_PORT} ${APACHE_HTDOCS}" >&2
+    httpd -E /dev/stderr -e debug -f "${APACHE_CONF}" # -DFOREGROUND
+  fi
+
+  ##
   ## RESTART HOMEASSISTANT
   ##
   if [[ -n ${HASSIO_TOKEN:-} ]]; then
@@ -344,7 +375,6 @@ main() {
   TMPLS="config-ssh.tmpl ssh-copy-id.tmpl wpa_supplicant.tmpl"
   FILES="${SCRIPT} ${TMPLS}"
 
-
   # make working directory
   hass.log.trace "Creating ${SCRIPT_DIR}"
   mkdir -p "${SCRIPT_DIR}"
@@ -365,25 +395,38 @@ main() {
   while [[ NODE=$(hzn node list) ]]; do
     hass.log.debug "Node state:" $(echo "${NODE}" | jq '.configstate.state') "; workloads:" $(hzn agreement list | jq -r '.[]|.workload_to_run.url')
 
+    ## copy configuration
+    cp -f "${HORIZON_CONFIG_FILE}" "${HORIZON_CONFIG_FILE}.$$"
     ## EVALUATE
-    hass.log.info $(date) "${SCRIPT} on ${HORIZON_CONFIG_FILE} for ${HOST_LAN}; logging to ${SCRIPT_LOG}"
-    cd "${SCRIPT_DIR}" && bash -- "./${SCRIPT}" "${HORIZON_CONFIG_FILE}" "${HOST_LAN}" &> "${SCRIPT_LOG}" && true
-
-    # update configuration
-    URL="${CLOUDANT_URL}/${HORIZON_CONFIG_DB}/${HORIZON_CONFIG_NAME}"
-    hass.log.debug "Looking for configuration ${HORIZON_CONFIG_NAME} at ${URL}"
-    REV=$(curl -sL "${URL}" | jq -r '._rev')
-    if [[ "${REV}" != "null" && ! -z "${REV}" ]]; then
-      hass.log.debug "Prior configuration with revision ${REV}"
-      URL="${URL}?rev=${REV}"
-    fi
-    # create/update device 
-    hass.log.debug "Updating configuration ${HORIZON_CONFIG_NAME} with ${HORIZON_CONFIG_FILE} at ${URL}"
-    RESULT=$(curl -sL "${URL}" -X PUT -d '@'"${HORIZON_CONFIG_FILE}")
-    if [[ $(echo "${RESULT}" | jq '.ok') != "true" ]]; then
-      hass.log.warning "Update failed configuration ${HORIZON_CONFIG_NAME} with error" $(echo "${RESULT}" | jq '.error')
+    hass.log.info $(date) "${SCRIPT} on ${HORIZON_CONFIG_FILE}.$$ for ${HOST_LAN}; logging to ${SCRIPT_LOG}"
+    cd "${SCRIPT_DIR}" && bash -- "./${SCRIPT}" "${HORIZON_CONFIG_FILE}.$$" "${HOST_LAN}" &> "${SCRIPT_LOG}" && true
+    if [[ -s "${HORIZON_CONFIG_FILE}.$$" ]]; then
+      if [[ CMP=$(cmp "${HORIZON_CONFIG_FILE}" "${HORIZON_CONFIG_FILE}.$$") ]]; then
+	# update configuration
+	hass.log.info "Configuration ${HORIZON_CONFIG_NAME} changed: $CMP; updating database"
+	URL="${CLOUDANT_URL}/${HORIZON_CONFIG_DB}/${HORIZON_CONFIG_NAME}"
+	hass.log.debug "Looking for configuration ${HORIZON_CONFIG_NAME} at ${URL}"
+	REV=$(curl -sL "${URL}" | jq -r '._rev')
+	if [[ "${REV}" != "null" && ! -z "${REV}" ]]; then
+	  hass.log.debug "Found prior configuration ${HORIZON_CONFIG_NAME}; revision ${REV}"
+	  URL="${URL}?rev=${REV}"
+	fi
+	# create/update device 
+	hass.log.debug "Attempting update of configuration ${HORIZON_CONFIG_NAME} with ${HORIZON_CONFIG_FILE}.$$ at ${URL}"
+	RESULT=$(curl -sL "${URL}" -X PUT -d '@'"${HORIZON_CONFIG_FILE}.$$")
+	if [[ $(echo "${RESULT}" | jq '.ok') != "true" ]]; then
+	  hass.log.warning "Update failed ${HORIZON_CONFIG_FILE}.$$ with error" $(echo "${RESULT}" | jq '.error')
+	else
+	  hass.log.info "Updated succeeded configuration ${HORIZON_CONFIG_NAME}"
+	fi
+	hass.log.debug "Updating file ${HORIZON_CONFIG_FILE} from ${HORIZON_CONFIG_FILE}.$$"
+	mv -f "${HORIZON_CONFIG_FILE}.$$" "${HORIZON_CONFIG_FILE}"
+      else
+	hass.log.info "No updates processed for ${HORIZON_CONFIG_NAME}"
+      fi
     else
-      hass.log.info "Updated succeeded configuration ${HORIZON_CONFIG_NAME}"
+      hass.log.fatal "Failed ${SCRIPT} processing; zero-length result; check ${SCRIPT_LOG} on host ${HOST_IPADDR}"
+      hass.die
     fi
 
     ## SLEEP
