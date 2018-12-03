@@ -330,13 +330,14 @@ main() {
       ln -s "${APACHE_CONF%/*}/mods-available/${mod}" "${APACHE_CONF%/*}/mods-enabled/${mod}" || true
     done
     # edit defaults
+    hass.log.debug "Changing Listen to ${APACHE_PORT}"
     sed -i 's|^Listen\(.*\)|Listen '${APACHE_PORT}'|' "${APACHE_CONF}"
-    sed -i 's|^ServerName\(.*\)|ServerName '"${APACHE_HOST}:${APACHE_PORT}"'|' "${APACHE_CONF}"
+    hass.log.debug "Changing ServerName to ${APACHE_HOST}"
+    sed -i 's|^ServerName\(.*\)|ServerName '"${APACHE_HOST}"'|' "${APACHE_CONF}"
+    hass.log.debug "Changing ServerAdmin to ${APACHE_ADMIN}"
     sed -i 's|^ServerAdmin\(.*\)|ServerAdmin '"${APACHE_ADMIN}"'|' "${APACHE_CONF}"
     # sed -i 's|^ServerTokens \(.*\)|ServerTokens '"${APACHE_TOKENS}"'|' "${APACHE_CONF}"
     # sed -i 's|^ServerSignature \(.*\)|ServerSignature '"${APACHE_SIGNATURE}"'|' "${APACHE_CONF}"
-    # enable CGI
-    sed -i 's|^\([^#]\)#LoadModule cgi|\1LoadModule cgi|' "${APACHE_CONF}"
     # set environment
     echo 'PassEnv ADDON_CONFIG_FILE' >> "${APACHE_CONF}"
     echo 'PassEnv HORIZON_CLOUDANT_URL' >> "${APACHE_CONF}"
@@ -346,6 +347,7 @@ main() {
     mkdir -p "${APACHE_RUN_DIR}"
     # start HTTP daemon in foreground
     if [[ -n $(command -v "${APACHE_COMMAND}") ]]; then
+      cat "${APACHE_CONF}" > "${CONFIG_DIR}/httpd.conf"
       hass.log.info "Starting Apache: ${APACHE_CONF} ${APACHE_HOST} ${APACHE_PORT} ${APACHE_HTDOCS}"
       ${APACHE_COMMAND} -E /dev/stderr -e debug -f "${APACHE_CONF}" # -DFOREGROUND
     else
