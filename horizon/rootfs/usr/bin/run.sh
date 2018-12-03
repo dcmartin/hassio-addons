@@ -320,16 +320,18 @@ main() {
   ## START HTTPD
   ##
   if [ -s "${APACHE_CONF}" ]; then
-    cat "${APACHE_CONF}" > /data/apache.conf
     # parameters from addon options
     APACHE_ADMIN="${HORIZON_ORGANIZATION}"
-    # APACHE_HOST="${HORIZON_DEVICE_NAME}" # ="hassio/addon_cb7b3237_horizon"
     APACHE_HOST="${HOST_IPADDR}"
+    # APACHE_HOST="${HORIZON_DEVICE_NAME}" # ="hassio/addon_cb7b3237_horizon"
     # APACHE_HOST="hassio/addon_cb7b3237_horizon"
+    # configure for CGI
+    ln -s "${APACHE_CONF%/*}/mods-available/"*cgi* "${APACHE_CONF%/*}/mods-enabled"
+    ln -s "${APACHE_CONF%/*}/conf-available/"*cgi* "${APACHE_CONF%/*}/conf-enabled"
     # edit defaults
-    sed -i 's|^Listen \(.*\)|Listen '${APACHE_PORT}'|' "${APACHE_CONF}"
-    sed -i 's|^ServerName \(.*\)|ServerName '"${APACHE_HOST}:${APACHE_PORT}"'|' "${APACHE_CONF}"
-    sed -i 's|^ServerAdmin \(.*\)|ServerAdmin '"${APACHE_ADMIN}"'|' "${APACHE_CONF}"
+    sed -i 's|^Listen\(.*\)|Listen '${APACHE_PORT}'|' "${APACHE_CONF}"
+    sed -i 's|^ServerName\(.*\)|ServerName '"${APACHE_HOST}:${APACHE_PORT}"'|' "${APACHE_CONF}"
+    sed -i 's|^ServerAdmin\(.*\)|ServerAdmin '"${APACHE_ADMIN}"'|' "${APACHE_CONF}"
     # sed -i 's|^ServerTokens \(.*\)|ServerTokens '"${APACHE_TOKENS}"'|' "${APACHE_CONF}"
     # sed -i 's|^ServerSignature \(.*\)|ServerSignature '"${APACHE_SIGNATURE}"'|' "${APACHE_CONF}"
     # enable CGI
