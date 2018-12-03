@@ -342,7 +342,7 @@ main() {
     # start HTTP daemon in foreground
     if [[ -n $(command -v "${APACHE_COMMAND}") ]]; then
       hass.log.info "Starting Apache: ${APACHE_CONF} ${APACHE_HOST} ${APACHE_PORT} ${APACHE_HTDOCS}"
-      httpd -E /dev/stderr -e debug -f "${APACHE_CONF}" # -DFOREGROUND
+      ${APACHE_COMMAND} -E /dev/stderr -e debug -f "${APACHE_CONF}" # -DFOREGROUND
     else
       hass.log.warning "Cannot find executable for ${APACHE_COMMAND}"
     fi
