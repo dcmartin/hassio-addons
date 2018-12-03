@@ -327,7 +327,7 @@ main() {
     # APACHE_HOST="hassio/addon_cb7b3237_horizon"
     # configure for CGI
     for mod in cgi.load cgid.conf cgid.load; do
-      ln -s "${APACHE_CONF%/*}/mods-available/${mod}" "${APACHE_CONF%/*}/mods-enabled/${moe}" || true
+      ln -s "${APACHE_CONF%/*}/mods-available/${mod}" "${APACHE_CONF%/*}/mods-enabled/${mod}" || true
     done
     # edit defaults
     sed -i 's|^Listen\(.*\)|Listen '${APACHE_PORT}'|' "${APACHE_CONF}"
