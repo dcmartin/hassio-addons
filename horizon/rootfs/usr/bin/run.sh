@@ -403,7 +403,8 @@ main() {
     hass.log.info $(date) "${SCRIPT} on ${HORIZON_CONFIG_FILE}.$$ for ${HOST_LAN}; logging to ${SCRIPT_LOG}"
     cd "${SCRIPT_DIR}" && bash -- "./${SCRIPT}" "${HORIZON_CONFIG_FILE}.$$" "${HOST_LAN}" &> "${SCRIPT_LOG}" && true
     if [[ -s "${HORIZON_CONFIG_FILE}.$$" ]]; then
-      if [[ DIFF=$(diff "${HORIZON_CONFIG_FILE}" "${HORIZON_CONFIG_FILE}.$$" | wc -c) > 0 ]]; then
+      DIFF=$(diff "${HORIZON_CONFIG_FILE}" "${HORIZON_CONFIG_FILE}.$$" | wc -c)
+      if [ ${DIFF} -gt 0 ]; then 
 	# update configuration
 	hass.log.info "Configuration ${HORIZON_CONFIG_NAME} bytes changed: ${DIFF}; updating database"
 	URL="${CLOUDANT_URL}/${HORIZON_CONFIG_DB}/${HORIZON_CONFIG_NAME}"
