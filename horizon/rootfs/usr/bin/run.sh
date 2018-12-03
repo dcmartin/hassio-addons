@@ -326,8 +326,9 @@ main() {
     # APACHE_HOST="${HORIZON_DEVICE_NAME}" # ="hassio/addon_cb7b3237_horizon"
     # APACHE_HOST="hassio/addon_cb7b3237_horizon"
     # configure for CGI
-    ln -s "${APACHE_CONF%/*}/mods-available/"*cgi* "${APACHE_CONF%/*}/mods-enabled" || true
-    ln -s "${APACHE_CONF%/*}/conf-available/"*cgi* "${APACHE_CONF%/*}/conf-enabled" || true
+    for mod in cgi.load cgid.conf cgid.load; do
+      ln -s "${APACHE_CONF%/*}/mods-available/${mod}" "${APACHE_CONF%/*}/mods-enabled/${moe}" || true
+    done
     # edit defaults
     sed -i 's|^Listen\(.*\)|Listen '${APACHE_PORT}'|' "${APACHE_CONF}"
     sed -i 's|^ServerName\(.*\)|ServerName '"${APACHE_HOST}:${APACHE_PORT}"'|' "${APACHE_CONF}"
