@@ -321,7 +321,7 @@ main() {
   ##
   if [ -s "${APACHE_CONF}" ]; then
     # parameters from addon options
-    APACHE_ADMIN="${HORIZON_ORGANIZAION}"
+    APACHE_ADMIN="${HORIZON_ORGANIZATION}"
     APACHE_HOST="${HORIZON_DEVICE_NAME}" # ="hassio/addon_cb7b3237_horizon"
     # edit defaults
     sed -i 's|^Listen \(.*\)|Listen '${APACHE_PORT}'|' "${APACHE_CONF}"
