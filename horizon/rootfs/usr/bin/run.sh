@@ -340,10 +340,14 @@ main() {
     # make /run/apache2 for PID file
     mkdir -p /run/apache2
     # start HTTP daemon in foreground
-    hass.log.info "Starting Apache: ${APACHE_CONF} ${APACHE_HOST} ${APACHE_PORT} ${APACHE_HTDOCS}"
-    httpd -E /dev/stderr -e debug -f "${APACHE_CONF}" # -DFOREGROUND
+    if [[ -n $(command -v "httpd") ]]; then
+      hass.log.info "Starting Apache: ${APACHE_CONF} ${APACHE_HOST} ${APACHE_PORT} ${APACHE_HTDOCS}"
+      httpd -E /dev/stderr -e debug -f "${APACHE_CONF}" # -DFOREGROUND
+    else
+      hass.log.warning "Cannot find executable for httpd"
+    fi
   else
-    hass.log.info "Did not find Apache configuration at ${APACHE_CONF}"
+    hass.log.warning "Did not find Apache configuration at ${APACHE_CONF}"
   fi
 
   ##
