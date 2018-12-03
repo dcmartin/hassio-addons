@@ -320,6 +320,7 @@ main() {
   ## START HTTPD
   ##
   if [ -s "${APACHE_CONF}" ]; then
+    cat "${APACHE_CONF}" > /data/apache.conf
     # parameters from addon options
     APACHE_ADMIN="${HORIZON_ORGANIZATION}"
     # APACHE_HOST="${HORIZON_DEVICE_NAME}" # ="hassio/addon_cb7b3237_horizon"
