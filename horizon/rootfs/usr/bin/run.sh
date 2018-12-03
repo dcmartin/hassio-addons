@@ -326,14 +326,16 @@ main() {
     # APACHE_HOST="${HORIZON_DEVICE_NAME}" # ="hassio/addon_cb7b3237_horizon"
     # APACHE_HOST="hassio/addon_cb7b3237_horizon"
     # configure for CGI
-    for mod in cgi.load cgid.conf cgid.load; do
-      hass.log.debug "Linking ${APACHE_CONF%/*}/mods-enabled/${mod} to  ${APACHE_CONF%/*}/mods-available/${mod}"
-      ln -s "${APACHE_CONF%/*}/mods-available/${mod}" "${APACHE_CONF%/*}/mods-enabled/${mod}" || true
-    done
-    hass.log.debug "Disabling mpm_prefork"
-    a2dismod mpm_prefork
+    #for mod in cgi.load cgid.conf cgid.load; do
+    #  hass.log.debug "Linking ${APACHE_CONF%/*}/mods-enabled/${mod} to  ${APACHE_CONF%/*}/mods-available/${mod}"
+    #  ln -s "${APACHE_CONF%/*}/mods-available/${mod}" "${APACHE_CONF%/*}/mods-enabled/${mod}" || true
+    #done
+    hass.log.debug "Disabling mpm_event"
+    a2dismod mpm_event
     hass.log.debug "Enabling mpm_worker"
     a2enmod mpm_worker
+    hass.log.debug "Enabling cgi"
+    a2enmod cgi
     # edit defaults
     hass.log.debug "Changing Listen to ${APACHE_PORT}"
     sed -i 's|^Listen\(.*\)|Listen '${APACHE_PORT}'|' "${APACHE_CONF}"
