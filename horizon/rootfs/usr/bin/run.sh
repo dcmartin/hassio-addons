@@ -164,12 +164,12 @@ main() {
   hass.log.debug "CLOUDANT found at ${URL}"
 
   ## BASE URL
-  CLOUDANT_URL="${URL%:*}"'://'"${USERNAME}"':'"${PASSWORD}"'@'"${USERNAME}"."${URL#*.}"
-  hass.log.debug "Using CLOUDANT_URL: ${CLOUDANT_URL}"
+  export HORIZON_CLOUDANT_URL="${URL%:*}"'://'"${USERNAME}"':'"${PASSWORD}"'@'"${USERNAME}"."${URL#*.}"
+  hass.log.debug "Using CLOUDANT_URL: ${HORIZON_CLOUDANT_URL}"
 
   ## CONFIGURATION DATABASE
   # find configuration database (or create)
-  URL="${CLOUDANT_URL}/${HORIZON_CONFIG_DB}"
+  URL="${HORIZON_CLOUDANT_URL}/${HORIZON_CONFIG_DB}"
   hass.log.debug "Looking for configuration database ${HORIZON_CONFIG_DB} at ${URL}"
   DB=$(curl -sL "${URL}" | jq -r '.db_name')
   if [[ "${DB}" != "${HORIZON_CONFIG_DB}" ]]; then
@@ -183,7 +183,7 @@ main() {
   hass.log.info "Configuration database: ${HORIZON_CONFIG_DB}"
 
   # find configuration entry
-  URL="${CLOUDANT_URL}/${HORIZON_CONFIG_DB}/${HORIZON_CONFIG_NAME}"
+  URL="${HORIZON_CLOUDANT_URL}/${HORIZON_CONFIG_DB}/${HORIZON_CONFIG_NAME}"
   hass.log.debug "Looking for configurtion ${HORIZON_CONFIG_NAME} at ${URL}"
   VALUE=$(curl -sL "${URL}")
   hass.log.trace "Received: ${VALUE}"
@@ -207,7 +207,7 @@ main() {
 
   ## DEVICE DATABASE
   # find/create device database (or create)
-  URL="${CLOUDANT_URL}/${HORIZON_DEVICE_DB}"
+  URL="${HORIZON_CLOUDANT_URL}/${HORIZON_DEVICE_DB}"
   hass.log.debug "Looking for device database ${HORIZON_DEVICE_DB} at ${URL}"
   DB=$(curl -sL "${URL}" | jq -r '.db_name')
   if [[ "${DB}" != "${HORIZON_DEVICE_DB}" ]]; then
@@ -220,7 +220,7 @@ main() {
   fi
   hass.log.info "Device database ${HORIZON_DEVICE_DB} exists"
   # update/create device
-  URL="${CLOUDANT_URL}/${HORIZON_DEVICE_DB}/${HORIZON_DEVICE_NAME}"
+  URL="${HORIZON_CLOUDANT_URL}/${HORIZON_DEVICE_DB}/${HORIZON_DEVICE_NAME}"
   hass.log.debug "Looking for device ${HORIZON_DEVICE_NAME} at ${URL}"
   REV=$(curl -sL "${URL}" | jq -r '._rev')
   if [[ "${REV}" != "null" && ! -z "${REV}" ]]; then
@@ -322,7 +322,9 @@ main() {
   if [ -s "${APACHE_CONF}" ]; then
     # parameters from addon options
     APACHE_ADMIN="${HORIZON_ORGANIZATION}"
-    APACHE_HOST="${HORIZON_DEVICE_NAME}" # ="hassio/addon_cb7b3237_horizon"
+    # APACHE_HOST="${HORIZON_DEVICE_NAME}" # ="hassio/addon_cb7b3237_horizon"
+    # APACHE_HOST="${HOST_IPADDR}"
+    APACHE_HOST="hassio/addon_cb7b3237_horizon"
     # edit defaults
     sed -i 's|^Listen \(.*\)|Listen '${APACHE_PORT}'|' "${APACHE_CONF}"
     sed -i 's|^ServerName \(.*\)|ServerName '"${APACHE_HOST}:${APACHE_PORT}"'|' "${APACHE_CONF}"
@@ -335,7 +337,6 @@ main() {
     echo 'PassEnv ADDON_CONFIG_FILE' >> "${APACHE_CONF}"
     echo 'PassEnv HORIZON_CLOUDANT_URL' >> "${APACHE_CONF}"
     echo 'PassEnv HORIZON_SHARE_DIR' >> "${APACHE_CONF}"
-    echo 'PassEnv HORIZON_DATA_DIR' >> "${APACHE_CONF}"
     # echo 'PassEnv HORIZON_WATSON_APIKEY' >> "${APACHE_CONF}"
     # make /run/apache2 for PID file
     mkdir -p "${APACHE_RUN_DIR}"
@@ -410,7 +411,7 @@ main() {
       if [ ${DIFF} -gt 0 ]; then 
 	# update configuration
 	hass.log.info "Configuration ${HORIZON_CONFIG_NAME} bytes changed: ${DIFF}; updating database"
-	URL="${CLOUDANT_URL}/${HORIZON_CONFIG_DB}/${HORIZON_CONFIG_NAME}"
+	URL="${HORIZON_CLOUDANT_URL}/${HORIZON_CONFIG_DB}/${HORIZON_CONFIG_NAME}"
 	hass.log.debug "Looking for configuration ${HORIZON_CONFIG_NAME} at ${URL}"
 	REV=$(curl -sL "${URL}" | jq -r '._rev')
 	if [[ "${REV}" != "null" && ! -z "${REV}" ]]; then
