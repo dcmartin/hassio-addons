@@ -341,8 +341,10 @@ main() {
     # make /run/apache2 for PID file
     mkdir -p /run/apache2
     # start HTTP daemon in foreground
-    hass.log.info "Starting Apache: ${APACHE_CONF} ${APACHE_HOST} ${APACHE_PORT} ${APACHE_HTDOCS}" >&2
+    hass.log.info "Starting Apache: ${APACHE_CONF} ${APACHE_HOST} ${APACHE_PORT} ${APACHE_HTDOCS}"
     httpd -E /dev/stderr -e debug -f "${APACHE_CONF}" # -DFOREGROUND
+  else
+    hass.log.info "Did not find Apache configuration at ${APACHE_CONF}"
   fi
 
   ##
@@ -401,9 +403,9 @@ main() {
     hass.log.info $(date) "${SCRIPT} on ${HORIZON_CONFIG_FILE}.$$ for ${HOST_LAN}; logging to ${SCRIPT_LOG}"
     cd "${SCRIPT_DIR}" && bash -- "./${SCRIPT}" "${HORIZON_CONFIG_FILE}.$$" "${HOST_LAN}" &> "${SCRIPT_LOG}" && true
     if [[ -s "${HORIZON_CONFIG_FILE}.$$" ]]; then
-      if [[ CMP=$(cmp "${HORIZON_CONFIG_FILE}" "${HORIZON_CONFIG_FILE}.$$") ]]; then
+      if [[ DIFF=$(diff "${HORIZON_CONFIG_FILE}" "${HORIZON_CONFIG_FILE}.$$" | wc -c) > 0 ]]; then
 	# update configuration
-	hass.log.info "Configuration ${HORIZON_CONFIG_NAME} changed: $CMP; updating database"
+	hass.log.info "Configuration ${HORIZON_CONFIG_NAME} bytes changed: ${DIFF}; updating database"
 	URL="${CLOUDANT_URL}/${HORIZON_CONFIG_DB}/${HORIZON_CONFIG_NAME}"
 	hass.log.debug "Looking for configuration ${HORIZON_CONFIG_NAME} at ${URL}"
 	REV=$(curl -sL "${URL}" | jq -r '._rev')
