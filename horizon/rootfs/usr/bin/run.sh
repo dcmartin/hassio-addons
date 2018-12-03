@@ -10,7 +10,8 @@ source /usr/lib/hassio-addons/base.sh
 
 CONFIG_PATH="/data/options.json"
 CONFIG_DIR="${CONFIG_PATH%/*}"
-HORIZON_CONFIG_DB="hzn-config"
+export HORIZON_CONFIG_DB="hzn-config"
+export HORIZON_SHARE_DIR="/share/horizon"
 
 # ==============================================================================
 # RUN LOGIC
@@ -320,10 +321,8 @@ main() {
   ##
   if [ -s "${APACHE_CONF}" ]; then
     # parameters from addon options
-    APACHE_ADMIN=$(jq 'horizon.org' "${ADDON_CONFIG_FILE}")
-    APACHE_HOST=$(jq '.horizon.device' "${ADDON_CONFIG_FILE}")
-    # APACHE_HOST=$(jq '.host_ipaddr' "${ADDON_CONFIG_FILE}")
-    # APACHE_HOST="hassio/addon_cb7b3237_horizon"
+    APACHE_ADMIN="${HORIZON_ORGANIZAION}"
+    APACHE_HOST="${HORIZON_DEVICE_NAME}" # ="hassio/addon_cb7b3237_horizon"
     # edit defaults
     sed -i 's|^Listen \(.*\)|Listen '${APACHE_PORT}'|' "${APACHE_CONF}"
     sed -i 's|^ServerName \(.*\)|ServerName '"${APACHE_HOST}:${APACHE_PORT}"'|' "${APACHE_CONF}"
