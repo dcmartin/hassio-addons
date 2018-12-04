@@ -316,6 +316,9 @@ main() {
   hass.log.info "MQTT publish ${ADDON_CONFIG_FILE} to ${MQTT_HOST} topic ${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/start"
   mosquitto_pub -r -q 2 -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/start" -f "${ADDON_CONFIG_FILE}"
 
+  ## DEBUG
+  hass.log.debug "Services:" $(service --status-all)
+
   ##
   ## START HTTPD
   ##
@@ -323,26 +326,18 @@ main() {
     # parameters from addon options
     APACHE_ADMIN="${HORIZON_ORGANIZATION}"
     APACHE_HOST="${HOST_IPADDR}"
-    # APACHE_HOST="${HORIZON_DEVICE_NAME}" # ="hassio/addon_cb7b3237_horizon"
-    # APACHE_HOST="hassio/addon_cb7b3237_horizon"
-    # configure for CGI
-    #for mod in cgi.load cgid.conf cgid.load; do
-    #  hass.log.debug "Linking ${APACHE_CONF%/*}/mods-enabled/${mod} to  ${APACHE_CONF%/*}/mods-available/${mod}"
-    #  ln -s "${APACHE_CONF%/*}/mods-available/${mod}" "${APACHE_CONF%/*}/mods-enabled/${mod}" || true
-    #done
+    # control modules
     hass.log.debug "Disabling mpm_event"
     a2dismod mpm_event &> /dev/null
     hass.log.debug "Enabling mpm_worker"
     a2enmod mpm_worker &> /dev/null
     hass.log.debug "Enabling cgid"
     a2enmod cgid &> /dev/null
-    hass.log.debug "Restarting apache"
-    service apache2 restart
     # edit defaults
     hass.log.debug "Changing Listen to ${APACHE_PORT}"
     sed -i 's|^Listen\(.*\)|Listen '${APACHE_PORT}'|' "${APACHE_CONF}"
-    hass.log.debug "Changing ServerName to ${APACHE_HOST}"
-    sed -i 's|^ServerName\(.*\)|ServerName '"${APACHE_HOST}"'|' "${APACHE_CONF}"
+    hass.log.debug "Changing ServerName to ${APACHE_HOST}:${APACHE_PORT}"
+    sed -i 's|^ServerName\(.*\)|ServerName '"${APACHE_HOST}:${APACHE_PORT}"'|' "${APACHE_CONF}"
     hass.log.debug "Changing ServerAdmin to ${APACHE_ADMIN}"
     sed -i 's|^ServerAdmin\(.*\)|ServerAdmin '"${APACHE_ADMIN}"'|' "${APACHE_CONF}"
     # sed -i 's|^ServerTokens \(.*\)|ServerTokens '"${APACHE_TOKENS}"'|' "${APACHE_CONF}"
@@ -353,15 +348,17 @@ main() {
     echo 'PassEnv HORIZON_SHARE_DIR' >> "${APACHE_CONF}"
     # echo 'PassEnv HORIZON_WATSON_APIKEY' >> "${APACHE_CONF}"
     # make /run/apache2 for PID file
-    mkdir -p "${APACHE_RUN_DIR}"
-    # start HTTP daemon in foreground
-    if [[ -n $(command -v "${APACHE_COMMAND}") ]]; then
-      cat "${APACHE_CONF}" > "${CONFIG_DIR}/httpd.conf"
-      hass.log.info "Starting Apache: ${APACHE_CONF} ${APACHE_HOST} ${APACHE_PORT} ${APACHE_HTDOCS}"
-      ${APACHE_COMMAND} -E /dev/stderr -e debug -f "${APACHE_CONF}" # -DFOREGROUND
-    else
-      hass.log.warning "Cannot find executable for ${APACHE_COMMAND}"
-    fi
+    # mkdir -p "${APACHE_RUN_DIR}"
+    hass.log.debug "Restarting apache"
+    service apache2 restart
+    # start HTTP daemon 
+    #if [[ -n $(command -v "${APACHE_COMMAND}") ]]; then
+    #  cat "${APACHE_CONF}" > "${CONFIG_DIR}/httpd.conf"
+    #  hass.log.info "Starting Apache: ${APACHE_CONF} ${APACHE_HOST} ${APACHE_PORT} ${APACHE_HTDOCS}"
+    #  ${APACHE_COMMAND} -E /dev/stderr -e debug -f "${APACHE_CONF}" || true
+    #else
+    #  hass.log.warning "Cannot find executable for ${APACHE_COMMAND}"
+    #fi
   else
     hass.log.warning "Did not find Apache configuration at ${APACHE_CONF}"
   fi
