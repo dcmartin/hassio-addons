@@ -10,8 +10,8 @@ source /usr/lib/hassio-addons/base.sh
 
 CONFIG_PATH="/data/options.json"
 CONFIG_DIR="${CONFIG_PATH%/*}"
-export HORIZON_CONFIG_DB="hzn-config"
-export HORIZON_SHARE_DIR="/share/horizon"
+HORIZON_CONFIG_DB="hzn-config"
+HORIZON_SHARE_DIR="/share/horizon"
 
 # ==============================================================================
 # RUN LOGIC
@@ -105,11 +105,11 @@ main() {
   hass.log.debug "CONFIGURATION:" $(echo "${ADDON_CONFIG}" | jq -c '.')
 
   ## ADDON CONFIGURATION
-  export HORIZON_ORGANIZATION=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.org')
-  export HORIZON_DEVICE_DB=$(echo "${HORIZON_ORGANIZATION}" | sed 's/@.*//')
-  export HORIZON_DEVICE_NAME=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.device')
-  export HORIZON_CONFIG_NAME=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.config')
-  export ADDON_CONFIG_FILE="${CONFIG_DIR}/${HORIZON_DEVICE_NAME}.json"
+  HORIZON_ORGANIZATION=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.org')
+  HORIZON_DEVICE_DB=$(echo "${HORIZON_ORGANIZATION}" | sed 's/@.*//')
+  HORIZON_DEVICE_NAME=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.device')
+  HORIZON_CONFIG_NAME=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.config')
+  ADDON_CONFIG_FILE="${CONFIG_DIR}/${HORIZON_DEVICE_NAME}.json"
   # check it
   echo "${ADDON_CONFIG}" | jq '.' > "${ADDON_CONFIG_FILE}"
   if [ ! -s "${ADDON_CONFIG_FILE}" ]; then
@@ -126,6 +126,7 @@ main() {
   # command line environment
   export HZN_EXCHANGE_URL=$(jq -r '.horizon.url' "${ADDON_CONFIG_FILE}")
   export HZN_EXCHANGE_USER_AUTH=$(jq -j '.horizon.org,"/iamapikey:",.horizon.apikey' "${ADDON_CONFIG_FILE}")
+
   # agreements
   AGREEMENTS=$(hzn agreement list)
   hass.log.info "Horizon agreements: " $(echo "${AGREEMENTS}" | jq -c '.')
@@ -164,7 +165,7 @@ main() {
   hass.log.debug "CLOUDANT found at ${URL}"
 
   ## BASE URL
-  export HORIZON_CLOUDANT_URL="${URL%:*}"'://'"${USERNAME}"':'"${PASSWORD}"'@'"${USERNAME}"."${URL#*.}"
+  HORIZON_CLOUDANT_URL="${URL%:*}"'://'"${USERNAME}"':'"${PASSWORD}"'@'"${USERNAME}"."${URL#*.}"
   hass.log.debug "Using CLOUDANT_URL: ${HORIZON_CLOUDANT_URL}"
 
   ## CONFIGURATION DATABASE
@@ -317,7 +318,7 @@ main() {
   mosquitto_pub -r -q 2 -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/start" -f "${ADDON_CONFIG_FILE}"
 
   ## DEBUG
-  hass.log.debug "Services:" $(service --status-all)
+  hass.log.trace "Services:" $(service --status-all)
 
   ##
   ## START HTTPD
@@ -325,40 +326,23 @@ main() {
   if [ -s "${APACHE_CONF}" ]; then
     # parameters from addon options
     APACHE_ADMIN="${HORIZON_ORGANIZATION}"
-    APACHE_HOST="${HOST_IPADDR}"
-    # control modules
-    # a2enmod mpm_worker
-    # a2enmod mpm_event
-    # a2enmod mpm_prefork
-    # a2enmod cgi
-    # a2enmod cgid
     # edit defaults
     hass.log.debug "Changing Listen to ${APACHE_PORT}"
     sed -i 's|^Listen\(.*\)|Listen '${APACHE_PORT}'|' "${APACHE_CONF}"
-    #hass.log.debug "Changing ServerName to ${APACHE_HOST}:${APACHE_PORT}"
-    #sed -i 's|^ServerName\(.*\)|ServerName '"${APACHE_HOST}:${APACHE_PORT}"'|' "${APACHE_CONF}"
     hass.log.debug "Changing ServerAdmin to ${APACHE_ADMIN}"
     sed -i 's|^ServerAdmin\(.*\)|ServerAdmin '"${APACHE_ADMIN}"'|' "${APACHE_CONF}"
     # sed -i 's|^ServerTokens \(.*\)|ServerTokens '"${APACHE_TOKENS}"'|' "${APACHE_CONF}"
     # sed -i 's|^ServerSignature \(.*\)|ServerSignature '"${APACHE_SIGNATURE}"'|' "${APACHE_CONF}"
     # set environment
-    echo 'PassEnv ADDON_CONFIG_FILE' >> "${APACHE_CONF}"
-    echo 'PassEnv HORIZON_CLOUDANT_URL' >> "${APACHE_CONF}"
-    echo 'PassEnv HORIZON_SHARE_DIR' >> "${APACHE_CONF}"
-    # echo 'PassEnv HORIZON_WATSON_APIKEY' >> "${APACHE_CONF}"
-    # make /run/apache2 for PID file
+    echo "SetEnv ADDON_CONFIG_FILE ${ADDON_CONFIG_FILE}" >> "${APACHE_CONF}"
+    echo "SetEnv HORIZON_CLOUDANT_URL ${HORIZON_CLOUDANT_URL}" >> "${APACHE_CONF}"
+    echo "SetEnv HORIZON_DEVICE_DB ${HORIZON_DEVICE_DB}" >> "${APACHE_CONF}"
+    echo "SetEnv HORIZON_SHARE_DIR ${HORIZON_SHARE_DIR}" >> "${APACHE_CONF}"
+    # make run directory
     mkdir -p "${APACHE_RUN_DIR}"
-    hass.log.debug "Starting apache"
-    #service apache2 reload
-    service apache2 start
+    hass.log.debug "Starting apache2"
     # start HTTP daemon 
-    #if [[ -n $(command -v "${APACHE_COMMAND}") ]]; then
-    #  cat "${APACHE_CONF}" > "${CONFIG_DIR}/httpd.conf"
-    #  hass.log.info "Starting Apache: ${APACHE_CONF} ${APACHE_HOST} ${APACHE_PORT} ${APACHE_HTDOCS}"
-    #  ${APACHE_COMMAND} -E /dev/stderr -e debug -f "${APACHE_CONF}" || true
-    #else
-    #  hass.log.warning "Cannot find executable for ${APACHE_COMMAND}"
-    #fi
+    service apache2 start
   else
     hass.log.warning "Did not find Apache configuration at ${APACHE_CONF}"
   fi
