@@ -35,7 +35,7 @@ RUN apt-get update \
 
 ## APACHE
 
-ARG APACHE_CONF=/etc/apache2/httpd.conf
+ARG APACHE_CONF=/etc/apache2/apache2.conf
 ARG APACHE_HTDOCS=/var/www/localhost/htdocs
 ARG APACHE_CGIBIN=/var/www/localhost/cgi-bin
 ARG APACHE_PORT=9999
