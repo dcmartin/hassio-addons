@@ -327,8 +327,8 @@ main() {
     APACHE_ADMIN="${HORIZON_ORGANIZATION}"
     APACHE_HOST="${HOST_IPADDR}"
     # control modules
-    # a2dismod mpm_worker
-    # a2dismod mpm_event
+    # a2enmod mpm_worker
+    a2enmod mpm_event
     # a2enmod mpm_prefork
     a2enmod cgi
     a2enmod cgid
