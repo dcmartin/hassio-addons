@@ -327,12 +327,11 @@ main() {
     APACHE_ADMIN="${HORIZON_ORGANIZATION}"
     APACHE_HOST="${HOST_IPADDR}"
     # control modules
-    hass.log.debug "Disabling mpm_event"
-    a2dismod mpm_event &> /dev/null
-    hass.log.debug "Enabling mpm_worker"
-    a2enmod mpm_worker &> /dev/null
-    hass.log.debug "Enabling cgid"
-    a2enmod cgid &> /dev/null
+    a2enmod mpm_prefork
+    a2dismod mpm_worker
+    a2enmod mpm_event
+    a2enmod cgi
+    a2enmod cgid
     # edit defaults
     hass.log.debug "Changing Listen to ${APACHE_PORT}"
     sed -i 's|^Listen\(.*\)|Listen '${APACHE_PORT}'|' "${APACHE_CONF}"
@@ -349,8 +348,8 @@ main() {
     # echo 'PassEnv HORIZON_WATSON_APIKEY' >> "${APACHE_CONF}"
     # make /run/apache2 for PID file
     # mkdir -p "${APACHE_RUN_DIR}"
-    hass.log.debug "Restarting apache"
-    service apache2 restart
+    hass.log.debug "Starting apache"
+    service apache2 start
     # start HTTP daemon 
     #if [[ -n $(command -v "${APACHE_COMMAND}") ]]; then
     #  cat "${APACHE_CONF}" > "${CONFIG_DIR}/httpd.conf"
