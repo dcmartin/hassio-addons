@@ -335,8 +335,8 @@ main() {
     # edit defaults
     hass.log.debug "Changing Listen to ${APACHE_PORT}"
     sed -i 's|^Listen\(.*\)|Listen '${APACHE_PORT}'|' "${APACHE_CONF}"
-    hass.log.debug "Changing ServerName to ${APACHE_HOST}:${APACHE_PORT}"
-    sed -i 's|^ServerName\(.*\)|ServerName '"${APACHE_HOST}:${APACHE_PORT}"'|' "${APACHE_CONF}"
+    #hass.log.debug "Changing ServerName to ${APACHE_HOST}:${APACHE_PORT}"
+    #sed -i 's|^ServerName\(.*\)|ServerName '"${APACHE_HOST}:${APACHE_PORT}"'|' "${APACHE_CONF}"
     hass.log.debug "Changing ServerAdmin to ${APACHE_ADMIN}"
     sed -i 's|^ServerAdmin\(.*\)|ServerAdmin '"${APACHE_ADMIN}"'|' "${APACHE_CONF}"
     # sed -i 's|^ServerTokens \(.*\)|ServerTokens '"${APACHE_TOKENS}"'|' "${APACHE_CONF}"
@@ -349,8 +349,8 @@ main() {
     # make /run/apache2 for PID file
     mkdir -p "${APACHE_RUN_DIR}"
     hass.log.debug "Starting apache"
-    service apache2 reload
-    service apache2 restart
+    #service apache2 reload
+    service apache2 start
     # start HTTP daemon 
     #if [[ -n $(command -v "${APACHE_COMMAND}") ]]; then
     #  cat "${APACHE_CONF}" > "${CONFIG_DIR}/httpd.conf"
