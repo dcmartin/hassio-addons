@@ -331,11 +331,13 @@ main() {
     #  ln -s "${APACHE_CONF%/*}/mods-available/${mod}" "${APACHE_CONF%/*}/mods-enabled/${mod}" || true
     #done
     hass.log.debug "Disabling mpm_event"
-    a2dismod mpm_event
+    a2dismod mpm_event &> /dev/null
     hass.log.debug "Enabling mpm_worker"
-    a2enmod mpm_worker
-    hass.log.debug "Enabling cgi"
-    a2enmod cgi
+    a2enmod mpm_worker &> /dev/null
+    hass.log.debug "Enabling cgid"
+    a2enmod cgid &> /dev/null
+    hass.log.debug "Restarting apache"
+    service apache2 restart
     # edit defaults
     hass.log.debug "Changing Listen to ${APACHE_PORT}"
     sed -i 's|^Listen\(.*\)|Listen '${APACHE_PORT}'|' "${APACHE_CONF}"
