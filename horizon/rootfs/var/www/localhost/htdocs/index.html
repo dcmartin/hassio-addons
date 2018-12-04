@@ -12,14 +12,14 @@ devreq.onreadystatechange = function() {
   if (this.readyState == 4 && this.status == 200 && this.responseText != null) {
     var jobj = JSON.parse(this.responseText);
 
-    jobj.devices.forEach(function(item,index) {
-      devices.innerHTML += '<h2>CONFIGURATION: ' + item._id+ '</h2>';
-      devices.innerHTML += '<ul>'
-      devices.innerHTML += '<li><a href="/cgi-bin/hzn-configView?id=' + item._id+ '">View</a> configuration details&nbsp;';
-      devices.innerHTML += '<li><a href="/cgi-bin/hzn-configChange?id=' + item._id+ '">Change</a> configuration pattern&nbsp;';
-      devices.innerHTML += '</ul>';
+    jobj.configs.forEach(function(item,index) {
+      configs.innerHTML += '<h2>CONFIGURATION: ' + item._id+ '</h2>';
+      configs.innerHTML += '<ul>'
+      configs.innerHTML += '<li><a href="/cgi-bin/hzn-configView?id=' + item._id+ '">View</a> configuration details&nbsp;';
+      configs.innerHTML += '<li><a href="/cgi-bin/hzn-configChange?id=' + item._id+ '">Change</a> configuration pattern&nbsp;';
+      configs.innerHTML += '</ul>';
     });
-    jobj.devices.forEach(function(item,index) {
+    jobj.configs.forEach(function(item,index) {
       var nodreq = new XMLHttpRequest();
       nodreq.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200 && this.responseText != null) {
@@ -93,7 +93,7 @@ window.onload = function () {
 <li><h2><a id="data" href="">Data</a></h1><div id="datasets"></div></li>
 </ul>
 
-<h1>CONFIGURATIONS</h1><div id="devices"></div>
+<h1>CONFIGURATIONS</h1><div id="configs"></div>
 
 <h1>NODES</h1><div id="nodes"></div>
 
