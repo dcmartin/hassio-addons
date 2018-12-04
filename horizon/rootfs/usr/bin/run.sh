@@ -328,10 +328,10 @@ main() {
     APACHE_HOST="${HOST_IPADDR}"
     # control modules
     # a2enmod mpm_worker
-    a2enmod mpm_event
+    # a2enmod mpm_event
     # a2enmod mpm_prefork
-    a2enmod cgi
-    a2enmod cgid
+    # a2enmod cgi
+    # a2enmod cgid
     # edit defaults
     hass.log.debug "Changing Listen to ${APACHE_PORT}"
     sed -i 's|^Listen\(.*\)|Listen '${APACHE_PORT}'|' "${APACHE_CONF}"

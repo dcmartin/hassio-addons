@@ -58,6 +58,7 @@ ENV APACHE_RUN_USER "${APACHE_RUN_USER}"
 ENV APACHE_RUN_GROUP "${APACHE_RUN_GROUP}"
 
 RUN mkdir -p ${APACHE_LOG_DIR}/apache2/
+RUN mv -f ${APACHE_CONF} ${APACHE_CONF}.orig
 
 # Ports for motion (control and stream)
 EXPOSE ${HORIZON_APACHE_PORT}
