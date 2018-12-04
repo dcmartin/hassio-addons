@@ -1,13 +1,16 @@
 #!/bin/bash
-APP="horizon"
-API="test"
+APP="hzn"
+API="config"
+
+DEBUG="true"
 
 if [ -z ${TMP:-} ]; then TMP="/tmpfs"; fi
 if [ -z ${LOGTO:-} ]; then LOGTO=$TMP/$APP.log; fi
 
-if [ -n ${DEBUG:-} ]; then echo `date` "$0 $$ -- START" >> $LOGTO 2>&1; fi
+if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- START" >> $LOGTO 2>&1; fi
 
-CU="${HORIZON_CLOUDANT_URL}"
+if [ -z ${CU:-} ]; then CU="${HORIZON_CLOUDANT_URL}"; fi
+if [ -z ${DB:-} ]; then DB="${APP}-${API}"; fi
 
 ###
 ### dateutils REQUIRED
@@ -26,18 +29,18 @@ fi
 
 # don't update statistics more than once per (in seconds)
 TTL=30
-SECONDS=`date "+%s"`
-DATE=`echo $SECONDS \/ $TTL \* $TTL | bc`
+SECONDS=$(date "+%s")
+DATE=$(echo $SECONDS \/ $TTL \* $TTL | bc)
 
 if [ -n ${QUERY_STRING:-} ]; then
-    db=`echo "$QUERY_STRING" | sed 's/.*db=\([^&]*\).*/\1/'`
-    if [ $db == "$QUERY_STRING" ]; then db=""; fi
+    id=$(echo "$QUERY_STRING" | sed 's/.*id=\([^&]*\).*/\1/')
+    if [[ $id == "$QUERY_STRING" ]]; then id=""; fi
 fi
 
-if [ -z ${db:-} ]; then db="all"; fi
+if [ -z ${id:-} ]; then id="all"; fi
 
 # standardize QUERY_STRING (rendezvous w/ APP-make-API.csh script)
-export QUERY_STRING="db=$db"
+export QUERY_STRING="id=$id"
 
 ##
 ## ACCESS CLOUDANT
@@ -50,44 +53,43 @@ if [ ! -s "$OUTPUT" ]; then
   rm -f "${OUTPUT%.*}".*
 
   # find devices
-  if [ $db == "all" ]; then
-    devices=`curl -s -q -L "$CU/$HORIZON_DEVICE_DB/_all_docs" | jq -r '.rows[]?.id'`
-    if [ -z ${devices} ]; then
-      if [ -n ${DEBUG:-} ]; then echo `date` "$0 $$ ++ Could not retrieve list of devices from ($url)" >> $LOGTO 2>&1; fi
-      goto done
+  if [ $id == "all" ]; then
+    devices=$(curl -s -q -L "$CU/$DB/_all_docs" | jq -r '.rows[]?.id')
+    if [[ -z "${devices}" ]]; then
+      if [ -n "${DEBUG:-}" ]; then echo $(date) "$0 $$ ++ Could not retrieve list of devices from ($url)" >> $LOGTO 2>&1; fi
     fi
   else
-    devices=$db
+    devices=$id
   fi
 
-  if [ -n ${DEBUG:-} ]; then echo `date` "$0 $$ ++ Devices in DB ($devices)" >> $LOGTO 2>&1; fi
+  if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ ++ Devices in DB ($devices)" >> $LOGTO 2>&1; fi
 
   k=0
-  all='{"date":'"$DATE"',"devices":['
+  all='{"date":'"$DATE"',"'$API'":['
 
   for d in $devices; do
     # get device entry
-    url="$CU/$HORIZON_DEVICE_DB/$d"
+    url="$CU/$DB/$d"
     out="$TMP/$APP-$API-$$.json"
     curl -sL "$url" -o "$out"
-    if [ ! -e "$out" ]; then
-      if [ -n ${DEBUG:-} ]; then echo `date` "$0 $$ ++ FAILURE ($d)" `ls -al $out` >> $LOGTO 2>&1; fi
+    if [ ! -s "$out" ]; then
+      if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ ++ FAILURE ($d)" $(ls -al $out) >> $LOGTO 2>&1; fi
       rm -f "$out"
       continue
     fi
-    if [ $db == "all" && $d == "$db" ]; then
-      jq '{"hostname":.hostname,"date":.date,"host_ipaddr":.host_ipaddr,"arch":.arch}' "$out" > "$OUTPUT"
+    if [ "$id" != "all" ] && [ "$d" == "$id" ]; then
+      jq '.' "$out" > "$OUTPUT"
       rm -f "$out"
       break
-    elif [ $db == "all" ]; then
-      json=`jq '{"name":.name,"date":.date}' "$out"`
+    elif [ $id == "all" ]; then
+      json=$(jq '{"id":._id}' "$out")
       rm -f "$out"
     else
       json=""
     fi
     if [ $k -gt 0 ]; then all="$all"','; fi
     k=$((k+1))
-    if [ -n ${json:-} ]; then all="${all}${json}"; fi
+    if [ -n "${json:-}" ]; then all="${all}${json}"; fi
   done
   all="$all"']}'
 fi
@@ -111,13 +113,13 @@ if [ -z ${output:-} ] && [ -s "$OUTPUT" ]; then
   if [ $refresh -lt 0 ]; then refresh=$TTL; fi
   echo "Refresh: $refresh"
   echo "Cache-Control: max-age=$TTL"
-  echo "Last-Modified:" `$dateconv -i '%s' -f '%a, %d %b %Y %H:%M:%S %Z' $DATE`
+  echo "Last-Modified:" $($dateconv -i '%s' -f '%a, %d %b %Y %H:%M:%S %Z' $DATE)
   echo ""
   jq -c '.' "$OUTPUT"
-  if [ -n ${DEBUG:-} ]; then echo `date` "$0 $$ -- output $OUTPUT Age: $age Refresh: $refresh" >> $LOGTO 2>&1; fi
+  if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- output $OUTPUT Age: $age Refresh: $refresh" >> $LOGTO 2>&1; fi
 else
   echo "Cache-Control: no-cache"
-  echo "Last-Modified:" `$dateconv -i '%s' -f '%a, %d %b %Y %H:%M:%S %Z' $DATE`
+  echo "Last-Modified:" $($dateconv -i '%s' -f '%a, %d %b %Y %H:%M:%S %Z' $DATE)
   echo ""
   if [ -n ${output:-} ]; then
     echo "$output"
@@ -126,4 +128,4 @@ else
   fi
 fi
 
-if [ -n ${DEBUG:-} ]; then echo `date` "$0 $$ -- FINISH $QUERY_STRING" >> $LOGTO 2>&1; fi
+if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- FINISH $QUERY_STRING" >> $LOGTO 2>&1; fi
