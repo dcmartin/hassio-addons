@@ -1,16 +1,20 @@
 #!/bin/bash
 APP="hzn"
 API="nodes"
-
 DEBUG="true"
 
 if [ -z ${TMP:-} ]; then TMP="/tmpfs"; fi
 if [ -z ${LOGTO:-} ]; then LOGTO=$TMP/$APP.log; fi
-
 if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- START" >> $LOGTO 2>&1; fi
 
 if [ -z ${CU:-} ]; then CU="${HORIZON_CLOUDANT_URL}"; fi
+
+# use the confi database
+DB="${APP}-config"
 if [ -z ${DB:-} ]; then DB="${APP}-${API}"; fi
+
+JQ='{"nodes":.nodes}'
+if [ -z ${JQ:-} ]; then JQ='.'; fi
 
 ###
 ### dateutils REQUIRED
@@ -54,6 +58,7 @@ if [ ! -s "$OUTPUT" ]; then
 
   # find devices
   if [ $id == "all" ]; then
+    if [ -n "${DEBUG:-}" ]; then echo $(date) "$0 $$ ++ Attempting to retrieve devices from ($url)" >> $LOGTO 2>&1; fi
     devices=$(curl -s -q -L "$CU/$DB/_all_docs" | jq -r '.rows[]?.id')
     if [[ -z "${devices}" ]]; then
       if [ -n "${DEBUG:-}" ]; then echo $(date) "$0 $$ ++ Could not retrieve list of devices from ($url)" >> $LOGTO 2>&1; fi
@@ -78,7 +83,7 @@ if [ ! -s "$OUTPUT" ]; then
       continue
     fi
     if [ "$id" != "all" ] && [ "$d" == "$id" ]; then
-      jq '.' "$out" > "$OUTPUT"
+      jq "${JQ}"  "$out" > "$OUTPUT"
       rm -f "$out"
       break
     elif [ $id == "all" ]; then
