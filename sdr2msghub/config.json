@@ -13,7 +13,7 @@
     "armhf",
     "i386"
   ],
-  "webui": "https://alpha-sdr-sdr-poc-app-sweet-crocodile.mybluemix.net/",
+  "webui": "http://alpha-sdr-sdr-poc-app-sweet-crocodile.mybluemix.net/",
   "hassio_role": "default",
   "hassio_api": true,
   "homeassistant_api": false,
