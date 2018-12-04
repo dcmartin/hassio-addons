@@ -327,9 +327,9 @@ main() {
     APACHE_ADMIN="${HORIZON_ORGANIZATION}"
     APACHE_HOST="${HOST_IPADDR}"
     # control modules
-    a2enmod mpm_prefork
     a2dismod mpm_worker
     a2dismod mpm_event
+    a2enmod mpm_prefork
     a2enmod cgi
     a2enmod cgid
     # edit defaults
@@ -347,9 +347,10 @@ main() {
     echo 'PassEnv HORIZON_SHARE_DIR' >> "${APACHE_CONF}"
     # echo 'PassEnv HORIZON_WATSON_APIKEY' >> "${APACHE_CONF}"
     # make /run/apache2 for PID file
-    # mkdir -p "${APACHE_RUN_DIR}"
+    mkdir -p "${APACHE_RUN_DIR}"
     hass.log.debug "Starting apache"
-    service apache2 start
+    service apache2 reload
+    service apache2 restart
     # start HTTP daemon 
     #if [[ -n $(command -v "${APACHE_COMMAND}") ]]; then
     #  cat "${APACHE_CONF}" > "${CONFIG_DIR}/httpd.conf"
