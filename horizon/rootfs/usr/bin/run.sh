@@ -329,7 +329,7 @@ main() {
     # control modules
     a2enmod mpm_prefork
     a2dismod mpm_worker
-    a2enmod mpm_event
+    a2dismod mpm_event
     a2enmod cgi
     a2enmod cgid
     # edit defaults
