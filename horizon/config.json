@@ -1,7 +1,7 @@
 {
   "name": "Horizon Control",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/horizon",
-  "version": "0.1.94",
+  "version": "0.1.95",
   "slug": "horizon",
   "description": "Example base addon for horizon",
   "startup": "before",
@@ -22,6 +22,7 @@
     "SYS_ADMIN"
   ],
   "timeout": 90,
+  "tmpfs": "size=256m,uid=0,rw",
   "map": [
     "share:rw",
     "config:rw"
