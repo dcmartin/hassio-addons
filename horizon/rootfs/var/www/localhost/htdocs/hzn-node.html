@@ -1,0 +1,360 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+
+<link href="https://fonts.googleapis.com/css?family=IBM+Plex+Sans" rel="stylesheet">
+
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Horizon Node</title>
+<link rel="stylesheet" href="css/cfmatrix.css" type="text/css">
+
+<script type="text/javascript" language="javascript">
+
+//
+// TOP-LEVEL MODEL
+//
+
+//<![CDATA[
+
+var device, model, matrix;
+
+/* Ottiene il parametro di nome parameter dalla stringa dell'indirizzo */
+function get_par(parameter) {
+    var address = window.location.toString() + "&";
+    var name_pos = address.indexOf(parameter + "=");
+    if (name_pos == -1) return "";
+    var substr = address.substring(name_pos);
+    var s_start = substr.indexOf("=");
+    var s_end = substr.indexOf("&");
+    var parameter = substr.substring(s_start + 1, s_end);
+    return parameter;
+}
+
+/* Arrotonda il numero alla n cifra decimale */
+function n_round(the_number, n) {
+    return Math.round(the_number * Math.pow(10, n)) / Math.pow(10, n);
+}
+
+/* Calcola la matrice di confusione */
+function compute_matrix() {
+    var n_of_elements;
+
+    /* Calcola i totali per classificazione */
+    for (total = 0, r = 1; r <= n_of_classes; r++) { /* Riga per riga */
+	for (c = 1; c <= n_of_classes; c++) { /* Colonna per colonna */
+	    total += parseInt(eval("document.conf_matrix.el" + r + "_" + c + ".value"));
+	}
+	eval("document.conf_matrix.tot_cla" + r + ".value = " + total);
+	total = 0;
+    }
+
+    /* Calcola i totali per verita' */
+    for (total = 0, c = 1; c <= n_of_classes; c++) { /* Colonna per colonna */
+	for (r = 1; r <= n_of_classes; r++) { /* Riga per riga */
+	    total += parseInt(eval("document.conf_matrix.el" + r + "_" + c + ".value"));
+	}
+	eval("document.conf_matrix.tot_ver" + c + ".value = " + total);
+	total = 0;
+    }
+
+    /* Calcola il totale degli elementi da classificare */
+    for (total = 0, r = 1; r <= n_of_classes; r++) { /* Somma totali */
+	total += parseInt(eval("document.conf_matrix.tot_cla" + r + ".value"));
+    }
+    n_of_elements = document.conf_matrix.the_total.value = total;
+
+    /* Calcola la user accuracy */
+    for (r = 1; r <= n_of_classes; r++) { /* Riga per riga */
+	total = parseInt(eval("document.conf_matrix.tot_cla" + r + ".value"));
+	el_diag = parseInt(eval("document.conf_matrix.el" + r + "_" + r + ".value"));
+	error_q = n_round((el_diag / total) * 100, 3);
+	if (total) {
+	    eval("document.conf_matrix.err_om" + r + ".value = " + error_q + " + \"%\"");
+	} else {
+	    eval("document.conf_matrix.err_om" + r + ".value = \"No data\"");
+	}
+    }
+
+    /* Calcola la producer accuracy */
+    for (c = 1; c <= n_of_classes; c++) { /* Colonna per colonna */
+	total = parseInt(eval("document.conf_matrix.tot_ver" + c + ".value"));
+	el_diag = parseInt(eval("document.conf_matrix.el" + c + "_" + c + ".value"));
+	error_q = n_round((el_diag / total) * 100, 3);
+	if (total) {
+	    eval("document.conf_matrix.err_com" + c + ".value = " + error_q + " + \"%\"");
+	} else {
+	    eval("document.conf_matrix.err_com" + c + ".value = \"No data\"");
+	}
+    }
+
+    /* Calcola l'accuratezza globale */
+    for (diag_sum = 0, d = 1; d <= n_of_classes; d++) { /* Elemento diagonale per elemento diagonale */
+	diag_sum += parseInt(eval("document.conf_matrix.el" + d + "_" + d + ".value"));
+    }
+    oa = diag_sum / n_of_elements;
+    if (n_of_elements) {
+	document.conf_matrix.oa_factor.value = n_round(oa * 100, 3) + "%";
+    } else {
+	document.conf_matrix.oa_factor.value = "No data";
+    }
+
+    /* Calcola l'expected accuracy, pc */
+    for (pc = 0, i = 1; i <= n_of_classes; i++) { /* Classe per classe */
+	/* Calcola la somma degli elementi sulla riga i */
+	for (r_sum = 0, c = 1; c <= n_of_classes; c++) { /* Colonna per colonna */
+	    r_sum += parseInt(eval("document.conf_matrix.el" + i + "_" + c + ".value"));
+	}
+	/* Calcola la somma degli elementi sulla colonna i */
+	for (c_sum = 0, r = 1; r <= n_of_classes; r++) { /* Riga per riga */
+	    c_sum += parseInt(eval("document.conf_matrix.el" + r + "_" + i + ".value"));
+	}
+	pc += r_sum * c_sum;
+    }
+    pc /= (n_of_elements * n_of_elements);
+
+    /* Calcola il parametro k */
+    kf = n_round(((oa - pc) / (1 - pc)), 3);
+
+    if (n_of_elements) {
+	document.conf_matrix.k_factor.value = kf;
+    } else {
+	document.conf_matrix.k_factor.value = "No data";
+    }
+
+}
+
+function build_cmtable() {
+  if (!matrix) {
+    console.log("build_cmtable: NO MATRIX");
+    return;
+  }
+
+  var n_of_classes = matrix.size;
+  if (!(n_of_classes > 1)) {
+    console.log("build_cmtable: SIZE TOO SMALL (default 2)");
+    n_of_classes = 2;
+  }
+
+  var string = "", cell = "", mark = "";
+
+  /* Mostra la matrice di confusione formattata e pronta all'input utente */
+  for (r = 0; r <= n_of_classes + 2; r++) { /* Riga per riga */
+    string += "<tr align=\"center\">\n";
+    for (c = 0; c <= n_of_classes + 2; c++) { /* Colonna per colonna */
+      if (((c == n_of_classes + 1) && (r == n_of_classes + 2)) || ((r == n_of_classes + 1) && (c == n_of_classes + 2)) || ((r == n_of_classes + 2) && (c == n_of_classes + 2))) { /* Celle da saltare */
+	  mark = " bgcolor=\"gray\"";
+	  cell = "";
+      } else if ((c == n_of_classes + 1) && (r == n_of_classes + 1)) { /* Totale elementi */
+	  mark = " bgcolor=\"green\"";
+	  cell = "<input type=\"text\" name=\"the_total\" value=\"0\" style=\"text-align: right\" size=\"6\" readonly>";
+      } else if (!r && c == n_of_classes + 1) { /* Totali per classificazione */
+	  mark = " bgcolor=\"lightgreen\"";
+	  cell = "<b>Classification <br /> overall</b>";
+      } else if (!c && r == n_of_classes + 1) { /* Totali per verita' */
+	  mark = " bgcolor=\"lightgreen\"";
+	  cell = "<b>Truth <br />overall</b>";
+      } else if (!r && c == n_of_classes + 2) { /* % Producer accuracy */
+	  mark = " bgcolor=\"red\"";
+	  cell = "<b>Producer<br />Accuracy<br />(Precision)</b>";
+      } else if (!c && r == n_of_classes + 2) { /* % User accuracy */
+	  mark = " bgcolor=\"red\"";
+	  cell = "<b>User<br />Accuracy<br />(Recall)</b>";
+      } else if (c == n_of_classes + 2 || r == n_of_classes + 2) { /* Celle errori */
+	  mark = " bgcolor=\"red\"";
+	  cell = "<input type=\"text\" name=\"err_" + (c == n_of_classes + 2 ? "om" + r : "com" + c) + "\" value=\"0\" style=\"text-align: right\" size=\"6\" readonly>";
+      } else if (c == n_of_classes + 1 || r == n_of_classes + 1) { /* Celle totali */
+	  mark = " bgcolor=\"lightgreen\"";
+	  cell = "<input type=\"text\" name=\"tot_" + (c == n_of_classes + 1 ? "cla" + r : "ver" + c) + "\" value=\"0\" style=\"text-align: right\" size=\"6\" readonly>";
+      } else if (!r ^ !c) { /* Nomi delle classi */
+	  mark = " bgcolor=\"lightblue\"";
+	  cell = "<b><div id=\"" + (r?("rlabel_"+r):("clabel_"+c)) + "\">LABEL" + (r ? r : c) + "</div></b>";
+      } else if (r || c) { /* Celle contenenti i valori utente */
+	  if (r == c) {  /* Marca la casella se e' sulla diagonale */
+	      mark = " bgcolor=\"orange\"";
+	  } else {
+	      mark = " bgcolor=\"yellow\"";
+	  }
+	      cell = "<input type=\"text\" name=\"el" + r + "_" + c + "\" value=\"NA\" style=\"text-align: right\" size=\"4\">";
+      }
+      string += "<td" + mark + ">" + cell + "</td>\n";
+      mark = "";
+    }
+    string += "</tr>\n";
+    // update table structure
+    cmtable.innerHTML = string;
+  }
+}
+
+function on_classifiers_load() {
+  console.log("on_classifiers_load");
+
+  if (this.status == 200 && this.responseText != null) {
+    var classifiers = JSON.parse(this.responseText);
+    
+    if (classifiers) {
+      var string = "";
+      var count = classifiers.count;
+
+      console.log("FOUND " + count.toString() + " classifiers");
+
+      for (x = 0; x < count; x++) {
+        var tmp = classifiers.models[x].toString();
+
+	    string += "<option value=\"" + tmp + "\">" + tmp + "</option>"
+      }
+      var elem = document.getElementById('model_options');
+      
+      if (elem) {
+        console.log(elem.toString() + string);
+	elem.innerHTML = string;
+      } else {
+        console.log("NO ELEMENT");
+      }
+    }
+  }
+}
+
+function get_classifiers(device) {
+  console.log("get_classifiers");
+
+  var get = "/cgi-bin/horizon-cfmatrix.cgi"
+  var req = new XMLHttpRequest();
+
+  if (device) get += "?db=" + device;
+
+  req.onload = on_classifiers_load;
+  req.open("GET", get, true);
+  req.send();
+}
+
+function model_load() {
+  console.log("model_load");
+  if (this.status == 200 && this.responseText != null) {
+    matrix = JSON.parse(this.responseText);
+    if (matrix) {
+      n_of_classes = matrix.size;
+      device_div.innerHTML = matrix.name;
+      model_div.innerHTML = matrix.model;
+      date_div.innerHTML = matrix.date;
+      size_div.innerHTML = matrix.size;
+
+      build_cmtable();
+
+      for (r = 0; r < matrix.size; r++) { /* Riga per riga */
+	var x = r+1;
+	var lbl = x.toString() + ".innerHTML" + "=" + "\"" + matrix.sets[r] + "\"";
+
+	// set labels
+	eval("rlabel_" + lbl);
+	eval("clabel_" + lbl);
+
+	for (c = 0; c < matrix.size; c++) { /* Colonna per colonna */
+          var y = c+1;
+          var val = matrix.matrix[c].truth[r];
+
+          if (document.conf_matrix) {
+            eval("document.conf_matrix.el" + x + "_" + y + ".value = " + val.toString());
+          }
+	}
+      }
+      // recalculate
+      compute_matrix();
+
+    } else {
+      get_classifiers();
+      console.log("NO MATRIX" + this.responseText);
+    }
+  } else {
+    console.log("NO RESPONSE TEXT " + this.toString());
+  }
+}
+
+function get_model(device,model) {
+  console.log("get_model");
+
+  var get = "/cgi-bin/horizon-cfmatrix.cgi?"
+
+  if (device) {
+    get += "db=" + device + "&";
+  }
+  if (model) {
+    get += "model=" + model;
+  }
+  if ((device && model) || model) {
+    var req = new XMLHttpRequest();
+
+    req.onload = model_load;
+    console.log("GET " + get);
+    req.open("GET", get, true);
+    req.send();
+  }
+}
+
+function init() {
+  console.log("INIT");
+  var d = get_par("device");
+  var m = get_par("model");
+  
+  console.log(d + m);
+  get_classifiers(d);
+  if (m) get_model(d,m);
+}
+//]]>
+
+</script>
+
+</head>
+
+<body onload="init()">
+
+<noscript>
+    Javascript must be enabled!
+</noscript>
+
+<div id="main">
+  <div id="top"> <h1>Model Confusion Matrix</h1> </div>
+<table border="0">
+<tr><th>Device</th><th>Current Model</th><th>Date</th><th>Size</th></tr>
+<tr valign="top">
+ <td><div id="device_div"><i>NO DEVICE</i></div></td>
+ <td><div id="model_div"><i>NO MODEL</i></div></td>
+ <td><div id="date_div"><i>NO DATE</i></div></td>
+ <td><div id="size_div"><i>NO SIZE</i></div></td>
+</tr>
+</table>
+<hr>
+    <form action="horizon-model.html">
+      AVAILABLE MODELS <select name="model" id="model_options">
+	<option value="">LOADING ...</option>"
+      </select>
+      <input type="submit" value="CHOOSE" type="button">
+    </form>
+  <hr>
+  <div id="cmcalculator">
+    <form name="conf_matrix">
+      <table>
+       <tbody> 
+        <tr align="center">
+	 <td><b>Classifier<br>results</b></td>
+	 <td><b>Truth data</b> 
+	 <table id="cmtable" border="1" cellpadding="4" cellspacing="0"> 
+	 <tr><td>PLEASE CHOOSE A MODEL</td></tr>
+	 </table>
+	 </td>
+        </tr>
+	<tr>
+	  <td>Accuracy:</td>
+	  <td><input name="oa_factor" value="0" style="text-align: right" size="8" readonly="readonly" type="text"></td>
+	</tr>
+	<tr>
+	  <td>Kappa<sup>1</sup>: </td>
+	  <td><input name="k_factor" value="0" style="text-align: right" size="8" readonly="readonly" type="text"></td>
+	</tr>
+       </tbody>
+      </table>
+    <br>
+    <input type="button" onclick="compute_matrix()" value="CALCULATE">
+    </form>
+  </div>
+</div>
+<hr>
