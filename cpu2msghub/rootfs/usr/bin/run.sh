@@ -230,7 +230,7 @@ while [[ "${LISTEN_MODE}" != "false" ]]; do
       continue
     fi
     hass.log.debug "POSTING: " $(echo "${PAYLOAD}" | jq -c '.')
-    echo "${PAYLOAD}" | jq -c '.date='$(date '+%s') | ${MQTT} -l -t "${MQTT_TOPIC}" || true
+    echo "${PAYLOAD}" | jq -c '.date='$(date '+%s') | ${MQTT} --quiet -i $(hostname) -l -t "${MQTT_TOPIC}" | true
   done
   hass.log.warning "Unexpected failure of kafkacat"
 done
