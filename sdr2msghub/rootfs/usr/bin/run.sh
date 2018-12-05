@@ -372,7 +372,9 @@ while [[ "${LISTEN_MODE}" != "false" ]]; do
     fi
     if [[ $(echo "${PAYLOAD}" | jq -r '.bytes') > 0 || ${MOCK_SDR} == "true" ]]; then
       hass.log.debug "POSTING: " $(echo "${PAYLOAD}" | jq -c '.audio="redacted"')
-      ${MQTT} --quiet -i $(hostname) -t "${MQTT_TOPIC}" -m "${PAYLOAD}"
+      temp=$(mktemp); echo "${PAYLOAD}" | jq '.' > "${temp}"
+      ${MQTT} --quiet -i $(hostname) -t "${MQTT_TOPIC}" -f "${temp}"
+      rm -f "${temp}"
     else
       hass.log.debug "IGNORED: zero bytes audio; MOCK_SDR is ${MOCK_SDR}"
     fi
