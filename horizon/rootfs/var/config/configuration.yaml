@@ -23,7 +23,7 @@ tts:
 panel_iframe:
   horizon:
     title: Horizon Control
-    icon: mdi:wrench
+    icon: mdi:weather-sunset
     url: http://%%HOST_IPADDR%%:9999
     
 mqtt:
