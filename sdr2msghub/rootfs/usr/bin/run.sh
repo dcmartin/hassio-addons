@@ -135,7 +135,7 @@ ADDON_CONFIG="${ADDON_CONFIG}"',"host":"'"${VALUE}"'"'
 VALUE=$(hass.config.get "mqtt.port")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="1883"; fi
 hass.log.debug "MQTT port: ${VALUE}"
-ADDON_CONFIG="${ADDON_CONFIG}"',"port":"'"${VALUE}"'"'
+ADDON_CONFIG="${ADDON_CONFIG}"',"port":'"${VALUE}"
 # username
 VALUE=$(hass.config.get "mqtt.username")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE=""; fi

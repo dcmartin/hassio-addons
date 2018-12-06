@@ -28,16 +28,12 @@ fi
 
 OUT='{"host":"'${MQTT_HOST}'","port":'${MQTT_PORT}',"topic":"'${MQTT_TOPIC}'","username":"'${MQTT_USERNAME}'","password":"'${MQTT_PASSWORD}'","identity":"'${MQTT_IDENTITY}'"}'
 
-if read -r; then
-  if [ -n "${REPLY}" ]; then
-    echo "${MQTT}" &> /dev/stderr
-    mosquitto_pub ${MQTT} -m "${REPLY}" &> /dev/stderr
-    SIZE=$(echo "${REPLY}" | wc -c | awk '{ print $1 }')
-  else
-    SIZE=0
-  fi
+PAYLOAD=$(cat)
+if [ -n "${PAYLOAD}" ]; then
+  mosquitto_pub ${MQTT} -m "${PAYLOAD}" &> /dev/stderr
+  SIZE=$(echo "${PAYLOAD}" | wc -c | awk '{ print $1 }')
 else
-  SIZE=-1
+  SIZE=0
 fi
 
 echo "${OUT}" | jq '.size='${SIZE}
