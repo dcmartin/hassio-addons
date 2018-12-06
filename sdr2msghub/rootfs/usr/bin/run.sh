@@ -396,8 +396,7 @@ while [[ "${LISTEN_MODE}" != "false" ]]; do
     fi
     if [[ $(echo "${PAYLOAD}" | jq -r '.bytes') > 0 || ${MOCK_SDR} == "true" ]]; then
       PAYLOAD=$(echo "${PAYLOAD}" | jq '.audio="redacted"')
-      hass.log.debug "MQTT publishing payload:" $(echo "${PAYLOAD}" | jq -c '.')
-      echo "${PAYLOAD}" | mqtt_send.sh | true
+      hass.log.debug "MQTT publishing payload:" $(echo "${PAYLOAD}" | mqtt_send.sh)
     else
       hass.log.debug "IGNORED: zero bytes audio; MOCK_SDR is ${MOCK_SDR}"
     fi
