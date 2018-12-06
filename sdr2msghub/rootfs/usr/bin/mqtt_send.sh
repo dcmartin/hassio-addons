@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ -z "${ADDON_CONFIG_FILE:-} ] || [ ! -s "${ADDON_CONFIG_FILE:-}" ]; then
-  echo "$0 $$ -- ERROR: cannot find addon configuration file: ${ADDON_CONFIG_FILE:-}" >> mqtt.log 2>&1
+  echo "$0 $$ -- ERROR: cannot find addon configuration file: ${ADDON_CONFIG_FILE:-}" >> "${HOME}/mqtt.log" 2>&1
   exit 1
 fi
 
@@ -20,6 +20,6 @@ if [ -n "${MQTT_USERNAME} ] && [ -n "${MQTT_PASSWORD}" ]; then
   MQTT="${MQTT} -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD}"
 fi
 
-mosquitto_pub ${MQTT} >> mqtt.log 2>&1
+mosquitto_pub ${MQTT} >> "${HOME}/mqtt.log" 2>&1
 
 exit 0
