@@ -17,7 +17,7 @@ MQTT_PORT=$(jq -r ".mqtt.port" "${ADDON_CONFIG_FILE}")
 MQTT_TOPIC=$(jq -r ".mqtt.topic" "${ADDON_CONFIG_FILE}")
 
 # set options
-MQTT='-i "'${MQTT_IDENTITY}'" -h "'${MQTT_HOST}'" -p '${MQTT_PORT}' -t "'${MQTT_TOPIC}'"'
+MQTT="-i ${MQTT_IDENTITY} -h ${MQTT_HOST} -p ${MQTT_PORT} -t ${MQTT_TOPIC}"
 
 # check credentials
 MQTT_USERNAME=$(jq -r ".mqtt.username" "${ADDON_CONFIG_FILE}")
@@ -30,6 +30,7 @@ OUT='{"host":"'${MQTT_HOST}'","port":'${MQTT_PORT}',"topic":"'${MQTT_TOPIC}'","u
 
 if read -r; then
   if [ -n "${REPLY}" ]; then
+    echo "${MQTT}" &> /dev/stderr
     mosquitto_pub ${MQTT} -m "${REPLY}" &> /dev/stderr
     SIZE=$(echo "${REPLY}" | wc -c | awk '{ print $1 }')
   else
