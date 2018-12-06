@@ -310,7 +310,7 @@ JQ='{"date":.ts?,"name":.devID?,"frequency":.freq?,"value":.expectedValue?,"long
 
 # run forever
 while [[ "${LISTEN_MODE}" != "false" ]]; do
-  hass.log.info "Starting listen loop; routing ${KAFKA_TOPIC} to ${MQTT_TOPIC}"
+  hass.log.info "Starting listen loop on ${KAFKA_TOPIC}"
   # wait on kafkacat death
   kafkacat \
     -E -u -C -q -o end \
