@@ -18,21 +18,21 @@ hass.log.trace "${FUNCNAME[0]}"
 ### A HOST at DATE on ARCH
 ###
 
-# START JSON
-JSON='{"hostname":"'"$(hostname)"'","arch":"'"$(arch)"'","date":'$(/bin/date +%s)
+# START ADDON_CONFIG
+ADDON_CONFIG='{"hostname":"'"$(hostname)"'","arch":"'"$(arch)"'","date":'$(/bin/date +%s)
 # time zone
 VALUE=$(hass.config.get "timezone")
 # Set the correct timezone
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="GMT"; fi
 hass.log.info "Setting TIMEZONE ${VALUE}" >&2
 cp /usr/share/zoneinfo/${VALUE} /etc/localtime
-JSON="${JSON}"',"timezone":"'"${VALUE}"'"'
+ADDON_CONFIG="${ADDON_CONFIG}"',"timezone":"'"${VALUE}"'"'
 
 ##
 ## HORIZON 
 ##
 
-JSON="${JSON}"',"horizon":{"pattern":'"${HORIZON_PATTERN}"
+ADDON_CONFIG="${ADDON_CONFIG}"',"horizon":{"pattern":'"${HORIZON_PATTERN}"
 
 ###
 ### TURN on/off listen only mode
@@ -65,105 +65,117 @@ VALUE=$(hass.config.get "horizon.exchange")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.warning "No horizon exchange"; VALUE="null"; fi
 export HZN_EXCHANGE_URL="${VALUE}"
 hass.log.debug "Setting HZN_EXCHANGE_URL to ${VALUE}" >&2
-JSON="${JSON}"',"exchange":"'"${VALUE}"'"'
+ADDON_CONFIG="${ADDON_CONFIG}"',"exchange":"'"${VALUE}"'"'
 # USERNAME
 VALUE=$(hass.config.get "horizon.username")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.warning "No exchange username"; VALUE="null"; fi
-JSON="${JSON}"',"username":"'"${VALUE}"'"'
+ADDON_CONFIG="${ADDON_CONFIG}"',"username":"'"${VALUE}"'"'
 HZN_EXCHANGE_USER_AUTH="${VALUE}"
 # PASSWORD
 VALUE=$(hass.config.get "horizon.password")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.warning "No exchange password"; VALUE="null"; fi
-JSON="${JSON}"',"password":"'"${VALUE}"'"'
+ADDON_CONFIG="${ADDON_CONFIG}"',"password":"'"${VALUE}"'"'
 export HZN_EXCHANGE_USER_AUTH="${HZN_EXCHANGE_USER_AUTH}:${VALUE}"
 hass.log.trace "Setting HZN_EXCHANGE_USER_AUTH ${HZN_EXCHANGE_USER_AUTH}" >&2
 # ORGANIZATION
 VALUE=$(hass.config.get "horizon.organization")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.warning "No horizon organization"; VALUE="null"; fi
-JSON="${JSON}"',"organization":"'"${VALUE}"'"'
+ADDON_CONFIG="${ADDON_CONFIG}"',"organization":"'"${VALUE}"'"'
 # DEVICE
 VALUE=$(hass.config.get "horizon.device")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then
   VALUE=($(hostname -I | awk '{ print $1 }' | sed 's/\.//g'))
   VALUE="$(hostname)-${VALUE}"
 fi
-JSON="${JSON}"',"device":"'"${VALUE}"'"'
+ADDON_CONFIG="${ADDON_CONFIG}"',"device":"'"${VALUE}"'"'
 hass.log.debug "EXCHANGE_ID ${VALUE}" >&2
 # TOKEN
 VALUE=$(hass.config.get "horizon.token")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then
   VALUE=$(echo "${HZN_EXCHANGE_USER_AUTH}" | sed 's/.*://')
 fi
-JSON="${JSON}"',"token":"'"${VALUE}"'"'
+ADDON_CONFIG="${ADDON_CONFIG}"',"token":"'"${VALUE}"'"'
 hass.log.debug "EXCHANGE_TOKEN ${VALUE}" >&2
 
 ## DONE w/ horizon
-JSON="${JSON}"'}'
+ADDON_CONFIG="${ADDON_CONFIG}"'}'
 
 ##
 ## KAFKA OPTIONS
 ##
 
-JSON="${JSON}"',"kafka":{"topic": null'
+ADDON_CONFIG="${ADDON_CONFIG}"',"kafka":{"topic": "sdr-audio"'
 # BROKERS
 VALUE=$(hass.config.get "kafka.broker")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.broker"; hass.die; fi
 hass.log.debug "Kafka broker: ${VALUE}"
-JSON="${JSON}"',"broker":"'"${VALUE}"'"'
+ADDON_CONFIG="${ADDON_CONFIG}"',"broker":"'"${VALUE}"'"'
 # API_KEY
 VALUE=$(hass.config.get "kafka.api_key")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.api_key"; hass.die; fi
 hass.log.debug "Kafka API key: ${VALUE}"
-JSON="${JSON}"',"api_key":"'"${VALUE}"'"'
+ADDON_CONFIG="${ADDON_CONFIG}"',"api_key":"'"${VALUE}"'"'
 ## DONE w/ kafka
-JSON="${JSON}"'}'
+ADDON_CONFIG="${ADDON_CONFIG}"'}'
 
-## DONE w/ JSON
-JSON="${JSON}"'}'
+##
+## MQTT OPTIONS
+##
 
-hass.log.debug "CONFIGURATION:" $(echo "${JSON}" | jq -c '.')
+ADDON_CONFIG="${ADDON_CONFIG}"',"mqtt":{"topic": "kafka/sdr-audio"'
+# host
+VALUE=$(hass.config.get "mqtt.host")
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="core-mosquitto"; fi
+hass.log.debug "MQTT host: ${VALUE}"
+ADDON_CONFIG="${ADDON_CONFIG}"',"host":"'"${VALUE}"'"'
+# port
+VALUE=$(hass.config.get "mqtt.port")
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="1883"; fi
+hass.log.debug "MQTT port: ${VALUE}"
+ADDON_CONFIG="${ADDON_CONFIG}"',"port":"'"${VALUE}"'"'
+# username
+VALUE=$(hass.config.get "mqtt.username")
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE=""; fi
+hass.log.debug "MQTT username: ${VALUE}"
+ADDON_CONFIG="${ADDON_CONFIG}"',"username":"'"${VALUE}"'"'
+# password
+VALUE=$(hass.config.get "mqtt.password")
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE=""; fi
+hass.log.debug "MQTT password: ${VALUE}"
+ADDON_CONFIG="${ADDON_CONFIG}"',"password":"'"${VALUE}"'"'
+## DONE w/ mqtt
+ADDON_CONFIG="${ADDON_CONFIG}"'}'
+
+## DONE w/ ADDON_CONFIG
+ADDON_CONFIG="${ADDON_CONFIG}"'}'
+
+## configuration complete
+hass.log.debug "CONFIGURATION complete:" $(echo "${ADDON_CONFIG}" | jq -c '.')
+export ADDON_CONFIG_FILE="${CONFIG_DIR}/addon-config.json"
+# check it
+echo "${ADDON_CONFIG}" | jq '.' > "${ADDON_CONFIG_FILE}"
+if [ ! -s "${ADDON_CONFIG_FILE}" ]; then
+  hass.log.fatal "Invalid addon configuration: ${ADDON_CONFIG}"
+  hass.die
+else
+  hass.log.info "Valid addon configuration: ${ADDON_CONFIG_FILE}"
+fi
 
 ###
 ### REVIEW
 ###
 
-PATTERN_ORG=$(echo "$JSON" | jq -r '.horizon.pattern.org')
-PATTERN_ID=$(echo "$JSON" | jq -r '.horizon.pattern.id')
-PATTERN_URL=$(echo "$JSON" | jq -r '.horizon.pattern.url')
+PATTERN_ORG=$(jq -r '.horizon.pattern.org' "${ADDON_CONFIG_FILE}")
+PATTERN_ID=$(jq -r '.horizon.pattern.id' "${ADDON_CONFIG_FILE}")
+PATTERN_URL=$(jq -r '.horizon.pattern.url' "${ADDON_CONFIG_FILE}")
 
-EXCHANGE_ID=$(echo "$JSON" | jq -r '.horizon.device' )
-EXCHANGE_TOKEN=$(echo "$JSON" | jq -r '.horizon.token')
-EXCHANGE_ORG=$(echo "$JSON" | jq -r '.horizon.organization')
+EXCHANGE_ID=$(jq -r '.horizon.device' "${ADDON_CONFIG_FILE}" )
+EXCHANGE_TOKEN=$(jq -r '.horizon.token' "${ADDON_CONFIG_FILE}")
+EXCHANGE_ORG=$(jq -r '.horizon.organization' "${ADDON_CONFIG_FILE}")
 
-## KAFKA
-KAFKA_TOPIC="sdr-audio" # alternatively $(echo "${EXCHANGE_ORG}.${PATTERN_ORG}_${PATTERN_ID}" | sed 's/@/_/g')
-JSON=$(echo "${JSON}" | jq '.kafka.topic="'"${KAFKA_TOPIC}"'"')
-KAFKA_BROKER_URL=$(echo "$JSON" | jq -r '.kafka.broker')
-KAFKA_API_KEY=$(echo "$JSON" | jq -r '.kafka.api_key')
-
-## MQTT
-VALUE=$(hass.config.get "mqtt.host")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="core-mosquitto"; fi
-hass.log.debug "MQTT host: ${VALUE}"
-MQTT_HOST=${VALUE}
-
-VALUE=$(hass.config.get "mqtt.port")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="1883"; fi
-hass.log.debug "MQTT port: ${VALUE}"
-MQTT_PORT=${VALUE}
-
-VALUE=$(hass.config.get "mqtt.topic")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="kafka/sdr-audio"; fi
-hass.log.debug "MQTT topic: ${VALUE}"
-MQTT_TOPIC=${VALUE}
-
-# set command
-MQTT="mosquitto_pub -h ${MQTT_HOST} -p ${MQTT_PORT}"
-# test if username and password supplied
-if [[ $(hass.config.exists "mqtt.username") && $(hass.config.exists "mqtt.password") ]]; then
-  # update command
-  MQTT="${MQTT} -u $(hass.config.get 'mqtt.username') -P (hass.config.get 'mqtt.password')"
-fi
+KAFKA_TOPIC=$(jq -r '.kafka.topic' "${ADDON_CONFIG_FILE}")
+KAFKA_BROKER_URL=$(jq -r '.kafka.broker' "${ADDON_CONFIG_FILE}")
+KAFKA_API_KEY=$(jq -r '.kafka.api_key' "${ADDON_CONFIG_FILE}")
 
 ## WATSON
 
@@ -295,7 +307,7 @@ JQ='{"date":.ts?,"name":.devID?,"frequency":.freq?,"value":.expectedValue?,"long
 
 # run forever
 while [[ "${LISTEN_MODE}" != "false" ]]; do
-  hass.log.info "Starting listen loop; routing ${KAFKA_TOPIC} to ${MQTT_TOPIC} at host ${MQTT_HOST} on port ${MQTT_PORT}"
+  hass.log.info "Starting listen loop; routing ${KAFKA_TOPIC} to ${MQTT_TOPIC}"
   # wait on kafkacat death
   kafkacat \
     -E -u -C -q -o end \
