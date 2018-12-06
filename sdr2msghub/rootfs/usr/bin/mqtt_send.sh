@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ -z "${ADDON_CONFIG_FILE:-} ] || [ ! -s "${ADDON_CONFIG_FILE:-}" ]; then
+if [ -z "${ADDON_CONFIG_FILE:-}" ] || [ ! -s "${ADDON_CONFIG_FILE:-}" ]; then
   echo "$0 $$ -- ERROR: cannot find addon configuration file: ${ADDON_CONFIG_FILE:-}" >> "${HOME}/mqtt.log" 2>&1
   exit 1
 fi
