@@ -8,6 +8,9 @@ set -o pipefail # Return exit status of the last command in the pipe that failed
 # shellcheck disable=SC1091
 source /usr/lib/hassio-addons/base.sh
 
+# should be from environment
+DATA_DIR="/data"
+
 # ==============================================================================
 # RUN LOGIC
 # ------------------------------------------------------------------------------
@@ -151,7 +154,7 @@ ADDON_CONFIG="${ADDON_CONFIG}"'}'
 
 ## configuration complete
 hass.log.debug "CONFIGURATION complete:" $(echo "${ADDON_CONFIG}" | jq -c '.')
-export ADDON_CONFIG_FILE="${CONFIG_DIR}/addon-config.json"
+export ADDON_CONFIG_FILE="${DATA_DIR}/$(hostname)-config.json"
 # check it
 echo "${ADDON_CONFIG}" | jq '.' > "${ADDON_CONFIG_FILE}"
 if [ ! -s "${ADDON_CONFIG_FILE}" ]; then
