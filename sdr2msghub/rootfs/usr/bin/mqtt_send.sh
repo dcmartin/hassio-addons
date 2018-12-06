@@ -20,6 +20,25 @@ if [ -n "${MQTT_USERNAME}" ] && [ -n "${MQTT_PASSWORD}" ]; then
   MQTT="${MQTT} -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD}"
 fi
 
-mosquitto_pub ${MQTT} >> "${HOME}/mqtt.log" &> /dev/stderr
+MQTT_IDENTITY=$(jq -r ".horizon.device" "${ADDON_CONFIG_FILE}")
+if [ -z "${MQTT_IDENTITY}" ]; then
+  MQTT_IDENTITY=$(hostname)
+fi
 
+OUT='{"host":"'${MQTT_HOST}'","port":'${MQTT_PORT}',"topic":"'${MQTT_TOPIC}'","username":"'${MQTT_USERNAME}'","password":"'${MQTT_PASSWORD}',"identity":"'${MQTT_IDENTITY}'"}'
+
+if read -r; then
+  if [ -n "${REPLY}" ]; then
+    mosquitto_pub ${MQTT} -m "${REPLY}" &> /dev/stderr
+    SIZE=$(echo "${REPLY}" | wc -c | awk '{ print $1 }')
+  else
+    SIZE=0
+  fi
+else
+  SIZE=-1
+fi
+
+OUT=$(echo "${OUT}" | jq '.size='${SIZE})
+
+echo "${OUT}"
 exit 0
