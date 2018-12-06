@@ -16,7 +16,7 @@ MQTT="--quiet -l -i $(hostname) -h ${MQTT_HOST} -p ${MQTT_PORT} -t ${MQTT_TOPIC}
 # check credentials
 MQTT_USERNAME=$(jq -r ".mqtt.username" "${ADDON_CONFIG_FILE}")
 MQTT_PASSWORD=$(jq -r ".mqtt.password" "${ADDON_CONFIG_FILE}")
-if [ -n "${MQTT_USERNAME} ] && [ -n "${MQTT_PASSWORD}" ]; then
+if [ -n "${MQTT_USERNAME}" ] && [ -n "${MQTT_PASSWORD}" ]; then
   MQTT="${MQTT} -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD}"
 fi
 
