@@ -109,14 +109,15 @@ main() {
   HORIZON_DEVICE_DB=$(echo "${HORIZON_ORGANIZATION}" | sed 's/@.*//')
   HORIZON_DEVICE_NAME=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.device')
   HORIZON_CONFIG_NAME=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.config')
-  ADDON_CONFIG_FILE="${CONFIG_DIR}/${HORIZON_DEVICE_NAME}.json"
+
+  export ADDON_CONFIG_FILE="${CONFIG_DIR}/${HORIZON_DEVICE_NAME}.json"
   # check it
   echo "${ADDON_CONFIG}" | jq '.' > "${ADDON_CONFIG_FILE}"
   if [ ! -s "${ADDON_CONFIG_FILE}" ]; then
     hass.log.fatal "Invalid addon configuration: ${ADDON_CONFIG}"
     hass.die
   else
-    hass.log.fatal "Valid addon configuration: ${ADDON_CONFIG_FILE}"
+    hass.log.info "Valid addon configuration: ${ADDON_CONFIG_FILE}"
   fi
 
   ##
