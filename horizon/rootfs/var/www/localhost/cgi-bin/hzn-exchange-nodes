@@ -7,13 +7,6 @@ if [ -z ${TMP:-} ]; then TMP="/tmp"; fi
 if [ -z ${LOGTO:-} ]; then LOGTO=$TMP/$APP.log; fi
 if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- START" >> $LOGTO 2>&1; fi
 
-# use the confi database
-DB="${APP}-config"
-if [ -z ${DB:-} ]; then DB="${APP}-${API}"; fi
-
-JQ='{"nodes":.nodes}'
-if [ -z ${JQ:-} ]; then JQ='.'; fi
-
 ###
 ### dateutils REQUIRED
 ###
@@ -25,7 +18,7 @@ elif [ -e /usr/bin/dateconv ]; then
 elif [ -e /usr/local/bin/dateconv ]; then
    dateconv=/usr/local/bin/dateconv
 else
-  echo "No date converter; install dateutils" &> /dev/stderr
+  echo "No date converter; install dateutils" >> $LOGTO 2>&1
   exit 1
 fi
 
@@ -44,13 +37,32 @@ if [ -z ${id:-} ]; then id="all"; fi
 # standardize QUERY_STRING (rendezvous w/ APP-make-API.csh script)
 export QUERY_STRING="id=$id"
 
-##
-## ACCESS HORIZON
-##
+## ADDON CONFIGURATION INFORMATION
+if [ -z "${ADDON_CONFIG_FILE:-}" ] || [ ! -s "${ADDON_CONFIG_FILE:-}" ]; then
+  echo "$0 $$ -- ERROR: cannot find addon configuration file: ${ADDON_CONFIG_FILE:-}" >> $LOGTO 2>&1
+  exit 1
+fi
 
-if [ -z "${HORIZON_EXCHANGE_URL:-}" ]; then HORIZON_EXCHANGE_URL="https://alpha.edge-fabric.com/v1"; fi
-if [ -z "${HORIZON_ORG:-}" ]; then HORIZON_ORG="dcmartin@us.ibm.com"; fi
-if [ -z "${HORIZON_APIKEY:-}" ]; then HORIZON_APIKEY="Kq65Z9rfOQvPpx1fU1_BxdzXsGbp_0E8nrlVFYX0F9Vi"; fi
+## HORIZON CONFIGURATION INFORMATION
+HORIZON_EXCHANGE_URL=$(jq -r ".horizon.url" "${ADDON_CONFIG_FILE}")
+if [ -z "${HORIZON_EXCHANGE_URL:-}" ]; then 
+  echo "$0 $$ -- ERROR: cannot determine horizon exchange URL" >> $LOGTO 2>&1
+  exit 1
+fi
+HORIZON_ORG=$(jq -r ".horizon.org" "${ADDON_CONFIG_FILE}")
+if [ -z "${HORIZON_ORG:-}" ]; then 
+  echo "$0 $$ -- ERROR: cannot determine horizon exchange organization" >> $LOGTO 2>&1
+  exit 1
+fi
+HORIZON_APIKEY=$(jq -r ".horizon.apikey" "${ADDON_CONFIG_FILE}")
+if [ -z "${HORIZON_APIKEY:-}" ]; then 
+  echo "$0 $$ -- ERROR: cannot determine horizon exchange API key" >> $LOGTO 2>&1
+  exit 1
+fi
+
+###
+### find all the nodes in the exchange for the specified organization
+###
 
 url="${HORIZON_EXCHANGE_URL}/orgs/${HORIZON_ORG}/nodes"
 key="${HORIZON_ORG}/iamapikey:${HORIZON_APIKEY}"
