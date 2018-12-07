@@ -10,11 +10,11 @@ Currently there are two supported patterns:
 
 ## Install Open Horizon
 
-Please refer to the Horizon setup [instructions][dcm-oh].  More detailed instructions are [available][edge-install].  Installation package for macOS is also [available][macos-install]
+Please refer to the Horizon setup [instructions][dcm-oh].
 
 # Install addon
 
-1. [Add our Hass.io add-ons repository][repository] to your Hass.io instance.
+1. [Add this Hass.io add-ons repository][repository] to your Hass.io instance.
 1. Install the "horizon" add-on
 1. Configure the "horizon" add-on (see below)
 1. Start the "horizon" add-on
@@ -23,7 +23,7 @@ Please refer to the Horizon setup [instructions][dcm-oh].  More detailed instruc
 ## Configure addon
 
 ### Options: Home Assistant
-These options are for the Home Assistant environment hosting this control addon.  These values will be specified in the modifications to the HA environment, ***which will be replaced***.
+These options are for the Home Assistant environment hosting this control addon.  These values will be specified in the modifications to the HA environment, ***which will be replaced (NOT YET)***.
 #### `log-level`
 #### `timezone`
 #### `unit_system`
