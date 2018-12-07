@@ -68,7 +68,7 @@ JSON="${JSON}"',"organization":"'"${VALUE}"'"'
 # DEVICE
 VALUE=$(hass.config.get "horizon.device")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then
-  VALUE=($(hostname -I | awk '{ print $1 }' | sed 's/\.//g'))
+  VALUE=$(hostname -I | awk '{ print $1 }' | awk -F\. '{ printf("%03d%03d%03d%03d\n", $1, $2, $3, $4) }')
   VALUE="$(hostname)-${VALUE}"
 fi
 JSON="${JSON}"',"device":"'"${VALUE}"'"'
