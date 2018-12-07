@@ -1,0 +1,110 @@
+#!/bin/bash
+APP="hzn"
+API="exchange-nodes"
+DEBUG="true"
+
+if [ -z ${TMP:-} ]; then TMP="/tmp"; fi
+if [ -z ${LOGTO:-} ]; then LOGTO=$TMP/$APP.log; fi
+if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- START" >> $LOGTO 2>&1; fi
+
+# use the confi database
+DB="${APP}-config"
+if [ -z ${DB:-} ]; then DB="${APP}-${API}"; fi
+
+JQ='{"nodes":.nodes}'
+if [ -z ${JQ:-} ]; then JQ='.'; fi
+
+###
+### dateutils REQUIRED
+###
+
+if [ -e /usr/bin/dateutils.dconv ]; then
+   dateconv=/usr/bin/dateutils.dconv
+elif [ -e /usr/bin/dateconv ]; then
+   dateconv=/usr/bin/dateconv
+elif [ -e /usr/local/bin/dateconv ]; then
+   dateconv=/usr/local/bin/dateconv
+else
+  echo "No date converter; install dateutils" &> /dev/stderr
+  exit 1
+fi
+
+# don't update statistics more than once per (in seconds)
+TTL=30
+SECONDS=$(date "+%s")
+DATE=$(echo $SECONDS \/ $TTL \* $TTL | bc)
+
+if [ -n ${QUERY_STRING:-} ]; then
+    id=$(echo "$QUERY_STRING" | sed 's/.*id=\([^&]*\).*/\1/')
+    if [[ $id == "$QUERY_STRING" ]]; then id=""; fi
+fi
+
+if [ -z ${id:-} ]; then id="all"; fi
+
+# standardize QUERY_STRING (rendezvous w/ APP-make-API.csh script)
+export QUERY_STRING="id=$id"
+
+##
+## ACCESS HORIZON
+##
+
+if [ -z "${HORIZON_EXCHANGE_URL:-}" ]; then HORIZON_EXCHANGE_URL="https://alpha.edge-fabric.com/v1"; fi
+if [ -z "${HORIZON_ORG:-}" ]; then HORIZON_ORG="dcmartin@us.ibm.com"; fi
+if [ -z "${HORIZON_APIKEY:-}" ]; then HORIZON_APIKEY="Kq65Z9rfOQvPpx1fU1_BxdzXsGbp_0E8nrlVFYX0F9Vi"; fi
+
+url="${HORIZON_EXCHANGE_URL}/orgs/${HORIZON_ORG}/nodes"
+key="${HORIZON_ORG}/iamapikey:${HORIZON_APIKEY}"
+
+# output target
+OUTPUT="$TMP/$APP-$API-$QUERY_STRING.$DATE.json"
+# test if been-there-done-that
+if [ ! -s "$OUTPUT" ]; then 
+  rm -f "${OUTPUT%.*}".*
+
+  result=$(curl -sL "$url" -u "$key")
+  if [[ $(echo "${result}" | jq '.nodes==null') == 'false' ]]; then
+    nodes=$(echo "${result}" | jq '.nodes')
+    names=$(echo "${nodes}" | jq '[ . | objects | keys[]] | unique' | jq -r '.[]')
+    i=0
+    echo '{"nodes":[' > "${OUTPUT}"
+    for name in $names; do
+      if [ $i -gt 0 ]; then echo ',' >> "${OUTPUT}"; fi; i=$((i+1))
+      echo "${nodes}" | jq '."'"${name}"'"|.id="'${name}'"' >> "${OUTPUT}"
+    done 
+    echo ']}' >> "${OUTPUT}"
+  else
+    echo 'null' >> "${OUTPUT}"
+  fi
+fi
+
+#
+# output
+#
+
+echo "Content-Type: application/json; charset=utf-8"
+echo "Access-Control-Allow-Origin: *"
+
+if [ -s "${OUTPUT}" ]; then
+  age=$((SECONDS - DATE))
+  echo "Age: $age"
+  refresh=$((TTL - age))
+  # check back if using old
+  if [ $refresh -lt 0 ]; then refresh=$TTL; fi
+  echo "Refresh: $refresh"
+  echo "Cache-Control: max-age=$TTL"
+  echo "Last-Modified:" $($dateconv -i '%s' -f '%a, %d %b %Y %H:%M:%S %Z' $DATE)
+  echo ""
+  jq '.' "$OUTPUT"
+  if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- output $OUTPUT Age: $age Refresh: $refresh" >> $LOGTO 2>&1; fi
+else
+  echo "Cache-Control: no-cache"
+  echo "Last-Modified:" $($dateconv -i '%s' -f '%a, %d %b %Y %H:%M:%S %Z' $DATE)
+  echo ""
+  if [ -n ${output:-} ]; then
+    echo "$output"
+  else
+    echo '{ "error": "not found" }'
+  fi
+fi
+
+if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- FINISH $QUERY_STRING" >> $LOGTO 2>&1; fi
