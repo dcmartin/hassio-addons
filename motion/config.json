@@ -133,7 +133,7 @@
         "fov": "int?",
         "fps": "int?",
         "userpass": "str?",
-        "keepalive": "str?",
+        "keepalive": "match(^(on|off|force)$)?",
         "port": "port?",
         "quality": "int?",
         "width": "int?",
@@ -181,7 +181,7 @@
     "lightswitch": "int?",
     "netcam_url": "str?",
     "netcam_userpass": "str?",
-    "netcam_keepalive": "str?",
+    "netcam_keepalive": "match(^(on|off|force)$)?",
     "watson": {
       "url": "str?",
       "apikey": "str?",
