@@ -123,9 +123,9 @@ internet_details:
   name: Internet Details
   control: hidden
   entities:
+    - binary_sensor.internet_test_state
     - sensor.internet_test
     - sensor.internet_test_ago
-    - sensor.internet_test_state
     - sensor.internet_count
     - sensor.internet_fast_count
     - sensor.internet_slow_count
