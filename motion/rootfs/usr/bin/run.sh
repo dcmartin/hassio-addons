@@ -691,7 +691,7 @@ USERNAME=$(jq -r ".cloudant.username" "${CONFIG_PATH}")
 PASSWORD=$(jq -r ".cloudant.password" "${CONFIG_PATH}")
 if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "null" ] && [ ! -z "${URL}" ] && [ ! -z "${USERNAME}" ] && [ ! -z "${PASSWORD}" ]; then
   echo "Testing CLOUDANT" >&2
-  OK=$(curl -s -q -f -L "${URL}" -u "${USERNAME}:${PASSWORD}" | jq -r '.couchdb')
+  OK=$(curl -sL "${URL}" -u "${USERNAME}:${PASSWORD}" | jq -r '.couchdb')
   if [ "${OK}" == "null" ] || [ -z "${OK}" ]; then
     echo "Cloudant failed at ${URL} with ${USERNAME} and ${PASSWORD}; exiting" >&2
     exit
@@ -699,10 +699,10 @@ if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "
     export MOTION_CLOUDANT_URL="${URL%:*}"'://'"${USERNAME}"':'"${PASSWORD}"'@'"${USERNAME}"."${URL#*.}"
   fi
   URL="${MOTION_CLOUDANT_URL}/${MOTION_DEVICE_DB}"
-  DB=$(curl -s -q -f -L "${URL}" | jq -r '.db_name')
+  DB=$(curl -sL "${URL}" | jq -r '.db_name')
   if [ "${DB}" != "${MOTION_DEVICE_DB}" ]; then
     # create DB
-    OK=$(curl -s -q -f -L -X PUT "${URL}" | jq '.ok')
+    OK=$(curl -sL -X PUT "${URL}" | jq '.ok')
     if [ "${OK}" != "true" ]; then
       echo "Failed to create CLOUDANT DB ${MOTION_DEVICE_DB}" >&2
       OFF=TRUE
@@ -714,12 +714,12 @@ if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "
   fi
   if [ -s "${MOTION_JSON_FILE}" ] && [ -z "${OFF:-}" ]; then
     URL="${URL}/${MOTION_DEVICE_NAME}"
-    REV=$(curl -s -q -f -L "${URL}" | jq -r '._rev')
+    REV=$(curl -sL "${URL}" | jq -r '._rev')
     if [ "${REV}" != "null" ] && [ ! -z "${REV}" ]; then
       echo "Prior record exists ${REV}" >&2
       URL="${URL}?rev=${REV}"
     fi
-    OK=$(curl -s -q -f -L "${URL}" -X PUT -d "@${MOTION_JSON_FILE}" | jq '.ok')
+    OK=$(curl -sL "${URL}" -X PUT -d "@${MOTION_JSON_FILE}" | jq '.ok')
     if [ "${OK}" != "true" ]; then
       echo "Failed to update ${URL}" $(jq -c '.' "${MOTION_JSON_FILE}") >&2
       echo "Exiting" >&2; exit
@@ -738,9 +738,9 @@ if [ -z "${MOTION_CLOUDANT_URL:-}" ]; then
 fi
 
 # test hassio
-echo "Testing hassio ..." $(curl -s -q -f -L -H "X-HASSIO-KEY: ${HASSIO_TOKEN}" "http://hassio/supervisor/info" | jq -c '.result') >&2
+echo "Testing hassio ..." $(curl -sL -H "X-HASSIO-KEY: ${HASSIO_TOKEN}" "http://hassio/supervisor/info" | jq -c '.result') >&2
 # test homeassistant
-echo "Testing homeassistant ..." $(curl -s -q -f -L -u ":${HASSIO_TOKEN}" "http://hassio/homeassistant/api/states" | jq -c '.|length') "states" >&2
+echo "Testing homeassistant ..." $(curl -sL -u ":${HASSIO_TOKEN}" "http://hassio/homeassistant/api/states" | jq -c '.|length') "states" >&2
 
 # start ftp_notifywait for all ftpd:// cameras (uses environment MOTION_JSON_FILE)
 ftp_notifywait.sh "${MOTION_JSON_FILE}"
