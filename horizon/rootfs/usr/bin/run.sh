@@ -72,7 +72,10 @@ main() {
   ADDON_CONFIG="${ADDON_CONFIG}"',"url":"'"${VALUE}"'"'
   # DEVICE
   VALUE=$(hass.config.get "horizon.device")
-  if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then hass.log.fatal "No horizon device"; hass.die; fi
+  if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then 
+    VALUE=$(hostname)'-'$(hostname -I | awk '{ print $1 }' | awk -F\. '{ printf("%03d%03d%03d%03d\n", $1, $2, $3, $4) }')
+    hass.log.warning "No horizon device; generated default: ${VALUE}"
+  fi
   ADDON_CONFIG="${ADDON_CONFIG}"',"device":"'"${VALUE}"'"'
   # CONFIG
   VALUE=$(hass.config.get "horizon.config")

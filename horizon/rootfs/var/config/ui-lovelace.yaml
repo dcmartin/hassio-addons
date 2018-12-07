@@ -6,6 +6,17 @@ views:
     cards:
       - type: entities
         entities:
+          - entity: sensor.sdr2msghub_date
+            icon: mdi:radio
+            name: Last SDR report
+          - entity: sensor.cpu2msghub_date
+            icon: mdi:chip
+            name: Last CPU report
+          - entity: sensor.internet_test
+            icon: mdi:ip-network
+            name: Last Internet test
+      - type: entities
+        entities:
           - entity: sensor.horizon_status
             icon: mdi:update
             name: Last update
@@ -34,7 +45,7 @@ views:
             icon: mdi:archive
             name: Archived
       - type: map
-        title: DEVICES
+        title: LAST REPORTING DEVICES
         aspect_ratio: 100%
         default_zoom: 1
         entities:
@@ -250,56 +261,4 @@ views:
           - entity: sensor.internet_receive_mean
             icon: mdi:heart-half-full
             name: Mean
-  - icon: mdi:folder-network
-    id: INTRANET
-    cards:
-      - type: history-graph
-        title: Activity
-        refresh_interval: 10
-        hours_to_show: 1 
-        entities:
-          - entity: sensor.intranet_count
-            icon: mdi:sigma
-            name: Tests
-      - type: entities
-        entities:
-          - entity: sensor.intranet_count
-            name: Count
-          - entity: sensor.intranet_test
-            name: When
-          - entity: sensor.intranet_test_send
-            name: Upload
-          - entity: sensor.intranet_test_receive
-            name: Download
-          - entity: sensor.intranet_receive_mean
-            name: Download average
-          - entity: sensor.intranet_send_mean
-            name: Upload average
-      - type: history-graph
-        title: Download deviation
-        refresh_interval: 10
-        hours_to_show: 1 
-        entities:
-          - entity: sensor.intranet_send_standard_deviation
-            icon: mdi:sigma-lower
-            name: Upload deviation
-          - entity: sensor.intranet_receive_standard_deviation
-            icon: mdi:sigma-lower
-            name: Download deviation
-      - type: history-graph
-        title: LAN
-        refresh_interval: 10
-        hours_to_show: 24
-        entities:
-          - entity: sensor.intranet_test_send
-            icon: mdi:arrow-up-down-bold-outline
-            name: Upload
-          - entity: sensor.intranet_send_mean
-            icon: mdi:heart-half-full
-            name: Mean
-          - entity: sensor.intranet_test_receive
-            icon: mdi:arrow-up-down-bold-outline
-            name: Download
-          - entity: sensor.intranet_receive_mean
-            icon: mdi:heart-half-full
-            name: Mean
+

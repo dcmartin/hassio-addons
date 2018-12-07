@@ -25,6 +25,10 @@ panel_iframe:
     title: Horizon Control
     icon: mdi:weather-sunset
     url: http://%%HOST_IPADDR%%:9999
+  configurator:
+    title: Configurator
+    icon: mdi:wrench
+    url: http://%%HOST_IPADDR%%:3218
     
 mqtt:
   broker: %%MQTT_HOST%%
@@ -66,19 +70,6 @@ history_graph:
     refresh: 10
     entities:
       - sensor.cpu2msghub_count
-  intranet_test:
-    name: Intranet Test
-    hours_to_show: 24
-    refresh: 30
-    entities:
-      # - sensor.intranet_test_receive
-      - sensor.intranet_receive_mean
-      - sensor.intranet_receive_min_value
-      - sensor.intranet_receive_max_value
-      # - sensor.intranet_test_send
-      - sensor.intranet_send_mean
-      - sensor.intranet_send_min_value
-      - sensor.intranet_send_max_value
   internet_receive:
     name: Internet Receive
     hours_to_show: 24
@@ -860,141 +851,3 @@ binary_sensor:
              > (states.input_number.internet_deviation.state|float) }}
         icon_template: >-
             mdi:emoticon-happy
-
-###
-### INTRANET TEST
-###
-
-sensor intranet_test:
-  - platform: command_line
-    command: iperf3 -c 192.168.1.32 -J | jq '{"date":.start.timestamp.timesecs,"send":.end.sum_sent.bits_per_second,"receive":.end.sum_received.bits_per_second}'
-    name: intranet_test
-    scan_interval: 120
-    command_timeout: 60
-    json_attributes:
-      - date
-      - send
-      - receive
-    value_template: >
-      {%- if value_json is defined -%}
-        {{ value_json.date | timestamp_custom("%a %b %d @ %I:%M %p") }}
-      {%- else -%}null{%- endif -%}
-  - platform: template
-    sensors:
-      intranet_test_receive:
-        entity_id:
-          - sensor.intranet_test
-        unit_of_measurement: Mbps
-        value_template: >
-          {% if states.sensor.intranet_test.attributes.receive is defined and states.sensor.intranet_test.attributes.receive != null %}
-            {{ '%0.2f' | format(states.sensor.intranet_test.attributes.receive / 1000000.0) }}
-          {%- else -%}null{%- endif -%}
-      intranet_test_send:
-        entity_id:
-          - sensor.intranet_test
-        unit_of_measurement: Mbps
-        value_template: >
-          {% if states.sensor.intranet_test.attributes.send is defined and states.sensor.intranet_test.attributes.send != null %}
-            {{ '%0.2f' | format(states.sensor.intranet_test.attributes.send / 1000000.0) }}
-          {%- else -%}null{%- endif -%}
-      intranet_receive_mean:
-        entity_id:
-          - sensor.intranet_receive_statistics_mean
-        unit_of_measurement: Mbps
-        value_template: >
-          {% if states.sensor.intranet_receive_statistics_mean is defined %}
-            {{ states.sensor.intranet_receive_statistics_mean.state }}
-          {%- else -%}null{%- endif -%}
-      intranet_receive_min_value:
-        entity_id:
-          - sensor.intranet_receive_statistics_mean
-        unit_of_measurement: Mbps
-        value_template: >
-          {% if states.sensor.intranet_receive_statistics_mean is defined %}
-            {{ states.sensor.intranet_receive_statistics_mean.attributes.min_value }}
-          {%- else -%}null{%- endif -%}
-      intranet_receive_max_value:
-        entity_id:
-          - sensor.intranet_receive_statistics_mean
-        unit_of_measurement: Mbps
-        value_template: >
-          {% if states.sensor.intranet_receive_statistics_mean is defined %}
-            {{ states.sensor.intranet_receive_statistics_mean.attributes.max_value }}
-          {%- else -%}null{%- endif -%}
-      intranet_receive_standard_deviation:
-        entity_id:
-          - sensor.intranet_receive_statistics_mean
-        unit_of_measurement: Mbps
-        value_template: >
-          {% if states.sensor.intranet_receive_statistics_mean is defined %}
-            {{ states.sensor.intranet_receive_statistics_mean.attributes.standard_deviation }}
-          {%- else -%}null{%- endif -%}
-      intranet_send_mean:
-        entity_id:
-          - sensor.intranet_send_statistics_mean
-        unit_of_measurement: Mbps
-        value_template: >
-          {% if states.sensor.intranet_send_statistics_mean is defined %}
-            {{ states.sensor.intranet_send_statistics_mean.state }}
-          {%- else -%}null{%- endif -%}
-      intranet_send_min_value:
-        entity_id:
-          - sensor.intranet_send_statistics_mean
-        unit_of_measurement: Mbps
-        value_template: >
-          {% if states.sensor.intranet_send_statistics_mean is defined %}
-            {{ states.sensor.intranet_send_statistics_mean.attributes.min_value }}
-          {%- else -%}null{%- endif -%}
-      intranet_send_max_value:
-        entity_id:
-          - sensor.intranet_send_statistics_mean
-        unit_of_measurement: Mbps
-        value_template: >
-          {% if states.sensor.intranet_send_statistics_mean is defined %}
-            {{ states.sensor.intranet_send_statistics_mean.attributes.max_value }}
-          {%- else -%}null{%- endif -%}
-      intranet_send_standard_deviation:
-        entity_id:
-          - sensor.intranet_send_statistics_mean
-        unit_of_measurement: Mbps
-        value_template: >
-          {% if states.sensor.intranet_send_statistics_mean is defined %}
-            {{ states.sensor.intranet_send_statistics_mean.attributes.standard_deviation }}
-          {%- else -%}null{%- endif -%}
-      intranet_test_ago:
-        entity_id:
-          - sensor.intranet_test
-          - sun.sun
-        unit_of_measurement: seconds
-        value_template: '{{ (now().timestamp()|int) - (states.sensor.intranet_test.attributes.date|int) }}'
-      intranet_test_state:
-        entity_id:
-          - sensor.intranet_test_ago
-        value_template: >
-          {% if states.sensor.intranet_test_ago.state|int > 30 %}False{% else %}True{% endif %}
-      intranet_count:
-        entity_id:
-          - sensor.intranet_test_count
-        unit_of_measurement: tests
-        value_template: >
-          {% if states.sensor.intranet_test_count is defined %}
-            {{ states.sensor.intranet_test_count.state }}
-          {%- else -%}null{%- endif -%}
-  - platform: statistics
-    entity_id: sensor.intranet_test_send
-    name: intranet_send_statistics
-    max_age:
-      hours: 24
-  - platform: statistics
-    entity_id: sensor.intranet_test_receive
-    name: intranet_receive_statistics
-    max_age:
-      hours: 24
-  - platform: history_stats
-    name: intranet_test_count
-    entity_id: sensor.intranet_test_state
-    state: True
-    type: count
-    start: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
-    end: '{{ now() }}'
-
