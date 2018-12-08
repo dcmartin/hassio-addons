@@ -106,14 +106,14 @@ if [ -s "${OUTPUT}" ]; then
   echo "Cache-Control: max-age=$TTL"
   echo "Last-Modified:" $($dateconv -i '%s' -f '%a, %d %b %Y %H:%M:%S %Z' $DATE)
   echo ""
-  jq '.' "$OUTPUT"
+  jq '.date='"${DATE}" "$OUTPUT"
   if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- output $OUTPUT Age: $age Refresh: $refresh" >> $LOGTO 2>&1; fi
 else
   echo "Cache-Control: no-cache"
   echo "Last-Modified:" $($dateconv -i '%s' -f '%a, %d %b %Y %H:%M:%S %Z' $DATE)
   echo ""
   if [ -n ${output:-} ]; then
-    echo "$output"
+    echo "$output" | jq '.date='"${DATE}"
   else
     echo '{ "error": "not found" }'
   fi

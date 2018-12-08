@@ -3,7 +3,7 @@ APP="hzn"
 API="nodes"
 DEBUG="true"
 
-if [ -z ${TMP:-} ]; then TMP="/tmpfs"; fi
+if [ -z ${TMP:-} ]; then TMP="/date"; fi
 if [ -z ${LOGTO:-} ]; then LOGTO=$TMP/$APP.log; fi
 if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- START" >> $LOGTO 2>&1; fi
 
@@ -27,7 +27,7 @@ elif [ -e /usr/bin/dateconv ]; then
 elif [ -e /usr/local/bin/dateconv ]; then
    dateconv=/usr/local/bin/dateconv
 else
-  echo "No date converter; install dateutils" &> /dev/stderr
+  echo "No date converter; install dateutils" >> $LOGTO 2>&1
   exit 1
 fi
 
@@ -120,14 +120,14 @@ if [ -z ${output:-} ] && [ -s "$OUTPUT" ]; then
   echo "Cache-Control: max-age=$TTL"
   echo "Last-Modified:" $($dateconv -i '%s' -f '%a, %d %b %Y %H:%M:%S %Z' $DATE)
   echo ""
-  jq -c '.' "$OUTPUT"
+  jq -c '.date='"${DATE}" "$OUTPUT"
   if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- output $OUTPUT Age: $age Refresh: $refresh" >> $LOGTO 2>&1; fi
 else
   echo "Cache-Control: no-cache"
   echo "Last-Modified:" $($dateconv -i '%s' -f '%a, %d %b %Y %H:%M:%S %Z' $DATE)
   echo ""
   if [ -n ${output:-} ]; then
-    echo "$output"
+    echo "$output" | jq '.date='"${DATE}"
   else
     echo '{ "error": "not found" }'
   fi

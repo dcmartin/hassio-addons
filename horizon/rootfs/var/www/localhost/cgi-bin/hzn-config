@@ -4,11 +4,10 @@ API="config"
 
 DEBUG="true"
 
-if [ -z ${TMP:-} ]; then TMP="/tmpfs"; fi
-if [ -z ${LOGTO:-} ]; then LOGTO=$TMP/$APP.log; fi
-
 if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- START" >> $LOGTO 2>&1; fi
 
+if [ -z ${TMP:-} ]; then TMP="/tmpfs"; fi
+if [ -z ${LOGTO:-} ]; then LOGTO=$TMP/$APP.log; fi
 if [ -z ${CU:-} ]; then CU="${HORIZON_CLOUDANT_URL}"; fi
 if [ -z ${DB:-} ]; then DB="${APP}-${API}"; fi
 
@@ -52,23 +51,23 @@ OUTPUT="$TMP/$APP-$API-$QUERY_STRING.$DATE.json"
 if [ ! -s "$OUTPUT" ]; then 
   rm -f "${OUTPUT%.*}".*
 
-  # find devices
+  # find configs
   if [ $id == "all" ]; then
-    devices=$(curl -s -q -L "$CU/$DB/_all_docs" | jq -r '.rows[]?.id')
-    if [[ -z "${devices}" ]]; then
-      if [ -n "${DEBUG:-}" ]; then echo $(date) "$0 $$ ++ Could not retrieve list of devices from ($url)" >> $LOGTO 2>&1; fi
+    configs=$(curl -s -q -L "$CU/$DB/_all_docs" | jq -r '.rows[]?.id')
+    if [[ -z "${configs}" ]]; then
+      if [ -n "${DEBUG:-}" ]; then echo $(date) "$0 $$ ++ Could not retrieve list of configs from ($url)" >> $LOGTO 2>&1; fi
     fi
   else
-    devices=$id
+    configs=$id
   fi
 
-  if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ ++ Devices in DB ($devices)" >> $LOGTO 2>&1; fi
+  if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ ++ configurations: ${configs}" >> $LOGTO 2>&1; fi
 
   k=0
   all='{"date":'"$DATE"',"'$API'":['
 
-  for d in $devices; do
-    # get device entry
+  for d in $configs; do
+    # get config entry
     url="$CU/$DB/$d"
     out="$TMP/$APP-$API-$$.json"
     curl -sL "$url" -o "$out"
@@ -78,7 +77,7 @@ if [ ! -s "$OUTPUT" ]; then
       continue
     fi
     if [ "$id" != "all" ] && [ "$d" == "$id" ]; then
-      jq '.' "$out" > "$OUTPUT"
+      jq 'del(._id) | del(._rev) | .id="'"${d}"'"' "$out" > "$OUTPUT"
       rm -f "$out"
       break
     elif [ $id == "all" ]; then
