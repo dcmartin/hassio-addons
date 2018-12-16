@@ -39,11 +39,53 @@ mqtt:
 group: !include groups.yaml
 automation: !include automations.yaml
 
+## INPUT BOOLEAN(s)
+input_boolean:
+  # MOTION
+  motion_event_notify:
+    name: motion_event_notify
+    initial: true
+    icon: mdi:switch
+  motion_status_notify:
+    name: motion_status_notify
+    initial: true
+    icon: mdi:switch
+
+## INPUT NUMBER(s)
+input_number:
+  # SDR
+  sdr2msghub_confidence:
+    name: Confidence
+    mode: slider
+    initial: 0
+    min: 0
+    max: 1
+    step: 0.01
+    icon: mdi:target
+  sdr2msghub_relevance:
+    name: Relevance
+    mode: slider
+    initial: 0
+    min: 0
+    max: 1
+    step: 0.01
+    icon: mdi:target
+  # INTERNET
+  internet_deviation:
+    name: Internet deviation
+    mode: slider
+    initial: 1.5
+    min: 0.1
+    max: 3
+    step: 0.1
+    icon: mdi:sigma-lower
+
 ###
 ### HISTORY GRAPH
 ###
 
 history_graph:
+  ## SDR
   sdr2msghub_sentiment:
     name: sdr2msghub_sentiment
     hours_to_show: 1
@@ -57,6 +99,7 @@ history_graph:
     refresh: 10
     entities:
       - sensor.sdr2msghub_count
+  ## CPU
   cpu2msghub_cpu:
     name: cpu2msghub_cpu
     hours_to_show: 1
@@ -70,6 +113,7 @@ history_graph:
     refresh: 10
     entities:
       - sensor.cpu2msghub_count
+  ## INTERNET
   internet_receive:
     name: Internet Receive
     hours_to_show: 24
@@ -110,36 +154,45 @@ history_graph:
       - sensor.internet_slow_count
       - sensor.internet_fast_count
       - sensor.internet_tests_count
+  ## INTRANET
+  intranet_test:
+    name: Intranet Test
+    hours_to_show: 24
+    refresh: 30
+    entities:
+      # - sensor.intranet_test_receive
+      - sensor.intranet_receive_mean
+      - sensor.intranet_receive_min_value
+      - sensor.intranet_receive_max_value
+      # - sensor.intranet_test_send
+      - sensor.intranet_send_mean
+      - sensor.intranet_send_min_value
+      - sensor.intranet_send_max_value
+  ## MOTION
+  motion_event_elapsed:
+    name: motion_event_elapsed
+    hours_to_show: 1
+    refresh: 10
+    entities:
+      - sensor.motion_event_end_elapsed
+      - sensor.motion_event_elapsed_mean
+  motion_event_ago:
+    name: motion_event_ago
+    hours_to_show: 1
+    refresh: 10
+    entities:
+      - sensor.motion_event_end_ago
+      - sensor.motion_event_ago_mean
+  motion_event_count:
+    name: motion_event_count
+    hours_to_show: 1
+    refresh: 10
+    entities:
+      - sensor.motion_event_count
 
 ###
 ### SDR
 ###
-
-input_number:
-  sdr2msghub_confidence:
-    name: Confidence
-    mode: slider
-    initial: 0
-    min: 0
-    max: 1
-    step: 0.01
-    icon: mdi:target
-  sdr2msghub_relevance:
-    name: Relevance
-    mode: slider
-    initial: 0
-    min: 0
-    max: 1
-    step: 0.01
-    icon: mdi:target
-  internet_deviation:
-    name: Internet deviation
-    mode: slider
-    initial: 1.5
-    min: 0.1
-    max: 3
-    step: 0.1
-    icon: mdi:sigma-lower
 
 sensor sdr2msghub:
   - platform: mqtt
@@ -618,10 +671,9 @@ sensor horizon:
 ###
 ### INTERNET TEST
 ###
-
 sensor internet_test:
   - platform: command_line
-    command: speedtest --csv --csv-delimiter '|' | xargs -I '%' echo $(date +%s)"|%" | awk -F'|' '{ printf("{\"date\":%d,\"server\":\"%s\",\"timestamp\":\"%s\",\"distance\":%d,\"ping\":%d,\"receive\":%f,\"send\":%f }\n", $1, $2, $5, $6, $7, $8, $9 ) }'
+    command: speedtest --json | jq '.date='$(date +%s)'|.latitude=(.client.lat|tonumber)|.longitude=(.client.lon|tonumber)'
     name: internet_test
     scan_interval: 120
     sampling_size: 60
@@ -630,12 +682,16 @@ sensor internet_test:
     command_timeout: 60
     json_attributes:
       - server
+      - latitude
+      - longitude
+      - bytes_sent
+      - bytes_received
+      - client
       - date
       - timestamp
-      - distance
       - ping
-      - receive
-      - send
+      - download
+      - upload
     value_template: >
       {%- if value_json is defined -%}
         {{ value_json.date | timestamp_custom("%a %b %d @ %I:%M %p") }}
@@ -647,16 +703,16 @@ sensor internet_test:
           - sensor.internet_test
         unit_of_measurement: Mbps
         value_template: >
-          {% if states.sensor.internet_test.attributes.receive is defined and states.sensor.internet_test.attributes.receive != null %}
-            {{ '%0.2f' | format(states.sensor.internet_test.attributes.receive / 1000000.0) }}
+          {% if states.sensor.internet_test.attributes.download is defined and states.sensor.internet_test.attributes.download != null %}
+            {{ '%0.2f' | format(states.sensor.internet_test.attributes.download / 1000000.0) }}
           {%- else -%}null{%- endif -%}
       internet_test_send:
         entity_id:
           - sensor.internet_test
         unit_of_measurement: Mbps
         value_template: >
-          {% if states.sensor.internet_test.attributes.send is defined and states.sensor.internet_test.attributes.send != null %}
-            {{ '%0.2f' | format(states.sensor.internet_test.attributes.send / 1000000.0) }}
+          {% if states.sensor.internet_test.attributes.upload is defined and states.sensor.internet_test.attributes.upload != null %}
+            {{ '%0.2f' | format(states.sensor.internet_test.attributes.upload / 1000000.0) }}
           {%- else -%}null{%- endif -%}
       internet_receive_mean:
         entity_id:
@@ -806,7 +862,7 @@ binary_sensor:
           - sensor.internet_test
           - sensor.internet_test_ago
         value_template: >
-          {% if states.sensor.internet_test_ago.state|int > 60 %}False{% else %}True{% endif %}
+          {% if states.sensor.internet_test_ago.state|int > 30 %}False{% else %}True{% endif %}
       internet_slow:
         entity_id:
           - sensor.internet_test_receive
@@ -851,3 +907,539 @@ binary_sensor:
              > (states.input_number.internet_deviation.state|float) }}
         icon_template: >-
             mdi:emoticon-happy
+
+###
+### INTRANET TEST
+###
+
+sensor intranet_test:
+  - platform: command_line
+    command: iperf3 -c 192.168.1.32 -J | jq '{"date":.start.timestamp.timesecs,"send":.end.sum_sent.bits_per_second,"receive":.end.sum_received.bits_per_second}'
+    name: intranet_test
+    scan_interval: 120
+    command_timeout: 60
+    json_attributes:
+      - date
+      - send
+      - receive
+    value_template: >
+      {%- if value_json is defined -%}
+        {{ value_json.date | timestamp_custom("%a %b %d @ %I:%M %p") }}
+      {%- else -%}null{%- endif -%}
+  - platform: template
+    sensors:
+      intranet_test_receive:
+        entity_id:
+          - sensor.intranet_test
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.intranet_test.attributes.receive is defined and states.sensor.intranet_test.attributes.receive != null %}
+            {{ '%0.2f' | format(states.sensor.intranet_test.attributes.receive / 1000000.0) }}
+          {%- else -%}null{%- endif -%}
+      intranet_test_send:
+        entity_id:
+          - sensor.intranet_test
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.intranet_test.attributes.send is defined and states.sensor.intranet_test.attributes.send != null %}
+            {{ '%0.2f' | format(states.sensor.intranet_test.attributes.send / 1000000.0) }}
+          {%- else -%}null{%- endif -%}
+      intranet_receive_mean:
+        entity_id:
+          - sensor.intranet_receive_statistics_mean
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.intranet_receive_statistics_mean is defined %}
+            {{ states.sensor.intranet_receive_statistics_mean.state }}
+          {%- else -%}null{%- endif -%}
+      intranet_receive_min_value:
+        entity_id:
+          - sensor.intranet_receive_statistics_mean
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.intranet_receive_statistics_mean is defined %}
+            {{ states.sensor.intranet_receive_statistics_mean.attributes.min_value }}
+          {%- else -%}null{%- endif -%}
+      intranet_receive_max_value:
+        entity_id:
+          - sensor.intranet_receive_statistics_mean
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.intranet_receive_statistics_mean is defined %}
+            {{ states.sensor.intranet_receive_statistics_mean.attributes.max_value }}
+          {%- else -%}null{%- endif -%}
+      intranet_receive_standard_deviation:
+        entity_id:
+          - sensor.intranet_receive_statistics_mean
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.intranet_receive_statistics_mean is defined %}
+            {{ states.sensor.intranet_receive_statistics_mean.attributes.standard_deviation }}
+          {%- else -%}null{%- endif -%}
+      intranet_send_mean:
+        entity_id:
+          - sensor.intranet_send_statistics_mean
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.intranet_send_statistics_mean is defined %}
+            {{ states.sensor.intranet_send_statistics_mean.state }}
+          {%- else -%}null{%- endif -%}
+      intranet_send_min_value:
+        entity_id:
+          - sensor.intranet_send_statistics_mean
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.intranet_send_statistics_mean is defined %}
+            {{ states.sensor.intranet_send_statistics_mean.attributes.min_value }}
+          {%- else -%}null{%- endif -%}
+      intranet_send_max_value:
+        entity_id:
+          - sensor.intranet_send_statistics_mean
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.intranet_send_statistics_mean is defined %}
+            {{ states.sensor.intranet_send_statistics_mean.attributes.max_value }}
+          {%- else -%}null{%- endif -%}
+      intranet_send_standard_deviation:
+        entity_id:
+          - sensor.intranet_send_statistics_mean
+        unit_of_measurement: Mbps
+        value_template: >
+          {% if states.sensor.intranet_send_statistics_mean is defined %}
+            {{ states.sensor.intranet_send_statistics_mean.attributes.standard_deviation }}
+          {%- else -%}null{%- endif -%}
+      intranet_test_ago:
+        entity_id:
+          - sensor.intranet_test
+          - sun.sun
+        unit_of_measurement: seconds
+        value_template: '{{ (now().timestamp()|int) - (states.sensor.intranet_test.attributes.date|int) }}'
+      intranet_test_state:
+        entity_id:
+          - sensor.intranet_test_ago
+        value_template: >
+          {% if states.sensor.intranet_test_ago.state|int > 30 %}False{% else %}True{% endif %}
+      intranet_count:
+        entity_id:
+          - sensor.intranet_test_count
+        unit_of_measurement: tests
+        value_template: >
+          {% if states.sensor.intranet_test_count is defined %}
+            {{ states.sensor.intranet_test_count.state }}
+          {%- else -%}null{%- endif -%}
+  - platform: statistics
+    entity_id: sensor.intranet_test_send
+    name: intranet_send_statistics
+    max_age:
+      hours: 24
+  - platform: statistics
+    entity_id: sensor.intranet_test_receive
+    name: intranet_receive_statistics
+    max_age:
+      hours: 24
+  - platform: history_stats
+    name: intranet_test_count
+    entity_id: sensor.intranet_test_state
+    state: True
+    type: count
+    start: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
+    end: '{{ now() }}'
+
+###
+### MOTION
+###
+
+# CAMERA
+camera motion_cameras:
+  - platform: mqtt
+    name: motion_last_image
+    topic: 'motion/+/+/image'
+  - platform: mqtt
+    name: motion_last_average
+    topic: 'motion/+/+/image-average'
+  - platform: mqtt
+    name: motion_last_blend
+    topic: 'motion/+/+/image-blend'
+  - platform: mqtt
+    name: motion_last_animated_mask
+    topic: 'motion/+/+/image-animated-mask'
+  - platform: mqtt
+    name: motion_last_composite
+    topic: 'motion/+/+/image-composite'
+  - platform: mqtt
+    name: motion_last_animated
+    topic: 'motion/+/+/image-animated'
+  - platform: mqtt
+    name: motion_last_annotated
+    topic: 'motion/+/+/image-annotated'
+  - platform: mqtt
+    name: motion_last_cropped
+    topic: 'motion/+/+/image-cropped'
+  - platform: mqtt
+    name: motion_localhost_image
+    topic: 'motion/newman/+/image'
+  - platform: mqtt
+    name: motion_localhost_average
+    topic: 'motion/newman/+/image-average'
+  - platform: mqtt
+    name: motion_localhost_blend
+    topic: 'motion/newman/+/image-blend'
+  - platform: mqtt
+    name: motion_localhost_animated_mask
+    topic: 'motion/newman/+/image-animated-mask'
+  - platform: mqtt
+    name: motion_localhost_composite
+    topic: 'motion/newman/+/image-composite'
+  - platform: mqtt
+    name: motion_localhost_animated
+    topic: 'motion/newman/+/image-animated'
+  - platform: mqtt
+    name: motion_localhost_annotated
+    topic: 'motion/newman/+/image-annotated'
+  - platform: mqtt
+    name: motion_localhost_cropped
+    topic: 'motion/newman/+/image-cropped'
+  - platform: mqtt
+    name: motion_localhost_image
+    topic: 'motion/newman/+/image'
+    # local device
+  - platform: mjpeg
+    mjpeg_url: http://192.168.1.199:8090/
+    name: motion_localhost_live
+    username: !secret motion_username
+    password: !secret motion_password
+    # camera images
+  - platform: mqtt
+    name: motion_pond_image
+    topic: 'motion/+/pond/image'
+  - platform: mqtt
+    name: motion_gate_image
+    topic: 'motion/+/gate/image'
+  - platform: mqtt
+    name: motion_window_image
+    topic: 'motion/+/desk/image'
+  - platform: mqtt
+    name: motion_window_image
+    topic: 'motion/+/window/image'
+
+# SENSOR
+sensor motion_sensors:
+  - platform: mqtt
+    name: motion_configuration_localhost
+    state_topic: 'motion/newman/start'
+    json_attributes:
+      - unit_system
+      - latitude
+      - longitude
+      - elevation
+      - interval
+      - minimum_animate
+      - post_pictures
+      - share_dir
+      - name
+      - host
+      - date
+      - www
+      - devicedb
+      - timezone
+      - mqtt
+      - watson
+      - digits
+      - motion
+      - cameras
+    value_template: >
+      {% if value_json is defined %}True{% else %}null{% endif %}
+  - platform: mqtt
+    name: motion_configuration_network
+    state_topic: 'motion/+/start'
+    json_attributes:
+      - unit_system
+      - latitude
+      - longitude
+      - elevation
+      - interval
+      - minimum_animate
+      - post_pictures
+      - share_dir
+      - name
+      - host
+      - date
+      - www
+      - devicedb
+      - timezone
+      - mqtt
+      - watson
+      - digits
+      - motion
+      - cameras
+    value_template: >
+      {% if value_json is defined %}True{% else %}null{% endif %}
+  - platform: mqtt
+    name: motion_camera_found
+    state_topic: 'motion/+/+/status/found'
+    expire_after: 1
+    force_update: true
+    json_attributes:
+      - device
+      - camera
+      - date
+      - status
+    value_template: >
+      {% if value_json is defined %}True{% else %}null{% endif %}
+  - platform: mqtt
+    name: motion_camera_lost
+    state_topic: 'motion/+/+/status/lost'
+    expire_after: 1
+    force_update: true
+    json_attributes:
+      - device
+      - camera
+      - date
+      - status
+    value_template: >
+      {% if value_json is defined %}True{% else %}null{% endif %}
+  - platform: mqtt
+    name: motion_event_image
+    state_topic: 'motion/+/+/event/image'
+    expire_after: 1
+    force_update: true
+    json_attributes:
+      - device
+      - camera
+      - type
+      - date
+      - seqno
+      - event
+      - id
+      - center
+      - width
+      - height
+      - size
+      - noise
+    value_template: >
+      {% if value_json is defined %}True{% else %}null{% endif %}
+  - platform: mqtt
+    name: motion_event_end
+    state_topic: 'motion/+/+/event/end'
+    expire_after: 1
+    force_update: true
+    json_attributes:
+      - device
+      - camera
+      - event
+      - start
+      - end
+      - elapsed
+      - date
+      - images
+    value_template: >
+      {% if value_json is defined %}True{% else %}null{% endif %}
+  - platform: template
+    sensors:
+      motion_configuration_localhost_camera_count:
+        entity_id:
+          - sensor.motion_configuration_localhost
+        value_template: >-
+          {% if states.sensor.motion_configuration_localhost.attributes.cameras is defined %}
+            {{ states.sensor.motion_configuration_localhost.attributes.cameras | length }}
+          {% else %}null{% endif %}
+      motion_configuration_localhost_camera_names:
+        entity_id:
+          - sensor.motion_configuration_localhost
+        value_template: >-
+          {% if states.sensor.motion_configuration_localhost.attributes.cameras is defined %}
+            {%- for camera in states.sensor.motion_configuration_localhost.attributes.cameras -%}
+              {% if loop.first %}[{% else %},{% endif %}
+              {{- camera.name | tojson -}}
+              {%- if loop.last -%}]{%- endif -%}
+            {% endfor %}
+          {% else %}null{% endif %}
+      motion_configuration_network_camera_count:
+        entity_id:
+          - sensor.motion_configuration_network
+        value_template: >-
+          {% if states.sensor.motion_configuration_network.attributes.cameras is defined %}
+            {{ states.sensor.motion_configuration_network.attributes.cameras | length }}
+          {% else %}null{% endif %}
+      motion_configuration_network_camera_names:
+        entity_id:
+          - sensor.motion_configuration_network
+        value_template: >-
+          {% if states.sensor.motion_configuration_network.attributes.cameras is defined %}
+            {%- for camera in states.sensor.motion_configuration_network.attributes.cameras -%}
+              {% if loop.first %}[{% else %},{% endif %}
+              {{- camera.name | tojson -}}
+              {%- if loop.last -%}]{%- endif -%}
+            {% endfor %}
+          {% else %}null{% endif %}
+      motion_event_end_ago:
+        entity_id:
+          - sensor.motion_event_end
+          - sun.sun
+        unit_of_measurement: seconds
+        value_template: '{{ (now().timestamp()|int) - (states.sensor.motion_event_end.attributes.date|int) }}'
+        icon_template: '{% if (states.sensor.motion_event_end.attributes.date|int) > 300 %} mdi:timer-off {% else %} mdi:timer {% endif %}'
+      motion_event_end_image_first:
+        entity_id:
+          - sensor.motion_event_end
+        value_template: >-
+          {% if states.sensor.motion_event_end is defined %}
+            {% for image in states.sensor.motion_event_end.attributes.images %}
+              {% if loop.first %} {{ image }} {% endif %}
+            {% endfor %}
+          {% else %} null {% endif %}
+      motion_event_end_image_last:
+        entity_id:
+          - sensor.motion_event_end
+        value_template: >-
+          {% if states.sensor.motion_event_end is defined %}
+            {% for image in states.sensor.motion_event_end.attributes.images %}
+              {% if loop.last %} {{ image }} {% endif %}
+            {% endfor %}
+          {% else %} null {% endif %}
+      motion_event_end_image_count:
+        entity_id:
+          - sensor.motion_event_end
+        unit_of_measurement: 'images'
+        value_template: >
+          {% if states.sensor.motion_event_end is defined %}
+            {{ states.sensor.motion_event_end.attributes.images | length }}
+          {% else %} null {% endif %}
+      motion_event_end_when:
+        entity_id:
+          - sensor.motion_event_end
+        value_template: >
+          {% if states.sensor.motion_event_end is defined %}
+            {{ states.sensor.motion_event_end.attributes.date | timestamp_custom("%a %b %d ~ %I:%M %p") }}
+          {% else %} null {% endif %}
+      motion_event_end_device:
+        entity_id:
+          - sensor.motion_event_end
+        value_template: >
+          {% if states.sensor.motion_event_end is defined %}
+            {{ states.sensor.motion_event_end.attributes.device }}
+          {% else %} null {% endif %}
+      motion_event_end_camera:
+        entity_id:
+          - sensor.motion_event_end
+        value_template: >
+          {% if states.sensor.motion_event_end is defined %}
+            {{ states.sensor.motion_event_end.attributes.camera }}
+          {% else %} null {% endif %}
+      motion_event_end_event:
+        entity_id:
+          - sensor.motion_event_end
+        value_template: >
+          {% if states.sensor.motion_event_end is defined %}
+            {{ states.sensor.motion_event_end.attributes.event }}
+          {% else %} null {% endif %}
+      motion_event_end_start:
+        entity_id:
+          - sensor.motion_event_end
+        unit_of_measurement: seconds
+        value_template: >
+          {% if states.sensor.motion_event_end is defined %}
+            {{ states.sensor.motion_event_end.attributes.start | int }}
+          {% else %}null{% endif %}
+      motion_event_end_end:
+        entity_id:
+          - sensor.motion_event_end
+        unit_of_measurement: seconds
+        value_template: >
+          {% if states.sensor.motion_event_end is defined %}
+            {{ states.sensor.motion_event_end.attributes.end | int }}
+          {% else %}null{% endif %}
+      motion_event_end_elapsed:
+        entity_id:
+          - sensor.motion_event_end
+        unit_of_measurement: seconds
+        value_template: >
+          {% if states.sensor.motion_event_end is defined %}
+            {{ states.sensor.motion_event_end.attributes.elapsed }}
+          {% else %}null{% endif %}
+      motion_event_count:
+        entity_id:
+          - sensor.motion_event_end_count
+        unit_of_measurement: events
+        value_template: >
+          {% if states.sensor.motion_event_end_count is defined %}
+            {{ states.sensor.motion_event_end_count.state }}
+          {%- else -%}null{%- endif -%}
+      motion_event_ratio:
+        entity_id:
+          - sensor.motion_event_end_ratio
+        unit_of_measurement: '%'
+        value_template: >
+          {% if states.sensor.motion_event_end_ratio is defined %}
+            {{ states.sensor.motion_event_end_ratio.state }}
+          {%- else -%}null{%- endif -%}
+      motion_event_elapsed_mean:
+        entity_id:
+          - sensor.motion_event_elapsed_statistics_mean
+        unit_of_measurement: seconds
+        value_template: >
+          {% if states.sensor.motion_event_elapsed_statistics_mean is defined %}
+            {{ states.sensor.motion_event_elapsed_statistics_mean.state }}
+          {%- else -%}null{%- endif -%}
+      motion_event_ago_mean:
+        entity_id:
+          - sensor.motion_event_ago_statistics_mean
+        unit_of_measurement: seconds
+        value_template: >
+          {% if states.sensor.motion_event_ago_statistics_mean is defined %}
+            {{ states.sensor.motion_event_ago_statistics_mean.state }}
+          {%- else -%}null{%- endif -%}
+
+sensor motion_statistics:
+  - platform: history_stats
+    name: motion_event_end_count
+    entity_id: sensor.motion_event_end
+    state: True
+    type: count
+    start: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
+    end: '{{ now() }}'
+  - platform: history_stats
+    icon: mdi:timer
+    name: motion_event_end_time
+    entity_id: sensor.motion_event_end
+    state: True
+    type: time
+    start: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
+    end: '{{ now() }}'
+  - platform: history_stats
+    icon: mdi:percent
+    name: motion_event_ratio
+    entity_id: sensor.motion_event_end
+    state: True
+    type: ratio
+    start: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
+    end: '{{ now() }}'
+  - platform: history_stats
+    icon: mdi:sigma
+    name: motion_event_count
+    entity_id: sensor.motion_event_end
+    state: True
+    type: count
+    start: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
+    end: '{{ now() }}'
+  - platform: history_stats
+    icon: mdi:timer
+    name: motion_event_end_time
+    entity_id: sensor.motion_event_end
+    state: True
+    type: time
+    start: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
+    end: '{{ now() }}'
+  - platform: statistics
+    name: motion_event_ago_statistics
+    unit_of_measurement: seconds
+    entity_id: sensor.motion_event_end_ago
+    max_age:
+      hours: 24
+  - platform: statistics
+    icon: mdi:clock
+    name: motion_event_elapsed_statistics
+    entity_id: sensor.motion_event_end_elapsed
+    max_age:
+      hours: 24
+
