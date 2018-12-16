@@ -405,8 +405,8 @@ main() {
     cp -f "${HORIZON_CONFIG_FILE}" "${HORIZON_CONFIG_FILE}.$$"
     ## EVALUATE
     hass.log.info $(date) "${SCRIPT} on ${HORIZON_CONFIG_FILE}.$$ for ${HOST_LAN}; logging to ${SCRIPT_LOG}"
-    cd "${SCRIPT_DIR}" && bash -- "./${SCRIPT}" "${HORIZON_CONFIG_FILE}.$$" "${HOST_LAN}" &> "${SCRIPT_LOG}" && true
-    if [[ -s "${HORIZON_CONFIG_FILE}.$$" ]]; then
+    cd "${SCRIPT_DIR}" && ${SCRIPT_DIR}/${SCRIPT} "${HORIZON_CONFIG_FILE}.$$" "${HOST_LAN}" &> "${SCRIPT_LOG}" || true
+    if [ -s "${HORIZON_CONFIG_FILE}.$$" ]; then
       DIFF=$(diff "${HORIZON_CONFIG_FILE}" "${HORIZON_CONFIG_FILE}.$$" | wc -c)
       if [ ${DIFF} -gt 0 ]; then 
 	# update configuration
