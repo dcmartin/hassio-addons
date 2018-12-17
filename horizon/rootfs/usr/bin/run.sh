@@ -391,9 +391,11 @@ main() {
     hass.log.trace "Retrieving ${SCRIPT_URL}/${F}"
     curl -sL "${SCRIPT_URL}/${F}" -o "${SCRIPT_DIR}/${F}"
     if [[ ! -s "${SCRIPT_DIR}/${F}" ]]; then
-      hass.log.warning "Failed to retrieve ${SCRIPT_DIR}/${F} from ${SCRIPT_URL}/${F}"
+      hass.log.fatal "Failed to retrieve ${SCRIPT_DIR}/${F} from ${SCRIPT_URL}/${F}"
+      hass.die
     else
       hass.log.debug "Retrieved ${SCRIPT_DIR}/${F}"
+      chmod 755 "${SCRIPT_DIR}/${F}"
     fi
   done
 
