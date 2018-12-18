@@ -208,6 +208,7 @@ main() {
   MQTT_USERNAME=$(jq -r '.mqtt.username' "${ADDON_CONFIG_FILE}")
   MQTT_PASSWORD=$(jq -r '.mqtt.password' "${ADDON_CONFIG_FILE}")
 
+  HZN_EXCHANGE_URL=$(jq -r '.horizon.url' "${ADDON_CONFIG_FILE}")
   HORIZON_APIKEY=$(jq -r '.horizon.apikey' "${ADDON_CONFIG_FILE}")
   UNIT_SYSTEM=$(jq -r '.unit_system' "${ADDON_CONFIG_FILE}")
   TIMEZONE=$(jq -r '.timezone' "${ADDON_CONFIG_FILE}")
