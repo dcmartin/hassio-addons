@@ -27,12 +27,12 @@ TTL=30
 SECONDS=$(date "+%s")
 DATE=$(echo $SECONDS \/ $TTL \* $TTL | bc)
 
-if [ -n ${QUERY_STRING:-} ]; then
+if [ -n "${QUERY_STRING:-}" ]; then
     id=$(echo "$QUERY_STRING" | sed 's/.*id=\([^&]*\).*/\1/')
-    if [[ $id == "$QUERY_STRING" ]]; then id=""; fi
+    if [[ "$id" == "$QUERY_STRING" ]]; then id=""; fi
 fi
 
-if [ -z ${id:-} ]; then id="all"; fi
+if [ -z "${id:-}" ]; then id="all"; fi
 
 # standardize QUERY_STRING (rendezvous w/ APP-make-API.csh script)
 export QUERY_STRING="id=$id"
