@@ -351,7 +351,7 @@ main() {
       hass.log.debug "Retrieved ${SCRIPT_DIR}/${F}"
     fi
   done
-  chmod 755 ${SCRIPT_DIR}/*.sh
+  chmod 755 ${SCRIPT_DIR}/${SCRIPT} ${SCRIPT_DIR}/${LSNODES}
 
   # loop while node is alive
   while [ true ]; do
