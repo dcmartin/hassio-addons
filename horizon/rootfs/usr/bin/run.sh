@@ -408,7 +408,7 @@ main() {
     ## EVALUATE
     hass.log.info $(date) "${SCRIPT} on ${HORIZON_CONFIG_FILE}.$$ for ${HOST_LAN}; logging to ${SCRIPT_LOG}"
     cd "${SCRIPT_DIR}" && RESULT=${SCRIPT_DIR}/${SCRIPT} "${HORIZON_CONFIG_FILE}.$$" "${HOST_LAN}" &> "${SCRIPT_LOG}" || true
-    hass.log.info "Executed ${SCRIPTDIR}/${SCRIPT} returns:" $(echo "${RESULT}" | jq -c '.')
+    hass.log.info "Executed ${SCRIPT_DIR}/${SCRIPT} returns:" $(echo "${RESULT}" | jq -c '.')
     if [ -s "${HORIZON_CONFIG_FILE}.$$" ]; then
       DIFF=$(diff "${HORIZON_CONFIG_FILE}" "${HORIZON_CONFIG_FILE}.$$" | wc -c)
       if [ ${DIFF} -gt 0 ]; then 
