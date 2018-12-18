@@ -403,7 +403,7 @@ main() {
     RESULT=$(cd "${SCRIPT_DIR}" && ${SCRIPT_DIR}/${SCRIPT} "${HORIZON_CONFIG_FILE}.$$" "${HOST_LAN}" 2>> "${SCRIPT_LOG}" || true)
     hass.log.info "Executed ${SCRIPT_DIR}/${SCRIPT} returns:" $(echo "${RESULT}" | jq -c '.')
     if [ -s "${HORIZON_CONFIG_FILE}.$$" ]; then
-      DIFF=$(diff "${HORIZON_CONFIG_FILE}" "${HORIZON_CONFIG_FILE}.$$" | wc -c)
+      DIFF=$(diff "${HORIZON_CONFIG_FILE}" "${HORIZON_CONFIG_FILE}.$$" | wc -c || true)
       if [[ ${DIFF} > 0 ]]; then 
 	# update configuration
 	hass.log.info "Configuration ${HORIZON_CONFIG_NAME} bytes changed: ${DIFF}; updating database"
