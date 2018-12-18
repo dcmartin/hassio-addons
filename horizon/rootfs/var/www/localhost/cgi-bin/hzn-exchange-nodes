@@ -29,10 +29,8 @@ DATE=$(echo $SECONDS \/ $TTL \* $TTL | bc)
 
 if [ -n "${QUERY_STRING:-}" ]; then
     id=$(echo "$QUERY_STRING" | sed 's|.*id=\([^&]*\).*|\1|')
-    if [[ "$id" == "$QUERY_STRING" ]]; then id=""; fi
+    if [[ "$id" == "$QUERY_STRING" ]]; then id=; fi
 fi
-
-if [ -z "${id:-}" ]; then id="all"; fi
 
 # standardize QUERY_STRING (rendezvous w/ APP-make-API.csh script)
 export QUERY_STRING="id=$id"
@@ -107,7 +105,7 @@ if [ -s "${OUTPUT}" ]; then
   echo "Last-Modified:" $($dateconv -i '%s' -f '%a, %d %b %Y %H:%M:%S %Z' $DATE)
   echo ""
   if [ -n "${id}" ]; then
-    jq '.nodes[]|select(.id="'"${id}"'")|.date='"${DATE}" "$OUTPUT"
+    jq '.nodes[]|select(.name=="'"${id}"'")|.date='"${DATE}" "$OUTPUT"
   else
     jq '.date='"${DATE}" "$OUTPUT"
   fi
