@@ -370,8 +370,9 @@ main() {
   chmod 755 "${SCRIPT_DIR}/${SCRIPT}"
 
   # loop while node is alive
-  while [[ NODE=$(hzn node list) ]]; do
-    hass.log.info "Node state:" $(echo "${NODE}" | jq '.configstate?.state') "; workloads:" $(hzn agreement list | jq -r '.[]?|.workload_to_run?.url?')
+  while [ true ]; do
+    NODE=$(hzn node list) 
+    hass.log.info "Node state: $(echo "${NODE}" | jq '.configstate?.state'); workloads:" $(hzn agreement list | jq -r '.[]?|.workload_to_run?.url?')
 
     # find configuration entry
     URL="${HORIZON_CLOUDANT_URL}/${HORIZON_CONFIG_DB}/${HORIZON_CONFIG_NAME}"
