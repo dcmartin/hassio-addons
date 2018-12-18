@@ -27,14 +27,6 @@ TTL=30
 SECONDS=$(date "+%s")
 DATE=$(echo $SECONDS \/ $TTL \* $TTL | bc)
 
-if [ -n "${QUERY_STRING:-}" ]; then
-    name=$(echo "$QUERY_STRING" | sed 's|.*name=\([^&]*\).*|\1|')
-    if [[ "$name" == "$QUERY_STRING" ]]; then name=; fi
-fi
-
-# standardize QUERY_STRING (rendezvous w/ APP-make-API.csh script)
-export QUERY_STRING="name=$name"
-
 ## ADDON CONFIGURATION INFORMATION
 if [ -z "${ADDON_CONFIG_FILE:-}" ] || [ ! -s "${ADDON_CONFIG_FILE:-}" ]; then
   echo "$0 $$ -- ERROR: cannot find addon configuration file: ${ADDON_CONFIG_FILE:-}" >> $LOGTO 2>&1
@@ -66,13 +58,10 @@ url="${HORIZON_EXCHANGE_URL}/orgs/${HORIZON_ORG}/nodes"
 key="${HORIZON_ORG}/iamapikey:${HORIZON_APIKEY}"
 
 # output target
-OUTPUT="$TMP/$APP-$API-$QUERY_STRING.$DATE.json"
-# test if been-there-done-that
-if [ ! -s "$OUTPUT" ]; then 
-  rm -f "${OUTPUT%%.*}".*
+OUTPUT="$TMP/$APP-$API.$$.json"
 
-  result=$(curl -sL "$url" -u "$key")
-  if [[ $(echo "${result}" | jq '.nodes==null') == 'false' ]]; then
+result=$(curl -sL "$url" -u "$key")
+if [[ $(echo "${result}" | jq '.nodes==null') == 'false' ]]; then
     nodes=$(echo "${result}" | jq '.nodes')
     names=$(echo "${nodes}" | jq '[ . | objects | keys[]] | unique' | jq -r '.[]')
     i=0
@@ -82,9 +71,8 @@ if [ ! -s "$OUTPUT" ]; then
       echo "${nodes}" | jq '."'"${name}"'"|.id="'${name}'"' >> "${OUTPUT}"
     done 
     echo ']}' >> "${OUTPUT}"
-  else
+else
     echo 'null' >> "${OUTPUT}"
-  fi
 fi
 
 #
@@ -110,6 +98,7 @@ if [ -s "${OUTPUT}" ]; then
     jq '.date='"${DATE}" "$OUTPUT"
   fi
   if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- output $OUTPUT Age: $age Refresh: $refresh" >> $LOGTO 2>&1; fi
+  rm -f "${OUTPUT}"
 else
   echo "Cache-Control: no-cache"
   echo "Last-Modified:" $($dateconv -i '%s' -f '%a, %d %b %Y %H:%M:%S %Z' $DATE)
