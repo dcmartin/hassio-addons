@@ -378,7 +378,7 @@ main() {
     fi
     hass.log.debug "Configuration file: ${HORIZON_CONFIG_FILE}"
 
-    NODES=$(${SCRIPT_DIR}/${LSNODES} "${HORIZON_CONFIG_FILE}"} 2> /dev/null) 
+    NODES=$(${SCRIPT_DIR}/${LSNODES} "${HORIZON_CONFIG_FILE}")
     hass.log.debug "Nodes:" $(echo "${NODES}" | jq -c '.nodes[].id')
 
     ## copy configuration
