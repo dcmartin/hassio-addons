@@ -187,30 +187,6 @@ main() {
   fi
   hass.log.info "Configuration database: ${HORIZON_CONFIG_DB}"
 
-  # find configuration entry
-  URL="${HORIZON_CLOUDANT_URL}/${HORIZON_CONFIG_DB}/${HORIZON_CONFIG_NAME}"
-  hass.log.debug "Looking for configurtion ${HORIZON_CONFIG_NAME} at ${URL}"
-  VALUE=$(curl -sL "${URL}")
-  hass.log.trace "Received: ${VALUE}"
-  FOUND=$(echo "${VALUE}" | jq '._id=="'${HORIZON_CONFIG_NAME}'"') 
-  hass.log.trace "Match: ${FOUND}"
-  if [[ "${FOUND}" == "true" ]]; then
-    HORIZON_CONFIG="${VALUE}"
-  else
-    hass.log.fatal "Found no configuration ${HORIZON_CONFIG_NAME}"
-    hass.die
-  fi
-  hass.log.trace "Found configuration ${HORIZON_CONFIG_NAME} with ${HORIZON_CONFIG}"
-  # make file
-  HORIZON_CONFIG_FILE="${CONFIG_DIR}/${HORIZON_CONFIG_NAME}.json"
-  echo "${HORIZON_CONFIG}" | jq '.' > "${HORIZON_CONFIG_FILE}"
-  if [[ ! -s "${HORIZON_CONFIG_FILE}" ]]; then
-    hass.log.fatal "Invalid addon configuration: ${HORIZON_CONFIG}"
-    hass.die
-  fi
-  hass.log.info "Configuration file: ${HORIZON_CONFIG_FILE}"
-
-  ## DEVICE DATABASE
   # find/create device database (or create)
   URL="${HORIZON_CLOUDANT_URL}/${HORIZON_DEVICE_DB}"
   hass.log.debug "Looking for device database ${HORIZON_DEVICE_DB} at ${URL}"
@@ -366,12 +342,6 @@ main() {
   ## INIT-DEVICES
   ##
 
-  # check for configuration file
-  if [[ ! -s "${HORIZON_CONFIG_FILE}" ]]; then
-    hass.log.fatal "Configuration file not found: ${HORIZON_CONFIG_FILE}"
-    hass.die
-  fi
-
   REFRESH=$(jq -r '.refresh' "${ADDON_CONFIG_FILE}")
   HOST_LAN=$(jq -r '.host_ipaddr' "${ADDON_CONFIG_FILE}" | sed 's|\(.*\)\.[0-9]*|\1.0/24|')
   SCRIPT="init-devices.sh"
@@ -403,6 +373,28 @@ main() {
   while [[ NODE=$(hzn node list) ]]; do
     hass.log.debug "Node state:" $(echo "${NODE}" | jq '.configstate.state') "; workloads:" $(hzn agreement list | jq -r '.[]|.workload_to_run.url')
 
+    # find configuration entry
+    URL="${HORIZON_CLOUDANT_URL}/${HORIZON_CONFIG_DB}/${HORIZON_CONFIG_NAME}"
+    VALUE=$(curl -sL "${URL}")
+    if [ "$(echo "${VALUE}" | jq '._id=="'${HORIZON_CONFIG_NAME}'"')" != "true" ]; then
+      hass.log.fatal "Found no configuration ${HORIZON_CONFIG_NAME}"
+      hass.die
+    fi
+    REV=$(echo "${VALUE}" | jq -r '._rev')
+    if [[ "${REV}" != "null" && ! -z "${REV}" ]]; then
+      hass.log.debug "Found prior configuration ${HORIZON_CONFIG_NAME}; revision ${REV}"
+      URL="${URL}?rev=${REV}"
+    fi
+    hass.log.info "Retrieved configuration ${HORIZON_CONFIG_NAME} with ${REV}"
+    # make file
+    HORIZON_CONFIG_FILE="${CONFIG_DIR}/${HORIZON_CONFIG_NAME}.json"
+    echo "${VALUE}" | jq '.' > "${HORIZON_CONFIG_FILE}"
+    if [ ! -s "${HORIZON_CONFIG_FILE}" ]; then
+      hass.log.fatal "Invalid addon configuration: ${VALUE}"
+      hass.die
+    fi
+    hass.log.debug "Configuration file: ${HORIZON_CONFIG_FILE}"
+
     ## copy configuration
     cp -f "${HORIZON_CONFIG_FILE}" "${HORIZON_CONFIG_FILE}.$$"
     ## EVALUATE
@@ -414,25 +406,16 @@ main() {
       if [ ${DIFF} -gt 0 ]; then 
 	# update configuration
 	hass.log.info "Configuration ${HORIZON_CONFIG_NAME} bytes changed: ${DIFF}; updating database"
-	URL="${HORIZON_CLOUDANT_URL}/${HORIZON_CONFIG_DB}/${HORIZON_CONFIG_NAME}"
-	hass.log.debug "Looking for configuration ${HORIZON_CONFIG_NAME} at ${URL}"
-	REV=$(curl -sL "${URL}" | jq -r '._rev')
-	if [[ "${REV}" != "null" && ! -z "${REV}" ]]; then
-	  hass.log.debug "Found prior configuration ${HORIZON_CONFIG_NAME}; revision ${REV}"
-	  URL="${URL}?rev=${REV}"
-	fi
-	# create/update device 
-	hass.log.debug "Attempting update of configuration ${HORIZON_CONFIG_NAME} with ${HORIZON_CONFIG_FILE}.$$ at ${URL}"
 	RESULT=$(curl -sL "${URL}" -X PUT -d '@'"${HORIZON_CONFIG_FILE}.$$")
 	if [[ $(echo "${RESULT}" | jq '.ok') != "true" ]]; then
-	  hass.log.warning "Initialization script ${SCRIPT} failed; ${HORIZON_CONFIG_FILE}.$$ with error" $(echo "${RESULT}" | jq '.error')
+	  hass.log.warning "Update configuration ${HORIZON_CONFIG_NAME} failed; ${HORIZON_CONFIG_FILE}.$$" $(echo "${RESULT}" | jq '.error')
 	else
-	  hass.log.info "Initialization script ${SCRIPT} succeeded:" $(echo "${RESULTS}" | jq -c '.')
+	  hass.log.debug "Update configuration ${HORIZON_CONFIG_NAME} succeeded:" $(echo "${RESULT}" | jq -c '.')
 	fi
-	hass.log.debug "Updating file ${HORIZON_CONFIG_FILE} from ${HORIZON_CONFIG_FILE}.$$"
+	hass.log.info "Updated configuration: ${HORIZON_CONFIG_NAME}"
 	mv -f "${HORIZON_CONFIG_FILE}.$$" "${HORIZON_CONFIG_FILE}"
       else
-	hass.log.info "No updates processed for ${HORIZON_CONFIG_NAME}"
+	hass.log.info "No updates: ${HORIZON_CONFIG_NAME}"
       fi
     else
       hass.log.fatal "Failed ${SCRIPT} processing; zero-length result; ${SCRIPT_LOG} from host ${HOST_IPADDR}" $(cat "${SCRIPT_LOG}")
