@@ -49,7 +49,7 @@ export QUERY_STRING="id=$id"
 OUTPUT="$TMP/$APP-$API-$QUERY_STRING.$DATE.json"
 # test if been-there-done-that
 if [ ! -s "$OUTPUT" ]; then 
-  rm -f "${OUTPUT%.*}".*
+  rm -f "${OUTPUT%%.*}".*
 
   # find configs
   if [ $id == "all" ]; then

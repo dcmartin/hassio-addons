@@ -69,7 +69,7 @@ key="${HORIZON_ORG}/iamapikey:${HORIZON_APIKEY}"
 OUTPUT="$TMP/$APP-$API-$QUERY_STRING.$DATE.json"
 # test if been-there-done-that
 if [ ! -s "$OUTPUT" ]; then 
-  rm -f "${OUTPUT%.*}".*
+  rm -f "${OUTPUT%%.*}".*
 
   result=$(curl -sL "$url" -u "$key")
   if [[ $(echo "${result}" | jq '.nodes==null') == 'false' ]]; then
@@ -105,7 +105,7 @@ if [ -s "${OUTPUT}" ]; then
   echo "Last-Modified:" $($dateconv -i '%s' -f '%a, %d %b %Y %H:%M:%S %Z' $DATE)
   echo ""
   if [ -n "${name}" ]; then
-    jq '.nodes[]|select(.name=="'"${name}"'")|.date='"${DATE}" "$OUTPUT"
+    jq '.nodes[]?|select(.name=="'"${name}"'")?|.date='"${DATE}" "$OUTPUT"
   else
     jq '.date='"${DATE}" "$OUTPUT"
   fi
