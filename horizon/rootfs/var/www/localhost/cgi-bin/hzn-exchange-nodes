@@ -28,7 +28,7 @@ SECONDS=$(date "+%s")
 DATE=$(echo $SECONDS \/ $TTL \* $TTL | bc)
 
 if [ -n "${QUERY_STRING:-}" ]; then
-    id=$(echo "$QUERY_STRING" | sed 's/.*id=\([^&]*\).*/\1/')
+    id=$(echo "$QUERY_STRING" | sed 's|.*id=\([^&]*\).*|\1|')
     if [[ "$id" == "$QUERY_STRING" ]]; then id=""; fi
 fi
 
@@ -106,7 +106,11 @@ if [ -s "${OUTPUT}" ]; then
   echo "Cache-Control: max-age=$TTL"
   echo "Last-Modified:" $($dateconv -i '%s' -f '%a, %d %b %Y %H:%M:%S %Z' $DATE)
   echo ""
-  jq '.date='"${DATE}" "$OUTPUT"
+  if [ -n "${id}" ]; then
+    jq '.nodes[]|select(.id="'"${id}"'")|.date='"${DATE}" "$OUTPUT"
+  else
+    jq '.date='"${DATE}" "$OUTPUT"
+  fi
   if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- output $OUTPUT Age: $age Refresh: $refresh" >> $LOGTO 2>&1; fi
 else
   echo "Cache-Control: no-cache"
