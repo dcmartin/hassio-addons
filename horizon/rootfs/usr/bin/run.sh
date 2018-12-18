@@ -355,8 +355,6 @@ main() {
 
   # loop while node is alive
   while [ true ]; do
-    NODES=$(cd ${SCRIPT_DIR} && ${SCRIPT_DIR}/${LSNODES}} 2> /dev/null) 
-    hass.log.debug "Nodes:" $(echo "${NODES}" | jq -c '.nodes[].id')
 
     # find configuration entry
     URL="${HORIZON_CLOUDANT_URL}/${HORIZON_CONFIG_DB}/${HORIZON_CONFIG_NAME}"
@@ -379,6 +377,9 @@ main() {
       hass.die
     fi
     hass.log.debug "Configuration file: ${HORIZON_CONFIG_FILE}"
+
+    NODES=$(${SCRIPT_DIR}/${LSNODES} "${HORIZON_CONFIG_FILE}"} 2> /dev/null) 
+    hass.log.debug "Nodes:" $(echo "${NODES}" | jq -c '.nodes[].id')
 
     ## copy configuration
     cp -f "${HORIZON_CONFIG_FILE}" "${HORIZON_CONFIG_FILE}.$$"
