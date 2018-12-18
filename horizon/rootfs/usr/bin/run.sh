@@ -395,9 +395,9 @@ main() {
       hass.die
     else
       hass.log.debug "Retrieved ${SCRIPT_DIR}/${F}"
-      chmod 755 "${SCRIPT_DIR}/${F}"
     fi
   done
+  chmod 755 "${SCRIPT_DIR}/${SCRIPT}"
 
   # loop while node is alive
   while [[ NODE=$(hzn node list) ]]; do
@@ -424,9 +424,9 @@ main() {
 	hass.log.debug "Attempting update of configuration ${HORIZON_CONFIG_NAME} with ${HORIZON_CONFIG_FILE}.$$ at ${URL}"
 	RESULT=$(curl -sL "${URL}" -X PUT -d '@'"${HORIZON_CONFIG_FILE}.$$")
 	if [[ $(echo "${RESULT}" | jq '.ok') != "true" ]]; then
-	  hass.log.warning "Update failed ${HORIZON_CONFIG_FILE}.$$ with error" $(echo "${RESULT}" | jq '.error')
+	  hass.log.warning "Initialization script ${SCRIPT} failed; ${HORIZON_CONFIG_FILE}.$$ with error" $(echo "${RESULT}" | jq '.error')
 	else
-	  hass.log.info "Updated succeeded configuration ${HORIZON_CONFIG_NAME}"
+	  hass.log.info "Initialization script ${SCRIPT} succeeded:" $(echo "${RESULTS}" | jq -c '.')
 	fi
 	hass.log.debug "Updating file ${HORIZON_CONFIG_FILE} from ${HORIZON_CONFIG_FILE}.$$"
 	mv -f "${HORIZON_CONFIG_FILE}.$$" "${HORIZON_CONFIG_FILE}"
@@ -434,7 +434,7 @@ main() {
 	hass.log.info "No updates processed for ${HORIZON_CONFIG_NAME}"
       fi
     else
-      hass.log.fatal "Failed ${SCRIPT} processing; zero-length result; check ${SCRIPT_LOG} on host ${HOST_IPADDR}"
+      hass.log.fatal "Failed ${SCRIPT} processing; zero-length result; ${SCRIPT_LOG} from host ${HOST_IPADDR}" $(cat "${SCRIPT_LOG}")
       hass.die
     fi
 
