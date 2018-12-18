@@ -403,11 +403,11 @@ main() {
     hass.log.info "Executed ${SCRIPT_DIR}/${SCRIPT} returns:" $(echo "${RESULT}" | jq -c '.')
     if [ -s "${HORIZON_CONFIG_FILE}.$$" ]; then
       DIFF=$(diff "${HORIZON_CONFIG_FILE}" "${HORIZON_CONFIG_FILE}.$$" | wc -c)
-      if [ ${DIFF} -gt 0 ]; then 
+      if [[ ${DIFF} > 0 ]]; then 
 	# update configuration
 	hass.log.info "Configuration ${HORIZON_CONFIG_NAME} bytes changed: ${DIFF}; updating database"
 	RESULT=$(curl -sL "${URL}" -X PUT -d '@'"${HORIZON_CONFIG_FILE}.$$")
-	if [[ $(echo "${RESULT}" | jq '.ok') != "true" ]]; then
+	if [ "$(echo "${RESULT}" | jq '.ok')" != "true" ]; then
 	  hass.log.warning "Update configuration ${HORIZON_CONFIG_NAME} failed; ${HORIZON_CONFIG_FILE}.$$" $(echo "${RESULT}" | jq '.error')
 	else
 	  hass.log.debug "Update configuration ${HORIZON_CONFIG_NAME} succeeded:" $(echo "${RESULT}" | jq -c '.')
@@ -423,7 +423,7 @@ main() {
     fi
 
     ## SLEEP
-    hass.log.debug "Sleeping ${REFRESH}"
+    hass.log.info "Sleeping ${REFRESH}"
     sleep ${REFRESH}
   done
 
