@@ -371,16 +371,16 @@ main() {
 
   # loop while node is alive
   while [[ NODE=$(hzn node list) ]]; do
-    hass.log.debug "Node state:" $(echo "${NODE}" | jq '.configstate.state') "; workloads:" $(hzn agreement list | jq -r '.[]|.workload_to_run.url')
+    hass.log.info "Node state:" $(echo "${NODE}" | jq '.configstate?.state') "; workloads:" $(hzn agreement list | jq -r '.[]?|.workload_to_run?.url?')
 
     # find configuration entry
     URL="${HORIZON_CLOUDANT_URL}/${HORIZON_CONFIG_DB}/${HORIZON_CONFIG_NAME}"
     VALUE=$(curl -sL "${URL}")
-    if [ "$(echo "${VALUE}" | jq '._id=="'${HORIZON_CONFIG_NAME}'"')" != "true" ]; then
+    if [ "$(echo "${VALUE}" | jq '._id?=="'${HORIZON_CONFIG_NAME}'"')" != "true" ]; then
       hass.log.fatal "Found no configuration ${HORIZON_CONFIG_NAME}"
       hass.die
     fi
-    REV=$(echo "${VALUE}" | jq -r '._rev')
+    REV=$(echo "${VALUE}" | jq -r '._rev?')
     if [[ "${REV}" != "null" && ! -z "${REV}" ]]; then
       hass.log.debug "Found prior configuration ${HORIZON_CONFIG_NAME}; revision ${REV}"
       URL="${URL}?rev=${REV}"
@@ -407,8 +407,8 @@ main() {
 	# update configuration
 	hass.log.info "Configuration ${HORIZON_CONFIG_NAME} bytes changed: ${DIFF}; updating database"
 	RESULT=$(curl -sL "${URL}" -X PUT -d '@'"${HORIZON_CONFIG_FILE}.$$")
-	if [ "$(echo "${RESULT}" | jq '.ok')" != "true" ]; then
-	  hass.log.warning "Update configuration ${HORIZON_CONFIG_NAME} failed; ${HORIZON_CONFIG_FILE}.$$" $(echo "${RESULT}" | jq '.error')
+	if [ "$(echo "${RESULT}" | jq '.ok?')" != "true" ]; then
+	  hass.log.warning "Update configuration ${HORIZON_CONFIG_NAME} failed; ${HORIZON_CONFIG_FILE}.$$" $(echo "${RESULT}" | jq '.error?')
 	else
 	  hass.log.debug "Update configuration ${HORIZON_CONFIG_NAME} succeeded:" $(echo "${RESULT}" | jq -c '.')
 	fi
