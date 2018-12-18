@@ -109,7 +109,7 @@ main() {
 
   ## ADDON CONFIGURATION
   HORIZON_ORGANIZATION=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.org')
-  HORIZON_DEVICE_DB=$(echo "${HORIZON_ORGANIZATION}" | sed 's/@.*//')
+  HORIZON_DEVICE_DB="hzn-"$(echo "${HORIZON_ORGANIZATION}" | sed 's/@.*//')
   HORIZON_DEVICE_NAME=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.device')
   HORIZON_CONFIG_NAME=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.config')
 
@@ -122,24 +122,6 @@ main() {
   else
     hass.log.info "Valid addon configuration: ${ADDON_CONFIG_FILE}"
   fi
-
-  ##
-  ## HORIZON CHECK
-  ##
-
-  # command line environment
-  export HZN_EXCHANGE_URL=$(jq -r '.horizon.url' "${ADDON_CONFIG_FILE}")
-  export HZN_EXCHANGE_USER_AUTH=$(jq -j '.horizon.org,"/iamapikey:",.horizon.apikey' "${ADDON_CONFIG_FILE}")
-
-  # agreements
-  AGREEMENTS=$(hzn agreement list)
-  hass.log.info "Horizon agreements: " $(echo "${AGREEMENTS}" | jq -c '.')
-  # node
-  NODE=$(hzn node list)
-  hass.log.info "Horizon node list: " $(echo "${NODE}" | jq -c '.')
-  # update configuration
-  jq '.agreements='"${AGREEMENTS}"'|.node='"${NODE}" "${ADDON_CONFIG_FILE}" > "${ADDON_CONFIG_FILE}.$$"; mv -f "${ADDON_CONFIG_FILE}.$$" "${ADDON_CONFIG_FILE}"
-
   # report success
   hass.log.info "Configuration for ${HORIZON_DEVICE_NAME} at ${ADDON_CONFIG_FILE}" $(jq -c '.' "${ADDON_CONFIG_FILE}") >&2
 
@@ -345,11 +327,12 @@ main() {
   REFRESH=$(jq -r '.refresh' "${ADDON_CONFIG_FILE}")
   HOST_LAN=$(jq -r '.host_ipaddr' "${ADDON_CONFIG_FILE}" | sed 's|\(.*\)\.[0-9]*|\1.0/24|')
   SCRIPT="init-devices.sh"
+  LSNODES="lsnodes.sh"
   SCRIPT_DIR="${CONFIG_DIR}/${SCRIPT%.*}"
   SCRIPT_LOG="${SCRIPT_DIR}/${SCRIPT}.$(date +%s).log"
   SCRIPT_URL="https://raw.githubusercontent.com/dcmartin/open-horizon/master/setup"
   TMPLS="config-ssh.tmpl ssh-copy-id.tmpl wpa_supplicant.tmpl"
-  FILES="${SCRIPT} ${TMPLS}"
+  FILES="${SCRIPT} ${TMPLS} lsnodes.sh"
 
   # make working directory
   hass.log.trace "Creating ${SCRIPT_DIR}"
@@ -367,12 +350,12 @@ main() {
       hass.log.debug "Retrieved ${SCRIPT_DIR}/${F}"
     fi
   done
-  chmod 755 "${SCRIPT_DIR}/${SCRIPT}"
+  chmod 755 ${SCRIPT_DIR}/*.sh
 
   # loop while node is alive
   while [ true ]; do
-    NODE=$(hzn node list) 
-    hass.log.info "Node state: $(echo "${NODE}" | jq '.configstate?.state'); workloads:" $(hzn agreement list | jq -r '.[]?|.workload_to_run?.url?')
+    NODES=$(cd ${SCRIPT_DIR} && ${SCRIPT_DIR}/${LSNODES}} 2> /dev/null) 
+    hass.log.debug "Nodes:" $(echo "${NODES}" | jq -c '.nodes[].id')
 
     # find configuration entry
     URL="${HORIZON_CLOUDANT_URL}/${HORIZON_CONFIG_DB}/${HORIZON_CONFIG_NAME}"
