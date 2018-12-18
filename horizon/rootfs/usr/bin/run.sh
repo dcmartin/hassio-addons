@@ -200,7 +200,7 @@ main() {
     hass.log.fatal "Found no configuration ${HORIZON_CONFIG_NAME}"
     hass.die
   fi
-  hass.log.debug "Found configuration ${HORIZON_CONFIG_NAME} with ${HORIZON_CONFIG}"
+  hass.log.trace "Found configuration ${HORIZON_CONFIG_NAME} with ${HORIZON_CONFIG}"
   # make file
   HORIZON_CONFIG_FILE="${CONFIG_DIR}/${HORIZON_CONFIG_NAME}.json"
   echo "${HORIZON_CONFIG}" | jq '.' > "${HORIZON_CONFIG_FILE}"
@@ -239,7 +239,7 @@ main() {
     hass.log.fatal "Failed to update device ${HORIZON_DEVICE_NAME} at ${URL}"
     hass.die
   fi
-  hass.log.debug "Updated device ${HORIZON_DEVICE_NAME} at ${URL} with " $(jq -c '.' "${ADDON_CONFIG_FILE}")
+  hass.log.trace "Updated device ${HORIZON_DEVICE_NAME} at ${URL} with " $(jq -c '.' "${ADDON_CONFIG_FILE}")
 
   ##
   ## YAML
@@ -407,7 +407,8 @@ main() {
     cp -f "${HORIZON_CONFIG_FILE}" "${HORIZON_CONFIG_FILE}.$$"
     ## EVALUATE
     hass.log.info $(date) "${SCRIPT} on ${HORIZON_CONFIG_FILE}.$$ for ${HOST_LAN}; logging to ${SCRIPT_LOG}"
-    cd "${SCRIPT_DIR}" && ${SCRIPT_DIR}/${SCRIPT} "${HORIZON_CONFIG_FILE}.$$" "${HOST_LAN}" &> "${SCRIPT_LOG}" || true
+    cd "${SCRIPT_DIR}" && RESULT=${SCRIPT_DIR}/${SCRIPT} "${HORIZON_CONFIG_FILE}.$$" "${HOST_LAN}" &> "${SCRIPT_LOG}" || true
+    hass.log.info "Executed ${SCRIPTDIR}/${SCRIPT} returns:" $(echo "${RESULT}" | jq -c '.')
     if [ -s "${HORIZON_CONFIG_FILE}.$$" ]; then
       DIFF=$(diff "${HORIZON_CONFIG_FILE}" "${HORIZON_CONFIG_FILE}.$$" | wc -c)
       if [ ${DIFF} -gt 0 ]; then 
