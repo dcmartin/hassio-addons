@@ -1,9 +1,9 @@
 {
   "name": "Horizon Control",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/horizon",
-  "version": "0.1.99",
+  "version": "0.1.100",
   "slug": "horizon",
-  "description": "Example base addon for horizon",
+  "description": "Control UX for Open Horizon (http://github.com/dcmartin/open-horizon)",
   "startup": "before",
   "boot": "auto",
   "arch": [
