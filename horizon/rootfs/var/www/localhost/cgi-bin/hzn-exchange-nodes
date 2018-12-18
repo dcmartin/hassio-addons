@@ -27,6 +27,14 @@ TTL=30
 SECONDS=$(date "+%s")
 DATE=$(echo $SECONDS \/ $TTL \* $TTL | bc)
 
+if [ -n ${QUERY_STRING:-} ]; then
+    name=$(echo "$QUERY_STRING" | sed 's|.*name=\([^&]*\).*|\1|')
+    if [[ "$name" == "$QUERY_STRING" ]]; then name=; fi
+fi
+
+# standardize QUERY_STRING (rendezvous w/ APP-make-API.csh script)
+export QUERY_STRING="name=$name"
+
 ## ADDON CONFIGURATION INFORMATION
 if [ -z "${ADDON_CONFIG_FILE:-}" ] || [ ! -s "${ADDON_CONFIG_FILE:-}" ]; then
   echo "$0 $$ -- ERROR: cannot find addon configuration file: ${ADDON_CONFIG_FILE:-}" >> $LOGTO 2>&1
