@@ -67,20 +67,20 @@ key="${HORIZON_ORG}/iamapikey:${HORIZON_APIKEY}"
 
 # output target
 OUTPUT="$TMP/$APP-$API.$$.json"
-
 result=$(curl -sL "$url" -u "$key")
 if [[ $(echo "${result}" | jq '.nodes==null') == 'false' ]]; then
-    nodes=$(echo "${result}" | jq '.nodes')
-    names=$(echo "${nodes}" | jq '[ . | objects | keys[]] | unique' | jq -r '.[]')
-    i=0
-    echo '{"nodes":[' > "${OUTPUT}"
-    for name in $names; do
-      if [ $i -gt 0 ]; then echo ',' >> "${OUTPUT}"; fi; i=$((i+1))
-      echo "${nodes}" | jq '."'"${name}"'"|.id="'${name}'"' >> "${OUTPUT}"
-    done 
-    echo ']}' >> "${OUTPUT}"
+  nodes=$(echo "${result}" | jq '.nodes')
+  names=$(echo "${nodes}" | jq '[ . | objects | keys[]] | unique' | jq -r '.[]')
+  i=0
+  echo '{"nodes":[' > "${OUTPUT}"
+  for name in $names; do
+    if [ $i -gt 0 ]; then echo ',' >> "${OUTPUT}"; fi; i=$((i+1))
+    echo "${nodes}" | jq '."'"${name}"'"|.id="'${name}'"' >> "${OUTPUT}"
+  done 
+  echo ']}' >> "${OUTPUT}"
 else
-    echo 'null' >> "${OUTPUT}"
+  rm -f "${OUTPUT}"
+  output=
 fi
 
 #
