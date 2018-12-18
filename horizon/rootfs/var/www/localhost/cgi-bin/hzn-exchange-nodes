@@ -102,7 +102,7 @@ if [ -s "${OUTPUT}" ]; then
   echo ""
   if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- output $OUTPUT Age: $age Refresh: $refresh Size:" $(jq -c '.' "${OUTPUT}")>> $LOGTO 2>&1; fi
   if [ -n "${name}" ]; then
-    jq '.nodes[]?|select(.name=="'"${name}"'")?|.date='"${DATE}" "$OUTPUT"
+    jq '.nodes[]|select(.name=="'"${name}"'").date='"${DATE}" "$OUTPUT"
   else
     jq '.date='"${DATE}" "$OUTPUT"
   fi
