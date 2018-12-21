@@ -5,7 +5,7 @@
 This is a repository of add-ons for Home Assistant. You can install Home Assistant on anything (Mac, LINUX, RaspberryPi, ..).
 You can read detailed Installation [instructions][hassio-install] or try the following command in a LINUX virtual machine.
 ```
-wget -qO - ibm.biz/hassio-setup | bash -s
+wget -qO - ibm.biz/hassio-setup | sudo bash
 ```
 
 ### [Open Horizon][openhorizon-git] Examples
