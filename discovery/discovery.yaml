@@ -1,0 +1,330 @@
+###
+### DISCOVERY
+###
+
+group default_view:
+  view: true
+  name: Default View
+  icon: mdi:home-variant
+  control: hidden
+  entities:
+    - group.discovery
+
+group discovery:
+  name: discovery
+  entities:
+    - input_number.discovery_confidence
+    - input_number.discovery_relevance
+    - sensor.discovery_count
+    - sensor.discovery_ratio
+    - sensor.discovery_date
+    - sensor.discovery_name
+    - sensor.discovery_bytes
+    - sensor.discovery_latitude
+    - sensor.discovery_longitude
+    - sensor.discovery_frequency
+    - sensor.discovery_value
+    - sensor.discovery_results
+    - sensor.discovery_keywords
+    - sensor.discovery_sentiment_label
+    - sensor.discovery_sentiment_score
+    - sensor.discovery_sentiment_mean
+    - sensor.discovery_language
+    - sensor.discovery_characters
+    - history_graph.discovery_sentiment
+    - history_graph.discovery_count
+
+history_graph:
+  discovery_sentiment:
+    name: discovery_sentiment
+    hours_to_show: 1
+    refresh: 10
+    entities:
+      - sensor.discovery_sentiment_score
+      - sensor.discovery_sentiment_mean
+  discovery_count:
+    name: discovery_count
+    hours_to_show: 1
+    refresh: 10
+    entities:
+      - sensor.discovery_count
+
+input_number:
+  discovery_confidence:
+    name: Confidence
+    mode: slider
+    initial: 0
+    min: 0
+    max: 1
+    step: 0.01
+    icon: mdi:target
+  discovery_relevance:
+    name: Relevance
+    mode: slider
+    initial: 0
+    min: 0
+    max: 1
+    step: 0.01
+    icon: mdi:target
+
+sensor discovery_event:
+  - platform: mqtt
+    name: discovery_event
+    state_topic: 'kafka/sdr-audio'
+    force_update: true
+    expire_after: 1
+    json_attributes:
+      - name
+      - date
+      - latitude
+      - longitude
+      - frequency
+      - value 
+      - bytes
+      - stt
+    value_template: >
+      {% if value_json is defined and value_json.bytes > 0 %} True {% else %} False {% endif %}
+
+sensor discovery:
+  - platform: mqtt
+    name: discovery_event
+    state_topic: 'kafka/sdr-audio'
+    force_update: true
+    expire_after: 1
+    json_attributes:
+      - name
+      - date
+      - latitude
+      - longitude
+      - frequency
+      - value
+      - bytes
+      - stt
+    value_template: >
+      {% if value_json is defined and value_json.bytes > 0 %} True {% else %} False {% endif %}
+  - platform: template
+    sensors:
+      discovery_date:
+        entity_id:
+          - sensor.discovery_event
+        value_template: >
+          {% if states.sensor.discovery_event is defined and states.sensor.discovery_event.attributes.date is defined %}
+            {{ states.sensor.discovery_event.attributes.date | timestamp_custom("%a %b %d %I:%M %p") }}
+          {% else %} null {% endif %}
+      discovery_name:
+        entity_id:
+          - sensor.discovery_event
+        value_template: >
+          {% if states.sensor.discovery_event is defined and states.sensor.discovery_event.attributes.name is defined %}
+            {{ states.sensor.discovery_event.attributes.name }}
+          {% else %} null {% endif %}
+      discovery_latitude:
+        entity_id:
+          - sensor.discovery_event
+        unit_of_measurement: degrees
+        value_template: >
+          {% if states.sensor.discovery_event is defined and states.sensor.discovery_event.attributes.latitude is defined %}
+            {{ states.sensor.discovery_event.attributes.latitude }}
+          {% else %} null {% endif %}
+      discovery_longitude:
+        entity_id:
+          - sensor.discovery_event
+        unit_of_measurement: degrees
+        value_template: >
+          {% if states.sensor.discovery_event is defined and states.sensor.discovery_event.attributes.longitude is defined %}
+            {{ states.sensor.discovery_event.attributes.longitude }}
+          {% else %} null {% endif %}
+      discovery_frequency:
+        entity_id:
+          - sensor.discovery_event
+        unit_of_measurement: MHz
+        value_template: >
+          {% if states.sensor.discovery_event is defined and states.sensor.discovery_event.attributes.frequency is defined %}
+            {{ states.sensor.discovery_event.attributes.frequency / 1000000.0 }}
+          {% else %} null {% endif %}
+      discovery_bytes:
+        entity_id:
+          - sensor.discovery_event
+        unit_of_measurement: bytes
+        value_template: >
+          {% if states.sensor.discovery_event is defined and states.sensor.discovery_event.attributes.bytes is defined %}
+            {{ states.sensor.discovery_event.attributes.bytes }}
+          {% else %} null {% endif %}
+      discovery_results:
+        entity_id:
+          - sensor.discovery_event
+        unit_of_measurement: RC
+        value_template: >-
+          {%- if states.sensor.discovery_event is defined and states.sensor.discovery_event.attributes.stt is defined and states.sensor.discovery_event.attributes.stt.results is defined -%}
+            {{- states.sensor.discovery_event.attributes.stt.results|length -}}
+          {%- else -%} null {%- endif -%}
+      discovery_sentiments:
+        entity_id:
+          - sensor.discovery_event
+          - input_number.discovery_confidence
+        value_template: >-
+          {% if states.sensor.discovery_event is defined and states.sensor.discovery_event.attributes.stt is defined and states.sensor.discovery_event.attributes.stt.results is defined %}
+            {% set results = states.sensor.discovery_event.attributes.stt.results %}
+            {% for result in results %}
+              {%- if loop.first -%}{%- else -%},{%- endif -%}
+              {%- for alternative in result.alternatives -%}
+                {%- if loop.first -%}{%- else -%},{%- endif -%}
+                {%- if alternative.confidence|float > states.input_number.discovery_confidence|float -%}
+                  {%- if alternative.nlu is defined and alternative.nlu.sentiment is defined -%}
+                    {%- if alternative.nlu.sentiment.document.label is defined -%}
+                      {{- alternative.nlu.sentiment.document.label -}}
+                    {%- else -%}null{%- endif -%}
+                  {%- else -%}null{%- endif -%}
+                {%- else -%}null{%- endif -%}
+              {%- endfor -%}
+            {%- endfor %}
+          {%- else -%} null {%- endif -%}
+      discovery_languages:
+        entity_id:
+          - sensor.discovery_event
+          - input_number.discovery_confidence
+        value_template: >-
+          {% if states.sensor.discovery_event is defined and states.sensor.discovery_event.attributes.stt is defined and states.sensor.discovery_event.attributes.stt.results is defined %}
+            {% set results = states.sensor.discovery_event.attributes.stt.results %}
+            {% for result in results %}
+              {%- if loop.first -%}{%- else -%},{%- endif -%}
+              {%- for alternative in result.alternatives -%}
+                {%- if loop.first -%}{%- else -%},{%- endif -%}
+                {%- if alternative.confidence > states.input_number.discovery_confidence|float -%}
+                  {%- if alternative.nlu is defined and alternative.nlu.language is defined -%}
+                    {{- alternative.nlu.language -}}
+                  {%- else -%}null{%- endif -%}
+                {%- else -%}null{%- endif -%}
+              {%- endfor -%}
+            {%- endfor %}
+          {%- else -%} null {%- endif -%}
+      discovery_confidence_minimum:
+        entity_id:
+          - input_number.discovery_confidence
+        unit_of_measurement: CV
+        value_template: >
+          {{ states.input_number.discovery_confidence.state }}
+      discovery_relevance_minimum:
+        entity_id:
+          - input_number.discovery_relevance
+        unit_of_measurement: RV
+        value_template: >
+          {{ states.input_number.discovery_relevance.state }}
+      discovery_all_keywords:
+        entity_id:
+          - sensor.discovery_event
+          - sensor.discovery_confidence_minimum
+          - sensor.discovery_relevance_minimum
+        value_template: >-
+          {% if states.sensor.discovery_event is defined and states.sensor.discovery_event.attributes.stt is defined and states.sensor.discovery_event.attributes.stt.results is defined %}
+            {% set results = states.sensor.discovery_event.attributes.stt.results %}
+            {% for result in results %}
+              {%- if loop.first -%}{% else %},{% endif %}
+              {%- for alternative in result.alternatives -%}
+                {%- if loop.first -%}{% else %},{% endif %}
+                {%- if alternative.confidence|float > states.sensor.discovery_confidence_minimum.state|float  -%}
+                  {%- if alternative.nlu is defined and alternative.nlu.keywords is defined and alternative.nlu.keywords != null -%}
+                    {%- for keyword in alternative.nlu.keywords -%}
+                      {%- if loop.first -%}{% else %},{% endif %}
+                      {%- if keyword.text is defined and keyword.relevance|float > states.sensor.discovery_relevance_minimum.state|float -%}
+                        {{- keyword.text -}}
+                      {%- else -%}null{%- endif -%}
+                    {%- endfor -%}
+                  {%- else -%}null{%- endif -%}
+                {%- else -%}null{%- endif -%}
+              {%- endfor -%}
+            {%- endfor -%}
+          {%- else -%}null{%- endif -%}
+      discovery_characters:
+        entity_id:
+          - sensor.discovery_event
+        unit_of_measurement: characters
+        value_template: >
+          {% if states.sensor.discovery_event.attributes.stt is defined and states.sensor.discovery_event.attributes.stt.nlu is defined and states.sensor.discovery_event.attributes.stt.nlu != null %}
+            {% set nlu = states.sensor.discovery_event.attributes.stt.nlu %}
+            {{ nlu.usage.text_characters|int }}
+          {%- else -%}null{%- endif -%}
+      discovery_language:
+        entity_id:
+          - sensor.discovery_event
+        value_template: >
+          {% if states.sensor.discovery_event.attributes.stt is defined and states.sensor.discovery_event.attributes.stt.nlu is defined and states.sensor.discovery_event.attributes.stt.nlu != null %}
+            {% set nlu = states.sensor.discovery_event.attributes.stt.nlu %}
+            {{ nlu.language }}
+          {%- else -%}null{%- endif -%}
+      discovery_sentiment_score:
+        entity_id:
+          - sensor.discovery_event
+        unit_of_measurement: SS
+        value_template: >
+          {% if states.sensor.discovery_event.attributes.stt is defined and states.sensor.discovery_event.attributes.stt.nlu is defined and states.sensor.discovery_event.attributes.stt.nlu != null %}
+            {% set nlu = states.sensor.discovery_event.attributes.stt.nlu %}
+            {{ nlu.sentiment.document.score|float }}
+          {%- else -%}null{%- endif -%}
+      discovery_sentiment_label:
+        entity_id:
+          - sensor.discovery_event
+        value_template: >
+          {% if states.sensor.discovery_event.attributes.stt is defined and states.sensor.discovery_event.attributes.stt.nlu is defined and states.sensor.discovery_event.attributes.stt.nlu != null %}
+            {% set nlu = states.sensor.discovery_event.attributes.stt.nlu %}
+            {{ nlu.sentiment.document.label }}
+          {%- else -%}null{%- endif -%}
+      discovery_keywords:
+        entity_id:
+          - sensor.discovery_event
+          - sensor.discovery_relevance_minimum
+        value_template: >
+          {% if states.sensor.discovery_event.attributes.stt is defined and states.sensor.discovery_event.attributes.stt.nlu is defined and states.sensor.discovery_event.attributes.stt.nlu != null %}
+            {% set nlu = states.sensor.discovery_event.attributes.stt.nlu %}
+            {% for keyword in nlu.keywords %}
+             {%- if loop.first -%}{% else %},{% endif %}
+             {%- if keyword.text is defined and keyword.relevance|float > states.sensor.discovery_relevance_minimum.state|float -%}
+               {{- keyword.text -}}
+             {%- else -%}null{%- endif -%}
+           {%- endfor -%}
+          {%- else -%}null{%- endif -%}
+      discovery_count:
+        entity_id:
+          - sensor.discovery_event_count
+        unit_of_measurement: events
+        value_template: >
+          {% if states.sensor.discovery_event_count is defined %}
+            {{ states.sensor.discovery_event_count.state }}
+          {%- else -%}null{%- endif -%}
+      discovery_ratio:
+        entity_id:
+          - sensor.discovery_event_ratio
+        unit_of_measurement: '%'
+        value_template: >
+          {% if states.sensor.discovery_event_ratio is defined %}
+            {{ states.sensor.discovery_event_ratio.state }}
+          {%- else -%}null{%- endif -%}
+      discovery_sentiment_mean:
+        entity_id:
+          - sensor.discovery_sentiment_statistics_mean
+        unit_of_measurement: SS
+        value_template: >
+          {% if states.sensor.discovery_event_sentiment_mean is defined %}
+            {{ states.sensor.discovery_sentiment_statistics_mean.state }}
+          {%- else -%}null{%- endif -%}
+  - platform: history_stats
+    icon: mdi:percent
+    name: discovery_event_ratio
+    entity_id: sensor.discovery_event
+    state: True
+    type: ratio
+    start: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
+    end: '{{ now() }}'
+  - platform: history_stats
+    icon: mdi:sigma
+    name: discovery_event_count
+    entity_id: sensor.discovery_event
+    state: True
+    type: count
+    start: '{{ now().replace(hour=0).replace(minute=0).replace(second=0) }}'
+    end: '{{ now() }}'
+  - platform: statistics
+    entity_id: sensor.discovery_sentiment_score
+    name: discovery_sentiment_statistics
+    max_age:
+      hours: 24

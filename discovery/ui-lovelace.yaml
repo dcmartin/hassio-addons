@@ -1,0 +1,90 @@
+title: Horizon DISCOVERY POC
+
+views:
+  - icon: mdi:radio
+    id: DISCOVERY
+    cards:
+      - type: history-graph
+        title: Activity
+        refresh_interval: 10
+        hours_to_show: 1 
+        entities:
+          - entity: sensor.discovery_count
+            icon: mdi:sigma
+            name: Events
+      - type: history-graph
+        title: Sentiment
+        refresh_interval: 10
+        hours_to_show: 1 
+        entities:
+          - entity: sensor.discovery_sentiment_score
+            icon: mdi:arrow-up-down-bold-outline
+            name: Score
+          - entity: sensor.discovery_sentiment_mean
+            icon: mdi:heart-half-full
+            name: Mean
+      - type: map
+        title: DISCOVERY
+        aspect_ratio: 100%
+        default_zoom: 1
+        entities:
+          - sensor.discovery_event
+          - zone.home
+      - type: entities
+        entities:
+          - entity: sensor.discovery_event
+            icon: mdi:emoticon-dead
+            name: Live
+          - entity: sensor.discovery_count
+            icon: mdi:sigma
+            name: Count
+          - entity: sensor.discovery_ratio
+            name: Ratio
+            icon: mdi:percent
+          - entity: sensor.discovery_date
+            icon: mdi:clock-outline
+            name: When
+          - entity: sensor.discovery_name
+            icon: mdi:account-outline
+            name: Who
+          - entity: sensor.discovery_bytes
+            icon: mdi:memory
+            name: Size
+          - entity: sensor.discovery_frequency
+            icon: mdi:access-point
+            name: Frequency
+          - entity: sensor.discovery_keywords
+            icon: mdi:key
+            name: Keywords
+          - entity: sensor.discovery_sentiment_score
+            icon: mdi:arrow-up-down-bold-outline
+            name: Sentiment score
+          - entity: sensor.discovery_sentiment_mean
+            icon: mdi:heart-half-full
+            name: Sentiment mean
+          - entity: sensor.discovery_sentiment_label
+            icon: mdi:plus-minus
+            name: Sentiment label
+          - entity: sensor.discovery_characters
+            icon: mdi:sigma
+            name: Text length
+          - entity: sensor.discovery_language
+            icon: mdi:translate
+            name: Language
+      - type: entities
+        entities:
+          - entity: input_number.discovery_relevance
+            icon: mdi:tune
+            name: Relevance
+          - entity: sensor.discovery_relevance_minimum
+            icon: mdi:greater-than-or-equal
+            name: Relevance
+#          - entity: input_number.discovery_confidence
+#            icon: mdi:tune
+#            name: Confidence
+#          - entity: sensor.discovery_confidence_minimum
+#            icon: mdi:greater-than-or-equal
+#            name: Confidence
+#          - entity: sensor.discovery_all_keywords
+#            icon: mdi:key
+#            name: All keywords
