@@ -1,4 +1,5 @@
 #!/usr/bin/with-contenv bash
+
 # ==============================================================================
 set -o nounset  # Exit script on use of an undefined variable
 set -o pipefail # Return exit status of the last command in the pipe that failed
@@ -387,6 +388,11 @@ main() {
     hass.log.info $(date) "${SCRIPT} on ${HORIZON_CONFIG_FILE}.$$ for ${HOST_LAN}; logging to ${SCRIPT_LOG}"
     RESULT=$(cd "${SCRIPT_DIR}" && ${SCRIPT_DIR}/${SCRIPT} "${HORIZON_CONFIG_FILE}.$$" "${HOST_LAN}" 2>> "${SCRIPT_LOG}" || true)
     hass.log.info "Executed ${SCRIPT_DIR}/${SCRIPT} returns:" $(echo "${RESULT}" | jq -c '.')
+    if [ -n "${RESULT}" ]; then
+      RESULT=$(echo "${RESULT}" | jq '{"nodes":.,"date":'$(date +%s)',"org":"'${HORIZON_ORGANIZATION}'","device":"'${HORIZON_DEVICE_NAME}'","configuration":"'${HORIZON_CONFIG_NAME}'"}')
+      hass.log.debug "Posting result to ${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/${SCRIPT}/result" $(echo "${RESULT}" | jq -c '.')
+      mosquitto_pub -r -q 2 -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/${HORIZON_CONFIG_NAME}/result" -m "${RESULT}"
+    fi
     if [ -s "${HORIZON_CONFIG_FILE}.$$" ]; then
       DIFF=$(diff "${HORIZON_CONFIG_FILE}" "${HORIZON_CONFIG_FILE}.$$" | wc -c || true)
       if [[ ${DIFF} > 0 ]]; then 
@@ -400,6 +406,10 @@ main() {
 	fi
 	hass.log.info "Updated configuration: ${HORIZON_CONFIG_NAME}"
 	mv -f "${HORIZON_CONFIG_FILE}.$$" "${HORIZON_CONFIG_FILE}"
+	if [ -s "${HORIZON_CONFIG_FILE}" ]; then
+	  RESULT=$(jq '.org="'${HORIZON_ORGANIZATION}'"|.device="'${HORIZON_DEVICE_NAME}'"|.configuration="'${HORIZON_CONFIG_NAME}'"' "${HORIZON_CONFIG_FILE}")
+	  mosquitto_pub -r -q 2 -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/${HORIZON_CONFIG_NAME}/status" -m "${RESULT}"
+	fi
       else
 	hass.log.info "No updates: ${HORIZON_CONFIG_NAME}"
       fi

@@ -28,12 +28,12 @@ SECONDS=$(date "+%s")
 DATE=$(echo $SECONDS \/ $TTL \* $TTL | bc)
 
 if [ -n ${QUERY_STRING:-} ]; then
-    name=$(echo "$QUERY_STRING" | sed 's|.*name=\([^&]*\).*|\1|')
-    if [[ "$name" == "$QUERY_STRING" ]]; then name=; fi
+    id=$(echo "$QUERY_STRING" | sed 's|.*id=\([^&]*\).*|\1|')
+    if [[ "$id" == "$QUERY_STRING" ]]; then id=; fi
 fi
 
 # standardize QUERY_STRING (rendezvous w/ APP-make-API.csh script)
-export QUERY_STRING="name=$name"
+export QUERY_STRING="id=$id"
 
 ## ADDON CONFIGURATION INFORMATION
 if [ -z "${ADDON_CONFIG_FILE:-}" ] || [ ! -s "${ADDON_CONFIG_FILE:-}" ]; then
@@ -101,8 +101,8 @@ if [ -s "${OUTPUT}" ]; then
   echo "Last-Modified:" $($dateconv -i '%s' -f '%a, %d %b %Y %H:%M:%S %Z' $DATE)
   echo ""
   if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- output $OUTPUT Age: $age Refresh: $refresh Size:" $(jq -c '.' "${OUTPUT}")>> $LOGTO 2>&1; fi
-  if [ -n "${name}" ]; then
-    jq '.nodes[]|select(.name=="'"${name}"'").date='"${DATE}" "$OUTPUT"
+  if [ -n "${id}" ]; then
+    jq '.nodes[]|select(.name=="'"${id}"'").date='"${DATE}" "$OUTPUT"
   else
     jq '.date='"${DATE}" "$OUTPUT"
   fi

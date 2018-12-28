@@ -3,13 +3,13 @@ APP="hzn"
 API="nodes"
 DEBUG="true"
 
-if [ -z ${TMP:-} ]; then TMP="/date"; fi
+if [ -z ${TMP:-} ]; then TMP="/tmpfs"; fi
 if [ -z ${LOGTO:-} ]; then LOGTO=$TMP/$APP.log; fi
 if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- START" >> $LOGTO 2>&1; fi
 
 if [ -z ${CU:-} ]; then CU="${HORIZON_CLOUDANT_URL}"; fi
 
-# use the confi database
+# use the config database
 DB="${APP}-config"
 if [ -z ${DB:-} ]; then DB="${APP}-${API}"; fi
 

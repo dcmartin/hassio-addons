@@ -556,6 +556,20 @@ sensor cpu2msghub:
 ###
 
 sensor horizon:
+  - platform: command_line
+    command: 'hzn-exchange-nodes.sh'
+    name: hzn_exchange_node_list
+    scan_interval: 120
+    sampling_size: 60
+    max_age:
+      hours: 24
+    command_timeout: 60
+    json_attributes:
+      - nodes
+    value_template: >
+      {%- if value_json is defined -%}
+        {{ value_json.nodes|length }}
+      {%- else -%}null{%- endif -%}
   - platform: rest
     name: horizon_exchange_node_list
     resource: !secret exchange_nodes
