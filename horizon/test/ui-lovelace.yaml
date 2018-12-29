@@ -1,0 +1,339 @@
+title: Horizon POC
+
+views:
+  - icon: mdi:weather-sunset
+    id: HORIZON
+    cards:
+      - type: entities
+        entities:
+          - entity: sensor.horizon_status
+            icon: mdi:update
+            name: Last update
+          - entity: sensor.horizon_version
+            icon: mdi:delta
+            name: Version
+          - entity: sensor.horizon_exchange_status
+            icon: mdi:arrow-up-down-bold-outline
+            name: Status
+          - entity: sensor.horizon_exchange_api
+            icon: mdi:cloud
+            name: API
+          - entity: sensor.horizon_exchange_version
+            icon: mdi:delta
+            name: Exchange version
+          - entity: sensor.horizon_architecture
+            icon: mdi:chip
+            name: Architecture
+          - entity: sensor.horizon_agreement_active
+            icon: mdi:file-document
+            name: Workload
+          - entity: sensor.horizon_agreements_count_active
+            icon: mdi:run
+            name: Active
+          - entity: sensor.horizon_agreements_count_archived
+            icon: mdi:archive
+            name: Archived
+      - type: map
+        title: DEVICES
+        aspect_ratio: 100%
+        default_zoom: 10
+        entities:
+          - sensor.sdr2msghub_event
+          - sensor.cpu2msghub_event
+          - sensor.internet_test
+  - icon: mdi:radio
+    id: SDR
+    cards:
+      - type: history-graph
+        title: Activity
+        refresh_interval: 10
+        hours_to_show: 1 
+        entities:
+          - entity: sensor.sdr2msghub_count
+            icon: mdi:sigma
+            name: Events
+      - type: history-graph
+        title: Sentiment
+        refresh_interval: 10
+        hours_to_show: 1 
+        entities:
+          - entity: sensor.sdr2msghub_sentiment_score
+            icon: mdi:arrow-up-down-bold-outline
+            name: Score
+          - entity: sensor.sdr2msghub_sentiment_mean
+            icon: mdi:heart-half-full
+            name: Mean
+      - type: map
+        title: SDR
+        aspect_ratio: 100%
+        default_zoom: 1
+        entities:
+          - sensor.sdr2msghub_event
+          - zone.home
+      - type: entities
+        entities:
+          - entity: sensor.sdr2msghub_event
+            icon: mdi:emoticon-dead
+            name: Live
+          - entity: sensor.sdr2msghub_count
+            icon: mdi:sigma
+            name: Count
+          - entity: sensor.sdr2msghub_ratio
+            name: Ratio
+            icon: mdi:percent
+          - entity: sensor.sdr2msghub_date
+            icon: mdi:clock-outline
+            name: When
+          - entity: sensor.sdr2msghub_name
+            icon: mdi:account-outline
+            name: Who
+          - entity: sensor.sdr2msghub_bytes
+            icon: mdi:memory
+            name: Size
+          - entity: sensor.sdr2msghub_frequency
+            icon: mdi:access-point
+            name: Frequency
+          - entity: sensor.sdr2msghub_keywords
+            icon: mdi:key
+            name: Keywords
+          - entity: sensor.sdr2msghub_sentiment_score
+            icon: mdi:arrow-up-down-bold-outline
+            name: Sentiment score
+          - entity: sensor.sdr2msghub_sentiment_mean
+            icon: mdi:heart-half-full
+            name: Sentiment mean
+          - entity: sensor.sdr2msghub_sentiment_label
+            icon: mdi:plus-minus
+            name: Sentiment label
+          - entity: sensor.sdr2msghub_characters
+            icon: mdi:sigma
+            name: Text length
+          - entity: sensor.sdr2msghub_language
+            icon: mdi:translate
+            name: Language
+      - type: entities
+        entities:
+          - entity: input_number.sdr2msghub_relevance
+            icon: mdi:tune
+            name: Relevance
+          - entity: sensor.sdr2msghub_relevance_minimum
+            icon: mdi:greater-than-or-equal
+            name: Relevance
+  - icon: mdi:chip
+    id: CPU
+    cards:
+      - type: history-graph
+        title: Activity
+        refresh_interval: 10
+        hours_to_show: 1 
+        entities:
+          - entity: sensor.cpu2msghub_count
+            icon: mdi:sigma
+            name: Events
+      - type: history-graph
+        title: CPU
+        refresh_interval: 10
+        hours_to_show: 1
+        entities:
+          - entity: sensor.cpu2msghub_cpu
+            icon: mdi:arrow-up-down-bold-outline
+            name: Load
+          - entity: sensor.cpu2msghub_cpu_mean
+            icon: mdi:heart-half-full
+            name: Mean
+      - type: map
+        title: CPU
+        aspect_ratio: 100%
+        default_zoom: 1
+        entities:
+          - sensor.cpu2msghub_event
+          - zone.home
+      - type: entities
+        entities:
+          - entity: sensor.cpu2msghub_count
+            name: Count
+          - entity: sensor.cpu2msghub_date
+            name: When
+          - entity: sensor.cpu2msghub_name
+            name: Who
+          - entity: sensor.cpu2msghub_cpu
+            name: Load
+          - entity: sensor.cpu2msghub_altitude
+            name: Altitude
+          - entity: sensor.cpu2msghub_latitude
+            name: Latitude
+          - entity: sensor.cpu2msghub_longitude
+            name: Longitude
+          - entity: sensor.cpu2msghub_cpu_mean
+            name: CPU mean
+  - icon: mdi:ip-network
+    id: INTERNET
+    cards:
+      - type: history-graph
+        title: Activity
+        refresh_interval: 10
+        hours_to_show: 1 
+        entities:
+          - entity: sensor.internet_tests_count
+            icon: mdi:sigma
+            name: All tests
+          - entity: sensor.internet_slow_count
+            icon: mdi:sigma
+            name: Slow
+          - entity: sensor.internet_fast_count
+            icon: mdi:sigma
+            name: Fast
+      - type: entities
+        entities:
+          - entity: sensor.internet_tests_count
+            name: Count
+          - entity: sensor.internet_test
+            name: When
+          - entity: sensor.internet_test_send
+            name: Upload
+          - entity: sensor.internet_test_receive
+            name: Download
+          - entity: sensor.internet_receive_mean
+            name: Download average
+          - entity: sensor.internet_send_mean
+            name: Upload average
+          - entity: input_number.internet_deviation
+            name: Change sensitivity
+          - entity: binary_sensor.internet_slow
+            name: Is it slow?
+          - entity: binary_sensor.internet_fast
+            name: Is is fast?
+          - entity: automation.internet_slow
+            name: Notify if slow?
+          - entity: automation.internet_fast
+            name: Notify if fast?
+      - type: history-graph
+        title: Download deviation
+        refresh_interval: 10
+        hours_to_show: 1 
+        entities:
+          - entity: sensor.internet_receive_standard_deviation
+            icon: mdi:sigma-lower
+            name: Download deviation
+          - entity: sensor.internet_receive_stdev_mean
+            icon: mdi:sigma-lower
+            name: Mean deviation
+      - type: history-graph
+        title: Upload deviation
+        refresh_interval: 10
+        hours_to_show: 1 
+        entities:
+          - entity: sensor.internet_send_standard_deviation
+            icon: mdi:sigma-lower
+            name: Upload deviation
+          - entity: sensor.internet_send_stdev_mean
+            icon: mdi:sigma-lower
+            name: Mean deviation
+      - type: history-graph
+        title: UPLOAD
+        refresh_interval: 10
+        hours_to_show: 24
+        entities:
+          - entity: sensor.internet_test_send
+            icon: mdi:arrow-up-down-bold-outline
+            name: Upload
+          - entity: sensor.internet_send_mean
+            icon: mdi:heart-half-full
+            name: Mean
+      - type: history-graph
+        title: DOWNLOAD
+        refresh_interval: 10
+        hours_to_show: 24
+        entities:
+          - entity: sensor.internet_test_receive
+            icon: mdi:arrow-up-down-bold-outline
+            name: Download
+          - entity: sensor.internet_receive_mean
+            icon: mdi:heart-half-full
+            name: Mean
+  - icon: mdi:folder-network
+    id: INTRANET
+    cards:
+      - type: history-graph
+        title: Activity
+        refresh_interval: 10
+        hours_to_show: 1 
+        entities:
+          - entity: sensor.intranet_docsisgw_count
+            icon: mdi:sigma
+            name: Tests
+          - entity: sensor.intranet_dslgw_count
+            icon: mdi:sigma
+            name: Tests
+      - type: entities
+        entities:
+          - entity: sensor.intranet_docsisgw_count
+            name: Count
+          - entity: sensor.intranet_docsisgw_test
+            name: When
+          - entity: sensor.intranet_docsisgw_test_send
+            name: Upload
+          - entity: sensor.intranet_docsisgw_test_receive
+            name: Download
+          - entity: sensor.intranet_docsisgw_receive_mean
+            name: Download average
+          - entity: sensor.intranet_docsisgw_send_mean
+            name: Upload average
+          - entity: sensor.intranet_dslgw_count
+            name: Count
+          - entity: sensor.intranet_dslgw_test
+            name: When
+          - entity: sensor.intranet_dslgw_test_send
+            name: Upload
+          - entity: sensor.intranet_dslgw_test_receive
+            name: Download
+          - entity: sensor.intranet_dslgw_receive_mean
+            name: Download average
+          - entity: sensor.intranet_dslgw_send_mean
+            name: Upload average
+      - type: history-graph
+        title: Download deviation
+        refresh_interval: 10
+        hours_to_show: 1 
+        entities:
+          - entity: sensor.intranet_docsisgw_send_standard_deviation
+            icon: mdi:sigma-lower
+            name: Upload deviation
+          - entity: sensor.intranet_docsisgw_receive_standard_deviation
+            icon: mdi:sigma-lower
+            name: Download deviation
+          - entity: sensor.intranet_dslgw_send_standard_deviation
+            icon: mdi:sigma-lower
+            name: Upload deviation
+          - entity: sensor.intranet_dslgw_receive_standard_deviation
+            icon: mdi:sigma-lower
+            name: Download deviation
+      - type: history-graph
+        title: LAN
+        refresh_interval: 10
+        hours_to_show: 24
+        entities:
+          - entity: sensor.intranet_docsisgw_test_send
+            icon: mdi:arrow-up-down-bold-outline
+            name: Upload
+          - entity: sensor.intranet_docsisgw_send_mean
+            icon: mdi:heart-half-full
+            name: Mean
+          - entity: sensor.intranet_docsisgw_test_receive
+            icon: mdi:arrow-up-down-bold-outline
+            name: Download
+          - entity: sensor.intranet_docsisgw_receive_mean
+            icon: mdi:heart-half-full
+            name: Mean
+          - entity: sensor.intranet_dslgw_test_send
+            icon: mdi:arrow-up-down-bold-outline
+            name: Upload
+          - entity: sensor.intranet_dslgw_send_mean
+            icon: mdi:heart-half-full
+            name: Mean
+          - entity: sensor.intranet_dslgw_test_receive
+            icon: mdi:arrow-up-down-bold-outline
+            name: Download
+          - entity: sensor.intranet_dslgw_receive_mean
+            icon: mdi:heart-half-full
+            name: Mean
