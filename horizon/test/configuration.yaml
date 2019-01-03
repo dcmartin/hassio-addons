@@ -7,6 +7,7 @@ homeassistant:
   time_zone: America/Los_Angeles
   customize: !include customize.yaml
 
+history: !include history.yaml
 
 frontend:
   extra_html_url:
@@ -18,7 +19,6 @@ cloud:
 config:
 updater:
 conversation:
-history:
 logbook:
 map:
 sun:
