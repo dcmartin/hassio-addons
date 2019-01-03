@@ -8,7 +8,23 @@ default_view:
   icon: mdi:home
   entities:
     - group.horizon_status_graphs
-    - group.internet_status_graphs
+    - group.status_sensors
+    - history_graph.internet_tests
+    - history_graph.sdr2msghub_count
+    - history_graph.cpu2msghub_count
+    - history_graph.motion_event_count
+#    - group.motion_status_graphs
+#    - group.internet_status_graphs
+#    - group.intranet_status_graphs
+
+status_sensors:
+  name: status_sensors
+  entities:
+    - sensor.horizon_addon_status
+    - sensor.sdr2msghub_status
+    - sensor.cpu2msghub_status
+    - sensor.motion_status
+    - sensor.internet_status
 
 ###
 ### HORIZON
@@ -22,17 +38,16 @@ horizon:
   entities:
     - group.horizon_status
     - group.horizon_patterns
-    - group.horizon_node
+    - group.horizon_init
+    - group.horizon_init_devices
     - group.horizon_status_graphs
 
 horizon_status_graphs:
   name: horizon_status_graphs
   entities:
-    - history_graph.sdr2msghub_sentiment
-    - history_graph.cpu2msghub_cpu
     - history_graph.horizon_exchange_status
 
-horizon_staus:
+horizon_status:
   name: horizon_status
   entities:
     - sensor.horizon_status
@@ -47,18 +62,24 @@ horizon_staus:
     - sensor.horizon_agreements_count_active
     - sensor.horizon_agreements_count_archived
 
-horizon_node:
-  name: horizon_node
+horizon_init:
+  name: horizon_init
   entities:
-    - sensor.horizon_local_nodes_count
-    - input_number.horizon_local_nodes_index
-    - sensor.horizon_local_nodes_id
-    - sensor.horizon_local_nodes_ip
-    - sensor.horizon_local_nodes_index
-    - sensor.horizon_local_ago
-    - sensor.horizon_local_nodes_device
-    - sensor.horizon_local_nodes_org
-    - sensor.horizon_local_nodes_configuration
+    - sensor.horizon_addon_ago
+    - sensor.horizon_addon_nodes_device
+    - sensor.horizon_addon_nodes_org
+    - sensor.horizon_addon_nodes_configuration
+
+horizon_init_devices:
+  name: horizon_init_devices
+  entities:
+    - sensor.horizon_addon_nodes_count
+    - input_number.horizon_addon_nodes_index
+    - sensor.horizon_addon_nodes_id
+    - sensor.horizon_addon_nodes_ip
+    - sensor.horizon_addon_nodes_mac
+    - sensor.horizon_addon_nodes_exchange
+    - sensor.horizon_addon_nodes_pattern
   
 ###
 ### SDR
@@ -139,8 +160,6 @@ internet_view:
 internet_status_graphs:
   name: internet_status_graphs
   entities:
-    - history_graph.intranet_docsisgw_test
-    - history_graph.intranet_dslgw_test
     - history_graph.internet_receive
     - history_graph.internet_send
 
@@ -176,7 +195,6 @@ internet_receive:
     - sensor.internet_receive_min_value
     - sensor.internet_receive_max_value
     - sensor.internet_receive_standard_deviation
-    - history_graph.internet_receive
     - history_graph.internet_recv_stdev
 
 internet_send:
@@ -187,7 +205,6 @@ internet_send:
     - sensor.internet_send_min_value
     - sensor.internet_send_max_value
     - sensor.internet_send_standard_deviation
-    - history_graph.internet_send
     - history_graph.internet_send_stdev
 
 ###
@@ -203,6 +220,7 @@ intranet_view:
     - group.intranet_dslgw_test
     - history_graph.intranet_docsisgw_test
     - history_graph.intranet_dslgw_test
+    - history_graph.intranet_test_compare
 
 intranet_docsisgw_test:
   name: intranet_docsisgw_test
@@ -253,12 +271,12 @@ motion_group:
     - group.motion_localhost_cameras
     - group.motion_last_cameras
     - group.motion_cameras
-    - group.motion_history
+    - group.motion_status_graphs
     - group.motion_event_end
     - group.motion_notify_controls
 
-motion_history:
-  name: motion_history
+motion_status_graphs:
+  name: motion_status_graphs
   icon: mdi:graph
   entities:
     - history_graph.motion_event_ago

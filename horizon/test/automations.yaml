@@ -2,6 +2,30 @@
 ### INTERNET
 ###
 
+- id: internet_test_relay
+  alias: internet_test_relay
+  initial_state: on
+  trigger:
+    platform: state
+    entity_id: 
+      - sensor.internet_test
+  action:
+#    - service: persistent_notification.create
+#      data_template:
+#        title: >
+#          {{ state_attr(trigger.entity_id,"friendly_name") }} Status
+#        notification_id: >
+#          {{ state_attr(trigger.entity_id,"friendly_name") }}
+#        message: >
+#          {{ trigger.to_state.attributes.friendly_name }} changed from {{ trigger.from_state.attributes.download }} to {{ trigger.to_state.attributes.download }}
+    - service: mqtt.publish
+      data_template:
+        topic: >
+          {{ "internet/test/" + state_attr(trigger.entity_id,"friendly_name") }}
+        retain: true
+        payload: >
+          { "ipv4": {{ states.sensor.host_ip.attributes.ipv4|tojson }}, "name": {{ state_attr(trigger.entity_id,"friendly_name")|tojson }}, "date": {{ state_attr(trigger.entity_id,"date") }}, "upload": {{ state_attr(trigger.entity_id,"upload") }}, "download": {{ state_attr(trigger.entity_id,"download") }}, "server": {{ state_attr(trigger.entity_id,"server")|tojson }}, "client": {{ state_attr(trigger.entity_id,"client")|tojson }} }
+
 - id: internet_slow
   alias: internet_slow
   initial_state: on
@@ -25,7 +49,7 @@
           stdev {{ states.sensor.internet_receive_statistics_mean.attributes.standard_deviation }} Mbps
     - service: mqtt.publish
       data_template:
-        topic: 'status/internet/download'
+        topic: 'internet/slow'
         retain: false
         payload: >
           {{ states.sensor.internet_receive_statistics_mean.attributes }}
@@ -68,7 +92,7 @@
           stdev {{ states.sensor.internet_receive_statistics_mean.attributes.standard_deviation }} Mbps
     - service: mqtt.publish
       data_template:
-        topic: 'status/internet/download'
+        topic: 'internet/fast'
         retain: false
         payload: >
           {{ states.sensor.internet_receive_statistics_mean.attributes }}
@@ -111,7 +135,7 @@
           average stdev {{ states.sensor.internet_receive_stdev_mean.state }} Mbps
     - service: mqtt.publish
       data_template:
-        topic: 'status/internet/download/stdev'
+        topic: 'internet/slow/stdev'
         retain: false
         payload: >
           {{ states.sensor.internet_receive_stdev_mean.attributes }}
@@ -139,7 +163,7 @@
           average stdev {{ states.sensor.internet_receive_stdev_mean.state }} Mbps
     - service: mqtt.publish
       data_template:
-        topic: 'status/internet/download/stdev'
+        topic: 'internet/fast/stdev'
         retain: false
         payload: >
           {{ states.sensor.internet_receive_stdev_mean.attributes }}
@@ -171,7 +195,8 @@
           stdev {{ states.sensor.intranet_docsisgw_receive_statistics_mean.attributes.standard_deviation }} Mbps
     - service: mqtt.publish
       data_template:
-        topic: 'status/intranet_docsisgw/download'
+        topic: >
+          {{ "intranet/test/" + trigger.entity_id.attributes.friendly_name + "/slow" }}
         retain: false
         payload: >
           {{ states.sensor.intranet_docsisgw_receive_statistics_mean.attributes }}
@@ -214,7 +239,8 @@
           stdev {{ states.sensor.intranet_docsisgw_receive_statistics_mean.attributes.standard_deviation }} Mbps
     - service: mqtt.publish
       data_template:
-        topic: 'status/intranet_docsisgw/download'
+        topic: >
+          {{ "intranet/test/" + trigger.entity_id.attributes.friendly_name + "/fast" }}
         retain: false
         payload: >
           {{ states.sensor.intranet_docsisgw_receive_statistics_mean.attributes }}
@@ -257,7 +283,8 @@
           average stdev {{ states.sensor.intranet_docsisgw_receive_stdev_mean.state }} Mbps
     - service: mqtt.publish
       data_template:
-        topic: 'status/intranet_docsisgw/download/stdev'
+        topic: >
+          {{ "intranet/test/" + trigger.entity_id.attributes.friendly_name + "/slow/stdev" }}
         retain: false
         payload: >
           {{ states.sensor.intranet_docsisgw_receive_stdev_mean.attributes }}
@@ -285,7 +312,8 @@
           average stdev {{ states.sensor.intranet_docsisgw_receive_stdev_mean.state }} Mbps
     - service: mqtt.publish
       data_template:
-        topic: 'status/intranet_docsisgw/download/stdev'
+        topic: >
+          {{ "intranet/test/" + trigger.entity_id.attributes.friendly_name + "/fast/stdev" }}
         retain: false
         payload: >
           {{ states.sensor.intranet_docsisgw_receive_stdev_mean.attributes }}
@@ -293,6 +321,7 @@
 ###
 ### MOTION
 ###
+
 - id: motion_event_end_notify
   alias: 'motion_event_end_notify'
   initial_state: 'on'
@@ -363,6 +392,31 @@
 ###
 ### INTRANET
 ###
+
+- id: intranet_test_relay
+  alias: intranet_test_relay
+  initial_state: on
+  trigger:
+    platform: state
+    entity_id: 
+      - sensor.intranet_dslgw_test
+      - sensor.intranet_docsisgw_test
+  action:
+#    - service: persistent_notification.create
+#      data_template:
+#        title: >
+#          {{ state_attr(trigger.entity_id,"friendly_name") }} Status
+#        notification_id: >
+#          {{ state_attr(trigger.entity_id,"friendly_name") }}
+#        message: >
+#          {{ trigger.to_state.attributes.friendly_name }} changed from {{ trigger.from_state.attributes.receive }} to {{ trigger.to_state.attributes.receive }}
+    - service: mqtt.publish
+      data_template:
+        topic: >
+          {{ "intranet/test/" + state_attr(trigger.entity_id,"friendly_name") }}
+        retain: true
+        payload: >
+          { "ipv4": {{ states.sensor.host_ip.attributes.ipv4|tojson }}, "name": {{ state_attr(trigger.entity_id,"friendly_name")|tojson }}, "date": {{ state_attr(trigger.entity_id,"date") }}, "send": {{ state_attr(trigger.entity_id,"send") }}, "receive": {{ state_attr(trigger.entity_id,"receive") }} }
 
 - id: intranet_dslgw_slow
   alias: intranet_dslgw_slow
