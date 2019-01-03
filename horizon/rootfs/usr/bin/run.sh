@@ -369,7 +369,7 @@ main() {
       hass.log.debug "Found prior configuration ${HORIZON_CONFIG_NAME}; revision ${REV}"
       URL="${URL}?rev=${REV}"
     fi
-    hass.log.info "Retrieved configuration ${HORIZON_CONFIG_NAME} with ${REV}"
+    hass.log.info $(date) "Retrieved configuration ${HORIZON_CONFIG_NAME} with ${REV}"
     # make file
     HORIZON_CONFIG_FILE="${CONFIG_DIR}/${HORIZON_CONFIG_NAME}.json"
     echo "${VALUE}" | jq '.' > "${HORIZON_CONFIG_FILE}"
@@ -377,49 +377,49 @@ main() {
       hass.log.fatal "Invalid addon configuration: ${VALUE}"
       hass.die
     fi
-    hass.log.debug "Configuration file: ${HORIZON_CONFIG_FILE}"
+    hass.log.debug $(date) "Configuration file: ${HORIZON_CONFIG_FILE}"
 
     NODES=$(${SCRIPT_DIR}/${LSNODES} "${HORIZON_CONFIG_FILE}")
-    hass.log.debug "Nodes:" $(echo "${NODES}" | jq -c '.nodes[].id')
+    hass.log.debug $(date) "Nodes:" $(echo "${NODES}" | jq -c '.nodes[].id')
 
     ## copy configuration
     cp -f "${HORIZON_CONFIG_FILE}" "${HORIZON_CONFIG_FILE}.$$"
     ## EVALUATE
     hass.log.info $(date) "${SCRIPT} on ${HORIZON_CONFIG_FILE}.$$ for ${HOST_LAN}; logging to ${SCRIPT_LOG}"
     RESULT=$(cd "${SCRIPT_DIR}" && ${SCRIPT_DIR}/${SCRIPT} "${HORIZON_CONFIG_FILE}.$$" "${HOST_LAN}" 2>> "${SCRIPT_LOG}" || true)
-    hass.log.info "Executed ${SCRIPT_DIR}/${SCRIPT} returns:" $(echo "${RESULT}" | jq -c '.')
+    hass.log.info $(date) "Executed ${SCRIPT_DIR}/${SCRIPT} returns:" $(echo "${RESULT}" | jq -c '.')
     if [ -n "${RESULT}" ]; then
       RESULT=$(echo "${RESULT}" | jq '{"nodes":.,"date":'$(date +%s)',"org":"'${HORIZON_ORGANIZATION}'","device":"'${HORIZON_DEVICE_NAME}'","configuration":"'${HORIZON_CONFIG_NAME}'"}')
-      hass.log.debug "Posting result to ${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/${SCRIPT}/result" $(echo "${RESULT}" | jq -c '.')
+      hass.log.debug $(date) "Posting result to ${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/${SCRIPT}/result" $(echo "${RESULT}" | jq -c '.')
       mosquitto_pub -r -q 2 -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/${HORIZON_CONFIG_NAME}/result" -m "${RESULT}"
     fi
     if [ -s "${HORIZON_CONFIG_FILE}.$$" ]; then
       DIFF=$(diff "${HORIZON_CONFIG_FILE}" "${HORIZON_CONFIG_FILE}.$$" | wc -c || true)
       if [[ ${DIFF} > 0 ]]; then 
 	# update configuration
-	hass.log.info "Configuration ${HORIZON_CONFIG_NAME} bytes changed: ${DIFF}; updating database"
+	hass.log.info $(date) "Configuration ${HORIZON_CONFIG_NAME} bytes changed: ${DIFF}; updating database"
 	RESULT=$(curl -sL "${URL}" -X PUT -d '@'"${HORIZON_CONFIG_FILE}.$$")
 	if [ "$(echo "${RESULT}" | jq '.ok?')" != "true" ]; then
-	  hass.log.warning "Update configuration ${HORIZON_CONFIG_NAME} failed; ${HORIZON_CONFIG_FILE}.$$" $(echo "${RESULT}" | jq '.error?')
+	  hass.log.warning $(date) "Update configuration ${HORIZON_CONFIG_NAME} failed; ${HORIZON_CONFIG_FILE}.$$" $(echo "${RESULT}" | jq '.error?')
 	else
-	  hass.log.debug "Update configuration ${HORIZON_CONFIG_NAME} succeeded:" $(echo "${RESULT}" | jq -c '.')
+	  hass.log.debug $(date) "Update configuration ${HORIZON_CONFIG_NAME} succeeded:" $(echo "${RESULT}" | jq -c '.')
 	fi
-	hass.log.info "Updated configuration: ${HORIZON_CONFIG_NAME}"
+	hass.log.info $(date) "Updated configuration: ${HORIZON_CONFIG_NAME}"
 	mv -f "${HORIZON_CONFIG_FILE}.$$" "${HORIZON_CONFIG_FILE}"
 	if [ -s "${HORIZON_CONFIG_FILE}" ]; then
 	  RESULT=$(jq '.org="'${HORIZON_ORGANIZATION}'"|.device="'${HORIZON_DEVICE_NAME}'"|.configuration="'${HORIZON_CONFIG_NAME}'"' "${HORIZON_CONFIG_FILE}")
 	  mosquitto_pub -r -q 2 -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/${HORIZON_CONFIG_NAME}/status" -m "${RESULT}"
 	fi
       else
-	hass.log.info "No updates: ${HORIZON_CONFIG_NAME}"
+	hass.log.info $(date) "No updates: ${HORIZON_CONFIG_NAME}"
       fi
     else
-      hass.log.fatal "Failed ${SCRIPT} processing; zero-length result; ${SCRIPT_LOG} from host ${HOST_IPADDR}" $(cat "${SCRIPT_LOG}")
+      hass.log.fatal $(date) "Failed ${SCRIPT} processing; zero-length result; ${SCRIPT_LOG} from host ${HOST_IPADDR}" $(cat "${SCRIPT_LOG}")
       hass.die
     fi
 
     ## SLEEP
-    hass.log.info "Sleeping ${REFRESH}"
+    hass.log.info $(date) "Sleeping ${REFRESH}"
     sleep ${REFRESH}
   done
 
