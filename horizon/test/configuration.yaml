@@ -1922,5 +1922,5 @@ sensor intranet_compare:
         value_template: >
           {% if states.sensor.intranet_send_delta_statistics_mean is defined and states.sensor.intranet_send_delta_statistics_mean.attributes.standard_deviation != null
              and states.sensor.intranet_send_delta is defined and states.sensor.intranet_send_delta.state != null %}
-            {{ '%0.2f' | format(states.sensor.intranet_send_delta.state / states.sensor.intranet_send_delta_statistics_mean.attributes.standard_deviation) }}
+            {{ '%0.2f' | format((states.sensor.intranet_send_delta.state|float) / states.sensor.intranet_send_delta_statistics_mean.attributes.standard_deviation) }}
           {%- else -%}null{%- endif -%}
