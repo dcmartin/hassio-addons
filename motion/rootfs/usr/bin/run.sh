@@ -691,12 +691,13 @@ USERNAME=$(jq -r ".cloudant.username" "${CONFIG_PATH}")
 PASSWORD=$(jq -r ".cloudant.password" "${CONFIG_PATH}")
 if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "null" ] && [ ! -z "${URL}" ] && [ ! -z "${USERNAME}" ] && [ ! -z "${PASSWORD}" ]; then
   echo "Testing CLOUDANT" >&2
-  OK=$(curl -sL "${URL}" -u "${USERNAME}:${PASSWORD}" | jq -r '.couchdb')
-  if [ "${OK}" == "null" ] || [ -z "${OK}" ]; then
-    echo "Cloudant failed at ${URL} with ${USERNAME} and ${PASSWORD}; exiting" >&2
+  OK=$(curl -sL "${URL}" | jq '.couchdb?!=null')
+  if [ "${OK}" == "false" ]; then
+    echo "Cloudant failed at ${URL}; exiting" >&2
     exit
   else
     export MOTION_CLOUDANT_URL="${URL%:*}"'://'"${USERNAME}"':'"${PASSWORD}"'@'"${USERNAME}"."${URL#*.}"
+    echo "Cloudant succeeded at ${MOTION_CLOUDANT_URL}; exiting" >&2
   fi
   URL="${MOTION_CLOUDANT_URL}/${MOTION_DEVICE_DB}"
   DB=$(curl -sL "${URL}" | jq -r '.db_name')
