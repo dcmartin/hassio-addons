@@ -3,7 +3,7 @@ APP="hzn"
 API="exchange-nodes"
 DEBUG="true"
 
-if [ -z ${TMP:-} ]; then TMP="/tmp"; fi
+if [ -z ${TMP:-} ]; then TMP="/tmpfs"; fi
 if [ -z ${LOGTO:-} ]; then LOGTO=$TMP/$APP.log; fi
 if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- START" >> $LOGTO 2>&1; fi
 

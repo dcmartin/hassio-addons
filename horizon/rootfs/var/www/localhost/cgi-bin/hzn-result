@@ -58,22 +58,17 @@ if [ -z "${MQTT_PORT:-}" ]; then
   echo "$0 $$ -- ERROR: cannot determine mqtt port" >> $LOGTO 2>&1
   exit 1
 fi
-MQTT_USERNAME=$(jq -r ".mqtt.username" "${ADDON_CONFIG_FILE}")
-if [ -z "${MQTT_USERNAME:-}" ]; then
-  echo "$0 $$ -- ERROR: cannot determine mqtt username" >> $LOGTO 2>&1
-  exit 1
+VALUE=$(jq -r ".mqtt.username" "${ADDON_CONFIG_FILE}")
+if [ ! -z "${VALUE:-}" ]; then
+  MQTT_USERPASS="${VALUE}"':'$(jq -r ".mqtt.password" "${ADDON_CONFIG_FILE}")
+els
+  MQTT_USERPASS=
 fi
-MQTT_PASSWORD=$(jq -r ".mqtt.password" "${ADDON_CONFIG_FILE}")
-if [ -z "${MQTT_PASSWORD:-}" ]; then
-  echo "$0 $$ -- ERROR: cannot determine mqtt password" >> $LOGTO 2>&1
-  exit 1
-fi
-
 if [ -z "${MQTT_TIMEOUT:-}" ]; then MQTT_TIMEOUT=1; fi
 
 if [ ! -s "${OUTPUT}" ]; then
   rm -f "${OUTPUT%%.*}".*
-  mosquitto_sub -C 1 -W ${MQTT_TIMEOUT} -t ${MQTT_TOPIC} -h ${MQTT_HOST} -u ${MQTT_USERNAME}:${MQTT_PASSWORD} > "${OUTPUT}"
+  mosquitto_sub -C 1 -W ${MQTT_TIMEOUT} -t ${MQTT_TOPIC} -h ${MQTT_HOST} ${MQTT_USERPASS} > "${OUTPUT}"
 fi
 
 #
