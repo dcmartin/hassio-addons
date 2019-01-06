@@ -72,7 +72,7 @@ if [[ $(echo "${result}" | jq '.nodes==null') == 'false' ]]; then
   nodes=$(echo "${result}" | jq '.nodes')
   names=$(echo "${nodes}" | jq '[ . | objects | keys[]] | unique' | jq -r '.[]')
   i=0
-  echo '{"nodes":[' > "${OUTPUT}"
+  echo '{"org":"'${HORIZON_ORG}'","url":"'${HORIZON_EXCHANGE_URL}'","nodes":[' > "${OUTPUT}"
   for name in $names; do
     if [ $i -gt 0 ]; then echo ',' >> "${OUTPUT}"; fi; i=$((i+1))
     echo "${nodes}" | jq '."'"${name}"'"|.id="'${name}'"' >> "${OUTPUT}"

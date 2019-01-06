@@ -1,20 +1,11 @@
 #!/bin/bash
 APP="hzn"
-API="nodes"
+API="result"
 DEBUG="true"
 
 if [ -z ${TMP:-} ]; then TMP="/tmpfs"; fi
 if [ -z ${LOGTO:-} ]; then LOGTO=$TMP/$APP.log; fi
 if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- START" >> $LOGTO 2>&1; fi
-
-if [ -z ${CU:-} ]; then CU="${HORIZON_CLOUDANT_URL}"; fi
-
-# use the config database
-DB="${APP}-config"
-if [ -z ${DB:-} ]; then DB="${APP}-${API}"; fi
-
-JQ='{"nodes":.nodes}'
-if [ -z ${JQ:-} ]; then JQ='.'; fi
 
 ###
 ### dateutils REQUIRED
@@ -39,68 +30,50 @@ DATE=$(echo $SECONDS \/ $TTL \* $TTL | bc)
 if [ -n ${QUERY_STRING:-} ]; then
     id=$(echo "$QUERY_STRING" | sed 's/.*id=\([^&]*\).*/\1/')
     if [[ $id == "$QUERY_STRING" ]]; then id=""; fi
+    sh=$(echo "$QUERY_STRING" | sed 's/.*sh=\([^&]*\).*/\1/')
+    if [[ $sh == "$QUERY_STRING" ]]; then sh=""; fi
 fi
 
-if [ -z ${id:-} ]; then id="all"; fi
+if [ -z ${id:-} ]; then id="+"; fi
+if [ -z ${sh:-} ]; then sh="+"; fi
 
 # standardize QUERY_STRING (rendezvous w/ APP-make-API.csh script)
-export QUERY_STRING="id=$id"
-
-##
-## ACCESS CLOUDANT
-##
-
-# output target
+export QUERY_STRING="id=$id&sh=$sh"
 OUTPUT="$TMP/$APP-$API-$QUERY_STRING.$DATE.json"
-# test if been-there-done-that
-if [ ! -s "$OUTPUT" ]; then 
-  rm -f "${OUTPUT%%.*}".*
 
-  # find devices
-  if [ $id == "all" ]; then
-    if [ -n "${DEBUG:-}" ]; then echo $(date) "$0 $$ ++ Attempting to retrieve devices from ($url)" >> $LOGTO 2>&1; fi
-    devices=$(curl -s -q -L "$CU/$DB/_all_docs" | jq -r '.rows[]?.id')
-    if [[ -z "${devices}" ]]; then
-      if [ -n "${DEBUG:-}" ]; then echo $(date) "$0 $$ ++ Could not retrieve list of devices from ($url)" >> $LOGTO 2>&1; fi
-    fi
-  else
-    devices=$id
-  fi
-
-  if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ ++ Devices in DB ($devices)" >> $LOGTO 2>&1; fi
-
-  k=0
-  all='{"date":'"$DATE"',"'$API'":['
-
-  for d in $devices; do
-    # get device entry
-    url="$CU/$DB/$d"
-    out="$TMP/$APP-$API-$$.json"
-    curl -sL "$url" -o "$out"
-    if [ ! -s "$out" ]; then
-      if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ ++ FAILURE ($d)" $(ls -al $out) >> $LOGTO 2>&1; fi
-      rm -f "$out"
-      continue
-    fi
-    if [ "$id" != "all" ] && [ "$d" == "$id" ]; then
-      jq "${JQ}"  "$out" > "$OUTPUT"
-      rm -f "$out"
-      break
-    elif [ $id == "all" ]; then
-      json=$(jq '{"id":._id}' "$out")
-      rm -f "$out"
-    else
-      json=""
-    fi
-    if [ $k -gt 0 ]; then all="$all"','; fi
-    k=$((k+1))
-    if [ -n "${json:-}" ]; then all="${all}${json}"; fi
-  done
-  all="$all"']}'
+## ADDON CONFIGURATION INFORMATION
+if [ -z "${ADDON_CONFIG_FILE:-}" ] || [ ! -s "${ADDON_CONFIG_FILE:-}" ]; then
+  echo "$0 $$ -- ERROR: cannot find addon configuration file: ${ADDON_CONFIG_FILE:-}" >> $LOGTO 2>&1
+  exit 1
 fi
 
+## MQTT CONFIGURATION INFORMATION
+MQTT_HOST=$(jq -r ".mqtt.host" "${ADDON_CONFIG_FILE}")
+if [ -z "${MQTT_HOST:-}" ]; then
+  echo "$0 $$ -- ERROR: cannot determine mqtt host" >> $LOGTO 2>&1
+  exit 1
+fi
+MQTT_PORT=$(jq -r ".mqtt.port" "${ADDON_CONFIG_FILE}")
+if [ -z "${MQTT_PORT:-}" ]; then
+  echo "$0 $$ -- ERROR: cannot determine mqtt port" >> $LOGTO 2>&1
+  exit 1
+fi
+MQTT_USERNAME=$(jq -r ".mqtt.username" "${ADDON_CONFIG_FILE}")
+if [ -z "${MQTT_USERNAME:-}" ]; then
+  echo "$0 $$ -- ERROR: cannot determine mqtt username" >> $LOGTO 2>&1
+  exit 1
+fi
+MQTT_PASSWORD=$(jq -r ".mqtt.password" "${ADDON_CONFIG_FILE}")
+if [ -z "${MQTT_PASSWORD:-}" ]; then
+  echo "$0 $$ -- ERROR: cannot determine mqtt password" >> $LOGTO 2>&1
+  exit 1
+fi
+
+if [ -z "${MQTT_TIMEOUT:-}" ]; then MQTT_TIMEOUT=1; fi
+
 if [ ! -s "${OUTPUT}" ]; then
-  echo "$all" | jq -c '.' > "$OUTPUT"
+  rm -f "${OUTPUT%%.*}".*
+  mosquitto_sub -C 1 -W ${MQTT_TIMEOUT} -t ${MQTT_TOPIC} -h ${MQTT_HOST} -u ${MQTT_USERNAME}:${MQTT_PASSWORD} > "${OUTPUT}"
 fi
 
 #
@@ -120,14 +93,14 @@ if [ -z ${output:-} ] && [ -s "$OUTPUT" ]; then
   echo "Cache-Control: max-age=$TTL"
   echo "Last-Modified:" $($dateconv -i '%s' -f '%a, %d %b %Y %H:%M:%S %Z' $DATE)
   echo ""
-  jq -c '.date='"${DATE}" "$OUTPUT"
+  jq -c '.' "$OUTPUT"
   if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- output $OUTPUT Age: $age Refresh: $refresh" >> $LOGTO 2>&1; fi
 else
   echo "Cache-Control: no-cache"
   echo "Last-Modified:" $($dateconv -i '%s' -f '%a, %d %b %Y %H:%M:%S %Z' $DATE)
   echo ""
   if [ -n ${output:-} ]; then
-    echo "$output" | jq '.date='"${DATE}"
+    echo "$output"
   else
     echo '{ "error": "not found" }'
   fi

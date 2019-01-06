@@ -22,7 +22,7 @@ elif [ -e /usr/bin/dateconv ]; then
 elif [ -e /usr/local/bin/dateconv ]; then
    dateconv=/usr/local/bin/dateconv
 else
-  echo "No date converter; install dateutils" &> /dev/stderr
+  echo "No date converter; install dateutils" >> $LOGTO 2>&1
   exit 1
 fi
 
