@@ -7,63 +7,60 @@
 </head>
 
 <script>
-var devreq = new XMLHttpRequest();
-devreq.onreadystatechange = function() {
+var hzncfg = new XMLHttpRequest();
+hzncfg.onreadystatechange = function() {
   if (this.readyState == 4 && this.status == 200 && this.responseText != null) {
     var jobj = JSON.parse(this.responseText);
+    if (jobj != null) {
+      if (jobj["error"] != null) {
+	console.log(jobj.error);
+      } else if (jobj.config != null) {
+	config.innerHTML += '<hr>'
+	jobj.config.forEach(function(item,index) {
+	  config.innerHTML += '<h2>' + item.id + '</h2><div id="' + item.id + '"></div>'
 
-    jobj.configs.forEach(function(item,index) {
-      configs.innerHTML += '<h2>CONFIGURATION: ' + item._id+ '</h2>';
-      configs.innerHTML += '<ul>'
-      configs.innerHTML += '<li><a href="/cgi-bin/hzn-configView?id=' + item._id+ '">View</a> configuration details&nbsp;';
-      configs.innerHTML += '<li><a href="/cgi-bin/hzn-configChange?id=' + item._id+ '">Change</a> configuration pattern&nbsp;';
-      configs.innerHTML += '</ul>';
-    });
-    jobj.configs.forEach(function(item,index) {
-      var nodreq = new XMLHttpRequest();
-      nodreq.onreadystatechange = function() {
-        if (this.readyState == 4 && this.status == 200 && this.responseText != null) {
-          var jobj = JSON.parse(this.responseText);
+	  var cfgreq = new XMLHttpRequest();
+	  cfgreq.onreadystatechange = function() {
+            if (this.readyState == 4 && this.status == 200 && this.responseText != null) {
+	      var jobj = JSON.parse(this.responseText);
 
-          if (jobj != null) {
-            if (jobj["error"] != null) {
-              console.log(jobj.error);
-            } else if (jobj.models != null) {
-              console.log(jobj.models);
-              jobj.models.forEach(function(model,index){
-                did = model.device + '_models';
-                mod = document.getElementById(did)
-                mod.innerHTML += '<li><a href="/hzn-node.html?id=' + model.model + '">' + model.model + '</a>' 
-              });
-            }
-          } else {
-            console.log('null JSON object');
-          }
-        } else {
-          console.log('null responseText');
-        }
+	      if (jobj != null) {
+		if (jobj["error"] != null) {
+		  console.log(jobj.error);
+		} else if (jobj.nodes != null) {
+                  cid = document.getElementById(item.id);
+		  cid.innerHTML += '<h3>NODES</h3>'
+		  jobj.nodes.forEach(function(node,index){
+                    if (node.ipv4) {
+		      cid.innerHTML += '<p>'
+		      cid.innerHTML += 'id: ' + node.id + ',ipv4: ' + node.ipv4
+		      if (node.node != null) {
+                        cid.innerHTML += ' { node:' + node.node.id + ',name:' + node.node.name + ',state:' + node.node.configstate.state + ',updated:' + node.node.configstate.last_update_time + ' }'
+		      } else {
+                        cid.innerHTML += ' <i>UNCONFIGURED</i>'
+                      }
+		      cid.innerHTML += '<p>'
+                    }
+		  });
+		  cid.innerHTML += '<hr>'
+		}
+	      } else {
+		console.log('null JSON object');
+	      }
+	    } else {
+	      console.log('null responseText');
+	    }
+	  }
+	  cfgreq.open("GET","/cgi-bin/hzn-config?id=" + item.id, true);
+	  cfgreq.send();
+	});
+	config.innerHTML += '<br>'
       }
-      nodreq.open("GET","/cgi-bin/hzn-node?id=" + item.name, true);
-      nodreq.send();
-    });
+    }
   }
 }
-devreq.open("GET","/cgi-bin/hzn-config", true);
-devreq.send();
-</script>
-
-<script>
-var matreq = new XMLHttpRequest();
-matreq.onreadystatechange = function() {
-  if (this.readyState == 4 && this.status == 200 && this.responseText != null) {
-    var jobj = JSON.parse(this.responseText);
-
-    <!-- jobj.models.forEach(function(item,index){ models.innerHTML = models.innerHTML + "matrix#" + index + ": " + item + "<br>" }); -->
-    jobj.models.forEach(function(item,index){ models.innerHTML = models.innerHTML + '<a href="/hzn-node.html?id=' + item + '">' + item + '</a><br>' });
-  }
-}
-matreq.open("GET","/cgi-bin/hzn-nodes", true);
-matreq.send();
+hzncfg.open("GET","/cgi-bin/hzn-config", true);
+hzncfg.send();
 </script>
 
 <script>
@@ -74,28 +71,24 @@ window.onload = function () {
   site = rfr[2].split(':');
   port = site[1];
   site = site[0];
-  cid = document.getElementById("controls");
-  cid.href = prot + "//" + site + ":8080/";
-  cid = document.getElementById("data");
-  cid.href = prot + "//" + site + ":7999/cameras";
-  cid = document.getElementById("cameras");
+  cid = document.getElementById("threads");
+  cid.href = prot + "//" + site + ":8999/threads";
+  cid = document.getElementById("datasets");
+  cid.href = prot + "//" + site + ":7999/datasets";
+  cid = document.getElementById("lovelace");
   cid.href = prot + "//" + site + ":8123/" + "lovelace";
 }
 
 </script>
 
 <body>
-
 <h1>Horizon Control</h1>
+<h2>Configurations</h2><div id="config"></div>
+<h3>Operations</h3><div id="operations"></div>
 <ul>
-<li><h2><a id="cameras" href="">Nodes</a></h1><div id="lovelace"></div></li>
-<li><h2><a id="controls" href="">Controls</a></h1><div id="threads"></div></li>
-<li><h2><a id="data" href="">Data</a></h1><div id="datasets"></div></li>
+<li><a id="threads" href="">Threads</a><div id="threads"></div></li>
+<li><a id="datasets" href="">Datasets</a><div id="datasets"></div></li>
+<li><a id="lovelace" href="">Lovelace</a><div id="lovelace"></div></li>
 </ul>
-
-<h1>CONFIGURATIONS</h1><div id="configs"></div>
-
-<h1>NODES</h1><div id="nodes"></div>
-
 </body>
 </html>

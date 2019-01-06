@@ -1,7 +1,7 @@
-{
+{ 
   "name": "Horizon Control",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/horizon",
-  "version": "0.1.101",
+  "version": "0.1.102",
   "slug": "horizon",
   "description": "Control UX for Open Horizon (http://github.com/dcmartin/open-horizon)",
   "startup": "before",
@@ -23,6 +23,9 @@
   ],
   "timeout": 90,
   "tmpfs": "size=256m,uid=0,rw",
+  "ports": {
+    "9999/tcp": 9999
+  },
   "map": [
     "share:rw",
     "config:rw"
