@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -v
 APP="hzn"
 API="result"
 DEBUG="true"
@@ -38,8 +38,7 @@ if [ -z ${id:-} ]; then id="+"; fi
 if [ -z ${sh:-} ]; then sh="+"; fi
 
 # standardize QUERY_STRING (rendezvous w/ APP-make-API.csh script)
-export QUERY_STRING="id=$id&sh=$sh"
-OUTPUT="$TMP/$APP-$API-$QUERY_STRING.$DATE.json"
+export QUERY_STRING="id=${id}&sh=${sh}"
 
 ## ADDON CONFIGURATION INFORMATION
 if [ -z "${ADDON_CONFIG_FILE:-}" ] || [ ! -s "${ADDON_CONFIG_FILE:-}" ]; then
@@ -47,32 +46,60 @@ if [ -z "${ADDON_CONFIG_FILE:-}" ] || [ ! -s "${ADDON_CONFIG_FILE:-}" ]; then
   exit 1
 fi
 
+## HORIZON ORG
+HORIZON_ORG=$(jq -r '.horizon.org' "${ADDON_CONFIG_FILE}")
+if [ -z "${HORIZON_ORG}" ]; then
+  echo "$0 $$ -- ERROR: cannot determine horizon org" >> $LOGTO 2>&1
+  exit 1
+else
+  if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- HORIZON_ORG is ${HORIZON_ORG}" >> $LOGTO 2>&1; fi
+fi
+
 ## MQTT CONFIGURATION INFORMATION
 MQTT_HOST=$(jq -r ".mqtt.host" "${ADDON_CONFIG_FILE}")
 if [ -z "${MQTT_HOST:-}" ]; then
   echo "$0 $$ -- ERROR: cannot determine mqtt host" >> $LOGTO 2>&1
   exit 1
+else
+  if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- MQTT_HOST is ${MQTT_HOST}" >> $LOGTO 2>&1; fi
 fi
 MQTT_PORT=$(jq -r ".mqtt.port" "${ADDON_CONFIG_FILE}")
 if [ -z "${MQTT_PORT:-}" ]; then
-  echo "$0 $$ -- ERROR: cannot determine mqtt port" >> $LOGTO 2>&1
-  exit 1
+  MQTT_PORT=1883
+  echo "$0 $$ -- WARN: default MQTT port ${MQTT_PORT}" >> $LOGTO 2>&1
+else
+  if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- MQTT_PORT is ${MQTT_PORT}" >> $LOGTO 2>&1; fi
 fi
 VALUE=$(jq -r ".mqtt.username" "${ADDON_CONFIG_FILE}")
 if [ ! -z "${VALUE:-}" ]; then
-  MQTT_USERPASS="${VALUE}"':'$(jq -r ".mqtt.password" "${ADDON_CONFIG_FILE}")
-els
+  MQTT_USERPASS="-u ${VALUE}" "-P $(jq -r '.mqtt.password' ${ADDON_CONFIG_FILE})"
+else
   MQTT_USERPASS=
 fi
-if [ -z "${MQTT_TIMEOUT:-}" ]; then MQTT_TIMEOUT=1; fi
+if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- MQTT_USERPASS ${MQTT_USERPASS}" >> $LOGTO 2>&1; fi
 
+if [ -z "${MQTT_TIMEOUT:-}" ]; then MQTT_TIMEOUT=1; fi
+if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- MQTT_TIMEOUT ${MQTT_TIMEOUT}" >> $LOGTO 2>&1; fi
+
+if [ -z "${MQTT_TOPIC:-}" ]; then MQTT_TOPIC="${HORIZON_ORG}/${id}/${sh}/result"; fi
+if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- MQTT_TOPIC ${MQTT_TOPIC}" >> $LOGTO 2>&1; fi
+
+###
+### OUTPUT
+###
+
+OUTPUT="$TMP/$APP-$API-$QUERY_STRING.$DATE.json"
+if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- OUTPUT ${OUTPUT}" >> $LOGTO 2>&1; fi
 if [ ! -s "${OUTPUT}" ]; then
   rm -f "${OUTPUT%%.*}".*
-  mosquitto_sub -C 1 -W ${MQTT_TIMEOUT} -t ${MQTT_TOPIC} -h ${MQTT_HOST} ${MQTT_USERPASS} > "${OUTPUT}"
+  # if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- MQTT -- mosquitto_sub -C 1 -W ${MQTT_TIMEOUT} -t ${MQTT_TOPIC} -h ${MQTT_HOST} ${MQTT_USERPASS}" >> $LOGTO 2>&1; fi
+  # mosquitto_sub -C 1 -W ${MQTT_TIMEOUT} -t ${MQTT_TOPIC} -h ${MQTT_HOST} ${MQTT_USERPASS} > "${OUTPUT}"
+  if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- MQTT -- mosquitto_sub -C 1 -t ${MQTT_TOPIC} -h ${MQTT_HOST} ${MQTT_USERPASS}" >> $LOGTO 2>&1; fi
+  mosquitto_sub -C 1 -t ${MQTT_TOPIC} -h ${MQTT_HOST} ${MQTT_USERPASS} > "${OUTPUT}"
 fi
 
 #
-# output
+# respond
 #
 
 echo "Content-Type: application/json; charset=utf-8"
