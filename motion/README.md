@@ -113,6 +113,10 @@ The maximum time in seconds that will comprise an event; measured backward from 
 The Motion package has extensive [documentation][motiondoc] on available parameters.  Almost all parameters are avsailable.
 The JSON configuration options are provided using the same name as in the Motion documentation.
 
+# Sample output
+
+![motion sample](motion-sample.png?raw=true "MOTION")
+
 ## Changelog & Releases
 
 Releases are based on Semantic Versioning, and use the format
