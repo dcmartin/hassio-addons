@@ -31,9 +31,9 @@ hzncfg.onreadystatechange = function() {
                   cid = document.getElementById(item.id);
 		  cid.innerHTML += '<h3>NODES</h3>'
 		  jobj.nodes.forEach(function(node,index){
+		    cid.innerHTML += '<p>id: ' + node.id + '[' node.mac ']'
                     if (node.ipv4) {
-		      cid.innerHTML += '<p>'
-		      cid.innerHTML += 'id: ' + node.id + ',ipv4: ' + node.ipv4
+		      cid.innerHTML += ',ipv4: ' + node.ipv4
 		      if (node.node != null) {
                         cid.innerHTML += ' { node:' + node.node.id + ',name:' + node.node.name + ',state:' + node.node.configstate.state + ',updated:' + node.node.configstate.last_update_time + ' }'
 		      } else {
