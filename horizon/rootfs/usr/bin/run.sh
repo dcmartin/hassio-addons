@@ -62,7 +62,7 @@ main() {
   # LISTEN 
   VALUE=$(hass.config.get "listen")
   if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then VALUE="only"; hass.log.warning "Using default listen: ${VALUE}"; fi
-  ADDON_CONFIG="${ADDON_CONFIG}"',"refresh":'"${VALUE}"
+  ADDON_CONFIG="${ADDON_CONFIG}"',"listen":'"${VALUE}"
 
   ## HORIZON
   VALUE=$(hass.config.get "horizon.org")
