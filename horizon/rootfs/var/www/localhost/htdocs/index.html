@@ -13,48 +13,49 @@ hzncfg.onreadystatechange = function() {
     var jobj = JSON.parse(this.responseText);
     if (jobj != null) {
       if (jobj["error"] != null) {
-	console.log(jobj.error);
+        console.log(jobj.error);
       } else if (jobj.config != null) {
-	config.innerHTML += '<hr>'
-	jobj.config.forEach(function(item,index) {
-	  config.innerHTML += '<h2>' + item.id + '</h2><div id="' + item.id + '"></div>'
-
-	  var cfgreq = new XMLHttpRequest();
-	  cfgreq.onreadystatechange = function() {
+        config.innerHTML += '<hr>'
+        jobj.config.forEach(function(item,index) {
+          config.innerHTML += '<h2>Configuration ' + item.id + '</h2><div id="' + item.id + '"></div>';
+          var cfgreq = new XMLHttpRequest();
+          cfgreq.onreadystatechange = function() {
             if (this.readyState == 4 && this.status == 200 && this.responseText != null) {
-	      var jobj = JSON.parse(this.responseText);
-
-	      if (jobj != null) {
-		if (jobj["error"] != null) {
-		  console.log(jobj.error);
-		} else if (jobj.nodes != null) {
+              var jobj = JSON.parse(this.responseText);
+              if (jobj != null) {
+                if (jobj["error"] != null) {
+                  console.log(jobj.error);
+                } else if (jobj.nodes != null) {
                   cid = document.getElementById(item.id);
-		  cid.innerHTML += '<h3>NODES</h3>'
-		  jobj.nodes.forEach(function(node,index){
-		    cid.innerHTML += '<p>id: ' + node.id + '[' node.mac ']'
+                  cid.innerHTML += '<h3>Nodes in configuration ' + item.id + '</h3>';
+                  jobj.nodes.forEach(function(node,index) {
+                    cid.innerHTML += '<p><b>id:</b> ' + node.id + ' [' + node.mac + ']';
                     if (node.ipv4) {
-		      cid.innerHTML += ',ipv4: ' + node.ipv4
-		      if (node.node != null) {
-                        cid.innerHTML += ' { node:' + node.node.id + ',name:' + node.node.name + ',state:' + node.node.configstate.state + ',updated:' + node.node.configstate.last_update_time + ' }'
-		      } else {
-                        cid.innerHTML += ' <i>UNCONFIGURED</i>'
+                      cid.innerHTML += '<i>ipv4</i>: ' + node.ipv4 + '&nbsp;';
+                      if (node.node != null) {
+                        cid.innerHTML += '<a href="/cgi-bin/hzn-exchange-nodes?id=' + node.node.name + '">' + node.node.name + '</a>&nbsp;';
+                        cid.innerHTML += '<a href="http://' + node.ipv4 + ':8080/">Video</a>&nbsp;';
+                        cid.innerHTML += '<a href="http://' + node.ipv4 + ':8081/">Ctrls</a>&nbsp;';
+                        cid.innerHTML += '<code> { node:' + node.node.id + ',name:' + node.node.name + ',state:' + node.node.configstate.state + ',updated:' + node.node.configstate.last_update_time + ' }</code>';
+                      } else {
+                        cid.innerHTML += ' <i>UNCONFIGURED</i>';
                       }
-		      cid.innerHTML += '<p>'
+                      cid.innerHTML += '<p>';
                     }
-		  });
-		  cid.innerHTML += '<hr>'
-		}
-	      } else {
-		console.log('null JSON object');
-	      }
-	    } else {
-	      console.log('null responseText');
-	    }
-	  }
-	  cfgreq.open("GET","/cgi-bin/hzn-config?id=" + item.id, true);
-	  cfgreq.send();
-	});
-	config.innerHTML += '<br>'
+                  });
+                  cid.innerHTML += '<hr>';
+                }
+              } else {
+                console.log('null JSON object');
+              }
+            } else {
+              console.log('null responseText');
+            }
+          }
+          cfgreq.open("GET","/cgi-bin/hzn-config?id=" + item.id, true);
+          cfgreq.send();
+        });
+        config.innerHTML += '<br>';
       }
     }
   }

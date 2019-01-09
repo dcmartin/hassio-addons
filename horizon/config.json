@@ -1,7 +1,7 @@
 { 
   "name": "Horizon Control",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/horizon",
-  "version": "0.1.105",
+  "version": "0.1.106",
   "slug": "horizon",
   "description": "Control UX for Open Horizon (http://github.com/dcmartin/open-horizon)",
   "startup": "before",
@@ -32,6 +32,7 @@
   ],
   "options": {
     "log_level": "info",
+    "listen": "only",
     "timezone": "America/Los_Angeles",
     "unit_system": "imperial",
     "latitude": 16.775532,
@@ -52,11 +53,12 @@
       "org": "",
       "apikey": "",
       "url": "https://alpha.edge-fabric.com/v1",
-      "config": "58f38eddf709fc04ba55019da9cc1913"
+      "config": ""
     }
   },
   "schema": {
     "log_level": "match(^(trace|debug|info|notice|warning|error|fatal)$)",
+    "listen": "match(^(true|false|only)$)?",
     "timezone": "str?",
     "unit_system": "match(^(imperial|metric)$)?",
     "latitude": "float?",
@@ -79,7 +81,7 @@
       "org": "str",
       "apikey": "str",
       "url": "url",
-      "config": "str"
+      "config": "str?"
     }
   },
   "environment": {

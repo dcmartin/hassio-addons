@@ -59,6 +59,11 @@ main() {
   if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then VALUE="900"; hass.log.warning "Using default refresh: ${VALUE}"; fi
   ADDON_CONFIG="${ADDON_CONFIG}"',"refresh":'"${VALUE}"
 
+  # LISTEN 
+  VALUE=$(hass.config.get "listen")
+  if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then VALUE="only"; hass.log.warning "Using default listen: ${VALUE}"; fi
+  ADDON_CONFIG="${ADDON_CONFIG}"',"refresh":'"${VALUE}"
+
   ## HORIZON
   VALUE=$(hass.config.get "horizon.org")
   if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then hass.log.fatal "No horizon organization"; hass.die; fi
@@ -80,7 +85,7 @@ main() {
   ADDON_CONFIG="${ADDON_CONFIG}"',"device":"'"${VALUE}"'"'
   # CONFIG
   VALUE=$(hass.config.get "horizon.config")
-  if [[ -z "${VALUE}" || "${VALUE}" == "null" ]]; then hass.log.warning "No horizon configuration"; fi
+  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE=; hass.log.warning "No horizon configuration"; fi
   ADDON_CONFIG="${ADDON_CONFIG}"',"config":"'"${VALUE}"'"'
   ## DONE w/ HORIZON
   ADDON_CONFIG="${ADDON_CONFIG}"'}'
@@ -106,7 +111,7 @@ main() {
 
   ## DONE w/ ADDON_CONFIG
   ADDON_CONFIG="${ADDON_CONFIG}"'}'
-  hass.log.debug "CONFIGURATION:" $(echo "${ADDON_CONFIG}" | jq -c '.')
+  hass.log.trace "CONFIGURATION:" $(echo "${ADDON_CONFIG}" | jq -c '.')
 
   ## ADDON CONFIGURATION
   HORIZON_ORGANIZATION=$(echo "${ADDON_CONFIG}" | jq -r '.horizon.org')
@@ -121,10 +126,10 @@ main() {
     hass.log.fatal "Invalid addon configuration: ${ADDON_CONFIG}"
     hass.die
   else
-    hass.log.info "Valid addon configuration: ${ADDON_CONFIG_FILE}"
+    hass.log.debug "Valid addon configuration: ${ADDON_CONFIG_FILE}"
   fi
   # report success
-  hass.log.info "Configuration for ${HORIZON_DEVICE_NAME} at ${ADDON_CONFIG_FILE}" $(jq -c '.' "${ADDON_CONFIG_FILE}") >&2
+  hass.log.debug "Configuration for ${HORIZON_DEVICE_NAME} at ${ADDON_CONFIG_FILE}" $(jq -c '.' "${ADDON_CONFIG_FILE}") >&2
 
   ##
   ## CLOUDANT
