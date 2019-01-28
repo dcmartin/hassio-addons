@@ -817,7 +817,7 @@ sensor horizon:
           {% else %}null{% endif %}
   - platform: rest
     name: horizon_exchange_status
-    resource: !secret exchange_status
+    resource: https://alpha.edge-fabric.com/v1/admin/status
     method: GET
     authentication: basic
     username: !secret exchange_auth

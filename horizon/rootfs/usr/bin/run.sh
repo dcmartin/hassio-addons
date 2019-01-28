@@ -336,14 +336,14 @@ main() {
   SCRIPT="init-devices.sh"
   LSNODES="lsnodes.sh"
   SCRIPT_DIR="${CONFIG_DIR}/${SCRIPT%.*}"
-  SCRIPT_LOG="${SCRIPT_DIR}/${SCRIPT}.$(date +%s).log"
+  SCRIPT_LOG="${SCRIPT_DIR}/${SCRIPT}.$$.log"
   SCRIPT_URL="https://raw.githubusercontent.com/dcmartin/open-horizon/master/setup"
   TMPLS="config-ssh.tmpl ssh-copy-id.tmpl wpa_supplicant.tmpl"
   FILES="${SCRIPT} ${TMPLS} lsnodes.sh"
 
   # make working directory
   hass.log.trace "Creating ${SCRIPT_DIR}"
-  mkdir -p "${SCRIPT_DIR}"
+  rm -fr "${SCRIPT_DIR}" || mkdir -p "${SCRIPT_DIR}"
 
   # get all the files
   hass.log.debug "Retrieving ${FILES} from ${SCRIPT_URL}"
@@ -422,6 +422,7 @@ main() {
       hass.log.fatal $(date) "Failed ${SCRIPT} processing; zero-length result; ${SCRIPT_LOG} from host ${HOST_IPADDR}" $(cat "${SCRIPT_LOG}")
       hass.die
     fi
+    rm -f ${SCRIPT_LOG}
 
     ## SLEEP
     hass.log.info $(date) "Sleeping ${REFRESH}"
