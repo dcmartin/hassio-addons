@@ -343,7 +343,8 @@ main() {
 
   # make working directory
   hass.log.trace "Creating ${SCRIPT_DIR}"
-  rm -fr "${SCRIPT_DIR}" || mkdir -p "${SCRIPT_DIR}"
+  rm -fr "${SCRIPT_DIR}"
+  mkdir -p "${SCRIPT_DIR}"
 
   # get all the files
   hass.log.debug "Retrieving ${FILES} from ${SCRIPT_URL}"
