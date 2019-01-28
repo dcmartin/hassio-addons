@@ -1199,7 +1199,7 @@ binary_sensor internet_test:
 
 sensor motion_sensors:
   - platform: mqtt
-    name: motion_configuration_localhost
+    name: motion_localhost_start
     state_topic: 'motion/newman/start'
     json_attributes:
       - unit_system
@@ -1224,7 +1224,7 @@ sensor motion_sensors:
     value_template: >
       {% if value_json is defined %}True{% else %}null{% endif %}
   - platform: mqtt
-    name: motion_configuration_network
+    name: motion_network_start
     state_topic: 'motion/+/start'
     json_attributes:
       - unit_system
@@ -1317,37 +1317,37 @@ sensor motion_sensors:
           {% if states.sensor.motion_event_end is defined and states.sensor.motion_event_end.attributes.date is defined %}
             From {{ states.sensor.motion_event_end.attributes.device }} at {{ states.sensor.motion_event_end.attributes.date | timestamp_custom("%a %b %d %I:%M %p") }}
           {% else %} null {% endif %}
-      motion_configuration_localhost_camera_count:
+      motion_localhost_start_camera_count:
         entity_id:
-          - sensor.motion_configuration_localhost
+          - sensor.motion_localhost_start
         value_template: >-
-          {% if states.sensor.motion_configuration_localhost.attributes.cameras is defined %}
-            {{ states.sensor.motion_configuration_localhost.attributes.cameras | length }}
+          {% if states.sensor.motion_localhost_start.attributes.cameras is defined %}
+            {{ states.sensor.motion_localhost_start.attributes.cameras | length }}
           {% else %}null{% endif %}
-      motion_configuration_localhost_camera_names:
+      motion_localhost_start_camera_names:
         entity_id:
-          - sensor.motion_configuration_localhost
+          - sensor.motion_localhost_start
         value_template: >-
-          {% if states.sensor.motion_configuration_localhost.attributes.cameras is defined %}
-            {%- for camera in states.sensor.motion_configuration_localhost.attributes.cameras -%}
+          {% if states.sensor.motion_localhost_start.attributes.cameras is defined %}
+            {%- for camera in states.sensor.motion_localhost_start.attributes.cameras -%}
               {% if loop.first %}[{% else %},{% endif %}
               {{- camera.name | tojson -}}
               {%- if loop.last -%}]{%- endif -%}
             {% endfor %}
           {% else %}null{% endif %}
-      motion_configuration_network_camera_count:
+      motion_network_start_camera_count:
         entity_id:
-          - sensor.motion_configuration_network
+          - sensor.motion_network_start
         value_template: >-
-          {% if states.sensor.motion_configuration_network.attributes.cameras is defined %}
-            {{ states.sensor.motion_configuration_network.attributes.cameras | length }}
+          {% if states.sensor.motion_network_start.attributes.cameras is defined %}
+            {{ states.sensor.motion_network_start.attributes.cameras | length }}
           {% else %}null{% endif %}
-      motion_configuration_network_camera_names:
+      motion_network_start_camera_names:
         entity_id:
-          - sensor.motion_configuration_network
+          - sensor.motion_network_start
         value_template: >-
-          {% if states.sensor.motion_configuration_network.attributes.cameras is defined %}
-            {%- for camera in states.sensor.motion_configuration_network.attributes.cameras -%}
+          {% if states.sensor.motion_network_start.attributes.cameras is defined %}
+            {%- for camera in states.sensor.motion_network_start.attributes.cameras -%}
               {% if loop.first %}[{% else %},{% endif %}
               {{- camera.name | tojson -}}
               {%- if loop.last -%}]{%- endif -%}
