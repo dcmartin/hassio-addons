@@ -339,7 +339,7 @@ main() {
   SCRIPT_LOG="${SCRIPT_DIR}/${SCRIPT}.$$.log"
   SCRIPT_URL="https://raw.githubusercontent.com/dcmartin/open-horizon/master/setup"
   TMPLS="config-ssh.tmpl ssh-copy-id.tmpl wpa_supplicant.tmpl"
-  FILES="${SCRIPT} ${TMPLS} lsnodes.sh"
+  FILES="${SCRIPT} ${TMPLS} lsnodes.sh socat-node-id.sh node-id.sh"
 
   # make working directory
   hass.log.trace "Creating ${SCRIPT_DIR}"
