@@ -2,14 +2,12 @@
 APP="hzn"
 API="config"
 
-DEBUG="true"
-
-if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- START" >> $LOGTO 2>&1; fi
-
-if [ -z ${TMP:-} ]; then TMP="/tmpfs"; fi
+if [ -z ${TMP:-} ]; then if [ -d "/tmpfs" ]; then TMP="/tmpfs"; else TMP="/tmp"; fi; fi
 if [ -z ${LOGTO:-} ]; then LOGTO=$TMP/$APP.log; fi
 if [ -z ${CU:-} ]; then CU="${HORIZON_CLOUDANT_URL}"; fi
 if [ -z ${DB:-} ]; then DB="${APP}-${API}"; fi
+
+if [ "${DEBUG:-}" == 'true' ]; then echo $(date) "$0 $$ -- START" >> $LOGTO 2>&1; fi
 
 ###
 ### dateutils REQUIRED
@@ -61,7 +59,7 @@ if [ ! -s "$OUTPUT" ]; then
     configs=$id
   fi
 
-  if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ ++ configurations: ${configs}" >> $LOGTO 2>&1; fi
+  if [ "${DEBUG}" == 'true' ]; then echo $(date) "$0 $$ ++ configurations: ${configs}" >> $LOGTO 2>&1; fi
 
   k=0
   all='{"date":'"$DATE"',"'$API'":['
@@ -72,7 +70,7 @@ if [ ! -s "$OUTPUT" ]; then
     out="$TMP/$APP-$API-$$.json"
     curl -sL "$url" -o "$out"
     if [ ! -s "$out" ]; then
-      if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ ++ FAILURE ($d)" $(ls -al $out) >> $LOGTO 2>&1; fi
+      if [ "${DEBUG}" == 'true' ]; then echo $(date) "$0 $$ ++ FAILURE ($d)" $(ls -al $out) >> $LOGTO 2>&1; fi
       rm -f "$out"
       continue
     fi
@@ -115,7 +113,7 @@ if [ -z ${output:-} ] && [ -s "$OUTPUT" ]; then
   echo "Last-Modified:" $($dateconv -i '%s' -f '%a, %d %b %Y %H:%M:%S %Z' $DATE)
   echo ""
   jq -c '.' "$OUTPUT"
-  if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- output $OUTPUT Age: $age Refresh: $refresh" >> $LOGTO 2>&1; fi
+  if [ "${DEBUG}" == 'true' ]; then echo $(date) "$0 $$ -- output $OUTPUT Age: $age Refresh: $refresh" >> $LOGTO 2>&1; fi
 else
   echo "Cache-Control: no-cache"
   echo "Last-Modified:" $($dateconv -i '%s' -f '%a, %d %b %Y %H:%M:%S %Z' $DATE)
@@ -127,4 +125,4 @@ else
   fi
 fi
 
-if [ -n ${DEBUG:-} ]; then echo $(date) "$0 $$ -- FINISH $QUERY_STRING" >> $LOGTO 2>&1; fi
+if [ "${DEBUG}" == 'true' ]; then echo $(date) "$0 $$ -- FINISH $QUERY_STRING" >> $LOGTO 2>&1; fi
