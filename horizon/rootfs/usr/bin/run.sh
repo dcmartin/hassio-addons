@@ -396,7 +396,7 @@ main() {
     hass.log.info $(date) "Executed ${SCRIPT_DIR}/${SCRIPT} returns:" $(echo "${RESULT}")
     if [ -n "${RESULT}" ]; then
       RESULT=$(echo "${RESULT}" | jq '{"nodes":.,"date":'$(date +%s)',"org":"'${HORIZON_ORGANIZATION}'","device":"'${HORIZON_DEVICE_NAME}'","configuration":"'${HORIZON_CONFIG_NAME}'"}')
-      hass.log.debug $(date) "Posting result to ${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/${SCRIPT}/result" $(echo "${RESULT}" | jq -c '.')
+      hass.log.debug $(date) "Posting result to ${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/${HORIZON_CONFIG_NAME}/result" $(echo "${RESULT}" | jq -c '.')
       mosquitto_pub -r -q 2 -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/${HORIZON_CONFIG_NAME}/result" -m "${RESULT}"
     fi
     if [ -s "${HORIZON_CONFIG_FILE}.$$" ]; then
