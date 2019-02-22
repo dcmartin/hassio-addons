@@ -399,6 +399,7 @@ main() {
       hass.log.debug $(date) "Posting result to ${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/${HORIZON_CONFIG_NAME}/result" $(echo "${RESULT}" | jq -c '.')
       mosquitto_pub -r -q 2 -h "${MQTT_HOST}" -p "${MQTT_PORT}" -t "${HORIZON_ORGANIZATION}/${HORIZON_DEVICE_NAME}/${HORIZON_CONFIG_NAME}/result" -m "${RESULT}"
     fi
+    hass.log.trace "LOG:" $(cat "${SCRIPT_LOG}")
     if [ -s "${HORIZON_CONFIG_FILE}.$$" ]; then
       DIFF=$(diff "${HORIZON_CONFIG_FILE}" "${HORIZON_CONFIG_FILE}.$$" | wc -c || true)
       if [[ ${DIFF} > 0 ]]; then 
