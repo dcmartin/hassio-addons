@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.5.7",
+  "version": "0.5.8",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -66,26 +66,16 @@
   "options": {
     "log_level": "info",
     "devicedb": "motion",
+    "post_pictures": "center",
     "cameras": [
       {
         "name": "sample",
         "url": "mjpeg://192.168.1.174/img/video.mjpeg"
       }
     ],
-    "watson": {
-      "url": "",
-      "apikey": "",
-      "classifier": "",
-      "date": "",
-      "version": ""
-    },
-    "digits": {
-      "jobid": "",
-      "url": ""
-    },
     "mqtt": {
-      "host": "",
-      "port": "",
+      "host": "core-mosquitto",
+      "port": "1883",
       "username": "",
       "password": ""
     },
@@ -101,18 +91,10 @@
     "log_type": "str?",
     "devicedb": "str",
     "name": "str?",
-    "log_motion": "int?",
-    "elevation": "int?",
-    "latitude": "float?",
-    "longitude": "float?",
-    "unit_system": "str?",
     "username": "str?",
     "password": "str?",
-    "www": "str?",
-    "port": "port?",
-    "email": "email?",
     "timezone": "str?",
-    "camera_type": "str?",
+    "post_pictures": "str?",
     "cameras": [
       {
         "name": "str",
@@ -133,48 +115,9 @@
         "brightness": "int?",
         "contrast": "int?",
         "saturation": "int?",
-        "lightswitch": "int?",
-        "models": "str?"
+        "lightswitch": "int?"
       }
     ],
-    "webcontrol_port": "port?",
-    "stream_port": "port?",
-    "v412_pallette": "int?",
-    "auto_brightness": "str?",
-    "locate_motion_mode": "str?",
-    "locate_motion_style": "str?",
-    "output_pictures": "str?",
-    "picture_type": "str?",
-    "threshold_tune": "str?",
-    "pre_capture": "int?",
-    "post_capture": "int?",
-    "event_gap": "int?",
-    "minimum_motion_frames": "int?",
-    "quality": "int?",
-    "width": "int?",
-    "height": "int?",
-    "framerate": "int?",
-    "minimum_frame_time": "int?",
-    "brightness": "int?",
-    "contrast": "int?",
-    "saturation": "int?",
-    "hue": "int?",
-    "rotate": "int?",
-    "fov": "int?",
-    "fps": "int?",
-    "stream_quality": "int?",
-    "threshold": "int?",
-    "watson": {
-      "url": "str?",
-      "apikey": "str?",
-      "classifier": "str?",
-      "date": "str?",
-      "version": "str?"
-    },
-    "digits": {
-      "jobid": "str?",
-      "url": "str?"
-    },
     "mqtt": {
       "host": "str?",
       "port": "port?",
@@ -186,13 +129,7 @@
       "username": "str?",
       "password": "str?"
     },
-    "daemon": "str?",
-    "interval": "int?",
-    "post_pictures": "str?",
-    "minimum_animate": "int?",
-    "reload": "str?",
-    "target_dir": "str?",
-    "share_dir": "str?"
+    "reload": "str?"
   },
   "environment": {
     "LOG_FORMAT": "{LEVEL}: {MESSAGE}"
