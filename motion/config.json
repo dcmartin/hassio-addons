@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.4.28",
+  "version": "0.4.30",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -9,8 +9,7 @@
   "arch": [
     "aarch64",
     "amd64",
-    "armhf",
-    "i386"
+    "armhf"
   ],
   "audio": true,
   "devices": [
