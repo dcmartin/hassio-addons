@@ -508,7 +508,7 @@ for (( i=0; i<ncamera ; i++)) ; do
   CAMERAS="${CAMERAS}"',"keepalive":"'"${VALUE}"'"'
   # userpass 
   VALUE=$(jq -r '.cameras['${i}'].userpass' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="${NETCAM_USERPASS}"; fi
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=; fi
   echo "Set netcam_userpass to ${VALUE}" >&2
   echo "netcam_userpass ${VALUE}" >> "${CAMERA_CONF}"
   # DO NOT RECORD; CAMERAS="${CAMERAS}"',"userpass":"'"${VALUE}"'"'
