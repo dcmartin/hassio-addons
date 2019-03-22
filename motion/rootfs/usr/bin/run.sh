@@ -17,6 +17,7 @@ fi
 
 if [ -z "${MOTION_STREAM_PORT:-}" ]; then MOTION_STREAM_PORT=8090; fi
 if [ -z "${MOTION_CONTROL_PORT:-}" ]; then MOTION_CONTROL_PORT=8080; fi
+if [ -z "${MOTION_DEFAULT_PALETTE:-}" ]; then MOTION_DEFAULT_PALETTE=8; fi
 
 ###
 ### START JSON
@@ -142,12 +143,12 @@ echo "+++ MOTION" >&2
 
 MOTION='{'
 
-# set log_type
+# set log_type (FIRST ENTRY)
 VALUE=$(jq -r ".log_type" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="all"; fi
 echo "Set log_type to ${VALUE}" >&2
 sed -i "s|.*log_type .*|log_type ${VALUE}|" "${MOTION_CONF}"
-MOTION="${MOTION}"',"log_type":"'"${VALUE}"'"'
+MOTION="${MOTION}"'"log_type":"'"${VALUE}"'"'
 
 # set auto_brightness
 VALUE=$(jq -r ".auto_brightness" "${CONFIG_PATH}")
@@ -495,7 +496,7 @@ for (( i=0; i<ncamera ; i++)) ; do
 
   # palette
   VALUE=$(jq -r '.cameras['${i}'].palette' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=8; fi
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_DEFAULT_PALETTE}; fi
   echo "Set palette to ${VALUE}" >&2
   CAMERAS="${CAMERAS}"',"palette":'"${VALUE}"
   echo "v4l2_palette ${VALUE}" >> "${CAMERA_CONF}"
