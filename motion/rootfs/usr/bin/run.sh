@@ -15,6 +15,9 @@ if [ ! -s "${CONFIG_PATH}" ]; then
   exit
 fi
 
+if [ -z "${MOTION_STREAM_PORT:-}" ]; then MOTION_STREAM_PORT=8090
+if [ -z "${MOTION_CONTROL_PORT:-}" ]; then MOTION_CONTROL_PORT=8080
+
 ###
 ### START JSON
 ###
@@ -312,14 +315,14 @@ MOTION="${MOTION}"',"rotate":'"${VALUE}"
 
 # set webcontrol_port
 VALUE=$(jq -r ".webcontrol_port" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=8080; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_CONTROL_PORT}; fi
 echo "Set webcontrol_port to ${VALUE}" >&2
 sed -i "s/.*webcontrol_port\s[0-9]\+/webcontrol_port ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"webcontrol_port":'"${VALUE}"
 
 # set stream_port
 VALUE=$(jq -r ".stream_port" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=8090; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_STREAM_PORT}; fi
 echo "Set stream_port to ${VALUE}" >&2
 sed -i "s/.*stream_port\s[0-9]\+/stream_port ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"stream_port":'"${VALUE}"
@@ -399,7 +402,7 @@ for (( i=0; i<ncamera ; i++)) ; do
       MOTION_CONF=${CONF}
       # get webcontrol_port (base)
       VALUE=$(jq -r ".webcontrol_port" "${CONFIG_PATH}")
-      if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=8080; fi
+      if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_CONTROL_PORT}; fi
       VALUE=$(echo "$VALUE + $MOTION_COUNT" | bc)
       echo "Set webcontrol_port to ${VALUE}" >&2
       sed -i "s/.*webcontrol_port\s[0-9]\+/webcontrol_port ${VALUE}/" "${MOTION_CONF}"
@@ -473,7 +476,7 @@ for (( i=0; i<ncamera ; i++)) ; do
 
   # stream_port 
   VALUE=$(jq -r '.cameras['${i}'].port' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.stream_port'); VALUE=$((VALUE + i)); fi
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_STREAM_PORT}; VALUE=$((VALUE + i)); fi
   echo "Set stream_port to ${VALUE}" >&2
   echo "stream_port ${VALUE}" >> "${CAMERA_CONF}"
   CAMERAS="${CAMERAS}"',"port":"'"${VALUE}"'"'
