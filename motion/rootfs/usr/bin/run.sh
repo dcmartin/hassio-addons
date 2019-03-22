@@ -139,21 +139,6 @@ echo "+++ MOTION" >&2
 
 MOTION='{'
 
-## DAEMON MODE
-VALUE=$(jq -r ".daemon" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="on"; fi
-echo "Set daemon to ${VALUE}" >&2
-sed -i "s/^daemon\s.*/daemon ${VALUE}/" "${MOTION_CONF}"
-MOTION="${MOTION}"'"daemon":"'"${VALUE}"'"'
-
-# set videodevice
-VALUE=$(jq -r ".videodevice" "${CONFIG_PATH}")
-if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then 
-  echo "Set videodevice to ${VALUE}" >&2
-  sed -i "s|.*videodevice .*|videodevice ${VALUE}|" "${MOTION_CONF}"
-  MOTION="${MOTION}"',"videodevice":"'"${VALUE}"'"'
-fi
-
 # set log_type
 VALUE=$(jq -r ".log_type" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="all"; fi
@@ -380,22 +365,6 @@ else
   sed -i "s/.*webcontrol_localhost .*/webcontrol_localhost on/" "${MOTION_CONF}"
 fi
 
-# set netcam_url to be shared across all cameras
-VALUE=$(jq -r ".netcam_url" "${CONFIG_PATH}")
-if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
-  echo "Set netcam_url to ${VALUE}" >&2
-  sed -i "s|.*netcam_url .*|netcam_url ${VALUE}|" "${MOTION_CONF}"
-  MOTION="${MOTION}"',"netcam_url":"'"${VALUE}"'"'
-fi
-
-# set netcam_userpass across all cameras
-VALUE=$(jq -r ".netcam_userpass" "${CONFIG_PATH}")
-if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
-  echo "Set netcam_userpass to ${VALUE}" >&2
-  sed -i "s/.*netcam_userpass .*/netcam_userpass ${VALUE}/" "${MOTION_CONF}"
-fi
-NETCAM_USERPASS="${VALUE}"
-
 # MOTION_DATA_DIR defined for all cameras base path
 VALUE=$(jq -r ".target_dir" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="${MOTION_APACHE_HTDOCS}/cameras"; fi
@@ -510,27 +479,17 @@ for (( i=0; i<ncamera ; i++)) ; do
   echo "stream_port ${VALUE}" >> "${CAMERA_CONF}"
   CAMERAS="${CAMERAS}"',"port":"'"${VALUE}"'"'
 
-  # process videodevice; only "/dev/video0" enabled in config.json
-  VALUE=$(jq -r '.cameras['${i}'].device?' "${CONFIG_PATH}")
-  if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then 
-    ## HANDLE DEVICE CAMERA
-    echo "Set device to ${VALUE}" >&2
-    echo "videodevice ${VALUE}" >> "${CAMERA_CONF}"
-    CAMERAS="${CAMERAS}"',"device":"'"${VALUE}"'"'
-    VALUE='file://'"${VALUE}"
+  VALUE=$(jq -r '.cameras['${i}'].url' "${CONFIG_PATH}")
+  if [[ "${VALUE}" == ftpd* ]]; then
+    VALUE="${VALUE%*/}.jpg"
+    NETCAM_URL=$(echo "${VALUE}" | sed 's|^ftpd|file|')
   else
-    VALUE=$(jq -r '.cameras['${i}'].url' "${CONFIG_PATH}")
-    if [[ "${VALUE}" == ftpd* ]]; then
-      VALUE="${VALUE%*/}.jpg"
-      NETCAM_URL=$(echo "${VALUE}" | sed 's|^ftpd|file|')
-    else
-      # HANDLE NETCAM
-      NETCAM_URL="${VALUE}"
-    fi
-    CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
-    echo "Set netcam_url to ${NETCAM_URL}" >&2
-    echo "netcam_url ${NETCAM_URL}" >> "${CAMERA_CONF}"
+    # HANDLE NETCAM
+    NETCAM_URL="${VALUE}"
   fi
+  CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
+  echo "Set netcam_url to ${NETCAM_URL}" >&2
+  echo "netcam_url ${NETCAM_URL}" >> "${CAMERA_CONF}"
 
   # palette
   VALUE=$(jq -r '.cameras['${i}'].palette' "${CONFIG_PATH}")
@@ -826,14 +785,3 @@ if [ -s "${MOTION_APACHE_CONF}" ]; then
   echo "Starting Apache: ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT} ${MOTION_APACHE_HTDOCS}" >&2
   httpd -E /dev/stderr -e debug -f "${MOTION_APACHE_CONF}" -DFOREGROUND
 fi
-
-#if [ ! -z "${MOTION_DATA_DIR:-}" ]; then
-#  if [ ! -d "${MOTION_DATA_DIR}" ]; then mkdir -p "${MOTION_DATA_DIR}"; fi
-#  echo "Changing working directory: ${MOTION_DATA_DIR}" >&2
-#  cd "${MOTION_DATA_DIR}"
-#  # start python httpd server
-#  echo "Starting python httpd server" >&2
-#  python3 -m http.server
-#else
-#  echo "Motion data directory not defined; exiting" >&2
-#fi
