@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -114,7 +114,6 @@
         "fov": "int?",
         "fps": "int?",
         "userpass": "str?",
-        "keepalive": "match(^(on|off|force)$)?",
         "port": "port?",
         "quality": "int?",
         "width": "int?",
