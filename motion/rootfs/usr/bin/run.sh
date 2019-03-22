@@ -390,24 +390,21 @@ JSON="${JSON}"',"motion":'"${MOTION}"
 ncamera=$(jq '.cameras|length' "${CONFIG_PATH}")
 echo "*** Found ${ncamera} cameras" >&2
 
-MOTION_COUNT=1
-
 for (( i=0; i<ncamera ; i++)) ; do
 
   ## handle more than one motion process (10 camera/process)
   if (( i / 10 )); then
     if (( i % 10 == 0 )); then
-      CONF="${MOTION_CONF%%.*}.${MOTION_COUNT}.${MOTION_CONF##*.}"
+      CONF="${MOTION_CONF%%.*}.${i}.${MOTION_CONF##*.}"
       cp "${MOTION_CONF}" "${CONF}"
       sed -i 's|^camera|; camera|' "${CONF}"
       MOTION_CONF=${CONF}
       # get webcontrol_port (base)
       VALUE=$(jq -r ".webcontrol_port" "${CONFIG_PATH}")
       if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_CONTROL_PORT}; fi
-      VALUE=$(echo "$VALUE + $MOTION_COUNT" | bc)
+      VALUE=$(echo "$VALUE + $i" | bc)
       echo "Set webcontrol_port to ${VALUE}" >&2
       sed -i "s/.*webcontrol_port\s[0-9]\+/webcontrol_port ${VALUE}/" "${MOTION_CONF}"
-      MOTION_COUNT=$(echo "${MOTION_COUNT} + 1" | bc)
       CNUM=0
     else
       CNUM=$(echo "$CNUM + 1" | bc)
@@ -701,9 +698,9 @@ if [ -z "${MOTION_CLOUDANT_URL:-}" ]; then
 fi
 
 # test hassio
-echo "Testing hassio ..." $(curl -sL -H "X-HASSIO-KEY: ${HASSIO_TOKEN}" "http://hassio/supervisor/info" | jq -c '.result') >&2
+echo "Testing hassio ..." $(curl -sL -H "X-HASSIO-KEY: ${HASSIO_TOKEN}" "http://hassio/supervisor/info" | jq -c '.') >&2
 # test homeassistant
-echo "Testing homeassistant ..." $(curl -sL -u ":${HASSIO_TOKEN}" "http://hassio/homeassistant/api/states" | jq -c '.|length') "states" >&2
+echo "Testing homeassistant ..." $(curl -sL -u ":${HASSIO_TOKEN}" "http://hassio/homeassistant/api/states" | jq -c '.') >&2
 
 # start ftp_notifywait for all ftpd:// cameras (uses environment MOTION_JSON_FILE)
 ftp_notifywait.sh "${MOTION_JSON_FILE}"
@@ -739,24 +736,6 @@ else
     CONF="${MOTION_CONF%%.*}.${i}.${MOTION_CONF##*.}"
   done
 fi
-
-###
-### CUSTOMIZE MQTT BROKER
-###
-
-mqttconf="/share/motion/mosquitto/mosquitto.conf"
-mkdir -p "${mqttconf%/*}"
-echo "NOTIFY -- Change Hass.io Mosquitto add-on configuration to include: $mqttconf" >&2
-echo '  "customize": {' >&2
-echo '    "active": true,' >&2
-echo '    "folder": "motion/mosquitto"' >&2
-echo '  }' >&2
-echo "NOTIFY -- Re-start MQTT add-on" >&2
-# change configuration
-rm -f /share/motion/mosquitto/mosquitto.conf
-echo "max_connections -1" >> /share/motion/mosquitto/mosquitto.conf
-echo "max_inflight_messages 0" >> /share/motion/mosquitto/mosquitto.conf
-echo "max_queued_messages 1000" >> /share/motion/mosquitto/mosquitto.conf
 
 ###
 ### initialize camera(s)
