@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -71,10 +71,32 @@
         "name": "sample",
         "url": "mjpeg://192.168.1.174/img/video.mjpeg"
       }
-    ]
+    ],
+    "watson": {
+      "url": "",
+      "apikey": "",
+      "classifier": "",
+      "date": "",
+      "version": ""
+    },
+    "digits": {
+      "jobid": "",
+      "url": ""
+    },
+    "mqtt": {
+      "host": "",
+      "port": "",
+      "username": "",
+      "password": ""
+    },
+    "cloudant": {
+      "url": "",
+      "username": "",
+      "password": ""
+    }
   },
   "schema": {
-    "log_level": "str?",
+    "log_level": "str",
     "log_motion": "int?",
     "log_type": "str?",
     "devicedb": "str",
