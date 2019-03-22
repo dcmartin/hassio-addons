@@ -418,9 +418,8 @@ for (( i=0; i<ncamera ; i++)) ; do
 
   echo "+++ CAMERA ${i}" >&2
 
-  CAMERAS="${CAMERAS}"'{"id":'${i}
-
   ## TOP-LEVEL
+  CAMERAS="${CAMERAS}"'{"id":'${i}
 
   # name
   VALUE=$(jq -r '.cameras['${i}'].name' "${CONFIG_PATH}")
@@ -438,7 +437,7 @@ for (( i=0; i<ncamera ; i++)) ; do
 
   # target_dir 
   VALUE=$(jq -r '.cameras['${i}'].target_dir' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.target_dir'); VALUE="${VALUE}/${CNAME}"; fi
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="${MOTION_DATA_DIR}/${CNAME}"; fi
   echo "Set target_dir to ${VALUE}" >&2
   echo "target_dir ${VALUE}" >> "${CAMERA_CONF}"
   if [ ! -d "${VALUE}" ]; then mkdir -p "${VALUE}"; fi
