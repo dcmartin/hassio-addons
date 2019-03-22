@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -65,17 +65,7 @@
   },
   "options": {
     "log_level": "info",
-    "log_motion": 2,
     "devicedb": "motion",
-    "name": "hostname",
-    "username": "",
-    "password": "",
-    "timezone": "America/Los_Angeles",
-    "unit_system": "imperial",
-    "mqtt": {
-      "host": "core-mosquitto",
-      "port": 1883
-    },
     "cameras": [
       {
         "name": "sample",
@@ -89,8 +79,10 @@
   "schema": {
     "log_level": "match(^(trace|debug|info|notice|warning|error|fatal)$)",
     "log_motion": "int?",
+    "log_type": "str?",
     "devicedb": "str",
     "name": "str?",
+    "log_motion": "int?",
     "elevation": "int?",
     "latitude": "float?",
     "longitude": "float?",
@@ -128,9 +120,6 @@
     ],
     "webcontrol_port": "port?",
     "stream_port": "port?",
-    "log_motion": "int?",
-    "log_type": "str?",
-    "videodevice": "str?",
     "v412_pallette": "int?",
     "auto_brightness": "str?",
     "locate_motion_mode": "str?",
@@ -156,10 +145,6 @@
     "fps": "int?",
     "stream_quality": "int?",
     "threshold": "int?",
-    "lightswitch": "int?",
-    "netcam_url": "str?",
-    "netcam_userpass": "str?",
-    "netcam_keepalive": "match(^(on|off|force)$)?",
     "watson": {
       "url": "str?",
       "apikey": "str?",
