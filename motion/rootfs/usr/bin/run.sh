@@ -15,8 +15,8 @@ if [ ! -s "${CONFIG_PATH}" ]; then
   exit
 fi
 
-if [ -z "${MOTION_STREAM_PORT:-}" ]; then MOTION_STREAM_PORT=8090
-if [ -z "${MOTION_CONTROL_PORT:-}" ]; then MOTION_CONTROL_PORT=8080
+if [ -z "${MOTION_STREAM_PORT:-}" ]; then MOTION_STREAM_PORT=8090; fi
+if [ -z "${MOTION_CONTROL_PORT:-}" ]; then MOTION_CONTROL_PORT=8080; fi
 
 ###
 ### START JSON
