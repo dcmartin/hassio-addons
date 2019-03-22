@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -79,12 +79,9 @@
     "cameras": [
       {
         "name": "sample",
-        "device": "mjpeg://192.168.1.174/img/video.mjpeg",
-        "type": "ps3eye",
-        "palette": 15,
-        "fov": 75,
-        "width": 640,
-        "height": 480,
+        "url": "mjpeg://192.168.1.174/img/video.mjpeg",
+        "type": "wcv80n",
+        "fov": 62,
         "fps": 5
       }
     ]
