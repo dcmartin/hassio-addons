@@ -39,9 +39,9 @@ set password = ( `jq -r ".password" "$CONFIG_PATH"` )
 set port = ( `jq -r ".port" "$CONFIG_PATH"` )
 
 set www = ( `jq -r ".www" "$MOTION_JSON_FILE"` )
-set name = ( `jq -r ".name" "$MOTION_JSON_FILE"` )
 set host = ( `jq -r ".host" "$MOTION_JSON_FILE"` )
-set devicedb = ( `jq -r ".devicedb" "$MOTION_JSON_FILE"` )
+set name = ( `jq -r ".device" "$MOTION_JSON_FILE"` )
+set group = ( `jq -r ".group" "$MOTION_JSON_FILE"` )
 set timezone = ( `jq -r ".timezone" "$MOTION_JSON_FILE"` )
 set latitude = ( `jq -r ".latitude" "$MOTION_JSON_FILE"` )
 set longitude = ( `jq -r ".longitude" "$MOTION_JSON_FILE"` )
@@ -75,7 +75,7 @@ if ($?VERBOSE) echo "$0:t $$ -- Found $#cameras cameras on device ${name}: $came
 set c = "sensor"
 set components = ( $components "$c" )
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
-echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; devicedb $devicedb)" >> "$out"
+echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; group $group)" >> "$out"
 
 ## sensor for camera picture
 echo "  - platform: template" >> "$out"
@@ -95,7 +95,7 @@ if ($?VERBOSE) echo "$0:t $$ -- processed $out" >& /dev/stderr
 set c = "binary_sensor"
 set components = ( $components "$c" )
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
-echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; devicedb $devicedb)" >> "$out"
+echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; group $group)" >> "$out"
 
 ## binary_sensor for input_boolean
 echo "- platform: template" >> "$out"
@@ -120,27 +120,27 @@ if ($?VERBOSE) echo "$0:t $$ -- processed $out" >& /dev/stderr
 set c = "input_boolean"
 set components = ( $components "$c" )
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
-echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; devicedb $devicedb)" >> "$out"
+echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; group $group)" >> "$out"
 
-echo "${devicedb}_camera_network_status_notify:" >> "$out"
-echo "  name: ${devicedb}_camera_network_status_notify" >> "$out"
+echo "${group}_camera_network_status_notify:" >> "$out"
+echo "  name: ${group}_camera_network_status_notify" >> "$out"
 echo "  initial: true" >> "$out"
 echo "  icon: mdi:switch" >> "$out"
 echo "" >> "$out"
-echo "${devicedb}_event_end_notify:" >> "$out"
-echo "  name: ${devicedb}_event_end_notify" >> "$out"
+echo "${group}_event_end_notify:" >> "$out"
+echo "  name: ${group}_event_end_notify" >> "$out"
 echo "  initial: true" >> "$out"
 echo "  icon: mdi:switch" >> "$out"
 echo "" >> "$out"
-echo "${devicedb}_camera_status_notify:" >> "$out"
-echo "  name: ${devicedb}_camera_status_notify" >> "$out"
+echo "${group}_camera_status_notify:" >> "$out"
+echo "  name: ${group}_camera_status_notify" >> "$out"
 echo "  initial: true" >> "$out"
 echo "  icon: mdi:switch" >> "$out"
 echo "" >> "$out"
 
 foreach c ( $cameras )
-echo "${devicedb}_${c}_notify:" >> "$out"
-echo "  name: ${devicedb}_${c}_notify" >> "$out"
+echo "${group}_${c}_notify:" >> "$out"
+echo "  name: ${group}_${c}_notify" >> "$out"
 echo "  initial: false" >> "$out"
 echo "" >> "$out"
 end
@@ -154,13 +154,13 @@ if ($?VERBOSE) echo "$0:t $$ -- processed $out" >& /dev/stderr
 set c = "automation"
 set components = ( $components "$c" )
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
-echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; devicedb $devicedb)" >> "$out"
-echo "- id: ${devicedb}_notify_recognize" >> "$out"
-echo "  alias: ${devicedb}_notify_recognize" >> "$out"
+echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; group $group)" >> "$out"
+echo "- id: ${group}_notify_recognize" >> "$out"
+echo "  alias: ${group}_notify_recognize" >> "$out"
 echo "  initial_state: on" >> "$out"
 echo "  trigger:" >> "$out"
 echo "    - platform: mqtt" >> "$out"
-echo '      topic: "'"$devicedb/$name"'/+/event/recognize"' >> "$out"
+echo '      topic: "'"$group/$name"'/+/event/recognize"' >> "$out"
 echo "  condition:" >> "$out"
 echo "    condition: and" >> "$out"
 echo "    conditions:" >> "$out"
@@ -190,13 +190,13 @@ echo "            content-type: gif" >> "$out"
 echo "            hide-thumbnail: false" >> "$out"
 echo "" >> "$out"
 
-echo "- id: ${devicedb}_device_status_notify" >> "$out"
-echo "  alias: ${devicedb}_device_status_notify" >> "$out"
+echo "- id: ${group}_device_status_notify" >> "$out"
+echo "  alias: ${group}_device_status_notify" >> "$out"
 echo "  initial_state: on" >> "$out"
 echo "  trigger:" >> "$out"
 echo "    - platform: state" >> "$out"
 echo "      entity_id:" >> "$out"
-echo "        - group.${devicedb}_${name}_status" >> "$out"
+echo "        - group.${group}_${name}_status" >> "$out"
 echo "  condition:" >> "$out"
 echo "    condition: and" >> "$out"
 echo "    conditions:" >> "$out"
@@ -205,7 +205,7 @@ echo "        value_template: >" >> "$out"
 echo "          {{ (trigger.from_state.state|lower) != 'unknown' }}" >> "$out"
 echo "      - condition: template" >> "$out"
 echo "        value_template: >" >> "$out"
-echo "          {{ is_state('binary_sensor.${devicedb}_device_status_notify','on') }}" >> "$out"
+echo "          {{ is_state('binary_sensor.${group}_device_status_notify','on') }}" >> "$out"
 echo "  action:" >> "$out"
 echo "    - service: persistent_notification.create" >> "$out"
 echo "      data_template:" >> "$out"
@@ -221,7 +221,7 @@ echo "            {% endif -%}" >> "$out"
 echo "          {% endfor %}" >> "$out"
 echo "    - service: mqtt.publish" >> "$out"
 echo "      data_template:" >> "$out"
-echo "        topic: '${devicedb}/${name}/status/change'" >> "$out"
+echo "        topic: '${group}/${name}/status/change'" >> "$out"
 echo "        retain: false" >> "$out"
 echo "        payload: >" >> "$out"
 echo '          {%- for state in state_attr(trigger.entity_id,"entity_id") -%}' >> "$out"
@@ -240,7 +240,7 @@ if ($?VERBOSE) echo "$0:t $$ -- processed $out" >& /dev/stderr
 
 set c = "configuration"
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
-echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; devicedb $devicedb)" >> "$out"
+echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; group $group)" >> "$out"
 ## homeassistant
 echo "homeassistant:" >> "$out"
 echo "  name: $name" >> "$out"
@@ -287,7 +287,7 @@ echo "" >> "$out"
 
 #echo "mqtt:" >> "$out"
 #echo "  discovery: true" >> "$out"
-#echo "  discovery_prefix: $devicedb" >> "$out"
+#echo "  discovery_prefix: $group" >> "$out"
 #echo "" >> "$out"
 
 ###
@@ -305,19 +305,19 @@ end
 ### camera(s) in configuration.yaml
 ###
 
-## images from any device in $devicedb
+## images from any device in $group
 echo "" >> "$out"
-echo "## CAMERAS ($#cameras) [$devicedb]" >> "$out"
+echo "## CAMERAS ($#cameras) [$group]" >> "$out"
 echo "" >> "$out"
 echo "camera motion_image:" >> "$out"
 echo "  - platform: mqtt" >> "$out"
 echo "    name: motion_image" >> "$out"
-echo '    topic: "'$devicedb'/+/+/image"' >> "$out"
+echo '    topic: "'$group'/+/+/image"' >> "$out"
 echo "" >> "$out"
 echo "camera motion_animated:" >> "$out"
 echo "  - platform: mqtt" >> "$out"
 echo "    name: motion_animated" >> "$out"
-echo '    topic: "'$devicedb'/+/+/image-animated"' >> "$out"
+echo '    topic: "'$group'/+/+/image-animated"' >> "$out"
 echo "" >> "$out"
 echo "camera motion_image_animated:" >> "$out"
 echo "  - platform: mqtt" >> "$out"
@@ -335,12 +335,12 @@ foreach c ( $cameras )
   echo "camera motion_${c}_animated:" >> "$out"
   echo "  - platform: mqtt" >> "$out"
   echo "    name: motion_${c}_animated" >> "$out"
-  echo '    topic: "'$devicedb/${name}/${c}'/image-animated"' >> "$out"
+  echo '    topic: "'$group/${name}/${c}'/image-animated"' >> "$out"
   echo "" >> "$out"
   echo "camera motion_${c}_image:" >> "$out"
   echo "  - platform: mqtt" >> "$out"
   echo "    name: motion_${c}_image" >> "$out"
-  echo '    topic: "'$devicedb/${name}/${c}'/image"' >> "$out"
+  echo '    topic: "'$group/${name}/${c}'/image"' >> "$out"
   echo "" >> "$out"
   set mjpeg_url = "http://${www}:${port}"
   if ($?VERBOSE) echo "$0:t $$ -- Live camera URL for device ${name} camera ${c}: $mjpeg_url" >& /dev/stderr
@@ -363,7 +363,7 @@ group:
 
 set c = "group"
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
-echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; devicedb $devicedb)" >> "$out"
+echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; group $group)" >> "$out"
 
 ## group for motion animated cameras
 echo "default_view:" >> "$out"
@@ -371,52 +371,52 @@ echo "  view: yes" >> "$out"
 echo "  name: Home" >> "$out"
 echo "  icon: mdi:home" >> "$out"
 echo "  entities:" >> "$out"
-echo "    - group.${devicedb}_camera_latest_images" >> "$out"
-echo "    - group.${devicedb}_camera_network_status" >> "$out"
-echo "    - group.${devicedb}_input_booleans" >> "$out"
+echo "    - group.${group}_camera_latest_images" >> "$out"
+echo "    - group.${group}_camera_network_status" >> "$out"
+echo "    - group.${group}_input_booleans" >> "$out"
 echo "" >> "$out"
 
-echo "${devicedb}_camera_latest_images:" >> "$out"
+echo "${group}_camera_latest_images:" >> "$out"
 echo "  name: Home" >> "$out"
 echo "  icon: mdi:home" >> "$out"
 echo "  entities:" >> "$out"
-echo "    - camera.${devicedb}_image" >> "$out"
-echo "    - camera.${devicedb}_animated" >> "$out"
-echo "    - camera.${devicedb}_image_animated" >> "$out"
+echo "    - camera.${group}_image" >> "$out"
+echo "    - camera.${group}_animated" >> "$out"
+echo "    - camera.${group}_image_animated" >> "$out"
 echo "" >> "$out"
 
-echo "${devicedb}_input_booleans:" >> "$out"
+echo "${group}_input_booleans:" >> "$out"
 echo "  name: Home" >> "$out"
 echo "  icon: mdi:home" >> "$out"
 echo "  entities:" >> "$out"
-echo "    - input_boolean.${devicedb}_camera_network_status_notify" >> "$out"
-echo "    - input_boolean.${devicedb}_camera_status_notify" >> "$out"
-echo "    - input_boolean.${devicedb}_event_end_notify" >> "$out"
+echo "    - input_boolean.${group}_camera_network_status_notify" >> "$out"
+echo "    - input_boolean.${group}_camera_status_notify" >> "$out"
+echo "    - input_boolean.${group}_event_end_notify" >> "$out"
 echo "" >> "$out"
 
 foreach c ( $cameras )
-echo "${devicedb}_${c}_view:" >> "$out"
+echo "${group}_${c}_view:" >> "$out"
 echo "  view: yes" >> "$out"
 echo "  name: Home" >> "$out"
 echo "  icon: mdi:home" >> "$out"
 echo "  entities:" >> "$out"
-echo "    - camera.${devicedb}_${c}_image" >> "$out"
-echo "    - camera.${devicedb}_${c}_live" >> "$out"
-echo "    - camera.${devicedb}_${c}_animated" >> "$out"
-echo "    - input_boolean.${devicedb}_${c}_status_notify" >> "$out"
+echo "    - camera.${group}_${c}_image" >> "$out"
+echo "    - camera.${group}_${c}_live" >> "$out"
+echo "    - camera.${group}_${c}_animated" >> "$out"
+echo "    - input_boolean.${group}_${c}_status_notify" >> "$out"
 end
 echo "" >> "$out"
 
 ## CAMERA_NETWORK_STATUS group
 
-echo "${devicedb}_camera_network_status:" >> "$out"
-echo "  name: ${devicedb} Camera Network Status" >> "$out"
+echo "${group}_camera_network_status:" >> "$out"
+echo "  name: ${group} Camera Network Status" >> "$out"
 echo "  view: false" >> "$out"
 echo "  entities:" >> "$out"
 foreach c ( $cameras )
   set mac = ( `jq -r '.cameras[]|select(.name=="'${c}'").mac' "$CONFIG_PATH"` )
   if ($#mac && "$mac" != "null") then
-    echo "    - device_tracker.${devicedb}_${name}_${c}" >> "$out"
+    echo "    - device_tracker.${group}_${name}_${c}" >> "$out"
   endif
 end
 echo "" >> "$out"
@@ -431,15 +431,15 @@ set c = "known_devices"
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
 set components = ( $components "$c" )
 
-echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; devicedb $devicedb)" >> "$out"
+echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; group $group)" >> "$out"
 
 # 192.168.1.163 00:22:6B:F0:92:60 (Cisco-Linksys)
 foreach c ( $cameras )
   set mac = ( `jq -r '.cameras[]|select(.name=="'${c}'").mac' "$CONFIG_PATH"` )
   if ($#mac && "$mac" != "null") then
-    echo "${devicedb}_${name}_${c}:" >> "$out"
+    echo "${group}_${name}_${c}:" >> "$out"
     echo "  mac: ${mac}" >> "$out"
-    echo "  name: ${devicedb}_${name}_${c}" >> "$out"
+    echo "  name: ${group}_${name}_${c}" >> "$out"
     echo "  icon: mdi:webcam" >> "$out"
     echo "  track: true" >> "$out"
     echo "  hide_if_away: false" >> "$out"
@@ -458,7 +458,7 @@ set c = "ui-lovelace"
 set components = ( $components "$c" )
 set out = "$DATA_DIR/${c}.yaml"; rm -f "$out"
 
-echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; devicedb $devicedb)" >> "$out"
+echo "### MOTION $c ["`date`"] (auto-generated from $MOTION_JSON_FILE for name $name; group $group)" >> "$out"
 echo "name: $name" >> "$out"
 echo "" >> "$out"
 echo "views:" >> "$out"

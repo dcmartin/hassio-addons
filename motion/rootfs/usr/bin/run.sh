@@ -28,26 +28,26 @@ JSON='{"config_path":"'"${CONFIG_PATH}"'","ipaddr":"'$(hostname -i)'","hostname"
 ##
 ## host name
 ##
-VALUE=$(jq -r ".name" "${CONFIG_PATH}")
+VALUE=$(jq -r ".device" "${CONFIG_PATH}")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="${HOSTNAME}"; fi
-echo "Setting name ${VALUE} [MOTION_DEVICE_NAME]" >&2
-JSON="${JSON}"',"name":"'"${VALUE}"'"'
-export MOTION_DEVICE_NAME="${VALUE}"
+echo "Setting device ${VALUE} [MOTION_DEVICE]" >&2
+JSON="${JSON}"',"device":"'"${VALUE}"'"'
+export MOTION_DEVICE="${VALUE}"
 
 ## web
 VALUE=$(jq -r ".www" "${CONFIG_PATH}")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="${MOTION_DEVICE_NAME}.local"; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="${MOTION_DEVICE}.local"; fi
 echo "Setting www ${VALUE}" >&2
 JSON="${JSON}"',"www":"'"${VALUE}"'"'
 
 ##
-## device db name
+## device group
 ##
-VALUE=$(jq -r ".devicedb" "${CONFIG_PATH}")
+VALUE=$(jq -r ".group" "${CONFIG_PATH}")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="motion"; fi
-echo "Setting devicedb ${VALUE} [MOTION_DEVICE_DB]" >&2
-JSON="${JSON}"',"devicedb":"'"${VALUE}"'"'
-export MOTION_DEVICE_DB="${VALUE}"
+echo "Setting group ${VALUE} [MOTION_GROUP]" >&2
+JSON="${JSON}"',"group":"'"${VALUE}"'"'
+export MOTION_GROUP="${VALUE}"
 
 ##
 ## time zone
@@ -623,7 +623,7 @@ export MOTION_POST_PICTURES="${VALUE}"
 
 # MOTION_SHARE_DIR defined for all cameras base path
 VALUE=$(jq -r ".share_dir" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="/share/$MOTION_DEVICE_DB"; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="/share/$MOTION_GROUP"; fi
 if [ ! -z ${MOTION_SHARE_DIR:-} ]; then echo "*** MOTION_SHARE_DIR *** ${MOTION_SHARE_DIR}"; VALUE="${MOTION_SHARE_DIR}"; else export MOTION_SHARE_DIR="${VALUE}"; fi
 echo "Set share_dir to ${VALUE}" >&2
 JSON="${JSON}"',"share_dir":"'"${VALUE}"'"'
@@ -634,14 +634,14 @@ JSON="${JSON}"',"share_dir":"'"${VALUE}"'"'
 
 JSON="${JSON}"'}'
 
-export MOTION_JSON_FILE="${MOTION_CONF%/*}/${MOTION_DEVICE_NAME}.json"
+export MOTION_JSON_FILE="${MOTION_CONF%/*}/${MOTION_DEVICE}.json"
 echo "${JSON}" | jq '.' > "${MOTION_JSON_FILE}"
 if [ ! -s "${MOTION_JSON_FILE}" ]; then
   echo "Invalid JSON: ${JSON}" >&2
   exit
 else
-  echo "Publishing configuration to ${MOTION_MQTT_HOST} topic ${MOTION_DEVICE_DB}/${MOTION_DEVICE_NAME}/start" >&2
-  mosquitto_pub -r -q 2 -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "${MOTION_DEVICE_DB}/${MOTION_DEVICE_NAME}/start" -f "${MOTION_JSON_FILE}"
+  echo "Publishing configuration to ${MOTION_MQTT_HOST} topic ${MOTION_GROUP}/${MOTION_DEVICE}/start" >&2
+  mosquitto_pub -r -q 2 -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "${MOTION_GROUP}/${MOTION_DEVICE}/start" -f "${MOTION_JSON_FILE}"
 fi
 
 ###
@@ -661,22 +661,22 @@ if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "
     export MOTION_CLOUDANT_URL="${URL%:*}"'://'"${USERNAME}"':'"${PASSWORD}"'@'"${USERNAME}"."${URL#*.}"
     echo "Cloudant succeeded at ${MOTION_CLOUDANT_URL}; exiting" >&2
   fi
-  URL="${MOTION_CLOUDANT_URL}/${MOTION_DEVICE_DB}"
+  URL="${MOTION_CLOUDANT_URL}/${MOTION_GROUP}"
   DB=$(curl -sL "${URL}" | jq -r '.db_name')
-  if [ "${DB}" != "${MOTION_DEVICE_DB}" ]; then
+  if [ "${DB}" != "${MOTION_GROUP}" ]; then
     # create DB
     OK=$(curl -sL -X PUT "${URL}" | jq '.ok')
     if [ "${OK}" != "true" ]; then
-      echo "Failed to create CLOUDANT DB ${MOTION_DEVICE_DB}" >&2
+      echo "Failed to create CLOUDANT DB ${MOTION_GROUP}" >&2
       OFF=TRUE
     else
-      echo "Created CLOUDANT DB ${MOTION_DEVICE_DB}" >&2
+      echo "Created CLOUDANT DB ${MOTION_GROUP}" >&2
     fi
   else
-    echo "CLOUDANT DB ${MOTION_DEVICE_DB} exists" >&2
+    echo "CLOUDANT DB ${MOTION_GROUP} exists" >&2
   fi
   if [ -s "${MOTION_JSON_FILE}" ] && [ -z "${OFF:-}" ]; then
-    URL="${URL}/${MOTION_DEVICE_NAME}"
+    URL="${URL}/${MOTION_DEVICE}"
     REV=$(curl -sL "${URL}" | jq -r '._rev')
     if [ "${REV}" != "null" ] && [ ! -z "${REV}" ]; then
       echo "Prior record exists ${REV}" >&2
@@ -687,7 +687,7 @@ if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "
       echo "Failed to update ${URL}" $(jq -c '.' "${MOTION_JSON_FILE}") >&2
       echo "Exiting" >&2; exit
     else
-      echo "Configuration for ${MOTION_DEVICE_NAME} at ${MOTION_JSON_FILE}" $(jq -c '.' "${MOTION_JSON_FILE}") >&2
+      echo "Configuration for ${MOTION_DEVICE} at ${MOTION_JSON_FILE}" $(jq -c '.' "${MOTION_JSON_FILE}") >&2
     fi
   else
     echo "Failed; no DB or bad JSON" >&2
