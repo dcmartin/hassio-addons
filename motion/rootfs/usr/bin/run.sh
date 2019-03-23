@@ -390,21 +390,24 @@ JSON="${JSON}"',"motion":'"${MOTION}"
 ncamera=$(jq '.cameras|length' "${CONFIG_PATH}")
 echo "*** Found ${ncamera} cameras" >&2
 
+MOTION_COUNT=1
+
 for (( i=0; i<ncamera ; i++)) ; do
 
   ## handle more than one motion process (10 camera/process)
   if (( i / 10 )); then
     if (( i % 10 == 0 )); then
-      CONF="${MOTION_CONF%%.*}.${i}.${MOTION_CONF##*.}"
+      CONF="${MOTION_CONF%%.*}.${MOTION_COUNT}.${MOTION_CONF##*.}"
       cp "${MOTION_CONF}" "${CONF}"
       sed -i 's|^camera|; camera|' "${CONF}"
       MOTION_CONF=${CONF}
       # get webcontrol_port (base)
       VALUE=$(jq -r ".webcontrol_port" "${CONFIG_PATH}")
       if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_CONTROL_PORT}; fi
-      VALUE=$(echo "$VALUE + $i" | bc)
+      VALUE=$(echo "$VALUE + $MOTION_COUNT" | bc)
       echo "Set webcontrol_port to ${VALUE}" >&2
       sed -i "s/.*webcontrol_port\s[0-9]\+/webcontrol_port ${VALUE}/" "${MOTION_CONF}"
+      MOTION_COUNT=$(echo "${MOTION_COUNT} + 1" | bc)
       CNUM=0
     else
       CNUM=$(echo "$CNUM + 1" | bc)
