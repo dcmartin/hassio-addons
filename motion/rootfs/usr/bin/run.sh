@@ -735,7 +735,7 @@ else
   for (( i = 1; i <= MOTION_COUNT;  i++)); do
     # start motion
     echo "*** Start motion ${i} with ${CONF}" >&2
-    motion -b -c "${CONF}" -l /dev/stderr
+    motion -b -c "${CONF}"
     CONF="${MOTION_CONF%%.*}.${i}.${MOTION_CONF##*.}"
   done
 fi
