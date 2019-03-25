@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.5.18",
+  "version": "0.5.19",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -65,7 +65,7 @@
   },
   "options": {
     "log_level": "info",
-    "devicedb": "motion",
+    "group": "motion",
     "post_pictures": "center",
     "cameras": [
       {
