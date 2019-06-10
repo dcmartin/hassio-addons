@@ -10,7 +10,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ARG BUILD_ARCH=amd64
 
 RUN apt-get update \
-  && apt-get install -y kafkacat mosquitto-clients \
+  && apt-get install -y bc kafkacat mosquitto-clients \
   \
   && rm -fr \
       /tmp/* \
