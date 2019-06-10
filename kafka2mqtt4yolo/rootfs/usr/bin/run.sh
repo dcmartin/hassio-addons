@@ -120,17 +120,17 @@ kafka2mqtt_process_yolo2msghub()
 {
   hass.log.trace "${FUNCNAME[0]}"
 
-  REPLY=$(cat)
   NOW=$(date +%s)
 
-  if [ -n "${REPLY}" ]; then
-    PAYLOAD=$(mktemp)
-    echo "${REPLY}" > ${PAYLOAD}
+  PAYLOAD=$(mktemp)
+  cat > ${PAYLOAD}
+
+  if [ -s "${PAYLOAD}" ]; then
     BYTES=$(wc -c ${PAYLOAD} | awk '{ print $1 }')
     TOTAL_BYTES=$((TOTAL_BYTES+BYTES))
     ELAPSED=$((NOW-BEGIN))
-    if [ ${ELAPSED} -ne 0 ]; then BPS=$(echo "${TOTAL_BYTES} / ${ELAPSED}" | bc -l); else BPS=1; fi
 
+    if [ ${ELAPSED} -ne 0 ]; then BPS=$(echo "${TOTAL_BYTES} / ${ELAPSED}" | bc -l); else BPS=1; fi
     hass.log.info "### DATA $0 $$ -- received at: $(date +%T); bytes: ${BYTES}; total bytes: ${TOTAL_BYTES}; bytes/sec: ${BPS}"
 
     # get payload specifics
@@ -160,55 +160,59 @@ kafka2mqtt_process_yolo2msghub()
     else
       THIS='null'
     fi
+    hass.log.debug "THIS: ${THIS}"
+
     if [ -z "${THIS}" ] || [ "${THIS}" = 'null' ]; then
-      NODE_COUNT=0
-      TOTAL_SEEN=0
-      MOCK=0
-      FIRST_SEEN=0
-      LAST_SEEN=0
-      SEEN_PER_SECOND=0
-      THIS='{"id":"'${ID:-}'","entity":"'${ENTITY}'","date":'${DATE}',"started":'${STARTED}',"count":'${NODE_COUNT}',"mock":'${MOCK}',"seen":'${TOTAL_SEEN}',"first":'${FIRST_SEEN}',"last":'${LAST_SEEN}',"average":'${SEEN_PER_SECOND:-0}',"download":'${WAN_DOWNLOAD:-0}',"percent":'${CPU_PERCENT:-0}',"product":"'${HAL_PRODUCT:-unknown}'"}'
+      NODE_ENTITY_COUNT=0
+      NODE_SEEN_COUNT=0
+      NODE_MOCK_COUNT=0
+      NODE_FIRST_SEEN=0
+      NODE_LAST_SEEN=0
+      NODE_AVERAGE=0
+      THIS='{"id":"'${ID:-}'","entity":"'${ENTITY}'","date":'${DATE}',"started":'${STARTED}',"count":'${NODE_ENTITY_COUNT}',"mock":'${NODE_MOCK_COUNT}',"seen":'${NODE_SEEN_COUNT}',"first":'${NODE_FIRST_SEEN}',"last":'${NODE_LAST_SEEN}',"average":'${NODE_AVERAGE:-0}',"download":'${WAN_DOWNLOAD:-0}',"percent":'${CPU_PERCENT:-0}',"product":"'${HAL_PRODUCT:-unknown}'"}'
       DEVICES=$(echo "${DEVICES}" | jq '.+=['"${THIS}"']')
     else
-      NODE_COUNT=$(echo "${THIS}" | jq '.count') || NODE_COUNT=0
-      MOCK=$(echo "${THIS}" | jq '.mock') || MOCK=0
-      TOTAL_SEEN=$(echo "${THIS}" | jq '.seen') || TOTAL_SEEN=0
-      FIRST_SEEN=$(echo "${THIS}" | jq '.first') || FIRST_SEEN=0
-      SEEN_PER_SECOND=$(echo "${THIS}" | jq '.average') || SEEN_PER_SECOND=0
+      NODE_ENTITY_COUNT=$(echo "${THIS}" | jq '.count') || NODE_ENTITY_COUNT=0
+      NODE_MOCK_COUNT=$(echo "${THIS}" | jq '.mock') || NODE_MOCK_COUNT=0
+      NODE_SEEN_COUNT=$(echo "${THIS}" | jq '.seen') || NODE_SEEN_COUNT=0
+      NODE_FIRST_SEEN=$(echo "${THIS}" | jq '.first') || NODE_FIRST_SEEN=0
+      NODE_AVERAGE=$(echo "${THIS}" | jq '.average') || NODE_AVERAGE=0
     fi
 
     if [ $(jq '.yolo2msghub.yolo!=null' ${PAYLOAD}) = true ]; then
       if [ $(jq -r '.yolo2msghub.yolo.mock' ${PAYLOAD}) = 'null' ]; then
 	hass.log.debug "${ID}: non-mock"
 	WHEN=$(jq -r '.yolo2msghub.yolo.date' ${PAYLOAD})
-	if [ ${WHEN} -gt ${LAST_SEEN} ]; then
+	if [ ${WHEN} -gt ${NODE_LAST_SEEN} ]; then
 	  hass.log.debug "${ID}: new payload"
 	  SEEN=$(jq -r '.yolo2msghub.yolo.count' ${PAYLOAD})
 	  if [ ${SEEN} -gt 0 ]; then
-	    # retrieve image and convert from BASE64 to JPEG
-	    jq -r '.yolo2msghub.yolo.image' ${PAYLOAD} | base64 --decode > ${0##*/}.$$.${ID}.jpeg
 
-	    hass.log.debug "sending file ${0##*/}.$$.${ID}.jpeg to topic ${MQTT_TOPIC}"
+	    hass.log.debug "sending file ${TEMP} to topic ${MQTT_TOPIC}"
 
-	    # publish image
-	    mqtt_pub -t ${MQTT_TOPIC}/image -f ${0##*/}.$$.${ID}.jpeg
+	    # retrieve image and convert from BASE64 to JPEG; publish image
+            TEMP=$(mktemp)
+	    jq -r '.yolo2msghub.yolo.image' ${PAYLOAD} | base64 --decode > ${TEMP}
+	    mqtt_pub -t ${MQTT_TOPIC}/image -f ${TEMP}
+	    rm -f ${TEMP}
+
 	    # increment total entities seen
-	    TOTAL_SEEN=$((TOTAL_SEEN+SEEN))
+	    NODE_SEEN_COUNT=$((NODE_SEEN_COUNT+SEEN))
 	    # track when
-	    LAST_SEEN=${WHEN}
-	    AGO=$((NOW-LAST_SEEN))
+	    NODE_LAST_SEEN=${WHEN}
+	    AGO=$((NOW-NODE_LAST_SEEN))
 	    hass.log.info "### DATA $0 $$ -- ${ID}; ago: ${AGO:-0}; ${ENTITY} seen: ${SEEN}"
 	    # calculate interval
-	    if [ "${FIRST_SEEN:-0}" -eq 0 ]; then FIRST_SEEN=${LAST_SEEN}; fi
-	    INTERVAL=$((LAST_SEEN-FIRST_SEEN))
+	    if [ "${NODE_FIRST_SEEN:-0}" -eq 0 ]; then NODE_FIRST_SEEN=${NODE_LAST_SEEN}; fi
+	    INTERVAL=$((NODE_LAST_SEEN-NODE_FIRST_SEEN))
 	    if [ ${INTERVAL} -eq 0 ]; then 
-	      FIRST_SEEN=${WHEN}
+	      NODE_FIRST_SEEN=${WHEN}
 	      INTERVAL=0
-	      SEEN_PER_SECOND=1.0
+	      NODE_AVERAGE=1.0
 	    else
-	      SEEN_PER_SECOND=$(echo "${TOTAL_SEEN}/${INTERVAL}" | bc -l)
+	      NODE_AVERAGE=$(echo "${NODE_SEEN_COUNT}/${INTERVAL}" | bc -l)
 	    fi
-	    THIS=$(echo "${THIS}" | jq '.date='${NOW}'|.interval='${INTERVAL:-0}'|.ago='${AGO:-0}'|.seen='${TOTAL_SEEN:-0}'|.last='${LAST_SEEN:-0}'|.first='${FIRST_SEEN:-0}'|.average='${SEEN_PER_SECOND:-0})
+	    THIS=$(echo "${THIS}" | jq '.date='${NOW}'|.interval='${INTERVAL:-0}'|.ago='${AGO:-0}'|.seen='${NODE_SEEN_COUNT:-0}'|.last='${NODE_LAST_SEEN:-0}'|.first='${NODE_FIRST_SEEN:-0}'|.average='${NODE_AVERAGE:-0})
 	  else
 	    hass.log.debug "${ID} at ${WHEN}; did not see: ${ENTITY:-null}"
 	  fi
@@ -217,13 +221,15 @@ kafka2mqtt_process_yolo2msghub()
 	fi
       else
 	hass.log.warning "${ID} at ${WHEN}: mock" $(jq -c '.yolo2msghub.yolo.detected' ${PAYLOAD})
-	MOCK=$((MOCK+1)) && THIS=$(echo "${THIS}" | jq '.mock='${MOCK})
+	NODE_MOCK_COUNT=$((NODE_MOCK_COUNT+1)) && THIS=$(echo "${THIS}" | jq '.mock='${NODE_MOCK_COUNT})
       fi
     else
       hass.log.warning "${ID} at ${WHEN}: no yolo output"
     fi
 
-    NODE_COUNT=$((NODE_COUNT+1)) && THIS=$(echo "${THIS}" | jq '.count='${NODE_COUNT})
+    rm -f ${PAYLOAD}
+
+    NODE_ENTITY_COUNT=$((NODE_ENTITY_COUNT+1)) && THIS=$(echo "${THIS}" | jq '.count='${NODE_ENTITY_COUNT})
     DEVICES=$(echo "${DEVICES}" | jq '(.[]|select(.id=="'${ID}'"))|='"${THIS}")
 
     hass.log.debug "sending ${DEVICES} to topic ${MQTT_TOPIC}"
@@ -271,12 +277,13 @@ MQTT_PORT=$(jq -r '.mqtt.port' "${ADDON_CONFIG_FILE}")
 MQTT_USERNAME=$(jq -r '.mqtt.username' "${ADDON_CONFIG_FILE}")
 MQTT_PASSWORD=$(jq -r '.mqtt.password' "${ADDON_CONFIG_FILE}")
 
+# globals
+DEVICES='[]'
+TOTAL_BYTES=0
+BEGIN=$(date +%s)
+
 # forever poll
 while true; do
-  DEVICES='[]'
-  TOTAL_BYTES=0
-  BEGIN=$(date +%s)
-
   # run
   kafka2mqtt_poll
 done
