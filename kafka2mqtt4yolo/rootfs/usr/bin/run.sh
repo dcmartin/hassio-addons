@@ -191,7 +191,7 @@ kafka2mqtt_process_yolo2msghub()
 	    hass.log.debug "sending file ${0##*/}.$$.${ID}.jpeg to topic ${MQTT_TOPIC}"
 
 	    # publish image
-	    # mqtt_pub -t ${MQTT_TOPIC}/image -f ${0##*/}.$$.${ID}.jpeg
+	    mqtt_pub -t ${MQTT_TOPIC}/image -f ${0##*/}.$$.${ID}.jpeg
 	    # increment total entities seen
 	    TOTAL_SEEN=$((TOTAL_SEEN+SEEN))
 	    # track when
@@ -229,7 +229,7 @@ kafka2mqtt_process_yolo2msghub()
     hass.log.debug "sending ${DEVICES} to topic ${MQTT_TOPIC}"
 
     # send JSON update
-    # mqtt_pub -t ${MQTT_TOPIC} -m "$(echo "${DEVICES}" | jq -c '.')"
+    mqtt_pub -t ${MQTT_TOPIC} -m "$(echo "${DEVICES}" | jq -c '.')"
   else
     hass.log.warning "received null payload:" $(date +%T)
   fi
