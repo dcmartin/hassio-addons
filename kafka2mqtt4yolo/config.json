@@ -1,7 +1,7 @@
 {
   "name": "Kafka to MQTT relay for YOLO",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/kafka2mqtt4yolo",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "slug": "kafka2mqtt4yolo",
   "description": "Relays Kakfa messages to MQTT for yolo2msghub",
   "long_description": "Collects new messages sent by devices running the Open Horizon yolo2msghub pattern and routes them the local MQTT broker associated with the HomeAssistant system.  More information on the yolo2msghub pattern is at: https://github.com/dcmartin/open-horizon/blob/master/yolo2msghub/README.md",

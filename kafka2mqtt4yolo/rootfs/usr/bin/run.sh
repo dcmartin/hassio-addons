@@ -229,7 +229,9 @@ kafka2mqtt_process_yolo2msghub()
     hass.log.debug "sending ${DEVICES} to topic ${MQTT_TOPIC}"
 
     # send JSON update
-    mqtt_pub -t ${MQTT_TOPIC} -m "$(echo "${DEVICES}" | jq -c '.')"
+    TEMP=$(mktemp) && echo "${DEVICES}" | jq -c '.' > ${TEMP}
+    mqtt_pub -t ${MQTT_TOPIC} -f ${TEMP}
+    rm -f ${TEMP}
   else
     hass.log.warning "received null payload:" $(date +%T)
   fi
