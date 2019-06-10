@@ -97,7 +97,7 @@ mqtt_pub()
 {
   hass.log.trace "${FUNCNAME[0]}"
 
-  if [ -z "${MQTT_DEVICE:-}" ]; then MQTT_DEVICE=$(hostname) && hass.log.warn "+++ WARN -- $0 $$ -- MQTT_DEVICE unspecified; using hostname: ${MQTT_DEVICE}"; fi
+  if [ -z "${MQTT_DEVICE:-}" ]; then MQTT_DEVICE=$(hostname) && hass.log.warning "+++ WARN -- $0 $$ -- MQTT_DEVICE unspecified; using hostname: ${MQTT_DEVICE}"; fi
   ARGS=${*}
   if [ ! -z "${ARGS}" ]; then
     hass.log.debug "--- INFO -- $0 $$ -- got arguments: ${ARGS}"
@@ -112,7 +112,7 @@ mqtt_pub()
     hass.log.debug "--- INFO -- $0 $$ -- publishing as ${MQTT_DEVICE} to ${MQTT_HOST} port ${MQTT_PORT} using arguments: ${ARGS}"
     mosquitto_pub -i "${MQTT_DEVICE}" -h "${MQTT_HOST}" -p "${MQTT_PORT}" ${ARGS}
   else
-    hass.log.warn "+++ WARN -- $0 $$ -- nothing to send"
+    hass.log.warning "+++ WARN -- $0 $$ -- nothing to send"
   fi
 }
 
@@ -216,11 +216,11 @@ kafka2mqtt_process_yolo2msghub()
 	  hass.log.debug "old payload"
 	fi
       else
-	hass.log.warn "${ID} at ${WHEN}: mock" $(jq -c '.yolo2msghub.yolo.detected' ${PAYLOAD})
+	hass.log.warning "${ID} at ${WHEN}: mock" $(jq -c '.yolo2msghub.yolo.detected' ${PAYLOAD})
 	MOCK=$((MOCK+1)) && THIS=$(echo "${THIS}" | jq '.mock='${MOCK})
       fi
     else
-      hass.log.warn "${ID} at ${WHEN}: no yolo output"
+      hass.log.warning "${ID} at ${WHEN}: no yolo output"
     fi
 
     TOTAL_RECEIVED=$((TOTAL_RECEIVED+1)) && THIS=$(echo "${THIS}" | jq '.count='${TOTAL_RECEIVED})
@@ -231,7 +231,7 @@ kafka2mqtt_process_yolo2msghub()
     # send JSON update
     # mqtt_pub -t ${MQTT_TOPIC} -m "$(echo "${DEVICES}" | jq -c '.')"
   else
-    hass.log.warn "received null payload:" $(date +%T)
+    hass.log.warning "received null payload:" $(date +%T)
   fi
 }
 
