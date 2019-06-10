@@ -124,7 +124,7 @@ kafka2mqtt_process_payload()
   NOW=$(date +%s)
 
   if [ -n "${REPLY}" ]; then
-    PAYLOAD=${0##*/}.$$.json
+    PAYLOAD=$(mktemp)
     echo "${REPLY}" > ${PAYLOAD}
     BYTES=$(wc -c ${PAYLOAD} | awk '{ print $1 }')
     TOTAL_BYTES=$((TOTAL_BYTES+BYTES))
@@ -140,16 +140,16 @@ kafka2mqtt_process_payload()
     STARTED=$((NOW-DATE))
 
     # HZN
-    if [ $(jq '.hzn?!=null' ${PAYLOAD}) = true ]; then HZN=$(jq '.hzn' ${PAYLOAD}) HZN_STATUS=$(echo "${HZN}" | jq -c '.') fi
+    if [ $(jq '.hzn?!=null' ${PAYLOAD}) = true ]; then HZN=$(jq '.hzn' ${PAYLOAD}) HZN_STATUS=$(echo "${HZN}" | jq -c '.'); fi
     HZN_STATUS=${HZN_STATUS:-null}
     # WAN
-    if [ $(jq '.wan?!=null' ${PAYLOAD}) = true ]; then WAN=$(jq '.wan' ${PAYLOAD}) WAN_DOWNLOAD=$(echo "${WAN}" | jq -r '.speedtest.download') fi
+    if [ $(jq '.wan?!=null' ${PAYLOAD}) = true ]; then WAN=$(jq '.wan' ${PAYLOAD}) WAN_DOWNLOAD=$(echo "${WAN}" | jq -r '.speedtest.download'); fi
     WAN_DOWNLOAD=${WAN_DOWNLOAD:-0}
     # CPU
-    if [ $(jq '.cpu?!=null' ${PAYLOAD}) = true ]; then CPU=$(jq '.cpu' ${PAYLOAD}) CPU_PERCENT=$(echo "${CPU}" | jq -r '.percent') fi
+    if [ $(jq '.cpu?!=null' ${PAYLOAD}) = true ]; then CPU=$(jq '.cpu' ${PAYLOAD}) CPU_PERCENT=$(echo "${CPU}" | jq -r '.percent'); fi
     CPU_PERCENT=${CPU_PERCENT:-0}
     # HAL
-    if [ $(jq '.hal?!=null' ${PAYLOAD}) = true ]; then HAL=$(jq '.hal' ${PAYLOAD}) HAL_PRODUCT=$(echo "${HAL}" | jq -r '.lshw.product') fi
+    if [ $(jq '.hal?!=null' ${PAYLOAD}) = true ]; then HAL=$(jq '.hal' ${PAYLOAD}) HAL_PRODUCT=$(echo "${HAL}" | jq -r '.lshw.product'); fi
     HAL_PRODUCT="${HAL_PRODUCT:-unknown}"
 
     hass.log.debug "device: ${ID}; hzn: ${HZN_STATUS}; entity: ${ENTITY:-}; started: ${STARTED}; download: ${WAN_DOWNLOAD}; percent: ${CPU_PERCENT}; product: ${HAL_PRODUCT}"
