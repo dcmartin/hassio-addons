@@ -269,6 +269,7 @@ KAFKA_BROKER_URL=$(jq -r '.kafka.broker' "${ADDON_CONFIG_FILE}")
 KAFKA_APIKEY=$(jq -r '.kafka.apikey' "${ADDON_CONFIG_FILE}")
 MQTT_TOPIC=$(jq -r '.mqtt.topic' "${ADDON_CONFIG_FILE}")
 MQTT_HOST=$(jq -r '.mqtt.host' "${ADDON_CONFIG_FILE}")
+MQTT_PORT=$(jq -r '.mqtt.port' "${ADDON_CONFIG_FILE}")
 MQTT_USERNAME=$(jq -r '.mqtt.username' "${ADDON_CONFIG_FILE}")
 MQTT_PASSWORD=$(jq -r '.mqtt.password' "${ADDON_CONFIG_FILE}")
 
