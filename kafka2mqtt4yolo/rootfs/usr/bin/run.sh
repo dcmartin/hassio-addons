@@ -161,16 +161,16 @@ kafka2mqtt_process_yolo2msghub()
       THIS='null'
     fi
     if [ -z "${THIS}" ] || [ "${THIS}" = 'null' ]; then
-      TOTAL_RECEIVED=0
+      NODE_COUNT=0
       TOTAL_SEEN=0
       MOCK=0
       FIRST_SEEN=0
       LAST_SEEN=0
       SEEN_PER_SECOND=0
-      THIS='{"id":"'${ID:-}'","entity":"'${ENTITY}'","date":'${DATE}',"started":'${STARTED}',"count":'${TOTAL_RECEIVED}',"mock":'${MOCK}',"seen":'${TOTAL_SEEN}',"first":'${FIRST_SEEN}',"last":'${LAST_SEEN}',"average":'${SEEN_PER_SECOND:-0}',"download":'${WAN_DOWNLOAD:-0}',"percent":'${CPU_PERCENT:-0}',"product":"'${HAL_PRODUCT:-unknown}'"}'
+      THIS='{"id":"'${ID:-}'","entity":"'${ENTITY}'","date":'${DATE}',"started":'${STARTED}',"count":'${NODE_COUNT}',"mock":'${MOCK}',"seen":'${TOTAL_SEEN}',"first":'${FIRST_SEEN}',"last":'${LAST_SEEN}',"average":'${SEEN_PER_SECOND:-0}',"download":'${WAN_DOWNLOAD:-0}',"percent":'${CPU_PERCENT:-0}',"product":"'${HAL_PRODUCT:-unknown}'"}'
       DEVICES=$(echo "${DEVICES}" | jq '.+=['"${THIS}"']')
     else
-      TOTAL_RECEIVED=$(echo "${THIS}" | jq '.count') || TOTAL_RECEIVED=0
+      NODE_COUNT=$(echo "${THIS}" | jq '.count') || NODE_COUNT=0
       MOCK=$(echo "${THIS}" | jq '.mock') || MOCK=0
       TOTAL_SEEN=$(echo "${THIS}" | jq '.seen') || TOTAL_SEEN=0
       FIRST_SEEN=$(echo "${THIS}" | jq '.first') || FIRST_SEEN=0
@@ -223,7 +223,7 @@ kafka2mqtt_process_yolo2msghub()
       hass.log.warning "${ID} at ${WHEN}: no yolo output"
     fi
 
-    TOTAL_RECEIVED=$((TOTAL_RECEIVED+1)) && THIS=$(echo "${THIS}" | jq '.count='${TOTAL_RECEIVED})
+    NODE_COUNT=$((NODE_COUNT+1)) && THIS=$(echo "${THIS}" | jq '.count='${NODE_COUNT})
     DEVICES=$(echo "${DEVICES}" | jq '(.[]|select(.id=="'${ID}'"))|='"${THIS}")
 
     hass.log.debug "sending ${DEVICES} to topic ${MQTT_TOPIC}"
@@ -240,10 +240,6 @@ kafka2mqtt_process_yolo2msghub()
 kafka2mqtt_poll()
 {
   hass.log.trace "${FUNCNAME[0]}"
-
-  DEVICES='[]'
-  TOTAL_BYTES=0
-  BEGIN=$(date +%s)
 
   hass.log.debug "listening: ${KAFKA_TOPIC}; ${KAFKA_APIKEY}; ${KAFKA_BROKER_URL}"
 
@@ -277,6 +273,10 @@ MQTT_PASSWORD=$(jq -r '.mqtt.password' "${ADDON_CONFIG_FILE}")
 
 # forever poll
 while true; do
+  DEVICES='[]'
+  TOTAL_BYTES=0
+  BEGIN=$(date +%s)
+
   # run
   kafka2mqtt_poll
 done
