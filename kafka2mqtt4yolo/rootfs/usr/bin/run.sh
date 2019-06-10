@@ -224,7 +224,8 @@ do_kafka2mqtt()
  	      # retrieve image and convert from BASE64 to JPEG
 	      jq -r '.yolo2msghub.yolo.image' ${PAYLOAD} | base64 --decode > ${0##*/}.$$.${ID}.jpeg
 	      # publish image
-              mqtt_pub -t ${MQTT_TOPIC}/image -f ${0##*/}.$$.${ID}.jpeg
+              hass.log.debug "sending file ${0##*/}.$$.${ID}.jpeg to topic ${MQTT_TOPIC}"
+              # mqtt_pub -t ${MQTT_TOPIC}/image -f ${0##*/}.$$.${ID}.jpeg
 	      # increment total entities seen
 	      TOTAL_SEEN=$((TOTAL_SEEN+SEEN))
 	      # track when
@@ -258,7 +259,8 @@ do_kafka2mqtt()
       TOTAL_RECEIVED=$((TOTAL_RECEIVED+1)) && THIS=$(echo "${THIS}" | jq '.count='${TOTAL_RECEIVED})
       DEVICES=$(echo "${DEVICES}" | jq '(.[]|select(.id=="'${ID}'"))|='"${THIS}")
       # send JSON update
-      mqtt_pub -t ${MQTT_TOPIC} -m "$(echo "${DEVICES}" | jq -c '.')"
+      hass.log.debug "sending ${DEVICES} to topic ${MQTT_TOPIC}"
+      # mqtt_pub -t ${MQTT_TOPIC} -m "$(echo "${DEVICES}" | jq -c '.')"
     done
 }
 
