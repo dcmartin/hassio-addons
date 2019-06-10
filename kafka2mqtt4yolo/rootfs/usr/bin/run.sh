@@ -116,7 +116,7 @@ mqtt_pub()
   fi
 }
 
-kafka2mqtt_process_payload()
+kafka2mqtt_process_yolo2msghub()
 {
   hass.log.trace "${FUNCNAME[0]}"
 
@@ -251,8 +251,8 @@ kafka2mqtt_poll()
     -X "sasl.username=${KAFKA_APIKEY:0:16}" \
     -X "sasl.password=${KAFKA_APIKEY:16}" \
     -t "${KAFKA_TOPIC}" | while read -r; do
-      hass.log.debug "${REPLY}"
-      # echo "${REPLY}" | kafka2mqtt_process_payload 
+      hass.log.trace "${REPLY}"
+      echo "${REPLY}" | kafka2mqtt_process_yolo2msghub 
   done
 }
   
