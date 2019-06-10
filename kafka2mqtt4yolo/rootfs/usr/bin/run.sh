@@ -229,7 +229,7 @@ kafka2mqtt_process_yolo2msghub()
     hass.log.debug "sending ${DEVICES} to topic ${MQTT_TOPIC}"
 
     # send JSON update
-    TEMP=$(mktemp) && echo "${DEVICES}" | jq -c '.' > ${TEMP}
+    TEMP=$(mktemp) && echo "${DEVICES}" | jq -c '{"'${KAFKA_TOPIC}'":{"date":"'$(date -u +%FT%TZ)'","payload":.}}' > ${TEMP}
     mqtt_pub -t ${MQTT_TOPIC} -f ${TEMP}
     rm -f ${TEMP}
   else
