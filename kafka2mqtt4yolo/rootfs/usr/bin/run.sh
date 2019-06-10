@@ -127,15 +127,14 @@ do_kafka2mqtt()
   TOTAL_BYTES=0
   BEGIN=$(date +%s)
 
-  hass.log.debug "listening for topic ${KAFKA_TOPIC}"
+  hass.log.debug "listening: ${KAFKA_TOPIC}; ${KAFKA_APIKEY}; ${KAFKA_BROKER_URL}"
 
   kafkacat -E -u -C -q -o end -f "%s\n" -b "${KAFKA_BROKER_URL}" \
     -X "security.protocol=sasl_ssl" \
     -X "sasl.mechanisms=PLAIN" \
     -X "sasl.username=${KAFKA_APIKEY:0:16}" \
     -X "sasl.password=${KAFKA_APIKEY:16}" \
-    -t "${KAFKA_TOPIC}" \
-    | while read -r; do
+    -t "${KAFKA_TOPIC}" | while read -r; do
       NOW=$(date +%s)
 
       if [ -n "${REPLY}" ]; then
