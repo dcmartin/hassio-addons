@@ -188,11 +188,10 @@ kafka2mqtt_process_yolo2msghub()
 	  SEEN=$(jq -r '.yolo2msghub.yolo.count' ${PAYLOAD})
 	  if [ ${SEEN} -gt 0 ]; then
 
-	    hass.log.debug "sending file ${TEMP} to topic ${MQTT_TOPIC}"
-
 	    # retrieve image and convert from BASE64 to JPEG; publish image
             TEMP=$(mktemp)
 	    jq -r '.yolo2msghub.yolo.image' ${PAYLOAD} | base64 --decode > ${TEMP}
+	    hass.log.debug "sending file ${TEMP} to topic ${MQTT_TOPIC}"
 	    mqtt_pub -t ${MQTT_TOPIC}/image -f ${TEMP}
 	    rm -f ${TEMP}
 
