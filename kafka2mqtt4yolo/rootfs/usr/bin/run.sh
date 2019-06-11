@@ -275,7 +275,7 @@ kafka2mqtt_poll()
             DEVICES=$(echo "${DEVICES}" | jq '(.[]|select(.id=="'${ID}'"))|='"${THIS}")
           else
 	    hass.log.debug "adding device ${ID}"
-            DEVICES=$(echo "${DEVICES}" | jq '.+='"${THIS}")
+            DEVICES=$(echo "${DEVICES}" | jq '.+=['"${THIS}"']')
           fi
         else
 	  hass.log.debug "no existing devices"
