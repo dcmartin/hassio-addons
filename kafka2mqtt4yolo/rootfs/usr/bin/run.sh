@@ -121,7 +121,7 @@ kafka2mqtt_process_yolo2msghub()
   hass.log.trace "${FUNCNAME[0]}"
 
   DEVICES="${*}"
-      hass.log.debug "DEVICES: " $(echo "${DEVICES}" | jq -c '.')
+      hass.log.debug "top of function - DEVICES: " $(echo "${DEVICES}" | jq -c '.')
 
   NOW=$(date +%s)
 
@@ -162,7 +162,7 @@ kafka2mqtt_process_yolo2msghub()
     hass.log.debug "device: ${ID}; hzn: ${HZN_STATUS}; entity: ${ENTITY:-}; started: ${STARTED}; download: ${WAN_DOWNLOAD}; percent: ${CPU_PERCENT}; product: ${HAL_PRODUCT}"
 
     # have we seen this before
-    if [ ! -z "${ID:-}" ] && [ "${DEVICES:-[]}" != '[]' ]; then
+    if [ ! -z "${ID:-}" ] && [ "${DEVICES}" != '[]' ]; then
       THIS=$(echo "${DEVICES}" | jq '.[]|select(.id=="'${ID}'")')
     else
       THIS='null'
@@ -249,7 +249,7 @@ kafka2mqtt_process_yolo2msghub()
   else
     hass.log.warning "received null payload:" $(date +%T)
   fi
-      hass.log.debug "DEVICES: " $(echo "${DEVICES}" | jq -c '.')
+      hass.log.debug "bottom of function; DEVICES: " $(echo "${DEVICES}" | jq -c '.')
   echo "${DEVICES:-[]}"
 }
 
@@ -271,7 +271,7 @@ kafka2mqtt_poll()
     -X "sasl.password=${KAFKA_APIKEY:16}" \
     -t "${KAFKA_TOPIC}" | while read -r; do
       DEVICES=$(echo "${REPLY}" | kafka2mqtt_process_yolo2msghub "${DEVICES}")
-      hass.log.debug "DEVICES: " $(echo "${DEVICES}" | jq -c '.')
+      hass.log.debug "in the loop: DEVICES: " $(echo "${DEVICES}" | jq -c '.')
   done
 }
   
