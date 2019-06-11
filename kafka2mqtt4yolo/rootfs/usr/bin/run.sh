@@ -239,7 +239,7 @@ kafka2mqtt_process_yolo2msghub()
 
     NODE_ENTITY_COUNT=$((NODE_ENTITY_COUNT+1))
     THIS=$(echo "${THIS}" | jq '.count='${NODE_ENTITY_COUNT})
-    DEVICES=$(echo "${DEVICES}" | jq '(.[]|select(.id=="'${ID}'"))|='"${THIS}")
+    DEVICES=$(echo "${DEVICES}" | jq '(.[]|select(.id=="'${ID}'"))+='"${THIS}")
 
     # send JSON update
     TEMP=$(mktemp) && echo "${DEVICES}" | jq -c '{"'${KAFKA_TOPIC}'":{"date":"'$(date -u +%FT%TZ)'","activity":.}}' > ${TEMP}
