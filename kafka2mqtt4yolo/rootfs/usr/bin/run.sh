@@ -161,13 +161,13 @@ kafka2mqtt_process_yolo2msghub()
     hass.log.debug "device: ${ID}; hzn: ${HZN_STATUS}; entity: ${ENTITY:-}; started: ${STARTED}; download: ${WAN_DOWNLOAD}; percent: ${CPU_PERCENT}; product: ${HAL_PRODUCT}"
 
     # have we seen this before
+    hass.log.debug "Finding ${ID} in DEVICES=${DEVICES}"
     if [ ! -z "${ID:-}" ] && [ "${DEVICES:-[]}" != '[]' ]; then
-      hass.log.debug "Setting; DEVICES=${DEVICES}"
       THIS=$(echo "${DEVICES}" | jq '.[]|select(.id=="'${ID}'")')
-      hass.log.debug "Set DEVICES"
     else
       THIS='null'
     fi
+    hass.log.debug "Found ${THIS}"
 
     if [ -z "${THIS}" ] || [ "${THIS}" = 'null' ]; then
       NODE_ENTITY_COUNT=0
@@ -177,7 +177,7 @@ kafka2mqtt_process_yolo2msghub()
       NODE_LAST_SEEN=0
       NODE_AVERAGE=0
       THIS='{"id":"'${ID:-}'","entity":"'${ENTITY}'","date":'${DATE}',"started":'${STARTED}',"count":'${NODE_ENTITY_COUNT}',"mock":'${NODE_MOCK_COUNT}',"seen":'${NODE_SEEN_COUNT}',"first":'${NODE_FIRST_SEEN}',"last":'${NODE_LAST_SEEN}',"average":'${NODE_AVERAGE:-0}',"download":'${WAN_DOWNLOAD:-0}',"percent":'${CPU_PERCENT:-0}',"product":"'${HAL_PRODUCT:-unknown}'"}'
-      DEVICES=$(echo "${DEVICES:-[]}" | jq '.+=['"${THIS}"']')
+      DEVICES=$(echo "${DEVICES}" | jq '.+=['"${THIS}"']')
     else
       NODE_ENTITY_COUNT=$(echo "${THIS}" | jq '.count') || NODE_ENTITY_COUNT=0
       NODE_MOCK_COUNT=$(echo "${THIS}" | jq '.mock') || NODE_MOCK_COUNT=0
@@ -240,7 +240,7 @@ kafka2mqtt_process_yolo2msghub()
 
     NODE_ENTITY_COUNT=$((NODE_ENTITY_COUNT+1))
     THIS=$(echo "${THIS}" | jq '.count='${NODE_ENTITY_COUNT})
-    DEVICES=$(echo "${DEVICES:-[]}" | jq '(.[]|select(.id=="'${ID}'"))|='"${THIS}")
+    DEVICES=$(echo "${DEVICES}" | jq '(.[]|select(.id=="'${ID}'"))|='"${THIS}")
 
     # send JSON update
     TEMP=$(mktemp) && echo "${DEVICES}" | jq -c '{"'${KAFKA_TOPIC}'":{"date":"'$(date -u +%FT%TZ)'","activity":.}}' > ${TEMP}
@@ -270,7 +270,7 @@ kafka2mqtt_poll()
     -X "sasl.username=${KAFKA_APIKEY:0:16}" \
     -X "sasl.password=${KAFKA_APIKEY:16}" \
     -t "${KAFKA_TOPIC}" | while read -r; do
-      DEVICES=$(echo "${REPLY}" | kafka2mqtt_process_yolo2msghub "${DEVICES}")
+      DEVICES="$(echo ${REPLY} | kafka2mqtt_process_yolo2msghub ${DEVICES})"
   done
 }
   
