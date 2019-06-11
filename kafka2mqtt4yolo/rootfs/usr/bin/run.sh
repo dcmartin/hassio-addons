@@ -122,10 +122,12 @@ kafka2mqtt_process_yolo2msghub()
 
   NOW=$(date +%s)
 
-  PAYLOAD=$(mktemp)
-  echo "$(cat)" > ${PAYLOAD}
+  REPLY=$(cat)
 
-  if [ -s "${PAYLOAD}" ]; then
+  if [ ! -z "${REPLY}" ]; then
+    PAYLOAD=$(mktemp)
+    echo "${REPLY}"  > ${PAYLOAD}
+
     BYTES=$(wc -c ${PAYLOAD} | awk '{ print $1 }')
     TOTAL_BYTES=$((TOTAL_BYTES+BYTES))
     ELAPSED=$((NOW-BEGIN))
