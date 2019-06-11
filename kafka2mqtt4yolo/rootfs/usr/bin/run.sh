@@ -123,7 +123,7 @@ kafka2mqtt_process_yolo2msghub()
   NOW=$(date +%s)
 
   PAYLOAD=$(mktemp)
-  cat > ${PAYLOAD}
+  echo "$(cat)" > ${PAYLOAD}
 
   if [ -s "${PAYLOAD}" ]; then
     BYTES=$(wc -c ${PAYLOAD} | awk '{ print $1 }')
