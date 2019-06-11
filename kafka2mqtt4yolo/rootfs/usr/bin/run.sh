@@ -81,7 +81,7 @@ kafka2mqtt_config()
   ADDON_CONFIG="${ADDON_CONFIG}"'}'
 
   ## configuration complete
-  hass.log.debug "CONFIGURATION complete:" $(echo "${ADDON_CONFIG}" | jq -c '.')
+  hass.log.trace "CONFIGURATION complete:" $(echo "${ADDON_CONFIG}" | jq -c '.')
   export ADDON_CONFIG_FILE="${DATA_DIR}/$(hostname)-config.json"
   # check it
   echo "${ADDON_CONFIG}" | jq '.' > "${ADDON_CONFIG_FILE}"
@@ -100,16 +100,16 @@ mqtt_pub()
   if [ -z "${MQTT_DEVICE:-}" ]; then MQTT_DEVICE=$(hostname) && hass.log.warning "MQTT_DEVICE unspecified; using hostname: ${MQTT_DEVICE}"; fi
   ARGS=${*}
   if [ ! -z "${ARGS}" ]; then
-    hass.log.debug "got arguments: ${ARGS}"
+    hass.log.trace "got arguments: ${ARGS}"
     if [ ! -z "${MQTT_USERNAME}" ]; then
       ARGS='-u '"${MQTT_USERNAME}"' '"${ARGS}"
-      hass.log.debug "set username: ${ARGS}"
+      hass.log.trace "set username: ${ARGS}"
     fi
     if [ ! -z "${MQTT_PASSWORD}" ]; then
       ARGS='-P '"${MQTT_PASSWORD}"' '"${ARGS}"
-      hass.log.debug "set password: ${ARGS}"
+      hass.log.trace "set password: ${ARGS}"
     fi
-    hass.log.debug "publishing as ${MQTT_DEVICE} to ${MQTT_HOST} port ${MQTT_PORT} using arguments: ${ARGS}"
+    hass.log.trace "publishing as ${MQTT_DEVICE} to ${MQTT_HOST} port ${MQTT_PORT} using arguments: ${ARGS}"
     mosquitto_pub -i "${MQTT_DEVICE}" -h "${MQTT_HOST}" -p "${MQTT_PORT}" ${ARGS}
   else
     hass.log.warning "nothing to send"
@@ -140,8 +140,6 @@ kafka2mqtt_process_yolo2msghub()
     ENTITY=$(jq -r '.yolo2msghub.yolo.detected[]?.entity' ${PAYLOAD})
     DATE=$(jq -r '.date' ${PAYLOAD})
     STARTED=$((NOW-DATE))
-
-    hass.log.debug "ID: ${ID}; ENTITY: ${ENTITY}; DATE: ${DATE}; STARTED: ${STARTED}"
 
     # HZN
     if [ $(jq '.hzn?!=null' ${PAYLOAD}) = true ]; then HZN=$(jq '.hzn' ${PAYLOAD}) HZN_STATUS=$(echo "${HZN}" | jq -c '.'); fi
@@ -185,17 +183,17 @@ kafka2mqtt_process_yolo2msghub()
     # test payload
     if [ $(jq '.yolo2msghub.yolo!=null' ${PAYLOAD}) = true ]; then
       if [ $(jq -r '.yolo2msghub.yolo.mock' ${PAYLOAD}) = 'null' ]; then
-	hass.log.debug "${ID}: non-mock"
+	hass.log.trace "${ID}: non-mock"
 	WHEN=$(jq -r '.yolo2msghub.yolo.date' ${PAYLOAD})
 	if [ ${WHEN} -gt ${NODE_LAST_SEEN} ]; then
-	  hass.log.debug "${ID}: new payload"
+	  hass.log.trace "${ID}: new payload"
 	  SEEN=$(jq -r '.yolo2msghub.yolo.count' ${PAYLOAD})
 	  if [ ${SEEN} -gt 0 ]; then
 
 	    # retrieve image and convert from BASE64 to JPEG; publish image
             TEMP=$(mktemp)
 	    jq -r '.yolo2msghub.yolo.image' ${PAYLOAD} | base64 --decode > ${TEMP}
-	    hass.log.debug "sending file ${TEMP} to topic ${MQTT_TOPIC}"
+	    hass.log.trace "sending file ${TEMP} to topic ${MQTT_TOPIC}"
 	    mqtt_pub -t ${MQTT_TOPIC}/image -f ${TEMP}
 	    rm -f ${TEMP}
 
@@ -217,10 +215,10 @@ kafka2mqtt_process_yolo2msghub()
 	    fi
 	    THIS=$(echo "${THIS}" | jq '.date='${NOW}'|.interval='${INTERVAL:-0}'|.ago='${AGO:-0}'|.seen='${NODE_SEEN_COUNT:-0}'|.last='${NODE_LAST_SEEN:-0}'|.first='${NODE_FIRST_SEEN:-0}'|.average='${NODE_AVERAGE:-0})
 	  else
-	    hass.log.debug "${ID} at ${WHEN}; did not see: ${ENTITY:-null}"
+	    hass.log.trace "${ID} at ${WHEN}; did not see: ${ENTITY:-null}"
 	  fi
 	else
-	  hass.log.debug "old payload"
+	  hass.log.trace "old payload"
 	fi
       else
 	hass.log.warning "${ID} at ${WHEN}: mock" $(jq -c '.yolo2msghub.yolo.detected' ${PAYLOAD})
@@ -236,7 +234,7 @@ kafka2mqtt_process_yolo2msghub()
     NODE_ENTITY_COUNT=$((NODE_ENTITY_COUNT+1))
     THIS=$(echo "${THIS}" | jq '.count='${NODE_ENTITY_COUNT})
   else
-    hass.log.warning "received null payload:" $(date +%T)
+    hass.log.trace  "received null payload:" $(date +%T)
     THIS=
   fi
   echo "${THIS:-}"
@@ -249,7 +247,7 @@ kafka2mqtt_poll()
   hass.log.debug "listening: ${KAFKA_TOPIC}; ${KAFKA_APIKEY}; ${KAFKA_BROKER_URL}"
 
   # globals
-  DEVICES='null'
+  DEVICES=
   TOTAL_BYTES=0
   BEGIN=$(date +%s)
 
@@ -262,12 +260,11 @@ kafka2mqtt_poll()
     -t "${KAFKA_TOPIC}" | while read -r; do
 
       THIS=$(echo "${REPLY}" | kafka2mqtt_process_yolo2msghub "${DEVICES}")
-      hass.log.debug "GOT THIS: " $(echo "${THIS}" | jq -c '.')
 
       # check for null payload
       if [ ! -z "${THIS}" ]; then
         # check for existing devices
-        if [ "${DEVICES}" != 'null' ]; then
+        if [ ! -z "${DEVICES}" ]; then
           ID=$(echo "${THIS}" | jq -r '.id')
           THAT=$(echo "${DEVICES}" | jq '.[]|select(.id=="'${ID}'")')
           if [ ! -z "${THAT}" ]; then
@@ -281,7 +278,6 @@ kafka2mqtt_poll()
 	  hass.log.debug "no existing devices"
           DEVICES='['"${THIS}"']'
         fi 
-        hass.log.debug "DEVICES: " $(echo "${DEVICES}" | jq -c '.')
 
         # send JSON update
         echo "${DEVICES}" | jq -c '{"'${KAFKA_TOPIC}'":{"date":"'$(date -u +%FT%TZ)'","activity":.}}' > ${TEMP}
