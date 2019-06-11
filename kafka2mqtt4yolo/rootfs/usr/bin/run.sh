@@ -162,7 +162,9 @@ kafka2mqtt_process_yolo2msghub()
 
     # have we seen this before
     if [ ! -z "${ID:-}" ] && [ "${DEVICES:-[]}" != '[]' ]; then
+      hass.log.debug "Setting DEVICES"
       THIS=$(echo "${DEVICES}" | jq '.[]|select(.id=="'${ID}'")')
+      hass.log.debug "Set DEVICES"
     else
       THIS='null'
     fi
@@ -238,9 +240,7 @@ kafka2mqtt_process_yolo2msghub()
 
     NODE_ENTITY_COUNT=$((NODE_ENTITY_COUNT+1))
     THIS=$(echo "${THIS}" | jq '.count='${NODE_ENTITY_COUNT})
-    hass.log.debug "Setting DEVICES"
     DEVICES=$(echo "${DEVICES:-[]}" | jq '(.[]|select(.id=="'${ID}'"))|='"${THIS}")
-    hass.log.debug "Set DEVICES"
 
     # send JSON update
     TEMP=$(mktemp) && echo "${DEVICES}" | jq -c '{"'${KAFKA_TOPIC}'":{"date":"'$(date -u +%FT%TZ)'","activity":.}}' > ${TEMP}
