@@ -21,7 +21,7 @@ kafka2mqtt_config()
   VALUE=$(hass.config.get "timezone")
   # Set the correct timezone
   if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="GMT"; fi
-  hass.log.info "Setting TIMEZONE ${VALUE}" >&2
+  hass.log.debug "Setting TIMEZONE ${VALUE}" >&2
   cp /usr/share/zoneinfo/${VALUE} /etc/localtime
   ADDON_CONFIG="${ADDON_CONFIG}"',"timezone":"'"${VALUE}"'"'
 
@@ -239,9 +239,9 @@ kafka2mqtt_process_yolo2msghub()
     NODE_ENTITY_COUNT=$((NODE_ENTITY_COUNT+1))
     THIS=$(echo "${THIS}" | jq '.count='${NODE_ENTITY_COUNT})
 
-    hass.log.info "Adding THIS: ${THIS} to DEVICES: ${DEVICES}"
+    hass.log.debug "Adding THIS: ${THIS} to DEVICES: ${DEVICES}"
     DEVICES=$(echo "${DEVICES}" | jq '(.[]|select(.id=="'${ID}'"))|='"${THIS}")
-    hass.log.info "Set DEVICES: ${DEVICES}"
+    hass.log.debug "Set DEVICES: ${DEVICES}"
 
     # send JSON update
     TEMP=$(mktemp) && echo "${DEVICES}" | jq -c '{"'${KAFKA_TOPIC}'":{"date":"'$(date -u +%FT%TZ)'","activity":.}}' > ${TEMP}
