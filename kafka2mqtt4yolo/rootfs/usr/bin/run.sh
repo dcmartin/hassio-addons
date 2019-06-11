@@ -162,7 +162,7 @@ kafka2mqtt_process_yolo2msghub()
 
     # have we seen this before
     if [ ! -z "${ID:-}" ] && [ "${DEVICES:-[]}" != '[]' ]; then
-      hass.log.debug "Setting DEVICES"
+      hass.log.debug "Setting; DEVICES=${DEVICES}"
       THIS=$(echo "${DEVICES}" | jq '.[]|select(.id=="'${ID}'")')
       hass.log.debug "Set DEVICES"
     else
