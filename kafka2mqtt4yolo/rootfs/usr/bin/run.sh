@@ -239,6 +239,7 @@ kafka2mqtt_process_yolo2msghub()
     hass.log.warning "received null payload:" $(date +%T)
     THIS=
   fi
+  hass.log.debug "PROCESSED THIS: " $(echo "${THIS}" | jq -c '.')
   echo "${THIS:-}"
 }
 
@@ -263,9 +264,10 @@ kafka2mqtt_poll()
       THIS=$(echo "${REPLY}" | kafka2mqtt_process_yolo2msghub "${DEVICES}")
       if [ ! -z "${THIS}" ]; then
         ID=$(echo "${THIS}" | jq -r '.id')
+        hass.log.debug "THIS: " $(echo "${THIS}" | jq -c '.')
         DEVICES=$(echo "${DEVICES}" | jq '(.[]|select(.id=="'${ID}'"))+='"${THIS}")
+        hass.log.debug "DEVICES: " $(echo "${DEVICES}" | jq -c '.')
       fi
-      hass.log.debug "IN THE LOOP - DEVICES: " $(echo "${DEVICES}" | jq -c '.')
 
       # send JSON update
       echo "${DEVICES}" | jq -c '{"'${KAFKA_TOPIC}'":{"date":"'$(date -u +%FT%TZ)'","activity":.}}' > ${TEMP}
