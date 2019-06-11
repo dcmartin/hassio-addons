@@ -255,13 +255,18 @@ kafka2mqtt_poll()
 
   hass.log.debug "listening: ${KAFKA_TOPIC}; ${KAFKA_APIKEY}; ${KAFKA_BROKER_URL}"
 
+  # globals
+  DEVICES='[]'
+  TOTAL_BYTES=0
+  BEGIN=$(date +%s)
+
   kafkacat -E -u -C -q -o end -f "%s\n" -b "${KAFKA_BROKER_URL}" \
     -X "security.protocol=sasl_ssl" \
     -X "sasl.mechanisms=PLAIN" \
     -X "sasl.username=${KAFKA_APIKEY:0:16}" \
     -X "sasl.password=${KAFKA_APIKEY:16}" \
     -t "${KAFKA_TOPIC}" | while read -r; do
-      hass.log.trace "${REPLY}"
+      hass.log.debug "DEVICES: ${DEVICES}"
       echo "${REPLY}" | kafka2mqtt_process_yolo2msghub 
   done
 }
@@ -282,11 +287,6 @@ MQTT_HOST=$(jq -r '.mqtt.host' "${ADDON_CONFIG_FILE}")
 MQTT_PORT=$(jq -r '.mqtt.port' "${ADDON_CONFIG_FILE}")
 MQTT_USERNAME=$(jq -r '.mqtt.username' "${ADDON_CONFIG_FILE}")
 MQTT_PASSWORD=$(jq -r '.mqtt.password' "${ADDON_CONFIG_FILE}")
-
-# globals
-DEVICES='[]'
-TOTAL_BYTES=0
-BEGIN=$(date +%s)
 
 # forever poll
 while true; do
