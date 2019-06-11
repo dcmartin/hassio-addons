@@ -97,22 +97,22 @@ mqtt_pub()
 {
   hass.log.trace "${FUNCNAME[0]}"
 
-  if [ -z "${MQTT_DEVICE:-}" ]; then MQTT_DEVICE=$(hostname) && hass.log.warning "+++ WARN -- $0 $$ -- MQTT_DEVICE unspecified; using hostname: ${MQTT_DEVICE}"; fi
+  if [ -z "${MQTT_DEVICE:-}" ]; then MQTT_DEVICE=$(hostname) && hass.log.warning "MQTT_DEVICE unspecified; using hostname: ${MQTT_DEVICE}"; fi
   ARGS=${*}
   if [ ! -z "${ARGS}" ]; then
-    hass.log.debug "--- INFO -- $0 $$ -- got arguments: ${ARGS}"
+    hass.log.debug "got arguments: ${ARGS}"
     if [ ! -z "${MQTT_USERNAME}" ]; then
       ARGS='-u '"${MQTT_USERNAME}"' '"${ARGS}"
-      hass.log.debug "--- INFO -- $0 $$ -- set username: ${ARGS}"
+      hass.log.debug "set username: ${ARGS}"
     fi
     if [ ! -z "${MQTT_PASSWORD}" ]; then
       ARGS='-P '"${MQTT_PASSWORD}"' '"${ARGS}"
-      hass.log.debug "--- INFO -- $0 $$ -- set password: ${ARGS}"
+      hass.log.debug "set password: ${ARGS}"
     fi
-    hass.log.debug "--- INFO -- $0 $$ -- publishing as ${MQTT_DEVICE} to ${MQTT_HOST} port ${MQTT_PORT} using arguments: ${ARGS}"
+    hass.log.debug "publishing as ${MQTT_DEVICE} to ${MQTT_HOST} port ${MQTT_PORT} using arguments: ${ARGS}"
     mosquitto_pub -i "${MQTT_DEVICE}" -h "${MQTT_HOST}" -p "${MQTT_PORT}" ${ARGS}
   else
-    hass.log.warning "+++ WARN -- $0 $$ -- nothing to send"
+    hass.log.warning "nothing to send"
   fi
 }
 
@@ -121,7 +121,7 @@ kafka2mqtt_process_yolo2msghub()
   hass.log.trace "${FUNCNAME[0]}"
 
   DEVICES="${*}"
-      hass.log.debug "top of function - DEVICES: " $(echo "${DEVICES}" | jq -c '.')
+  hass.log.debug "TOP OF FUNCTION - DEVICES: " $(echo "${DEVICES}" | jq -c '.')
 
   NOW=$(date +%s)
 
@@ -249,8 +249,8 @@ kafka2mqtt_process_yolo2msghub()
   else
     hass.log.warning "received null payload:" $(date +%T)
   fi
-      hass.log.debug "bottom of function; DEVICES: " $(echo "${DEVICES}" | jq -c '.')
-  echo "${DEVICES:-[]}"
+  hass.log.debug "BOTTOM OF FUNCTION - DEVICES: " $(echo "${DEVICES}" | jq -c '.')
+  echo "${DEVICES}"
 }
 
 kafka2mqtt_poll()
@@ -263,7 +263,6 @@ kafka2mqtt_poll()
   DEVICES='[]'
   TOTAL_BYTES=0
   BEGIN=$(date +%s)
-  TEMP=$(mktemp)
 
   kafkacat -E -u -C -q -o end -f "%s\n" -b "${KAFKA_BROKER_URL}" \
     -X "security.protocol=sasl_ssl" \
@@ -271,9 +270,8 @@ kafka2mqtt_poll()
     -X "sasl.username=${KAFKA_APIKEY:0:16}" \
     -X "sasl.password=${KAFKA_APIKEY:16}" \
     -t "${KAFKA_TOPIC}" | while read -r; do
-      echo "${REPLY}" | kafka2mqtt_process_yolo2msghub "${DEVICES}" > ${TEMP}
-      DEVICES="$(cat ${TEMP})"
-      hass.log.debug "in the loop: DEVICES: " $(echo "${DEVICES}" | jq -c '.')
+      DEVICES=$(echo "${REPLY}" | kafka2mqtt_process_yolo2msghub "${DEVICES}")
+      hass.log.debug "IN THE LOOP - DEVICES: " $(echo "${DEVICES}" | jq -c '.')
   done
 }
   
