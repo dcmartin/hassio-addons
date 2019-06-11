@@ -109,7 +109,7 @@ mqtt_pub()
       ARGS='-P '"${MQTT_PASSWORD}"' '"${ARGS}"
       hass.log.trace "set password: ${ARGS}"
     fi
-    hass.log.trace "publishing as ${MQTT_DEVICE} to ${MQTT_HOST} port ${MQTT_PORT} using arguments: ${ARGS}"
+    hass.log.debug "publishing as ${MQTT_DEVICE} to ${MQTT_HOST} port ${MQTT_PORT} using arguments: ${ARGS}"
     mosquitto_pub -i "${MQTT_DEVICE}" -h "${MQTT_HOST}" -p "${MQTT_PORT}" ${ARGS}
   else
     hass.log.warning "nothing to send"
@@ -193,8 +193,8 @@ kafka2mqtt_process_yolo2msghub()
 	    # retrieve image and convert from BASE64 to JPEG; publish image
             TEMP=$(mktemp)
 	    jq -r '.yolo2msghub.yolo.image' ${PAYLOAD} | base64 --decode > ${TEMP}
-	    hass.log.trace "sending file ${TEMP} to topic ${MQTT_TOPIC}"
-	    mqtt_pub -t ${MQTT_TOPIC}/image -f ${TEMP}
+	    hass.log.debug "sending file ${TEMP} to topic ${MQTT_TOPIC}"
+	    mqtt_pub -t "${MQTT_TOPIC}/image" -f ${TEMP}
 	    rm -f ${TEMP}
 
 	    # increment total entities seen
