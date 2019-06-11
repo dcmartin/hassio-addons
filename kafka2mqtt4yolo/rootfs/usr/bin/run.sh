@@ -162,11 +162,11 @@ kafka2mqtt_process_yolo2msghub()
 
     # have we seen this before
     if [ ! -z "${ID:-}" ]; then
+      hass.log.debug "adding THIS: ${THIS}"
       THIS=$(echo "${DEVICES:-[]}" | jq '.[]|select(.id=="'${ID}'")')
     else
       THIS='null'
     fi
-    hass.log.debug "THIS: ${THIS}"
 
     if [ -z "${THIS}" ] || [ "${THIS}" = 'null' ]; then
       NODE_ENTITY_COUNT=0
