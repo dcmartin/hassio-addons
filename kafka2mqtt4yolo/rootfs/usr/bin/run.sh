@@ -120,6 +120,8 @@ kafka2mqtt_process_yolo2msghub()
 {
   hass.log.trace "${FUNCNAME[0]}"
 
+  DEVICES="${*}"
+
   NOW=$(date +%s)
 
   REPLY=$(cat)
@@ -244,9 +246,11 @@ kafka2mqtt_process_yolo2msghub()
     TEMP=$(mktemp) && echo "${DEVICES}" | jq -c '{"'${KAFKA_TOPIC}'":{"date":"'$(date -u +%FT%TZ)'","activity":.}}' > ${TEMP}
     mqtt_pub -t ${MQTT_TOPIC} -f ${TEMP}
     rm -f ${TEMP}
+    echo "${THIS}"
   else
     hass.log.warning "received null payload:" $(date +%T)
   fi
+  echo "${DEVICES:-null}"
 }
 
 kafka2mqtt_poll()
@@ -267,7 +271,7 @@ kafka2mqtt_poll()
     -X "sasl.password=${KAFKA_APIKEY:16}" \
     -t "${KAFKA_TOPIC}" | while read -r; do
       hass.log.debug "DEVICES: ${DEVICES}"
-      echo "${REPLY}" | kafka2mqtt_process_yolo2msghub 
+      DEVICES=$(echo "${REPLY}" | kafka2mqtt_process_yolo2msghub "${DEVICES}")
   done
 }
   
