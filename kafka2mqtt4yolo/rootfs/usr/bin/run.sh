@@ -161,9 +161,8 @@ kafka2mqtt_process_yolo2msghub()
     hass.log.debug "device: ${ID}; hzn: ${HZN_STATUS}; entity: ${ENTITY:-}; started: ${STARTED}; download: ${WAN_DOWNLOAD}; percent: ${CPU_PERCENT}; product: ${HAL_PRODUCT}"
 
     # have we seen this before
-    if [ ! -z "${ID:-}" ]; then
-      hass.log.debug "adding THIS: ${THIS}"
-      THIS=$(echo "${DEVICES:-[]}" | jq '.[]|select(.id=="'${ID}'")')
+    if [ ! -z "${ID:-}" ] && [ "${DEVICES:-[]}" != '[]' ]; then
+      THIS=$(echo "${DEVICES}" | jq '.[]|select(.id=="'${ID}'")')
     else
       THIS='null'
     fi
