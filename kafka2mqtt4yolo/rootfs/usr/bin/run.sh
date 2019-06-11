@@ -120,16 +120,13 @@ kafka2mqtt_process_yolo2msghub()
 {
   hass.log.trace "${FUNCNAME[0]}"
 
-  DEVICES="${*}"
-  hass.log.debug "TOP OF FUNCTION - DEVICES: " $(echo "${DEVICES}" | jq -c '.')
-
   NOW=$(date +%s)
+  DEVICES="${*}"
+  BUFFER=$(cat)
 
-  REPLY=$(cat)
-
-  if [ ! -z "${REPLY}" ]; then
+  if [ ! -z "${BUFFER}" ]; then
     PAYLOAD=$(mktemp)
-    echo "${REPLY}"  > ${PAYLOAD}
+    echo "${BUFFER}"  > ${PAYLOAD}
 
     BYTES=$(wc -c ${PAYLOAD} | awk '{ print $1 }')
     TOTAL_BYTES=$((TOTAL_BYTES+BYTES))
@@ -162,7 +159,7 @@ kafka2mqtt_process_yolo2msghub()
     hass.log.debug "device: ${ID}; hzn: ${HZN_STATUS}; entity: ${ENTITY:-}; started: ${STARTED}; download: ${WAN_DOWNLOAD}; percent: ${CPU_PERCENT}; product: ${HAL_PRODUCT}"
 
     # have we seen this before
-    if [ ! -z "${ID:-}" ] && [ "${DEVICES}" != '[]' ]; then
+    if [ ! -z "${ID:-}" ] && [ ! -z "${DEVICES:-}" ] && [ "${DEVICES}" != '[]' ]; then
       THIS=$(echo "${DEVICES}" | jq '.[]|select(.id=="'${ID}'")')
     else
       THIS='null'
@@ -176,7 +173,6 @@ kafka2mqtt_process_yolo2msghub()
       NODE_LAST_SEEN=0
       NODE_AVERAGE=0
       THIS='{"id":"'${ID:-}'","entity":"'${ENTITY}'","date":'${DATE}',"started":'${STARTED}',"count":'${NODE_ENTITY_COUNT}',"mock":'${NODE_MOCK_COUNT}',"seen":'${NODE_SEEN_COUNT}',"first":'${NODE_FIRST_SEEN}',"last":'${NODE_LAST_SEEN}',"average":'${NODE_AVERAGE:-0}',"download":'${WAN_DOWNLOAD:-0}',"percent":'${CPU_PERCENT:-0}',"product":"'${HAL_PRODUCT:-unknown}'"}'
-      DEVICES=$(echo "${DEVICES}" | jq '.+=['"${THIS}"']')
     else
       NODE_ENTITY_COUNT=$(echo "${THIS}" | jq '.count') || NODE_ENTITY_COUNT=0
       NODE_MOCK_COUNT=$(echo "${THIS}" | jq '.mock') || NODE_MOCK_COUNT=0
@@ -239,18 +235,11 @@ kafka2mqtt_process_yolo2msghub()
 
     NODE_ENTITY_COUNT=$((NODE_ENTITY_COUNT+1))
     THIS=$(echo "${THIS}" | jq '.count='${NODE_ENTITY_COUNT})
-    DEVICES=$(echo "${DEVICES}" | jq '(.[]|select(.id=="'${ID}'"))+='"${THIS}")
-
-    # send JSON update
-    TEMP=$(mktemp) && echo "${DEVICES}" | jq -c '{"'${KAFKA_TOPIC}'":{"date":"'$(date -u +%FT%TZ)'","activity":.}}' > ${TEMP}
-    mqtt_pub -t ${MQTT_TOPIC} -f ${TEMP}
-    rm -f ${TEMP}
-    echo "${THIS}"
   else
     hass.log.warning "received null payload:" $(date +%T)
+    THIS=
   fi
-  hass.log.debug "BOTTOM OF FUNCTION - DEVICES: " $(echo "${DEVICES}" | jq -c '.')
-  echo "${DEVICES}"
+  echo "${THIS:-}"
 }
 
 kafka2mqtt_poll()
@@ -264,14 +253,23 @@ kafka2mqtt_poll()
   TOTAL_BYTES=0
   BEGIN=$(date +%s)
 
+  TEMP=$(mktemp)
   kafkacat -E -u -C -q -o end -f "%s\n" -b "${KAFKA_BROKER_URL}" \
     -X "security.protocol=sasl_ssl" \
     -X "sasl.mechanisms=PLAIN" \
     -X "sasl.username=${KAFKA_APIKEY:0:16}" \
     -X "sasl.password=${KAFKA_APIKEY:16}" \
     -t "${KAFKA_TOPIC}" | while read -r; do
-      DEVICES=$(echo "${REPLY}" | kafka2mqtt_process_yolo2msghub "${DEVICES}")
+      THIS=$(echo "${REPLY}" | kafka2mqtt_process_yolo2msghub "${DEVICES}")
+      if [ ! -z "${THIS}" ]; then
+        ID=$(echo "${THIS}" | jq -r '.id')
+        DEVICES=$(echo "${DEVICES}" | jq '(.[]|select(.id=="'${ID}'"))+='"${THIS}")
+      fi
       hass.log.debug "IN THE LOOP - DEVICES: " $(echo "${DEVICES}" | jq -c '.')
+
+      # send JSON update
+      echo "${DEVICES}" | jq -c '{"'${KAFKA_TOPIC}'":{"date":"'$(date -u +%FT%TZ)'","activity":.}}' > ${TEMP}
+      mqtt_pub -t ${MQTT_TOPIC} -f ${TEMP}
   done
 }
   
