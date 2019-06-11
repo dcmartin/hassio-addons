@@ -183,6 +183,7 @@ kafka2mqtt_process_yolo2msghub()
       NODE_MOCK_COUNT=$(echo "${THIS}" | jq '.mock') || NODE_MOCK_COUNT=0
       NODE_SEEN_COUNT=$(echo "${THIS}" | jq '.seen') || NODE_SEEN_COUNT=0
       NODE_FIRST_SEEN=$(echo "${THIS}" | jq '.first') || NODE_FIRST_SEEN=0
+      NODE_LAST_SEEN=$(echo "${THIS}" | jq '.last') || NODE_LAST_SEEN=0
       NODE_AVERAGE=$(echo "${THIS}" | jq '.average') || NODE_AVERAGE=0
     fi
 
