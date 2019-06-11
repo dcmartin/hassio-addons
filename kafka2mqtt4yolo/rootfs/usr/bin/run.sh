@@ -135,7 +135,7 @@ kafka2mqtt_process_yolo2msghub()
     ELAPSED=$((NOW-BEGIN))
 
     if [ ${ELAPSED} -ne 0 ]; then BPS=$(echo "${TOTAL_BYTES} / ${ELAPSED}" | bc -l); else BPS=1; fi
-    hass.log.info "### DATA $0 $$ -- received at: $(date +%T); bytes: ${BYTES}; total bytes: ${TOTAL_BYTES}; bytes/sec: ${BPS}"
+    hass.log.debug "### DATA $0 $$ -- received at: $(date +%T); bytes: ${BYTES}; total bytes: ${TOTAL_BYTES}; bytes/sec: ${BPS}"
 
     # get payload specifics
     ID=$(jq -r '.hzn.device_id' ${PAYLOAD})
@@ -143,7 +143,7 @@ kafka2mqtt_process_yolo2msghub()
     DATE=$(jq -r '.date' ${PAYLOAD})
     STARTED=$((NOW-DATE))
 
-    hass.log.info "ID: ${ID}; ENTITY: ${ENTITY}; DATE: ${DATE}; STARTED: ${STARTED}"
+    hass.log.debug "ID: ${ID}; ENTITY: ${ENTITY}; DATE: ${DATE}; STARTED: ${STARTED}"
 
     # HZN
     if [ $(jq '.hzn?!=null' ${PAYLOAD}) = true ]; then HZN=$(jq '.hzn' ${PAYLOAD}) HZN_STATUS=$(echo "${HZN}" | jq -c '.'); fi
@@ -158,11 +158,11 @@ kafka2mqtt_process_yolo2msghub()
     if [ $(jq '.hal?!=null' ${PAYLOAD}) = true ]; then HAL=$(jq '.hal' ${PAYLOAD}) HAL_PRODUCT=$(echo "${HAL}" | jq -r '.lshw.product'); fi
     HAL_PRODUCT="${HAL_PRODUCT:-unknown}"
 
-    hass.log.info "device: ${ID}; hzn: ${HZN_STATUS}; entity: ${ENTITY:-}; started: ${STARTED}; download: ${WAN_DOWNLOAD}; percent: ${CPU_PERCENT}; product: ${HAL_PRODUCT}"
+    hass.log.debug "device: ${ID}; hzn: ${HZN_STATUS}; entity: ${ENTITY:-}; started: ${STARTED}; download: ${WAN_DOWNLOAD}; percent: ${CPU_PERCENT}; product: ${HAL_PRODUCT}"
 
     # have we seen this before
     if [ ! -z "${ID:-}" ]; then
-      THIS=$(echo "${DEVICES}" | jq '.[]|select(.id=="'${ID}'")')
+      THIS=$(echo "${DEVICES:-[]}" | jq '.[]|select(.id=="'${ID}'")')
     else
       THIS='null'
     fi
