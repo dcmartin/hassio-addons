@@ -249,7 +249,7 @@ kafka2mqtt_poll()
   hass.log.debug "listening: ${KAFKA_TOPIC}; ${KAFKA_APIKEY}; ${KAFKA_BROKER_URL}"
 
   # globals
-  DEVICES='[]'
+  DEVICES='null'
   TOTAL_BYTES=0
   BEGIN=$(date +%s)
 
@@ -260,22 +260,33 @@ kafka2mqtt_poll()
     -X "sasl.username=${KAFKA_APIKEY:0:16}" \
     -X "sasl.password=${KAFKA_APIKEY:16}" \
     -t "${KAFKA_TOPIC}" | while read -r; do
+
       THIS=$(echo "${REPLY}" | kafka2mqtt_process_yolo2msghub "${DEVICES}")
       hass.log.debug "GOT THIS: " $(echo "${THIS}" | jq -c '.')
 
+      # check for null payload
       if [ ! -z "${THIS}" ]; then
-        if [ "${DEVICES}" != '[]' ]; then
+        # check for existing devices
+        if [ "${DEVICES}" != 'null' ]; then
           ID=$(echo "${THIS}" | jq -r '.id')
-          DEVICES=$(echo "${DEVICES}" | jq '(.[]|select(.id=="'${ID}'"))+='"${THIS}")
+          THAT=$(echo "${DEVICES}" | jq '.[]|select(.id=="'${ID}'")')
+          if [ ! -z "${THAT}" ]; then
+	    hass.log.debug "updating device ${ID}"
+            DEVICES=$(echo "${DEVICES}" | jq '(.[]|select(.id=="'${ID}'"))|='"${THIS}")
+          else
+	    hass.log.debug "adding device ${ID}"
+            DEVICES=$(echo "${DEVICES}" | jq '.+='"${THIS}")
+          fi
         else
-          DEVICES="[${THIS}]"
+	  hass.log.debug "no existing devices"
+          DEVICES='['"${THIS}"']'
         fi 
         hass.log.debug "DEVICES: " $(echo "${DEVICES}" | jq -c '.')
-      fi
 
-      # send JSON update
-      echo "${DEVICES}" | jq -c '{"'${KAFKA_TOPIC}'":{"date":"'$(date -u +%FT%TZ)'","activity":.}}' > ${TEMP}
-      mqtt_pub -t ${MQTT_TOPIC} -f ${TEMP}
+        # send JSON update
+        echo "${DEVICES}" | jq -c '{"'${KAFKA_TOPIC}'":{"date":"'$(date -u +%FT%TZ)'","activity":.}}' > ${TEMP}
+        mqtt_pub -t ${MQTT_TOPIC} -f ${TEMP}
+      fi
   done
 }
   
