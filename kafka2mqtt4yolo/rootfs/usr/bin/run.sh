@@ -141,6 +141,8 @@ kafka2mqtt_process_yolo2msghub()
     DATE=$(jq -r '.date' ${PAYLOAD})
     STARTED=$((NOW-DATE))
 
+    hass.log.debug "ID: ${ID}; ENTITY: ${ENTITY}; DATE: ${DATE}; STARTED: ${STARTED}"
+
     # HZN
     if [ $(jq '.hzn?!=null' ${PAYLOAD}) = true ]; then HZN=$(jq '.hzn' ${PAYLOAD}) HZN_STATUS=$(echo "${HZN}" | jq -c '.'); fi
     HZN_STATUS=${HZN_STATUS:-null}
@@ -172,7 +174,8 @@ kafka2mqtt_process_yolo2msghub()
       NODE_LAST_SEEN=0
       NODE_AVERAGE=0
       THIS='{"id":"'${ID:-}'","entity":"'${ENTITY}'","date":'${DATE}',"started":'${STARTED}',"count":'${NODE_ENTITY_COUNT}',"mock":'${NODE_MOCK_COUNT}',"seen":'${NODE_SEEN_COUNT}',"first":'${NODE_FIRST_SEEN}',"last":'${NODE_LAST_SEEN}',"average":'${NODE_AVERAGE:-0}',"download":'${WAN_DOWNLOAD:-0}',"percent":'${CPU_PERCENT:-0}',"product":"'${HAL_PRODUCT:-unknown}'"}'
-      DEVICES=$(echo "${DEVICES}" | jq '.+=['"${THIS}"']')
+      DEVICES=$(echo "${DEVICES:-null}" | jq '.+=['"${THIS}"']')
+      hass.log.debug "Setting DEVICES: ${DEVICES}"
     else
       NODE_ENTITY_COUNT=$(echo "${THIS}" | jq '.count') || NODE_ENTITY_COUNT=0
       NODE_MOCK_COUNT=$(echo "${THIS}" | jq '.mock') || NODE_MOCK_COUNT=0
@@ -230,10 +233,12 @@ kafka2mqtt_process_yolo2msghub()
 
     rm -f ${PAYLOAD}
 
-    NODE_ENTITY_COUNT=$((NODE_ENTITY_COUNT+1)) && THIS=$(echo "${THIS}" | jq '.count='${NODE_ENTITY_COUNT})
-    DEVICES=$(echo "${DEVICES}" | jq '(.[]|select(.id=="'${ID}'"))|='"${THIS}")
+    NODE_ENTITY_COUNT=$((NODE_ENTITY_COUNT+1))
+    THIS=$(echo "${THIS}" | jq '.count='${NODE_ENTITY_COUNT})
+    hass.log.debug "Setting THIS: ${THIS}"
 
-    hass.log.debug "sending ${DEVICES} to topic ${MQTT_TOPIC}"
+    DEVICES=$(echo "${DEVICES}" | jq '(.[]|select(.id=="'${ID}'"))|='"${THIS}")
+    hass.log.debug "Setting DEVICES: ${DEVICES}"
 
     # send JSON update
     TEMP=$(mktemp) && echo "${DEVICES}" | jq -c '{"'${KAFKA_TOPIC}'":{"date":"'$(date -u +%FT%TZ)'","activity":.}}' > ${TEMP}
