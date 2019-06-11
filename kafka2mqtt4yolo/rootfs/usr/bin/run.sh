@@ -182,9 +182,9 @@ kafka2mqtt_process_yolo2msghub()
 
     # test payload
     if [ $(jq '.yolo2msghub.yolo!=null' ${PAYLOAD}) = true ]; then
+      WHEN=$(jq -r '.yolo2msghub.yolo.date' ${PAYLOAD})
       if [ $(jq -r '.yolo2msghub.yolo.mock' ${PAYLOAD}) = 'null' ]; then
 	hass.log.trace "${ID}: non-mock"
-	WHEN=$(jq -r '.yolo2msghub.yolo.date' ${PAYLOAD})
 	if [ ${WHEN} -gt ${NODE_LAST_SEEN} ]; then
 	  hass.log.trace "${ID}: new payload"
 
