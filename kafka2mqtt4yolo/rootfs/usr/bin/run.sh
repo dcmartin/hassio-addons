@@ -270,7 +270,7 @@ kafka2mqtt_poll()
     -X "sasl.username=${KAFKA_APIKEY:0:16}" \
     -X "sasl.password=${KAFKA_APIKEY:16}" \
     -t "${KAFKA_TOPIC}" | while read -r; do
-      DEVICES=$(echo "${REPLY}" | kafka2mqtt_process_yolo2msghub "${DEVICES}")
+      DEVICES='['$(echo "${REPLY}" | kafka2mqtt_process_yolo2msghub "${DEVICES}")']'
       hass.log.debug "in the loop: DEVICES: " $(echo "${DEVICES}" | jq -c '.')
   done
 }
