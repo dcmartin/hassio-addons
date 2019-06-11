@@ -187,8 +187,6 @@ kafka2mqtt_process_yolo2msghub()
 	WHEN=$(jq -r '.yolo2msghub.yolo.date' ${PAYLOAD})
 	if [ ${WHEN} -gt ${NODE_LAST_SEEN} ]; then
 	  hass.log.trace "${ID}: new payload"
-	  SEEN=$(jq -r '.yolo2msghub.yolo.count' ${PAYLOAD})
-	  if [ ${SEEN} -gt 0 ]; then
 
 	    # retrieve image and convert from BASE64 to JPEG; publish image
             TEMP=$(mktemp)
@@ -196,6 +194,9 @@ kafka2mqtt_process_yolo2msghub()
 	    hass.log.debug "sending file ${TEMP} to topic ${MQTT_TOPIC}"
 	    mqtt_pub -t "${MQTT_TOPIC}/image" -f ${TEMP}
 	    rm -f ${TEMP}
+
+	  SEEN=$(jq -r '.yolo2msghub.yolo.count' ${PAYLOAD})
+	  if [ ${SEEN} -gt 0 ]; then
 
 	    # increment total entities seen
 	    NODE_SEEN_COUNT=$((NODE_SEEN_COUNT+SEEN))
