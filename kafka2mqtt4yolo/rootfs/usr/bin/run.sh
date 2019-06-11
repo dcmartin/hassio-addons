@@ -176,9 +176,7 @@ kafka2mqtt_process_yolo2msghub()
       NODE_LAST_SEEN=0
       NODE_AVERAGE=0
       THIS='{"id":"'${ID:-}'","entity":"'${ENTITY}'","date":'${DATE}',"started":'${STARTED}',"count":'${NODE_ENTITY_COUNT}',"mock":'${NODE_MOCK_COUNT}',"seen":'${NODE_SEEN_COUNT}',"first":'${NODE_FIRST_SEEN}',"last":'${NODE_LAST_SEEN}',"average":'${NODE_AVERAGE:-0}',"download":'${WAN_DOWNLOAD:-0}',"percent":'${CPU_PERCENT:-0}',"product":"'${HAL_PRODUCT:-unknown}'"}'
-      hass.log.info "Setting DEVICES"
       DEVICES=$(echo "${DEVICES:-[]}" | jq '.+=['"${THIS}"']')
-      hass.log.info "Set DEVICES"
     else
       NODE_ENTITY_COUNT=$(echo "${THIS}" | jq '.count') || NODE_ENTITY_COUNT=0
       NODE_MOCK_COUNT=$(echo "${THIS}" | jq '.mock') || NODE_MOCK_COUNT=0
@@ -271,7 +269,6 @@ kafka2mqtt_poll()
     -X "sasl.username=${KAFKA_APIKEY:0:16}" \
     -X "sasl.password=${KAFKA_APIKEY:16}" \
     -t "${KAFKA_TOPIC}" | while read -r; do
-      hass.log.debug "DEVICES: ${DEVICES}"
       DEVICES=$(echo "${REPLY}" | kafka2mqtt_process_yolo2msghub "${DEVICES}")
   done
 }
