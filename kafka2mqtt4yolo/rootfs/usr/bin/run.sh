@@ -263,6 +263,7 @@ kafka2mqtt_poll()
   DEVICES='[]'
   TOTAL_BYTES=0
   BEGIN=$(date +%s)
+  TEMP=$(mktemp)
 
   kafkacat -E -u -C -q -o end -f "%s\n" -b "${KAFKA_BROKER_URL}" \
     -X "security.protocol=sasl_ssl" \
@@ -270,7 +271,8 @@ kafka2mqtt_poll()
     -X "sasl.username=${KAFKA_APIKEY:0:16}" \
     -X "sasl.password=${KAFKA_APIKEY:16}" \
     -t "${KAFKA_TOPIC}" | while read -r; do
-      DEVICES='['$(echo "${REPLY}" | kafka2mqtt_process_yolo2msghub "${DEVICES}")']'
+      echo "${REPLY}" | kafka2mqtt_process_yolo2msghub "${DEVICES}" > ${TEMP}
+      DEVICES="$(cat ${TEMP})"
       hass.log.debug "in the loop: DEVICES: " $(echo "${DEVICES}" | jq -c '.')
   done
 }
