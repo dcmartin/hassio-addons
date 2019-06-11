@@ -143,7 +143,7 @@ kafka2mqtt_process_yolo2msghub()
     DATE=$(jq -r '.date' ${PAYLOAD})
     STARTED=$((NOW-DATE))
 
-    hass.log.debug "ID: ${ID}; ENTITY: ${ENTITY}; DATE: ${DATE}; STARTED: ${STARTED}"
+    hass.log.info "ID: ${ID}; ENTITY: ${ENTITY}; DATE: ${DATE}; STARTED: ${STARTED}"
 
     # HZN
     if [ $(jq '.hzn?!=null' ${PAYLOAD}) = true ]; then HZN=$(jq '.hzn' ${PAYLOAD}) HZN_STATUS=$(echo "${HZN}" | jq -c '.'); fi
@@ -158,7 +158,7 @@ kafka2mqtt_process_yolo2msghub()
     if [ $(jq '.hal?!=null' ${PAYLOAD}) = true ]; then HAL=$(jq '.hal' ${PAYLOAD}) HAL_PRODUCT=$(echo "${HAL}" | jq -r '.lshw.product'); fi
     HAL_PRODUCT="${HAL_PRODUCT:-unknown}"
 
-    hass.log.debug "device: ${ID}; hzn: ${HZN_STATUS}; entity: ${ENTITY:-}; started: ${STARTED}; download: ${WAN_DOWNLOAD}; percent: ${CPU_PERCENT}; product: ${HAL_PRODUCT}"
+    hass.log.info "device: ${ID}; hzn: ${HZN_STATUS}; entity: ${ENTITY:-}; started: ${STARTED}; download: ${WAN_DOWNLOAD}; percent: ${CPU_PERCENT}; product: ${HAL_PRODUCT}"
 
     # have we seen this before
     if [ ! -z "${ID:-}" ]; then
@@ -187,6 +187,7 @@ kafka2mqtt_process_yolo2msghub()
       NODE_AVERAGE=$(echo "${THIS}" | jq '.average') || NODE_AVERAGE=0
     fi
 
+    # test payload
     if [ $(jq '.yolo2msghub.yolo!=null' ${PAYLOAD}) = true ]; then
       if [ $(jq -r '.yolo2msghub.yolo.mock' ${PAYLOAD}) = 'null' ]; then
 	hass.log.debug "${ID}: non-mock"
@@ -234,13 +235,14 @@ kafka2mqtt_process_yolo2msghub()
       hass.log.warning "${ID} at ${WHEN}: no yolo output"
     fi
 
+    # remove payload
     rm -f ${PAYLOAD}
 
     NODE_ENTITY_COUNT=$((NODE_ENTITY_COUNT+1))
     THIS=$(echo "${THIS}" | jq '.count='${NODE_ENTITY_COUNT})
 
     hass.log.debug "Adding THIS: ${THIS} to DEVICES: ${DEVICES}"
-    DEVICES=$(echo "${DEVICES}" | jq '(.[]|select(.id=="'${ID}'"))|='"${THIS}")
+    DEVICES=$(echo "${DEVICES:-[]}" | jq '(.[]|select(.id=="'${ID}'"))|='"${THIS}")
     hass.log.debug "Set DEVICES: ${DEVICES}"
 
     # send JSON update
