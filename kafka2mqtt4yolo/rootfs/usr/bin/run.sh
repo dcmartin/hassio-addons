@@ -188,10 +188,6 @@ kafka2mqtt_process_yolo2msghub()
 	if [ ${WHEN:-0} -gt ${NODE_LAST_SEEN} ]; then
 	  hass.log.trace "${ID}: new payload"
 
-	  # send copy of payload
-	  hass.log.debug "sending payload to topic ${MQTT_TOPIC}/payload"
-	  mqtt_pub -t "${MQTT_TOPIC}/image" -f ${PAYLOAD}
-
 	  SEEN=$(jq -r '.yolo2msghub.yolo.count' ${PAYLOAD})
 	  if [ ${SEEN} -gt 0 ]; then
 
@@ -232,6 +228,10 @@ kafka2mqtt_process_yolo2msghub()
     else
       hass.log.warning "${ID} at ${WHEN:-0}: no yolo output"
     fi
+
+    # send copy of payload
+    hass.log.debug "sending payload to topic ${MQTT_TOPIC}/payload"
+    mqtt_pub -t "${MQTT_TOPIC}/payload" -f ${PAYLOAD}
 
     # remove payload
     rm -f ${PAYLOAD}
