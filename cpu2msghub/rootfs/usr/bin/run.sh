@@ -137,7 +137,7 @@ hass.log.debug "MQTT port: ${VALUE}"
 MQTT_PORT=${VALUE}
 
 VALUE=$(hass.config.get "mqtt.topic")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="kafka/cpu-load"; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="cpu2msghub"; fi
 hass.log.debug "MQTT topic: ${VALUE}"
 MQTT_TOPIC=${VALUE}
 
