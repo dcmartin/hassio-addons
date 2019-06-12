@@ -185,7 +185,7 @@ kafka2mqtt_process_yolo2msghub()
       WHEN=$(jq -r '.yolo2msghub.yolo.date' ${PAYLOAD})
       if [ $(jq -r '.yolo2msghub.yolo.mock' ${PAYLOAD}) = 'null' ]; then
 	hass.log.trace "${ID}: non-mock"
-	if [ ${WHEN} -gt ${NODE_LAST_SEEN} ]; then
+	if [ ${WHEN:-0} -gt ${NODE_LAST_SEEN} ]; then
 	  hass.log.trace "${ID}: new payload"
 
 	    # retrieve image and convert from BASE64 to JPEG; publish image
@@ -201,14 +201,14 @@ kafka2mqtt_process_yolo2msghub()
 	    # increment total entities seen
 	    NODE_SEEN_COUNT=$((NODE_SEEN_COUNT+SEEN))
 	    # track when
-	    NODE_LAST_SEEN=${WHEN}
+	    NODE_LAST_SEEN=${WHEN:-0}
 	    AGO=$((NOW-NODE_LAST_SEEN))
 	    hass.log.info "### DATA $0 $$ -- ${ID}; ago: ${AGO:-0}; ${ENTITY} seen: ${SEEN}"
 	    # calculate interval
 	    if [ "${NODE_FIRST_SEEN:-0}" -eq 0 ]; then NODE_FIRST_SEEN=${NODE_LAST_SEEN}; fi
 	    INTERVAL=$((NODE_LAST_SEEN-NODE_FIRST_SEEN))
 	    if [ ${INTERVAL} -eq 0 ]; then 
-	      NODE_FIRST_SEEN=${WHEN}
+	      NODE_FIRST_SEEN=${WHEN:-0}
 	      INTERVAL=0
 	      NODE_AVERAGE=1.0
 	    else
@@ -216,17 +216,17 @@ kafka2mqtt_process_yolo2msghub()
 	    fi
 	    THIS=$(echo "${THIS}" | jq '.date='${NOW}'|.interval='${INTERVAL:-0}'|.ago='${AGO:-0}'|.seen='${NODE_SEEN_COUNT:-0}'|.last='${NODE_LAST_SEEN:-0}'|.first='${NODE_FIRST_SEEN:-0}'|.average='${NODE_AVERAGE:-0})
 	  else
-	    hass.log.trace "${ID} at ${WHEN}; did not see: ${ENTITY:-null}"
+	    hass.log.trace "${ID} at ${WHEN:-0}; did not see: ${ENTITY:-null}"
 	  fi
 	else
 	  hass.log.trace "old payload"
 	fi
       else
-	hass.log.warning "${ID} at ${WHEN}: mock" $(jq -c '.yolo2msghub.yolo.detected' ${PAYLOAD})
+	hass.log.warning "${ID} at ${WHEN:-0}: mock" $(jq -c '.yolo2msghub.yolo.detected' ${PAYLOAD})
 	NODE_MOCK_COUNT=$((NODE_MOCK_COUNT+1)) && THIS=$(echo "${THIS}" | jq '.mock='${NODE_MOCK_COUNT})
       fi
     else
-      hass.log.warning "${ID} at ${WHEN}: no yolo output"
+      hass.log.warning "${ID} at ${WHEN:-0}: no yolo output"
     fi
 
     # remove payload
