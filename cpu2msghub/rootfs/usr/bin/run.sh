@@ -121,7 +121,7 @@ EXCHANGE_TOKEN=$(echo "$JSON" | jq -r '.horizon.token')
 EXCHANGE_ORG=$(echo "$JSON" | jq -r '.horizon.organization')
 
 ## KAFKA
-KAFKA_TOPIC=$(echo "$JSON" | jq -r '.kafka.broker')
+KAFKA_TOPIC=$(echo "$JSON" | jq -r '.kafka.topic')
 KAFKA_BROKER_URL=$(echo "$JSON" | jq -r '.kafka.broker')
 KAFKA_API_KEY=$(echo "$JSON" | jq -r '.kafka.api_key')
 
