@@ -188,15 +188,19 @@ kafka2mqtt_process_yolo2msghub()
 	if [ ${WHEN:-0} -gt ${NODE_LAST_SEEN} ]; then
 	  hass.log.trace "${ID}: new payload"
 
-	    # retrieve image and convert from BASE64 to JPEG; publish image
-            TEMP=$(mktemp)
-	    jq -r '.yolo2msghub.yolo.image' ${PAYLOAD} | base64 --decode > ${TEMP}
-	    hass.log.debug "sending file ${TEMP} to topic ${MQTT_TOPIC}"
-	    mqtt_pub -t "${MQTT_TOPIC}/image" -f ${TEMP}
-	    rm -f ${TEMP}
+	  # send copy of payload
+	  hass.log.debug "sending payload to topic ${MQTT_TOPIC}/payload"
+	  mqtt_pub -t "${MQTT_TOPIC}/image" -f ${PAYLOAD}
 
 	  SEEN=$(jq -r '.yolo2msghub.yolo.count' ${PAYLOAD})
 	  if [ ${SEEN} -gt 0 ]; then
+
+	    # retrieve image and convert from BASE64 to JPEG; publish image
+	    TEMP=$(mktemp)
+	    jq -r '.yolo2msghub.yolo.image' ${PAYLOAD} | base64 --decode > ${TEMP}
+	    hass.log.debug "sending image to topic ${MQTT_TOPIC}/image"
+	    mqtt_pub -t "${MQTT_TOPIC}/image" -f ${TEMP}
+	    rm -f ${TEMP}
 
 	    # increment total entities seen
 	    NODE_SEEN_COUNT=$((NODE_SEEN_COUNT+SEEN))
@@ -282,6 +286,7 @@ kafka2mqtt_poll()
 
         # send JSON update
         echo "${DEVICES}" | jq -c '{"'${KAFKA_TOPIC}'":{"date":"'$(date +%s)'","timestamp":"'$(date -u +%FT%TZ)'","activity":.|sort_by(.date)}}' > ${TEMP}
+        # send summary data
         mqtt_pub -t ${MQTT_TOPIC} -f ${TEMP}
       fi
   done
