@@ -88,7 +88,7 @@ JSON="${JSON}"'}'
 ## KAFKA OPTIONS
 ##
 
-JSON="${JSON}"',"kafka":{"topic": null'
+JSON="${JSON}"',"kafka":{"topic": "cpu2msghub"'
 # BROKERS
 VALUE=$(hass.config.get "kafka.broker")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then hass.log.fatal "No kafka.broker"; hass.die; fi
@@ -121,8 +121,7 @@ EXCHANGE_TOKEN=$(echo "$JSON" | jq -r '.horizon.token')
 EXCHANGE_ORG=$(echo "$JSON" | jq -r '.horizon.organization')
 
 ## KAFKA
-KAFKA_TOPIC=$(echo "${EXCHANGE_ORG}.${PATTERN_ORG}_${PATTERN_ID}" | sed 's/@/_/g')
-JSON=$(echo "${JSON}" | jq '.kafka.topic="'"${KAFKA_TOPIC}"'"')
+KAFKA_TOPIC=$(echo "$JSON" | jq -r '.kafka.broker')
 KAFKA_BROKER_URL=$(echo "$JSON" | jq -r '.kafka.broker')
 KAFKA_API_KEY=$(echo "$JSON" | jq -r '.kafka.api_key')
 
