@@ -182,6 +182,14 @@ kafka2mqtt_process_yolo2msghub()
 
     # test payload
     if [ $(jq '.yolo2msghub.yolo!=null' ${PAYLOAD}) = true ]; then
+
+	    # retrieve image and convert from BASE64 to JPEG; publish image
+	    TEMP=$(mktemp)
+	    jq -r '.yolo2msghub.yolo.image' ${PAYLOAD} | base64 --decode > ${TEMP}
+	    hass.log.debug "sending image to topic ${MQTT_TOPIC}/image"
+	    mqtt_pub -t "${MQTT_TOPIC}/image" -f ${TEMP}
+	    rm -f ${TEMP}
+
       WHEN=$(jq -r '.yolo2msghub.yolo.date' ${PAYLOAD})
       if [ $(jq -r '.yolo2msghub.yolo.mock' ${PAYLOAD}) = 'null' ]; then
 	hass.log.trace "${ID}: non-mock"
@@ -190,13 +198,6 @@ kafka2mqtt_process_yolo2msghub()
 
 	  SEEN=$(jq -r '.yolo2msghub.yolo.count' ${PAYLOAD})
 	  if [ ${SEEN} -gt 0 ]; then
-
-	    # retrieve image and convert from BASE64 to JPEG; publish image
-	    TEMP=$(mktemp)
-	    jq -r '.yolo2msghub.yolo.image' ${PAYLOAD} | base64 --decode > ${TEMP}
-	    hass.log.debug "sending image to topic ${MQTT_TOPIC}/image"
-	    mqtt_pub -t "${MQTT_TOPIC}/image" -f ${TEMP}
-	    rm -f ${TEMP}
 
 	    # increment total entities seen
 	    NODE_SEEN_COUNT=$((NODE_SEEN_COUNT+SEEN))
