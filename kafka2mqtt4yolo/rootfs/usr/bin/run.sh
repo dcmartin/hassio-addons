@@ -164,15 +164,15 @@ kafka2mqtt_process_yolo2msghub()
     fi
 
     if [ -z "${THIS}" ] || [ "${THIS}" = 'null' ]; then
-      NODE_ENTITY_COUNT=0
+      NODE_MESSAGE_COUNT=0
       NODE_SEEN_COUNT=0
       NODE_MOCK_COUNT=0
       NODE_FIRST_SEEN=0
       NODE_LAST_SEEN=0
       NODE_AVERAGE=0
-      THIS='{"id":"'${ID:-}'","entity":"'${ENTITY}'","timestamp":"'$(date -u +%FT%TZ)'","date":'${DATE}',"started":'${STARTED}',"count":'${NODE_ENTITY_COUNT}',"mock":'${NODE_MOCK_COUNT}',"seen":0,"total":'${NODE_SEEN_COUNT}',"first":'${NODE_FIRST_SEEN}',"last":'${NODE_LAST_SEEN}',"average":'${NODE_AVERAGE:-0}',"download":'${WAN_DOWNLOAD:-0}',"percent":'${CPU_PERCENT:-0}',"product":"'${HAL_PRODUCT:-unknown}'"}'
+      THIS='{"id":"'${ID:-}'","entity":"'${ENTITY}'","timestamp":"'$(date -u +%FT%TZ)'","date":'${DATE}',"started":'${STARTED}',"count":'${NODE_MESSAGE_COUNT}',"mock":'${NODE_MOCK_COUNT}',"seen":0,"total":'${NODE_SEEN_COUNT}',"first":'${NODE_FIRST_SEEN}',"last":'${NODE_LAST_SEEN}',"average":'${NODE_AVERAGE:-0}',"download":'${WAN_DOWNLOAD:-0}',"percent":'${CPU_PERCENT:-0}',"product":"'${HAL_PRODUCT:-unknown}'"}'
     else
-      NODE_ENTITY_COUNT=$(echo "${THIS}" | jq '.count') || NODE_ENTITY_COUNT=0
+      NODE_MESSAGE_COUNT=$(echo "${THIS}" | jq '.count') || NODE_MESSAGE_COUNT=0
       NODE_MOCK_COUNT=$(echo "${THIS}" | jq '.mock') || NODE_MOCK_COUNT=0
       NODE_SEEN_COUNT=$(echo "${THIS}" | jq '.total') || NODE_SEEN_COUNT=0
       NODE_FIRST_SEEN=$(echo "${THIS}" | jq '.first') || NODE_FIRST_SEEN=0
@@ -196,6 +196,7 @@ kafka2mqtt_process_yolo2msghub()
 	if [ ${WHEN:-0} -gt ${NODE_LAST_SEEN} ]; then
 	  SEEN=$(jq -r '.yolo2msghub.yolo.count' ${PAYLOAD})
 	  if [ ${SEEN} -gt 0 ]; then
+	    WHENSTAMP=${TIMESTAMP:-$(date -u +%FT%TZ)}
 	    NODE_SEEN_COUNT=$((NODE_SEEN_COUNT+SEEN))
 	    if [ ${NODE_LAST_SEEN:-0} > 0 ]; then AGO=$((WHEN-NODE_LAST_SEEN)); else AGO=0; fi
 	    NODE_LAST_SEEN=${WHEN}
@@ -207,8 +208,7 @@ kafka2mqtt_process_yolo2msghub()
 	    else
 	      NODE_AVERAGE=$(echo "${NODE_SEEN_COUNT}/${INTERVAL}" | bc -l)
 	    fi
-	    if [ "${TIMESTAMP:-}" = 'null' ] || [ -z "${TIMESTAMP:-}" ]; then TIMESTAMP=$(date -u +%FT%TZ); fi
-	    THIS=$(echo "${THIS}" | jq '.timestamp="'${TIMESTAMP:-}'"|.date='${WHEN}'|.interval='${INTERVAL:-0}'|.ago='${AGO:-0}'|.seen='${SEEN:-0}'|.last='${NODE_LAST_SEEN:-0}'|.first='${NODE_FIRST_SEEN:-0}'|.total='${NODE_SEEN_COUNT}'|.average='${NODE_AVERAGE:-0})
+	    THIS=$(echo "${THIS}" | jq '.when="'${WHENSTAMP:-}'"|.date='${WHEN}'|.interval='${INTERVAL:-0}'|.ago='${AGO:-0}'|.seen='${SEEN:-0}'|.last='${NODE_LAST_SEEN:-0}'|.first='${NODE_FIRST_SEEN:-0}'|.total='${NODE_SEEN_COUNT}'|.average='${NODE_AVERAGE:-0})
 	  else
 	    hass.log.trace "${ID} at ${WHEN:-0}; did not see: ${ENTITY:-null}"
 	  fi
@@ -230,8 +230,11 @@ kafka2mqtt_process_yolo2msghub()
     # remove payload
     rm -f ${PAYLOAD}
 
-    NODE_ENTITY_COUNT=$((NODE_ENTITY_COUNT+1))
-    THIS=$(echo "${THIS}" | jq '.count='${NODE_ENTITY_COUNT})
+    # update timestamp
+    THIS=$(echo "${THIS}" | jq '.timestamp="'$(date -u +%FT%TZ)'"')
+
+    NODE_MESSAGE_COUNT=$((NODE_MESSAGE_COUNT+1))
+    THIS=$(echo "${THIS}" | jq '.count='${NODE_MESSAGE_COUNT})
   else
     hass.log.trace  "received null payload:" $(date +%T)
     THIS=
