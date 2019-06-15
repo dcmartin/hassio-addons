@@ -207,6 +207,7 @@ kafka2mqtt_process_yolo2msghub()
 	    else
 	      NODE_AVERAGE=$(echo "${NODE_SEEN_COUNT}/${INTERVAL}" | bc -l)
 	    fi
+	    if [ "${TIMESTAMP:-}" = 'null' ] || [ -z "${TIMESTAMP:-}" ]; then TIMESTAMP=$(date -u +%FT%TZ); fi
 	    THIS=$(echo "${THIS}" | jq '.timestamp="'${TIMESTAMP:-}'"|.date='${WHEN}'|.interval='${INTERVAL:-0}'|.ago='${AGO:-0}'|.seen='${SEEN:-0}'|.last='${NODE_LAST_SEEN:-0}'|.first='${NODE_FIRST_SEEN:-0}'|.total='${NODE_SEEN_COUNT}'|.average='${NODE_AVERAGE:-0})
 	  else
 	    hass.log.trace "${ID} at ${WHEN:-0}; did not see: ${ENTITY:-null}"
@@ -278,7 +279,7 @@ kafka2mqtt_poll()
         fi 
 
         # send JSON update
-        echo "${DEVICES}" | jq -c '{"'${KAFKA_TOPIC}'":{"date":"'$(date +%s)'","timestamp":"'$(date -u +%FT%TZ)'","activity":.}}' > ${TEMP}
+        echo "${DEVICES}" | jq -c '{"'${KAFKA_TOPIC}'":{"date":"'$(date +%s)'","timestamp":"'$(date -u +%FT%TZ)'","activity":.|sort_by(.ago)}}' > ${TEMP}
         # send summary data
         mqtt_pub -t ${MQTT_TOPIC} -f ${TEMP}
       fi
