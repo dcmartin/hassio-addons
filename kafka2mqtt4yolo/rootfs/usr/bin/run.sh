@@ -286,7 +286,7 @@ kafka2mqtt_poll()
         fi 
 
         # send JSON update
-        echo "${DEVICES}" | jq -c '{"'${KAFKA_TOPIC}'":{"date":"'$(date +%s)'","timestamp":"'$(date -u +%FT%TZ)'","activity":.|sort_by(.date)}}' > ${TEMP}
+        echo "${DEVICES}" | jq -c '{"'${KAFKA_TOPIC}'":{"date":"'$(date +%s)'","timestamp":"'$(date -u +%FT%TZ)'","activity":.|sort_by(.date)|reverse}}' > ${TEMP}
         # send summary data
         mqtt_pub -t ${MQTT_TOPIC} -f ${TEMP}
       fi
