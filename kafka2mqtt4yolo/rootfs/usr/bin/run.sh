@@ -170,11 +170,11 @@ kafka2mqtt_process_yolo2msghub()
       NODE_FIRST_SEEN=0
       NODE_LAST_SEEN=0
       NODE_AVERAGE=0
-      THIS='{"id":"'${ID:-}'","entity":"'${ENTITY}'","timestamp":"'$(date -u +%FT%TZ)'","date":'${DATE}',"started":'${STARTED}',"count":'${NODE_ENTITY_COUNT}',"mock":'${NODE_MOCK_COUNT}',"seen":'${NODE_SEEN_COUNT}',"first":'${NODE_FIRST_SEEN}',"last":'${NODE_LAST_SEEN}',"average":'${NODE_AVERAGE:-0}',"download":'${WAN_DOWNLOAD:-0}',"percent":'${CPU_PERCENT:-0}',"product":"'${HAL_PRODUCT:-unknown}'"}'
+      THIS='{"id":"'${ID:-}'","entity":"'${ENTITY}'","timestamp":"'$(date -u +%FT%TZ)'","date":'${DATE}',"started":'${STARTED}',"count":'${NODE_ENTITY_COUNT}',"mock":'${NODE_MOCK_COUNT}',"seen":0,"total":'${NODE_SEEN_COUNT}',"first":'${NODE_FIRST_SEEN}',"last":'${NODE_LAST_SEEN}',"average":'${NODE_AVERAGE:-0}',"download":'${WAN_DOWNLOAD:-0}',"percent":'${CPU_PERCENT:-0}',"product":"'${HAL_PRODUCT:-unknown}'"}'
     else
       NODE_ENTITY_COUNT=$(echo "${THIS}" | jq '.count') || NODE_ENTITY_COUNT=0
       NODE_MOCK_COUNT=$(echo "${THIS}" | jq '.mock') || NODE_MOCK_COUNT=0
-      NODE_SEEN_COUNT=$(echo "${THIS}" | jq '.seen') || NODE_SEEN_COUNT=0
+      NODE_SEEN_COUNT=$(echo "${THIS}" | jq '.total') || NODE_SEEN_COUNT=0
       NODE_FIRST_SEEN=$(echo "${THIS}" | jq '.first') || NODE_FIRST_SEEN=0
       NODE_LAST_SEEN=$(echo "${THIS}" | jq '.last') || NODE_LAST_SEEN=0
       NODE_AVERAGE=$(echo "${THIS}" | jq '.average') || NODE_AVERAGE=0
@@ -193,29 +193,21 @@ kafka2mqtt_process_yolo2msghub()
       WHEN=$(jq -r '.yolo2msghub.yolo.date' ${PAYLOAD})
       TIMESTAMP=$(jq -r '.yolo2msghub.yolo.timestamp' ${PAYLOAD})
       if [ $(jq -r '.yolo2msghub.yolo.mock' ${PAYLOAD}) = 'null' ]; then
-	hass.log.trace "${ID}: non-mock"
 	if [ ${WHEN:-0} -gt ${NODE_LAST_SEEN} ]; then
-	  hass.log.trace "${ID}: new payload"
-
 	  SEEN=$(jq -r '.yolo2msghub.yolo.count' ${PAYLOAD})
 	  if [ ${SEEN} -gt 0 ]; then
-
-	    # increment total entities seen
 	    NODE_SEEN_COUNT=$((NODE_SEEN_COUNT+SEEN))
-	    AGO=$((WHEN-NODE_LAST_SEEN))
-	    # track when
-	    NODE_LAST_SEEN=${WHEN:-0}
+	    if [ ${NODE_LAST_SEEN:-0} > 0 ]; then AGO=$((WHEN-NODE_LAST_SEEN)); else AGO=0; fi
+	    NODE_LAST_SEEN=${WHEN}
 	    # calculate interval
 	    if [ "${NODE_FIRST_SEEN:-0}" -eq 0 ]; then NODE_FIRST_SEEN=${NODE_LAST_SEEN}; fi
 	    INTERVAL=$((NODE_LAST_SEEN-NODE_FIRST_SEEN))
 	    if [ ${INTERVAL} -eq 0 ]; then 
-	      NODE_FIRST_SEEN=${WHEN:-0}
-	      INTERVAL=0
-	      NODE_AVERAGE=1.0
+	      NODE_AVERAGE=${SEEN}
 	    else
 	      NODE_AVERAGE=$(echo "${NODE_SEEN_COUNT}/${INTERVAL}" | bc -l)
 	    fi
-	    THIS=$(echo "${THIS}" | jq '.timestamp="'${TIMESTAMP:-}'"|.date='${WHEN}'|.interval='${INTERVAL:-0}'|.ago='${AGO:-0}'|.seen='${NODE_SEEN_COUNT:-0}'|.last='${NODE_LAST_SEEN:-0}'|.first='${NODE_FIRST_SEEN:-0}'|.average='${NODE_AVERAGE:-0})
+	    THIS=$(echo "${THIS}" | jq '.timestamp="'${TIMESTAMP:-}'"|.date='${WHEN}'|.interval='${INTERVAL:-0}'|.ago='${AGO:-0}'|.seen='${SEEN:-0}'|.last='${NODE_LAST_SEEN:-0}'|.first='${NODE_FIRST_SEEN:-0}'|.total='${NODE_SEEN_COUNT}'|.average='${NODE_AVERAGE:-0})
 	  else
 	    hass.log.trace "${ID} at ${WHEN:-0}; did not see: ${ENTITY:-null}"
 	  fi
