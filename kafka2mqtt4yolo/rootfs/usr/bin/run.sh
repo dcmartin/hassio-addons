@@ -133,7 +133,7 @@ kafka2mqtt_process_yolo2msghub()
     ELAPSED=$((NOW-BEGIN))
 
     if [ ${ELAPSED} -ne 0 ]; then BPS=$(echo "${TOTAL_BYTES} / ${ELAPSED}" | bc -l); else BPS=1; fi
-    hass.log.debug "### DATA $0 $$ -- received at: $(date +%T); bytes: ${BYTES}; total bytes: ${TOTAL_BYTES}; bytes/sec: ${BPS}"
+    hass.log.debug "DATA $0 $$ -- received at: $(date +%T); bytes: ${BYTES}; total bytes: ${TOTAL_BYTES}; bytes/sec: ${BPS}"
 
     # get payload specifics
     ID=$(jq -r '.hzn.device_id' ${PAYLOAD})
@@ -170,7 +170,7 @@ kafka2mqtt_process_yolo2msghub()
       NODE_FIRST_SEEN=0
       NODE_LAST_SEEN=0
       NODE_AVERAGE=0
-      THIS='{"id":"'${ID:-}'","entity":"'${ENTITY}'","date":'${DATE}',"started":'${STARTED}',"count":'${NODE_ENTITY_COUNT}',"mock":'${NODE_MOCK_COUNT}',"seen":'${NODE_SEEN_COUNT}',"first":'${NODE_FIRST_SEEN}',"last":'${NODE_LAST_SEEN}',"average":'${NODE_AVERAGE:-0}',"download":'${WAN_DOWNLOAD:-0}',"percent":'${CPU_PERCENT:-0}',"product":"'${HAL_PRODUCT:-unknown}'"}'
+      THIS='{"id":"'${ID:-}'","entity":"'${ENTITY}'","timestamp":"'$(date -u +%FT%TZ)'","date":'${DATE}',"started":'${STARTED}',"count":'${NODE_ENTITY_COUNT}',"mock":'${NODE_MOCK_COUNT}',"seen":'${NODE_SEEN_COUNT}',"first":'${NODE_FIRST_SEEN}',"last":'${NODE_LAST_SEEN}',"average":'${NODE_AVERAGE:-0}',"download":'${WAN_DOWNLOAD:-0}',"percent":'${CPU_PERCENT:-0}',"product":"'${HAL_PRODUCT:-unknown}'"}'
     else
       NODE_ENTITY_COUNT=$(echo "${THIS}" | jq '.count') || NODE_ENTITY_COUNT=0
       NODE_MOCK_COUNT=$(echo "${THIS}" | jq '.mock') || NODE_MOCK_COUNT=0
@@ -191,6 +191,7 @@ kafka2mqtt_process_yolo2msghub()
 	    rm -f ${TEMP}
 
       WHEN=$(jq -r '.yolo2msghub.yolo.date' ${PAYLOAD})
+      TIMESTAMP=$(jq -r '.yolo2msghub.yolo.timestamp' ${PAYLOAD})
       if [ $(jq -r '.yolo2msghub.yolo.mock' ${PAYLOAD}) = 'null' ]; then
 	hass.log.trace "${ID}: non-mock"
 	if [ ${WHEN:-0} -gt ${NODE_LAST_SEEN} ]; then
@@ -201,10 +202,9 @@ kafka2mqtt_process_yolo2msghub()
 
 	    # increment total entities seen
 	    NODE_SEEN_COUNT=$((NODE_SEEN_COUNT+SEEN))
+	    AGO=$((WHEN-NODE_LAST_SEEN))
 	    # track when
 	    NODE_LAST_SEEN=${WHEN:-0}
-	    AGO=$((NOW-NODE_LAST_SEEN))
-	    hass.log.info "### DATA $0 $$ -- ${ID}; ago: ${AGO:-0}; ${ENTITY} seen: ${SEEN}"
 	    # calculate interval
 	    if [ "${NODE_FIRST_SEEN:-0}" -eq 0 ]; then NODE_FIRST_SEEN=${NODE_LAST_SEEN}; fi
 	    INTERVAL=$((NODE_LAST_SEEN-NODE_FIRST_SEEN))
@@ -215,7 +215,7 @@ kafka2mqtt_process_yolo2msghub()
 	    else
 	      NODE_AVERAGE=$(echo "${NODE_SEEN_COUNT}/${INTERVAL}" | bc -l)
 	    fi
-	    THIS=$(echo "${THIS}" | jq '.date='${NOW}'|.interval='${INTERVAL:-0}'|.ago='${AGO:-0}'|.seen='${NODE_SEEN_COUNT:-0}'|.last='${NODE_LAST_SEEN:-0}'|.first='${NODE_FIRST_SEEN:-0}'|.average='${NODE_AVERAGE:-0})
+	    THIS=$(echo "${THIS}" | jq '.timestamp="'${TIMESTAMP:-}'"|.date='${WHEN}'|.interval='${INTERVAL:-0}'|.ago='${AGO:-0}'|.seen='${NODE_SEEN_COUNT:-0}'|.last='${NODE_LAST_SEEN:-0}'|.first='${NODE_FIRST_SEEN:-0}'|.average='${NODE_AVERAGE:-0})
 	  else
 	    hass.log.trace "${ID} at ${WHEN:-0}; did not see: ${ENTITY:-null}"
 	  fi
@@ -286,7 +286,7 @@ kafka2mqtt_poll()
         fi 
 
         # send JSON update
-        echo "${DEVICES}" | jq -c '{"'${KAFKA_TOPIC}'":{"date":"'$(date +%s)'","timestamp":"'$(date -u +%FT%TZ)'","activity":.|sort_by(.date)|reverse}}' > ${TEMP}
+        echo "${DEVICES}" | jq -c '{"'${KAFKA_TOPIC}'":{"date":"'$(date +%s)'","timestamp":"'$(date -u +%FT%TZ)'","activity":.}}' > ${TEMP}
         # send summary data
         mqtt_pub -t ${MQTT_TOPIC} -f ${TEMP}
       fi
