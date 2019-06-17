@@ -14,7 +14,7 @@ else if ( -e /usr/bin/dateconv ) then
 else if ( -e /usr/local/bin/dateconv ) then
    set dateconv = /usr/local/bin/dateconv
 else
-  if ($?USE_MQTT && $?DEBUG) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "${MOTION_GROUP}/${MOTION_DEVICE}/debug" -m '{"ERROR":"'$0:t'","pid":"'$$'","error":"no date converter; install dateutils"}'
+  if ($?USE_MQTT && $?DEBUG) mosquitto_pub -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "$MOTION_MQTT_HOST" -t "${MOTION_GROUP}/${MOTION_DEVICE}/debug" -m '{"ERROR":"'$0:t'","pid":"'$$'","error":"no date converter; install dateutils"}'
   goto done
 endif
 
@@ -40,19 +40,19 @@ set TS = "${YR}${MO}${DY}${HR}${MN}${SC}"
 # get time
 set NOW = `$dateconv -i '%Y%m%d%H%M%S' -f "%s" "$TS"`
 
-if ($?VERBOSE && $?USE_MQTT) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "${MOTION_GROUP}/${MOTION_DEVICE}/debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","dir":"'$MOTION_DATA_DIR'","camera":"'$CN'","time":'$NOW'}'
+if ($?VERBOSE && $?USE_MQTT) mosquitto_pub -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "$MOTION_MQTT_HOST" -t "${MOTION_GROUP}/${MOTION_DEVICE}/debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","dir":"'$MOTION_DATA_DIR'","camera":"'$CN'","time":'$NOW'}'
 
 ## do MQTT
 if ($?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then
   # POST JSON
   set MQTT_TOPIC = "$MOTION_GROUP/$MOTION_DEVICE/$CN/status/found"
-  mosquitto_pub -q 2 -r -i "$MOTION_DEVICE" -h "$MOTION_MQTT_HOST" -p "$MOTION_MQTT_PORT" -t "$MQTT_TOPIC" -m '{"device":"'$MOTION_DEVICE'","camera":"'"$CN"'","time":'"$NOW"',"status":"found"}'
+  mosquitto_pub -q 2 -r -i "$MOTION_DEVICE" -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "$MOTION_MQTT_HOST" -p "$MOTION_MQTT_PORT" -t "$MQTT_TOPIC" -m '{"device":"'$MOTION_DEVICE'","camera":"'"$CN"'","time":'"$NOW"',"status":"found"}'
   # POST no signal jpg
   set MQTT_TOPIC = "$MOTION_GROUP/$MOTION_DEVICE/$CN/image"
-  mosquitto_pub -q 2 -r -i "$MOTION_DEVICE" -h "$MOTION_MQTT_HOST" -p "$MOTION_MQTT_PORT" -t "$MQTT_TOPIC" -f "/etc/motion/test.jpg"
+  mosquitto_pub -q 2 -r -i "$MOTION_DEVICE" -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "$MOTION_MQTT_HOST" -p "$MOTION_MQTT_PORT" -t "$MQTT_TOPIC" -f "/etc/motion/test.jpg"
   # POST no signal gif
   set MQTT_TOPIC = "$MOTION_GROUP/$MOTION_DEVICE/$CN/image-animated"
-  mosquitto_pub -q 2 -r -i "$MOTION_DEVICE" -h "$MOTION_MQTT_HOST" -p "$MOTION_MQTT_PORT" -t "$MQTT_TOPIC" -f "/etc/motion/test.gif"
+  mosquitto_pub -q 2 -r -i "$MOTION_DEVICE" -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "$MOTION_MQTT_HOST" -p "$MOTION_MQTT_PORT" -t "$MQTT_TOPIC" -f "/etc/motion/test.gif"
 endif
 
 ##
@@ -61,4 +61,4 @@ endif
 
 done:
   if ($?VERBOSE) echo "$0:t $$ -- END" `date` >& /dev/stderr
-  if ($?VERBOSE && $?USE_MQTT) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "${MOTION_GROUP}/${MOTION_DEVICE}/debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","info":"END"}'
+  if ($?VERBOSE && $?USE_MQTT) mosquitto_pub -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "$MOTION_MQTT_HOST" -t "${MOTION_GROUP}/${MOTION_DEVICE}/debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","info":"END"}'

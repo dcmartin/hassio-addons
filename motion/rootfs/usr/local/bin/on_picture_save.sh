@@ -13,7 +13,7 @@ else if ( -e /usr/bin/dateconv ) then
 else if ( -e /usr/local/bin/dateconv ) then
    set dateconv = /usr/local/bin/dateconv
 else
-  if ($?DEBUG && $?USE_MQTT) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "${MOTION_GROUP}/${MOTION_DEVICE}/debug" -m '{"ERROR":"'$0:t'","pid":"'$$'","error":"no date converter; install dateutils"}'
+  if ($?DEBUG && $?USE_MQTT) mosquitto_pub -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "$MOTION_MQTT_HOST" -t "${MOTION_GROUP}/${MOTION_DEVICE}/debug" -m '{"ERROR":"'$0:t'","pid":"'$$'","error":"no date converter; install dateutils"}'
   goto done
 endif
 
@@ -51,7 +51,7 @@ set SN = `echo "$ID" | sed 's/.*-..-\(.*\).*/\1/'`
 
 set NOW = `$dateconv -i '%Y%m%d%H%M%S' -f "%s" "$TS"`
 
-if ($?VERBOSE && $?USE_MQTT) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "${MOTION_GROUP}/${MOTION_DEVICE}/debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","data":"'$MOTION_DATA_DIR'","camera":"'$CN'","time":'$NOW'}'
+if ($?VERBOSE && $?USE_MQTT) mosquitto_pub -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "$MOTION_MQTT_HOST" -t "${MOTION_GROUP}/${MOTION_DEVICE}/debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","data":"'$MOTION_DATA_DIR'","camera":"'$CN'","time":'$NOW'}'
 
 ## create JSON
 set IJ = "$IF:r.json"
@@ -60,7 +60,7 @@ set JSON = '{"device":"'$MOTION_DEVICE'","camera":"'"$CN"'","type":"jpeg","date"
 
 echo "$JSON" > "$IJ"
 
-if ($?VERBOSE && $?USE_MQTT) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "${MOTION_GROUP}/${MOTION_DEVICE}/debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","json":"'"$IJ"'","image":'"$JSON"'}'
+if ($?VERBOSE && $?USE_MQTT) mosquitto_pub -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "$MOTION_MQTT_HOST" -t "${MOTION_GROUP}/${MOTION_DEVICE}/debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","json":"'"$IJ"'","image":'"$JSON"'}'
 
 ## do MQTT
 if ($?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then
@@ -68,11 +68,11 @@ if ($?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then
   if ( $post_pictures == "on" ) then
     # POST IMAGE 
     set MQTT_TOPIC = "$MOTION_GROUP/$MOTION_DEVICE/$CN/image"
-    mosquitto_pub -q 2 -r -i "$MOTION_DEVICE" -h "$MOTION_MQTT_HOST" -p "$MOTION_MQTT_PORT" -t "$MQTT_TOPIC" -f "$IF"
+    mosquitto_pub -q 2 -r -i "$MOTION_DEVICE" -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "$MOTION_MQTT_HOST" -p "$MOTION_MQTT_PORT" -t "$MQTT_TOPIC" -f "$IF"
   endif
   # POST JSON
   set MQTT_TOPIC = "$MOTION_GROUP/$MOTION_DEVICE/$CN/event/image"
-  mosquitto_pub -q 2 -r -i "$MOTION_DEVICE" -h "$MOTION_MQTT_HOST" -p "$MOTION_MQTT_PORT" -t "$MQTT_TOPIC" -f "$IJ"
+  mosquitto_pub -q 2 -r -i "$MOTION_DEVICE" -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "$MOTION_MQTT_HOST" -p "$MOTION_MQTT_PORT" -t "$MQTT_TOPIC" -f "$IJ"
 endif
 
 ##
@@ -81,5 +81,5 @@ endif
 
 done:
   if ($?VERBOSE) echo "$0:t $$ -- END" `date` >& /dev/stderr
-  if ($?VERBOSE && $?USE_MQTT) mosquitto_pub -h "$MOTION_MQTT_HOST" -t "${MOTION_GROUP}/${MOTION_DEVICE}/debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","info":"END"}'
+  if ($?VERBOSE && $?USE_MQTT) mosquitto_pub -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "$MOTION_MQTT_HOST" -t "${MOTION_GROUP}/${MOTION_DEVICE}/debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","info":"END"}'
   exit
