@@ -62,21 +62,28 @@ JSON="${JSON}"',"timezone":"'"${VALUE}"'"'
 ## MQTT
 # local MQTT server (hassio addon)
 VALUE=$(jq -r ".mqtt.host" "${CONFIG_PATH}")
-if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
-  echo "Using MQTT at ${VALUE}" >&2
-  MQTT='{"host":"'"${VALUE}"'"'
-  export MOTION_MQTT_HOST="${VALUE}"
-fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="mqtt"; fi
+echo "Using MQTT at ${VALUE}" >&2
+MQTT='{"host":"'"${VALUE}"'"'
+export MOTION_MQTT_HOST="${VALUE}"
 
-if [ -n "${MQTT:-}" ]; then
+  VALUE=$(jq -r ".mqtt.username" "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=""; fi
+  echo "Using MQTT username: ${VALUE}" >&2
+  MQTT="${MQTT}"',"username":'"${VALUE}"'}'
+  export MOTION_MQTT_USERNAME="${VALUE}"
+
+  VALUE=$(jq -r ".mqtt.password" "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=""; fi
+  echo "Using MQTT password: ${VALUE}" >&2
+  MQTT="${MQTT}"',"password":'"${VALUE}"'}'
+  export MOTION_MQTT_PASSWORD="${VALUE}"
+
   VALUE=$(jq -r ".mqtt.port" "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1883; fi
   echo "Using MQTT port: ${VALUE}" >&2
   MQTT="${MQTT}"',"port":'"${VALUE}"'}'
   export MOTION_MQTT_PORT="${VALUE}"
-else
-  echo "MQTT undefined; continuing" >&2
-fi
 
 if [ -n "${MQTT:-}" ]; then
   JSON="${JSON}"',"mqtt":'"${MQTT}"
@@ -641,7 +648,7 @@ if [ ! -s "${MOTION_JSON_FILE}" ]; then
   exit
 else
   echo "Publishing configuration to ${MOTION_MQTT_HOST} topic ${MOTION_GROUP}/${MOTION_DEVICE}/start" >&2
-  mosquitto_pub -r -q 2 -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "${MOTION_GROUP}/${MOTION_DEVICE}/start" -f "${MOTION_JSON_FILE}"
+  mosquitto_pub -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -r -q 2 -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "${MOTION_GROUP}/${MOTION_DEVICE}/start" -f "${MOTION_JSON_FILE}"
 fi
 
 ###
