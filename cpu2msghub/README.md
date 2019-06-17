@@ -1,4 +1,4 @@
-# CPU2MSGHUB addon for Home Assistant
+# `cpu2msghub` -  addon for Home Assistant
 
 This [Home Assistant][home-assistant] add-on is for the [Open Horizon][open-horizon] [`cpu2msghub`][cpu-pattern] pattern
 

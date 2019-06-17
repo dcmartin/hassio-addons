@@ -1,4 +1,4 @@
-# YOLO2MSGHUB addon for Home Assistant
+# `kafka2mqtt4yolo` -  addon for Home Assistant
 
 
 This [Home Assistant][home-assistant] add-on is for use with

@@ -1,4 +1,4 @@
-# SDR2MSGHUB addon for Home Assistant
+# `sdr2msghub` - addon for Home Assistant
 
 
 This [Home Assistant][home-assistant] add-on is for the [Open Horizon][open-horizon] [`sdr2msghub`][sdr-pattern] pattern
