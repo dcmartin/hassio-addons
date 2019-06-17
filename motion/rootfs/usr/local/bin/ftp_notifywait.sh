@@ -27,7 +27,7 @@ foreach name ( $names )
   set noglob
   set url = ( `echo "$CAMERAS" | jq -r '.[]|select(.name=="'"$name"'").url'` )
   echo "$0:t $$ -- camera $name at URL $url"
-  if ($#url && $url =~ 'ftpd://*') then
+  if ($#url == 1 && $url =~ 'ftpd://*') then
     set input = `echo "$url" | sed "s|ftpd://||"`
     set output = $input
     set input = $input:r
@@ -35,6 +35,8 @@ foreach name ( $names )
     echo "$0:t $$ -- waiting on $input to create $output" >& /dev/stderr
     cp -f /etc/motion/sample.jpg "$output"
     do_ftp_notifywait.sh "$input" "$output" &
+  else
+    echo "$0:t $$ -- more than one match for ${name}; skipping" >& /dev/stderr
   endif
   unset noglob
 end
