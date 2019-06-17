@@ -58,7 +58,7 @@ Configuration examples are provided for processing the JSON:
 
 # Sample output
 
-![yolo2msghub activity](yolo2msghub_activity.png?raw=true "YOLO2MSGHUB")
+![sample activity](samples/sample.png?raw=true "SAMPLE")
 
 ## Changelog & Releases
 
