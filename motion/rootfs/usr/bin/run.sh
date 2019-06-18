@@ -11,10 +11,10 @@ source /usr/lib/hassio-addons/base.sh
 # motion tools
 source /usr/bin/motion-tools.sh
 
-hass.log.debug $(date) "$0 $*"
+hass.log.notice $(date) "$0 $*"
 
 if [ ! -s "${CONFIG_PATH}" ]; then
-  hass.log.debug "Cannot find options ${CONFIG_PATH}; exiting"
+  hass.log.error "Cannot find options ${CONFIG_PATH}; exiting"
   exit
 fi
 
@@ -397,7 +397,7 @@ JSON="${JSON}"',"motion":'"${MOTION}"
 ###
 
 ncamera=$(jq '.cameras|length' "${CONFIG_PATH}")
-hass.log.debug "*** Found ${ncamera} cameras"
+hass.log.notice "*** Found ${ncamera} cameras"
 
 MOTION_COUNT=1
 
@@ -646,10 +646,10 @@ JSON="${JSON}"'}'
 export MOTION_JSON_FILE="${MOTION_CONF%/*}/${MOTION_DEVICE}.json"
 echo "${JSON}" | jq '.' > "${MOTION_JSON_FILE}"
 if [ ! -s "${MOTION_JSON_FILE}" ]; then
-  hass.log.debug "Invalid JSON: ${JSON}"
-  exit
+  hass.log.error "Invalid JSON: ${JSON}"
+  exit 1
 else
-  hass.log.debug "Publishing configuration to ${MQTT_HOST} topic ${MOTION_GROUP}/${MOTION_DEVICE}/start"
+  hass.log.notice "Publishing configuration to ${MQTT_HOST} topic ${MOTION_GROUP}/${MOTION_DEVICE}/start"
   mqtt_pub -r -q 2 -t "${MOTION_GROUP}/${MOTION_DEVICE}/start" -f "${MOTION_JSON_FILE}"
 fi
 
@@ -661,14 +661,14 @@ URL=$(jq -r ".cloudant.url" "${CONFIG_PATH}")
 USERNAME=$(jq -r ".cloudant.username" "${CONFIG_PATH}")
 PASSWORD=$(jq -r ".cloudant.password" "${CONFIG_PATH}")
 if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "null" ] && [ ! -z "${URL}" ] && [ ! -z "${USERNAME}" ] && [ ! -z "${PASSWORD}" ]; then
-  hass.log.debug "Testing CLOUDANT"
+  hass.log.trace "Testing CLOUDANT"
   OK=$(curl -sL "${URL}" | jq '.couchdb?!=null')
   if [ "${OK}" == "false" ]; then
-    hass.log.debug "Cloudant failed at ${URL}; exiting"
-    exit
+    hass.log.error "Cloudant failed at ${URL}; exiting"
+    exit 1
   else
     export MOTION_CLOUDANT_URL="${URL%:*}"'://'"${USERNAME}"':'"${PASSWORD}"'@'"${USERNAME}"."${URL#*.}"
-    hass.log.debug "Cloudant succeeded at ${MOTION_CLOUDANT_URL}; exiting"
+    hass.log.notice "Cloudant succeeded at ${MOTION_CLOUDANT_URL}; exiting"
   fi
   URL="${MOTION_CLOUDANT_URL}/${MOTION_GROUP}"
   DB=$(curl -sL "${URL}" | jq -r '.db_name')
@@ -676,10 +676,10 @@ if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "
     # create DB
     OK=$(curl -sL -X PUT "${URL}" | jq '.ok')
     if [ "${OK}" != "true" ]; then
-      hass.log.debug "Failed to create CLOUDANT DB ${MOTION_GROUP}"
+      hass.log.error "Failed to create CLOUDANT DB ${MOTION_GROUP}"
       OFF=TRUE
     else
-      hass.log.debug "Created CLOUDANT DB ${MOTION_GROUP}"
+      hass.log.notice "Created CLOUDANT DB ${MOTION_GROUP}"
     fi
   else
     hass.log.debug "CLOUDANT DB ${MOTION_GROUP} exists"
@@ -688,31 +688,31 @@ if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "
     URL="${URL}/${MOTION_DEVICE}"
     REV=$(curl -sL "${URL}" | jq -r '._rev')
     if [ "${REV}" != "null" ] && [ ! -z "${REV}" ]; then
-      hass.log.debug "Prior record exists ${REV}"
+      hass.log.trace "Prior record exists ${REV}"
       URL="${URL}?rev=${REV}"
     fi
     OK=$(curl -sL "${URL}" -X PUT -d "@${MOTION_JSON_FILE}" | jq '.ok')
     if [ "${OK}" != "true" ]; then
-      hass.log.debug "Failed to update ${URL}" $(jq -c '.' "${MOTION_JSON_FILE}")
-      hass.log.debug "Exiting"; exit
+      hass.log.error "Failed to update ${URL}" $(jq -c '.' "${MOTION_JSON_FILE}")
+      exit 1
     else
-      hass.log.debug "Configuration for ${MOTION_DEVICE} at ${MOTION_JSON_FILE}" $(jq -c '.' "${MOTION_JSON_FILE}")
+      hass.log.trace "Configuration for ${MOTION_DEVICE} at ${MOTION_JSON_FILE}" $(jq -c '.' "${MOTION_JSON_FILE}")
     fi
   else
-    hass.log.debug "Failed; no DB or bad JSON"
-    hass.log.debug "Exiting"; exit
+    hass.log.error "Failed; no DB or bad JSON"
+    exit 1
   fi
 else
-  hass.log.debug "Cloudant URL, username and/or password undefined"
+  hass.log.warn "Cloudant URL, username and/or password undefined"
 fi
 if [ -z "${MOTION_CLOUDANT_URL:-}" ]; then
-  hass.log.debug "Cloudant NOT SPECIFIED"
+  hass.log.notice "Cloudant NOT SPECIFIED"
 fi
 
 # test hassio
-hass.log.debug "Testing hassio ..." $(curl -sL -H "X-HASSIO-KEY: ${HASSIO_TOKEN}" "http://hassio/supervisor/info" | jq -c '.')
+hass.log.trace "Testing hassio ..." $(curl -sL -H "X-HASSIO-KEY: ${HASSIO_TOKEN}" "http://hassio/supervisor/info" | jq -c '.')
 # test homeassistant
-hass.log.debug "Testing homeassistant ..." $(curl -sL -u ":${HASSIO_TOKEN}" "http://hassio/homeassistant/api/states" | jq -c '.')
+hass.log.trace "Testing homeassistant ..." $(curl -sL -u ":${HASSIO_TOKEN}" "http://hassio/homeassistant/api/states" | jq -c '.')
 
 # start ftp_notifywait for all ftpd:// cameras (uses environment MOTION_JSON_FILE)
 ftp_notifywait.sh "${MOTION_JSON_FILE}"
@@ -724,11 +724,11 @@ mkyaml.sh "${CONFIG_PATH}"
 VALUE=$(jq -r ".reload" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="false"; fi
 if [ "${VALUE}" != "false" ]; then 
-  hass.log.debug "Re-defining configuration YAML (${VALUE})"
+  hass.log.notice "Re-defining configuration YAML (${VALUE})"
   JSON="${JSON}"',"reload":'"${VALUE}"
   rlyaml.sh "${VALUE}"
 else
-  hass.log.debug "Not re-defining configuration YAML (${VALUE})"
+  hass.log.notice "Not re-defining configuration YAML (${VALUE})"
 fi
 
 ###
@@ -737,7 +737,7 @@ fi
 
 MOTION_CMD=$(command -v motion)
 if [ ! -s "${MOTION_CMD}" ] || [ ! -s "${MOTION_CONF}" ]; then
-  hass.log.debug "No motion installed (${MOTION_CMD}) or motion configuration ${MOTION_CONF} does not exist"
+  hass.log.warn "No motion installed (${MOTION_CMD}) or motion configuration ${MOTION_CONF} does not exist"
 else
   hass.log.debug "Starting ${MOTION_COUNT} motion daemons"
   CONF="${MOTION_CONF%%.*}.${MOTION_CONF##*.}"
@@ -776,6 +776,6 @@ if [ -s "${MOTION_APACHE_CONF}" ]; then
   # make /run/apache2 for PID file
   mkdir -p /run/apache2
   # start HTTP daemon in foreground
-  hass.log.debug "Starting Apache: ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT} ${MOTION_APACHE_HTDOCS}"
+  hass.log.notice "Starting Apache: ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT} ${MOTION_APACHE_HTDOCS}"
   httpd -E /dev/stderr -e debug -f "${MOTION_APACHE_CONF}" -DFOREGROUND
 fi
