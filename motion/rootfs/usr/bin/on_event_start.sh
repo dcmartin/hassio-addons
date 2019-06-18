@@ -1,24 +1,7 @@
-#!/bin/tcsh
+#!/bin/bash
 
-setenv DEBUG
-setenv VERBOSE
-setenv USE_MQTT
+source /usr/bin/motion-tools.sh
 
-if ($?VERBOSE) echo "$0:t $$ -- START" `date` >& /dev/stderr
-
-## REQUIRES date utilities
-if ( -e /usr/bin/dateutils.dconv ) then
-   set dateconv = /usr/bin/dateutils.dconv
-else if ( -e /usr/bin/dateconv ) then
-   set dateconv = /usr/bin/dateconv
-else if ( -e /usr/local/bin/dateconv ) then
-   set dateconv = /usr/local/bin/dateconv
-else
-  if ($?DEBUG && $?USE_MQTT) mosquitto_pub -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "${MOTION_MQTT_HOST}" -t "${MOTION_GROUP}/${MOTION_DEVICE}/debug" -m '{"ERROR":"'$0:t'","pid":"'$$'","error":"no date converter; install dateutils"}'
-  goto done
-endif
-
-## ARGUMENTS
 #
 # on_event_start.sh %$ %v %Y %m %d %H %M %S
 #
@@ -32,32 +15,36 @@ endif
 # %S - The second as a decimal number (range 00 to 61). 
 #
 
-set CN = "$1"
-set EN = "$2"
-set YR = "$3"
-set MO = "$4"
-set DY = "$5"
-set HR = "$6"
-set MN = "$7"
-set SC = "$8"
-set TS = "${YR}${MO}${DY}${HR}${MN}${SC}"
+###
+### MAIN
+###
 
-# in seconds
-set NOW = `$dateconv -i '%Y%m%d%H%M%S' -f "%s" "${TS}"`
+hzn.log.trace "started program"
 
-set dir = "${MOTION_DATA_DIR}/${CN}"
+CN="${1}"
+EN="${2}"
+YR="${3}"
+MO="${4}"
+DY="${5}"
+HR="${6}"
+MN="${7}"
+SC="${8}"
+TS="${YR}${MO}${DY}${HR}${MN}${SC}"
 
-set EJ = "${dir}/${TS}-${EN}.json"
+# get time
+NOW=$($dateconv -i '%Y%m%d%H%M%S' -f "%s" "$TS")
 
-if ($?VERBOSE && $?USE_MQTT) mosquitto_pub -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "${MOTION_MQTT_HOST}" -t "${MOTION_GROUP}/${MOTION_DEVICE}/debug" -m '{"VERBOSE":"'$0:t'","pid":"'$$'","dir":"'${dir}'","camera":"'$CN'","event":"'$EN'","start":'$NOW',"timestamp":"'"$TS"'","json":"'"$EJ"'"}'
+hzn.log.debug "got timestamp: ${TS} and time: ${NOW}"
 
-echo '{"device":"'${MOTION_DEVICE}'","camera":"'${CN}'","event":"'${EN}'","start":'$NOW'}' >! "${EJ}"
+EJ="${MOTION_DATA_DIR}/${CN}/${TS}-${EN}.json"
 
-if ($?MOTION_MQTT_HOST && $?MOTION_MQTT_PORT) then
-  set MQTT_TOPIC = "$MOTION_GROUP/${MOTION_DEVICE}/${CN}/event/start"
-  mosquitto_pub -q 2 -r -i "$MOTION_DEVICE" -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "$MOTION_MQTT_HOST" -p "$MOTION_MQTT_PORT" -t "$MQTT_TOPIC" -f "$EJ"
-endif
+hzn.log.debug "making event JSON: ${EJ}"
 
-done:
+# make payload
+MOTION_DEVICE=${MOTION_DEVICE:-$(hostname)}
+echo '{"device":"'${MOTION_DEVICE}'","camera":"'${CN}'","event":"'${EN}'","start":'${NOW}'}' >! "${EJ}"
 
-if ($?VERBOSE) echo "$0:t $$ -- END" `date` >& /dev/stderr
+# `event/start`
+mqtt_pub -q 2 -r -t "${MOTION_GROUP}/${MOTION_DEVICE}/${CN}/event/start" -f "$EJ"
+
+hzn.log.trace "completed program"
