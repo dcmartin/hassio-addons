@@ -39,85 +39,85 @@ mqtt_pub()
 ## logging
 ##
 
-LOG_LEVEL_EMERG=0
-LOG_LEVEL_ALERT=1
-LOG_LEVEL_CRIT=2
-LOG_LEVEL_ERROR=3
-LOG_LEVEL_WARN=4
-LOG_LEVEL_NOTICE=5
-LOG_LEVEL_INFO=6
-LOG_LEVEL_DEBUG=7
-LOG_LEVEL_TRACE=8
-LOG_LEVEL_ALL=9
-LOG_LEVELS=(EMERGENCY ALERT CRITICAL ERROR WARNING NOTICE INFO DEBUG TRACE ALL)
+HZN_LEVEL_EMERG=0
+HZN_LEVEL_ALERT=1
+HZN_LEVEL_CRIT=2
+HZN_LEVEL_ERROR=3
+HZN_LEVEL_WARN=4
+HZN_LEVEL_NOTICE=5
+HZN_LEVEL_INFO=6
+HZN_LEVEL_DEBUG=7
+HZN_LEVEL_TRACE=8
+HZN_LEVEL_ALL=9
+HZN_LEVELS=(EMERGENCY ALERT CRITICAL ERROR WARNING NOTICE INFO DEBUG TRACE ALL)
 LOG_FORMAT_DEFAULT='[TIMESTAMP] LEVEL >>>'
 LOG_TIMESTAMP_DEFAULT='%FT%TZ'
 LOG_FORMAT="${LOG_FORMAT:-${LOG_FORMAT_DEFAULT}}"
-LOG_LEVEL="${LOG_LEVEL:-${LOG_LEVEL_INFO}}"
+HZN_LEVEL="${HZN_LEVEL:-${HZN_LEVEL_INFO}}"
 LOG_TIMESTAMP_FORMAT="${LOG_TIMESTAMP_FORMAT:-${LOG_TIMESTAMP_DEFAULT}}"
 
 # logging by level
 
 hzn.log.emerg()
 {
-  hzn.log.logto ${LOG_LEVEL_EMERG} "${*}"
+  hzn.log.logto ${HZN_LEVEL_EMERG} "${*}"
 }
 
 hzn.log.alert()
 {
-  hzn.log.logto ${LOG_LEVEL_ALERT} "${*}"
+  hzn.log.logto ${HZN_LEVEL_ALERT} "${*}"
 }
 
 hzn.log.crit()
 {
-  hzn.log.logto ${LOG_LEVEL_CRIT} "${*}"
+  hzn.log.logto ${HZN_LEVEL_CRIT} "${*}"
 }
 
 hzn.log.error()
 {
-  hzn.log.logto ${LOG_LEVEL_ERROR} "${*}"
+  hzn.log.logto ${HZN_LEVEL_ERROR} "${*}"
 }
 
 hzn.log.warn()
 {
-  hzn.log.logto ${LOG_LEVEL_WARN} "${*}"
+  hzn.log.logto ${HZN_LEVEL_WARN} "${*}"
 }
 
 hzn.log.notice()
 {
-  hzn.log.logto ${LOG_LEVEL_NOTICE} "${*}"
+  hzn.log.logto ${HZN_LEVEL_NOTICE} "${*}"
 }
 
 hzn.log.info()
 {
-  hzn.log.logto ${LOG_LEVEL_INFO} "${*}"
+  hzn.log.logto ${HZN_LEVEL_INFO} "${*}"
 }
 
 hzn.log.debug()
 {
-  hzn.log.logto ${LOG_LEVEL_DEBUG} "${*}"
+  hzn.log.logto ${HZN_LEVEL_DEBUG} "${*}"
 }
 
 hzn.log.trace()
 {
-  hzn.log.logto ${LOG_LEVEL_TRACE} "${*}"
+  hzn.log.logto ${HZN_LEVEL_TRACE} "${*}"
 }
 
 hzn.log.level()
 {
-  case "${LOG_LEVEL}" in
-    emerg) LL=${LOG_LEVEL_EMERG} ;;
-    alert) LL=${LOG_LEVEL_ALERT} ;;
-    crit) LL=${LOG_LEVEL_CRIT} ;;
-    error) LL=${LOG_LEVEL_ERROR} ;;
-    warn) LL=${LOG_LEVEL_WARN} ;;
-    notice) LL=${LOG_LEVEL_NOTICE} ;;
-    info) LL=${LOG_LEVEL_INFO} ;;
-    debug) LL=${LOG_LEVEL_DEBUG} ;;
-    trace) LL=${LOG_LEVEL_TRACE} ;;
-    *) LL=${LOG_LEVEL_ALL} ;;
+  case "${HZN_LEVEL}" in
+    emerg) LL=${HZN_LEVEL_EMERG} ;;
+    alert) LL=${HZN_LEVEL_ALERT} ;;
+    crit) LL=${HZN_LEVEL_CRIT} ;;
+    error) LL=${HZN_LEVEL_ERROR} ;;
+    warn) LL=${HZN_LEVEL_WARN} ;;
+    notice) LL=${HZN_LEVEL_NOTICE} ;;
+    info) LL=${HZN_LEVEL_INFO} ;;
+    debug) LL=${HZN_LEVEL_DEBUG} ;;
+    trace) LL=${HZN_LEVEL_TRACE} ;;
+    *) LL=${HZN_LEVEL_ALL} ;;
   esac
-  echo ${LL:-${LOG_LEVEL_ALL}}
+  echo ${LL:-${HZN_LEVEL_ALL}}
 }
 
 hzn.log.logto()
@@ -139,7 +139,7 @@ hzn.log.logto()
     timestamp=$(date -u +"${LOG_TIMESTAMP_FORMAT}")
     output="${LOG_FORMAT}"
     output=$(echo "${output}" | sed 's/TIMESTAMP/'${timestamp}'/')
-    output=$(echo "${output}" | sed 's/LEVEL/'${LOG_LEVELS[${level}]}'/')
+    output=$(echo "${output}" | sed 's/LEVEL/'${HZN_LEVELS[${level}]}'/')
     echo "${output} ${message}" &> ${LOGTO:-/dev/stderr}
   fi
 }
