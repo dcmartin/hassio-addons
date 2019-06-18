@@ -50,11 +50,11 @@ HZN_LEVEL_DEBUG=7
 HZN_LEVEL_TRACE=8
 HZN_LEVEL_ALL=9
 HZN_LEVELS=(EMERGENCY ALERT CRITICAL ERROR WARNING NOTICE INFO DEBUG TRACE ALL)
-LOG_FORMAT_DEFAULT='[TIMESTAMP] LEVEL >>>'
-LOG_TIMESTAMP_DEFAULT='%FT%TZ'
-LOG_FORMAT="${LOG_FORMAT:-${LOG_FORMAT_DEFAULT}}"
+HZN_FORMAT_DEFAULT='[TIMESTAMP] LEVEL >>>'
+HZN_TIMESTAMP_DEFAULT='%FT%TZ'
+HZN_FORMAT="${HZN_FORMAT:-${HZN_FORMAT_DEFAULT}}"
 HZN_LEVEL="${HZN_LEVEL:-${HZN_LEVEL_INFO}}"
-LOG_TIMESTAMP_FORMAT="${LOG_TIMESTAMP_FORMAT:-${LOG_TIMESTAMP_DEFAULT}}"
+HZN_TIMESTAMP_FORMAT="${HZN_TIMESTAMP_FORMAT:-${HZN_TIMESTAMP_DEFAULT}}"
 
 # logging by level
 
@@ -136,8 +136,8 @@ hzn.log.logto()
   fi
   if [ "${level:-0}" -le ${current:-9} ]; then
     message="${2:-}"
-    timestamp=$(date -u +"${LOG_TIMESTAMP_FORMAT}")
-    output="${LOG_FORMAT}"
+    timestamp=$(date -u +"${HZN_TIMESTAMP_FORMAT}")
+    output="${HZN_FORMAT}"
     output=$(echo "${output}" | sed 's/TIMESTAMP/'${timestamp}'/')
     output=$(echo "${output}" | sed 's/LEVEL/'${HZN_LEVELS[${level}]}'/')
     echo "${output} ${message}" &> ${LOGTO:-/dev/stderr}
