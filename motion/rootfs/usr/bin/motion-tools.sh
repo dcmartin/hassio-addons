@@ -126,11 +126,11 @@ hzn.log.logto()
   local current=$(hzn.log.level)
   local exp='^[0-9]+$'
 
-  if ! [[ ${level} =~ $re ]] ; then
+  if ! [[ ${level} =~ ${exp} ]] ; then
    echo "hzn.log.logto: error: level ${level} not a number ${FUNCNAME}" &> ${LOGTO}
    level=
   fi
-  if ! [[ ${current} =~ $re ]] ; then
+  if ! [[ ${current} =~ ${exp} ]] ; then
    echo "hzn.log.logto: error: current ${current} not a number ${FUNCNAME}" &> ${LOGTO}
    current=
   fi
