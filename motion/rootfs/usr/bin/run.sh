@@ -703,7 +703,7 @@ if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "
     exit 1
   fi
 else
-  hass.log.warn "Cloudant URL, username and/or password undefined"
+  hass.log.warning "Cloudant URL, username and/or password undefined"
 fi
 if [ -z "${MOTION_CLOUDANT_URL:-}" ]; then
   hass.log.notice "Cloudant NOT SPECIFIED"
@@ -737,7 +737,7 @@ fi
 
 MOTION_CMD=$(command -v motion)
 if [ ! -s "${MOTION_CMD}" ] || [ ! -s "${MOTION_CONF}" ]; then
-  hass.log.warn "No motion installed (${MOTION_CMD}) or motion configuration ${MOTION_CONF} does not exist"
+  hass.log.warning "No motion installed (${MOTION_CMD}) or motion configuration ${MOTION_CONF} does not exist"
 else
   hass.log.debug "Starting ${MOTION_COUNT} motion daemons"
   CONF="${MOTION_CONF%%.*}.${MOTION_CONF##*.}"
