@@ -8,6 +8,9 @@ set -o nounset  # Exit script on use of an undefined variable
 # shellcheck disable=SC1091
 source /usr/lib/hassio-addons/base.sh
 
+# motion tools
+source /usr/bin/motion-tools.sh
+
 hass.log.debug $(date) "$0 $*"
 
 if [ ! -s "${CONFIG_PATH}" ]; then
@@ -647,7 +650,7 @@ if [ ! -s "${MOTION_JSON_FILE}" ]; then
   exit
 else
   hass.log.debug "Publishing configuration to ${MOTION_MQTT_HOST} topic ${MOTION_GROUP}/${MOTION_DEVICE}/start"
-  mosquitto_pub -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -r -q 2 -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "${MOTION_GROUP}/${MOTION_DEVICE}/start" -f "${MOTION_JSON_FILE}"
+  mqtt_pub -r -q 2 -t "${MOTION_GROUP}/${MOTION_DEVICE}/start" -f "${MOTION_JSON_FILE}"
 fi
 
 ###
