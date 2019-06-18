@@ -31,6 +31,7 @@ mqtt_pub()
     if [ ! -z "${MOTION_MQTT_PASSWORD}" ]; then
       ARGS='-P '"${MOTION_MQTT_PASSWORD}"' '"${ARGS}"
     fi
+    hzn.log.debug "mosquitto_pub -i ${MQTT_DEVICE} -h ${MOTION_MQTT_HOST} -p ${MOTION_MQTT_PORT} ${ARGS}"
     mosquitto_pub -i "${MQTT_DEVICE}" -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" ${ARGS}
   fi
 }
