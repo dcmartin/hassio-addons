@@ -25,14 +25,14 @@ mqtt_pub()
   if [ -z "${MQTT_DEVICE:-}" ]; then MQTT_DEVICE=$(hostname) && hzn.log.notice "MQTT_DEVICE unspecified; using hostname: ${MQTT_DEVICE}"; fi
   ARGS=${*}
   if [ ! -z "${ARGS}" ]; then
-    if [ ! -z "${MOTION_MQTT_USERNAME}" ]; then
-      ARGS='-u '"${MOTION_MQTT_USERNAME}"' '"${ARGS}"
+    if [ ! -z "${MQTT_USERNAME}" ]; then
+      ARGS='-u '"${MQTT_USERNAME}"' '"${ARGS}"
     fi
-    if [ ! -z "${MOTION_MQTT_PASSWORD}" ]; then
-      ARGS='-P '"${MOTION_MQTT_PASSWORD}"' '"${ARGS}"
+    if [ ! -z "${MQTT_PASSWORD}" ]; then
+      ARGS='-P '"${MQTT_PASSWORD}"' '"${ARGS}"
     fi
-    hzn.log.debug "mosquitto_pub -i ${MQTT_DEVICE} -h ${MOTION_MQTT_HOST} -p ${MOTION_MQTT_PORT} ${ARGS}"
-    mosquitto_pub -i "${MQTT_DEVICE}" -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" ${ARGS}
+    hzn.log.debug "mosquitto_pub -i ${MQTT_DEVICE} -h ${MQTT_HOST} -p ${MQTT_PORT} ${ARGS}"
+    mosquitto_pub -i "${MQTT_DEVICE}" -h "${MQTT_HOST}" -p "${MQTT_PORT}" ${ARGS}
   fi
 }
 

@@ -14,7 +14,7 @@ else
   exit
 endif
 
-if ($?VERBOSE && $?USE_MQTT) mosquitto_pub -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "$MOTION_MQTT_HOST" -t "${MOTION_GROUP}/${MOTION_DEVICE}/debug" -m '{"INFO":"'$0:t'","pid":"'$$'","info":"moving '$image' to '$output'"}'
+if ($?VERBOSE && $?USE_MQTT) mosquitto_pub -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD} -h "$MQTT_HOST" -t "${MOTION_GROUP}/${MOTION_DEVICE}/debug" -m '{"INFO":"'$0:t'","pid":"'$$'","info":"moving '$image' to '$output'"}'
 
 if ($?VERBOSE) echo "$0:t moving $image to $output" >& /dev/stderr
 

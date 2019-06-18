@@ -227,7 +227,7 @@ if [ -n "${MQTT_ON}" ] && [ -n "${MQTT_HOST}" ] && [ -n "${CLASS}" ] && [ -n "${
   MSG='{"device":"'"${DEVICE_NAME}"'","location":"'"${AAH_LOCATION}"'","date":'"${DATE}"','"${WHAT}"'}'
   MQTT_TOPIC='presence/'"${AAH_LOCATION}"
   if [ -n "${VERBOSE}" ]; then echo "${0##*/} $$ -- ${IMAGE_ID} -- MQTT ${MSG} to ${MQTT_HOST} topic ${MQTT_TOPIC}" >&2; fi
-  mosquitto_pub -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -i "${DEVICE_NAME}" -h "${MQTT_HOST}" -t "${MQTT_TOPIC}" -m "${MSG}"
+  mosquitto_pub -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD} -i "${DEVICE_NAME}" -h "${MQTT_HOST}" -t "${MQTT_TOPIC}" -m "${MSG}"
 else
   if [ -n "${DEBUG}" ]; then echo "${0##*/} $$ -- not posting ${OUTPUT} to MQTT" $(date) >&2; fi
 fi

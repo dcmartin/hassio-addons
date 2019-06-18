@@ -71,25 +71,25 @@ VALUE=$(jq -r ".mqtt.host" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="mqtt"; fi
 hass.log.trace "Using MQTT at ${VALUE}"
 MQTT='{"host":"'"${VALUE}"'"'
-export MOTION_MQTT_HOST="${VALUE}"
+export MQTT_HOST="${VALUE}"
 # username
 VALUE=$(jq -r ".mqtt.username" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=""; fi
 hass.log.trace "Using MQTT username: ${VALUE}"
 MQTT="${MQTT}"',"username":"'"${VALUE}"'"'
-export MOTION_MQTT_USERNAME="${VALUE}"
+export MQTT_USERNAME="${VALUE}"
 # password
 VALUE=$(jq -r ".mqtt.password" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=""; fi
 hass.log.trace "Using MQTT password: ${VALUE}"
 MQTT="${MQTT}"',"password":"'"${VALUE}"'"'
-export MOTION_MQTT_PASSWORD="${VALUE}"
+export MQTT_PASSWORD="${VALUE}"
 # port
 VALUE=$(jq -r ".mqtt.port" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1883; fi
 hass.log.trace "Using MQTT port: ${VALUE}"
 MQTT="${MQTT}"',"port":'"${VALUE}"'}'
-export MOTION_MQTT_PORT="${VALUE}"
+export MQTT_PORT="${VALUE}"
 # finish
 JSON="${JSON}"',"mqtt":'"${MQTT}"
 
@@ -649,7 +649,7 @@ if [ ! -s "${MOTION_JSON_FILE}" ]; then
   hass.log.debug "Invalid JSON: ${JSON}"
   exit
 else
-  hass.log.debug "Publishing configuration to ${MOTION_MQTT_HOST} topic ${MOTION_GROUP}/${MOTION_DEVICE}/start"
+  hass.log.debug "Publishing configuration to ${MQTT_HOST} topic ${MOTION_GROUP}/${MOTION_DEVICE}/start"
   mqtt_pub -r -q 2 -t "${MOTION_GROUP}/${MOTION_DEVICE}/start" -f "${MOTION_JSON_FILE}"
 fi
 
