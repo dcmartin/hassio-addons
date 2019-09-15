@@ -40,85 +40,85 @@ mqtt_pub()
 ## logging
 ##
 
-LOG_LEVEL_EMERG=0
-LOG_LEVEL_ALERT=1
-LOG_LEVEL_CRIT=2
-LOG_LEVEL_ERROR=3
-LOG_LEVEL_WARN=4
-LOG_LEVEL_NOTICE=5
-LOG_LEVEL_INFO=6
-LOG_LEVEL_DEBUG=7
-LOG_LEVEL_TRACE=8
-LOG_LEVEL_ALL=9
-LOG_LEVELS=(EMERGENCY ALERT CRITICAL ERROR WARNING NOTICE INFO DEBUG TRACE ALL)
-LOG_FORMAT_DEFAULT='[TIMESTAMP] LEVEL >>>'
-LOG_TIMESTAMP_DEFAULT='%FT%TZ'
-LOG_FORMAT="${LOG_FORMAT:-${LOG_FORMAT_DEFAULT}}"
-LOG_LEVEL="${LOG_LEVEL:-${LOG_LEVEL_INFO}}"
-LOG_TIMESTAMP_FORMAT="${LOG_TIMESTAMP_FORMAT:-${LOG_TIMESTAMP_DEFAULT}}"
+MOTION_LEVEL_EMERG=0
+MOTION_LEVEL_ALERT=1
+MOTION_LEVEL_CRIT=2
+MOTION_LEVEL_ERROR=3
+MOTION_LEVEL_WARN=4
+MOTION_LEVEL_NOTICE=5
+MOTION_LEVEL_INFO=6
+MOTION_LEVEL_DEBUG=7
+MOTION_LEVEL_TRACE=8
+MOTION_LEVEL_ALL=9
+MOTION_LEVELS=(EMERGENCY ALERT CRITICAL ERROR WARNING NOTICE INFO DEBUG TRACE ALL)
+MOTION_FORMAT_DEFAULT='[TIMESTAMP] LEVEL >>>'
+MOTION_TIMESTAMP_DEFAULT='%FT%TZ'
+MOTION_FORMAT="${MOTION_FORMAT:-${MOTION_FORMAT_DEFAULT}}"
+MOTION_LEVEL="${MOTION_LEVEL:-${MOTION_LEVEL_INFO}}"
+MOTION_TIMESTAMP_FORMAT="${MOTION_TIMESTAMP_FORMAT:-${MOTION_TIMESTAMP_DEFAULT}}"
 
 # logging by level
 
 hzn.log.emerg()
 { 
-  hzn.log.logto ${LOG_LEVEL_EMERG} "${*}"
+  hzn.log.logto ${MOTION_LEVEL_EMERG} "${*}"
 }
 
 hzn.log.alert()
 {
-  hzn.log.logto ${LOG_LEVEL_ALERT} "${*}"
+  hzn.log.logto ${MOTION_LEVEL_ALERT} "${*}"
 }
 
 hzn.log.crit()
 {
-  hzn.log.logto ${LOG_LEVEL_CRIT} "${*}"
+  hzn.log.logto ${MOTION_LEVEL_CRIT} "${*}"
 }
 
 hzn.log.error()
 {
-  hzn.log.logto ${LOG_LEVEL_ERROR} "${*}"
+  hzn.log.logto ${MOTION_LEVEL_ERROR} "${*}"
 }
 
 hzn.log.warn()
 {
-  hzn.log.logto ${LOG_LEVEL_WARN} "${*}"
+  hzn.log.logto ${MOTION_LEVEL_WARN} "${*}"
 }
 
 hzn.log.notice()
 {
-  hzn.log.logto ${LOG_LEVEL_NOTICE} "${*}"
+  hzn.log.logto ${MOTION_LEVEL_NOTICE} "${*}"
 }
 
 hzn.log.info()
 {
-  hzn.log.logto ${LOG_LEVEL_INFO} "${*}"
+  hzn.log.logto ${MOTION_LEVEL_INFO} "${*}"
 }
 
 hzn.log.debug()
 {
-  hzn.log.logto ${LOG_LEVEL_DEBUG} "${*}"
+  hzn.log.logto ${MOTION_LEVEL_DEBUG} "${*}"
 }
 
 hzn.log.trace()
 {
-  hzn.log.logto ${LOG_LEVEL_TRACE} "${*}"
+  hzn.log.logto ${MOTION_LEVEL_TRACE} "${*}"
 }
 
 hzn.log.level()
 {
-  case "${LOG_LEVEL}" in
-    emerg) LL=${LOG_LEVEL_EMERG} ;;
-    alert) LL=${LOG_LEVEL_ALERT} ;;
-    crit) LL=${LOG_LEVEL_CRIT} ;;
-    error) LL=${LOG_LEVEL_ERROR} ;;
-    warn) LL=${LOG_LEVEL_WARN} ;;
-    notice) LL=${LOG_LEVEL_NOTICE} ;;
-    info) LL=${LOG_LEVEL_INFO} ;;
-    debug) LL=${LOG_LEVEL_DEBUG} ;;
-    trace) LL=${LOG_LEVEL_TRACE} ;;
-    *) LL=${LOG_LEVEL_ALL} ;;
+  case "${MOTION_LEVEL}" in
+    emerg) LL=${MOTION_LEVEL_EMERG} ;;
+    alert) LL=${MOTION_LEVEL_ALERT} ;;
+    crit) LL=${MOTION_LEVEL_CRIT} ;;
+    error) LL=${MOTION_LEVEL_ERROR} ;;
+    warn) LL=${MOTION_LEVEL_WARN} ;;
+    notice) LL=${MOTION_LEVEL_NOTICE} ;;
+    info) LL=${MOTION_LEVEL_INFO} ;;
+    debug) LL=${MOTION_LEVEL_DEBUG} ;;
+    trace) LL=${MOTION_LEVEL_TRACE} ;;
+    *) LL=${MOTION_LEVEL_ALL} ;;
   esac
-  echo ${LL:-${LOG_LEVEL_ALL}}
+  echo ${LL:-${MOTION_LEVEL_ALL}}
 }
 
 hzn.log.logto()
@@ -137,10 +137,10 @@ hzn.log.logto()
   fi
   if [ "${level:-0}" -le ${current:-9} ]; then
     message="${2:-}"
-    timestamp=$(date -u +"${LOG_TIMESTAMP_FORMAT}")
-    output="${LOG_FORMAT}"
+    timestamp=$(date -u +"${MOTION_TIMESTAMP_FORMAT}")
+    output="${MOTION_FORMAT}"
     output=$(echo "${output}" | sed 's/TIMESTAMP/'${timestamp}'/')
-    output=$(echo "${output}" | sed 's/LEVEL/'${LOG_LEVELS[${level}]}'/')
+    output=$(echo "${output}" | sed 's/LEVEL/'${MOTION_LEVELS[${level}]}'/')
     echo "${0##*/} $$ ${output} ${message}" &> ${LOGTO:-/dev/stderr}
   fi
 }
