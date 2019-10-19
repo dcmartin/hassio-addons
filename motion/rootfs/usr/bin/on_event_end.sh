@@ -343,14 +343,13 @@ set post_pictures = `jq -r '.post_pictures' "$MOTION_JSON_FILE"`
 if ($?USE_MQTT && $?VERBOSE) mosquitto_pub -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD} -h "$MQTT_HOST" -t "${MOTION_GROUP}/${MOTION_DEVICE}/debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"post_pictures":"'"$post_pictures"'"}'
 if ($?VERBOSE) echo "$0:t $$ -- Posting pictures specified as: $post_pictures" >& /dev/stderr
 
-set IF = $jpgs[1]
+set IF = ()
 switch ( "$post_pictures" )
+  case "first":
+    set IF = "$jpgs[1]"
+    breaksw
   case "off":
     set IF = ()
-    breaksw
-  case "center":
-    @ h = $#ps / 2
-    if ($h > 1 && $h <= $#ps) set IF = "$jpgs[$h]"
     breaksw
   case "best":
     if ($#biggest) set IF = "$biggest"
@@ -361,9 +360,10 @@ switch ( "$post_pictures" )
   case "last":
     set IF = "$jpgs[$#jpgs]"
     breaksw
-  case "first":
   default:
-    set IF = "$jpgs[1]"
+  case "center":
+    @ h = $#ps / 2
+    if ($h > 1 && $h <= $#ps) set IF = "$jpgs[$h]"
     breaksw
 endsw
 
