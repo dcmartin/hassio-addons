@@ -39,6 +39,7 @@ mqtt_pub -q 2 -r -t "${MOTION_GROUP}/${MOTION_DEVICE}/${CN}/status/found" -m '{"
 
 # test pattern to `image` 
 mqtt_pub -q 2 -r -t "${MOTION_GROUP}/${MOTION_DEVICE}/${CN}/image" -f "/etc/motion/test.jpg"
+mqtt_pub -q 2 -r -t "${MOTION_GROUP}/${MOTION_DEVICE}/${CN}/image/end" -f "/etc/motion/test.jpg"
 
 # test pattern to `image-animated`
 mqtt_pub -q 2 -r -t "$MOTION_GROUP/$MOTION_DEVICE/$CN/image-animated" -f "/etc/motion/test.gif"
