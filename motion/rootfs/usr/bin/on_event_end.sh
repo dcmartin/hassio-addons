@@ -368,7 +368,7 @@ switch ( "$post_pictures" )
 endsw
 
 if ($#IF && -s "$IF" && $?MQTT_HOST && $?MQTT_PORT) then
-  set MQTT_TOPIC = "$MOTION_GROUP/$MOTION_DEVICE/$CN/image"
+  set MQTT_TOPIC = "$MOTION_GROUP/$MOTION_DEVICE/$CN/image/end"
   mosquitto_pub -q 2 -r -i "$MOTION_DEVICE" -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD} -h "$MQTT_HOST" -p "$MQTT_PORT" -t "$MQTT_TOPIC" -f "$IF"
   if ($?USE_MQTT && $?VERBOSE) mosquitto_pub -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD} -h "${MQTT_HOST}" -t "${MOTION_GROUP}/${MOTION_DEVICE}/debug" -m '{"VERBOSE":"'$0:t'","pid":'$$',"topic":"'"$MQTT_TOPIC"'","image":"'${IF}'"}'
   if ($?VERBOSE) echo "$0:t $$ -- Posting file $IF to host $MQTT_HOST topic $MQTT_TOPIC" >& /dev/stderr
