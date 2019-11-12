@@ -20,9 +20,9 @@ fi
 
 mqtt_pub()
 {
-  hzn.log.trace "${FUNCNAME[0]}"
+  motion.log.trace "${FUNCNAME[0]}"
 
-  if [ -z "${MQTT_DEVICE:-}" ]; then MQTT_DEVICE=$(hostname) && hzn.log.notice "MQTT_DEVICE unspecified; using hostname: ${MQTT_DEVICE}"; fi
+  if [ -z "${MQTT_DEVICE:-}" ]; then MQTT_DEVICE=$(hostname) && motion.log.notice "MQTT_DEVICE unspecified; using hostname: ${MQTT_DEVICE}"; fi
   ARGS=${*}
   if [ ! -z "${ARGS}" ]; then
     if [ ! -z "${MQTT_USERNAME}" ]; then
@@ -31,7 +31,7 @@ mqtt_pub()
     if [ ! -z "${MQTT_PASSWORD}" ]; then
       ARGS='-P '"${MQTT_PASSWORD}"' '"${ARGS}"
     fi
-    hzn.log.debug "mosquitto_pub -i ${MQTT_DEVICE} -h ${MQTT_HOST} -p ${MQTT_PORT} ${ARGS}"
+    motion.log.debug "mosquitto_pub -i ${MQTT_DEVICE} -h ${MQTT_HOST} -p ${MQTT_PORT} ${ARGS}"
     mosquitto_pub -i "${MQTT_DEVICE}" -h "${MQTT_HOST}" -p "${MQTT_PORT}" ${ARGS}
   fi
 }
@@ -59,52 +59,52 @@ MOTION_TIMESTAMP_FORMAT="${MOTION_TIMESTAMP_FORMAT:-${MOTION_TIMESTAMP_DEFAULT}}
 
 # logging by level
 
-hzn.log.emerg()
+motion.log.emerg()
 { 
-  hzn.log.logto ${MOTION_LEVEL_EMERG} "${*}"
+  motion.log.logto ${MOTION_LEVEL_EMERG} "${*}"
 }
 
-hzn.log.alert()
+motion.log.alert()
 {
-  hzn.log.logto ${MOTION_LEVEL_ALERT} "${*}"
+  motion.log.logto ${MOTION_LEVEL_ALERT} "${*}"
 }
 
-hzn.log.crit()
+motion.log.crit()
 {
-  hzn.log.logto ${MOTION_LEVEL_CRIT} "${*}"
+  motion.log.logto ${MOTION_LEVEL_CRIT} "${*}"
 }
 
-hzn.log.error()
+motion.log.error()
 {
-  hzn.log.logto ${MOTION_LEVEL_ERROR} "${*}"
+  motion.log.logto ${MOTION_LEVEL_ERROR} "${*}"
 }
 
-hzn.log.warn()
+motion.log.warn()
 {
-  hzn.log.logto ${MOTION_LEVEL_WARN} "${*}"
+  motion.log.logto ${MOTION_LEVEL_WARN} "${*}"
 }
 
-hzn.log.notice()
+motion.log.notice()
 {
-  hzn.log.logto ${MOTION_LEVEL_NOTICE} "${*}"
+  motion.log.logto ${MOTION_LEVEL_NOTICE} "${*}"
 }
 
-hzn.log.info()
+motion.log.info()
 {
-  hzn.log.logto ${MOTION_LEVEL_INFO} "${*}"
+  motion.log.logto ${MOTION_LEVEL_INFO} "${*}"
 }
 
-hzn.log.debug()
+motion.log.debug()
 {
-  hzn.log.logto ${MOTION_LEVEL_DEBUG} "${*}"
+  motion.log.logto ${MOTION_LEVEL_DEBUG} "${*}"
 }
 
-hzn.log.trace()
+motion.log.trace()
 {
-  hzn.log.logto ${MOTION_LEVEL_TRACE} "${*}"
+  motion.log.logto ${MOTION_LEVEL_TRACE} "${*}"
 }
 
-hzn.log.level()
+motion.log.level()
 {
   case "${MOTION_LEVEL}" in
     emerg) LL=${MOTION_LEVEL_EMERG} ;;
@@ -121,18 +121,18 @@ hzn.log.level()
   echo ${LL:-${MOTION_LEVEL_ALL}}
 }
 
-hzn.log.logto()
+motion.log.logto()
 {
   local level="${1:-0}"
-  local current=$(hzn.log.level)
+  local current=$(motion.log.level)
   local exp='^[0-9]+$'
 
   if ! [[ ${level} =~ ${exp} ]] ; then
-   echo "hzn.log.logto: error: level ${level} not a number ${FUNCNAME}" &> ${LOGTO}
+   echo "motion.log.logto: error: level ${level} not a number ${FUNCNAME}" &> ${LOGTO}
    level=
   fi
   if ! [[ ${current} =~ ${exp} ]] ; then
-   echo "hzn.log.logto: error: current ${current} not a number ${FUNCNAME}" &> ${LOGTO}
+   echo "motion.log.logto: error: current ${current} not a number ${FUNCNAME}" &> ${LOGTO}
    current=
   fi
   if [ "${level:-0}" -le ${current:-9} ]; then

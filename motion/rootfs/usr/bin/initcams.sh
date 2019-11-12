@@ -6,10 +6,10 @@ source /usr/bin/motion-tools.sh
 ### MAIN
 ###
 
-hzn.log.trace "started program: $0"
+motion.log.trace "started program: $0"
 
 if [ -z "${MOTION_JSON_FILE:-}" ]; then
-  hzn.log.error "cannot find configuration file; specify MOTION_JSON_FILE; exiting"
+  motion.log.error "cannot find configuration file; specify MOTION_JSON_FILE; exiting"
   exit 1
 fi
 
@@ -26,4 +26,4 @@ for c in ${cameras}; do
   on_camera_found.sh $c $dateattr
 done
 
-hzn.log.trace "completed program: $0"
+motion.log.trace "completed program: $0"
