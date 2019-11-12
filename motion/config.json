@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.8.26",
+  "version": "0.8.27",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -28,22 +28,21 @@
   ],
   "ports": {
     "7999/tcp": 7999,
-    "8000/tcp": 8000
+    "7999/tcp": 7999,
+    "8080/tcp": 8080,
+    "8090/tcp": 8090
   },
   "options": {
     "log_level": "info",
     "group": "motion",
     "post_pictures": "center",
     "cameras": [
-      {
-        "name": "sample",
-        "url": "mjpeg://192.168.1.174/img/video.mjpeg"
-      },
+      { "name": "sample-mjpeg", "url": "mjpeg://192.168.1.174/img/video.mjpeg" },
       {
         "name": "local",
         "device": "/dev/video0",
-        "type": "ps3",
-        "fps": 30,
+        "type": "ps3eye",
+        "fps": 5,
         "fov": 75,
         "width": 640,
         "height": 480,
@@ -61,8 +60,8 @@
     },
     "cloudant": {
       "url": "http://localhost:5984",
-      "username": "admin",
-      "password": "mysecretpassword"
+      "username": "",
+      "password": ""
     }
   },
   "schema": {

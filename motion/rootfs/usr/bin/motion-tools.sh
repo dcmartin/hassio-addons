@@ -141,6 +141,6 @@ motion.log.logto()
     output="${MOTION_FORMAT}"
     output=$(echo "${output}" | sed 's/TIMESTAMP/'${timestamp}'/')
     output=$(echo "${output}" | sed 's/LEVEL/'${MOTION_LEVELS[${level}]}'/')
-    echo "${0##*/} $$ ${output} ${message}" &> ${LOGTO:-/dev/stderr}
+    echo "${0##*/} $$ ${output} ${message}" &>> ${MOTION_LOGTO:-/tmp/motion.log}
   fi
 }
