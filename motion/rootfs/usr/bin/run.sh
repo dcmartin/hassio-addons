@@ -147,178 +147,175 @@ MOTION='{'
 # set log_type (FIRST ENTRY)
 VALUE=$(jq -r ".log_type" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="all"; fi
-motion.log.trace "Set log_type to ${VALUE}"
 sed -i "s|.*log_type.*|log_type ${VALUE}|" "${MOTION_CONF}"
 MOTION="${MOTION}"'"log_type":"'"${VALUE}"'"'
+motion.log.trace "Set log_type to ${VALUE}"
 
 # set log_level
 VALUE=$(jq -r ".log_motion" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=6; fi
-motion.log.trace "Set motion log_level to ${VALUE}"
 sed -i "s/.*log_level.*/log_level ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"log_level":'"${VALUE}"
+motion.log.trace "Set motion log_level to ${VALUE}"
 
 # set log_file
 VALUE=$(jq -r ".log_file" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="/tmp/motion.log"; fi
-motion.log.trace "Set motion log_file to ${VALUE}"
 sed -i "s/.*log_file.*/log_file ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"log_file":"'"${VALUE}"'"'
-
+motion.log.trace "Set motion log_file to ${VALUE}"
 
 # set auto_brightness
 VALUE=$(jq -r ".auto_brightness" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="on"; fi
-motion.log.trace "Set auto_brightness to ${VALUE}"
-sed -i "s/.*auto_brightness .*/auto_brightness ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/.*auto_brightness.*/auto_brightness ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"auto_brightness":"'"${VALUE}"'"'
+motion.log.trace "Set auto_brightness to ${VALUE}"
 
 # set locate_motion_mode
 VALUE=$(jq -r ".locate_motion_mode" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="off"; fi
-motion.log.trace "Set locate_motion_mode to ${VALUE}"
-sed -i "s/.*locate_motion_mode .*/locate_motion_mode ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/.*locate_motion_mode.*/locate_motion_mode ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"locate_motion_mode":"'"${VALUE}"'"'
+motion.log.trace "Set locate_motion_mode to ${VALUE}"
 
 # set locate_motion_style (box, redbox, cross, redcross)
 VALUE=$(jq -r ".locate_motion_style" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="box"; fi
-motion.log.trace "Set locate_motion_style to ${VALUE}"
 sed -i "s/.*locate_motion_style .*/locate_motion_style ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"locate_motion_style":"'"${VALUE}"'"'
+motion.log.trace "Set locate_motion_style to ${VALUE}"
 
 # set picture_output (on, off, first, best, center)
 VALUE=$(jq -r ".picture_output" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="center"; fi
-motion.log.trace "Set picture_output to ${VALUE}"
 sed -i "s/.*picture_output.*/picture_output ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"picture_output":"'"${VALUE}"'"'
+motion.log.trace "Set picture_output to ${VALUE}"
 
 # set picture_type (jpeg, ppm)
 VALUE=$(jq -r ".picture_type" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="jpeg"; fi
-motion.log.trace "Set picture_type to ${VALUE}"
 sed -i "s/.*picture_type .*/picture_type ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"picture_type":"'"${VALUE}"'"'
+motion.log.trace "Set picture_type to ${VALUE}"
 
 # set threshold_tune (jpeg, ppm)
 VALUE=$(jq -r ".threshold_tune" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="on"; fi
-motion.log.trace "Set threshold_tune to ${VALUE}"
 sed -i "s/.*threshold_tune .*/threshold_tune ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"threshold_tune":"'"${VALUE}"'"'
+motion.log.trace "Set threshold_tune to ${VALUE}"
 
 # set netcam_keepalive (off,force,on)
 VALUE=$(jq -r ".netcam_keepalive" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="on"; fi
-motion.log.trace "Set netcam_keepalive to ${VALUE}"
 sed -i "s/.*netcam_keepalive .*/netcam_keepalive ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"netcam_keepalive":"'"${VALUE}"'"'
+motion.log.trace "Set netcam_keepalive to ${VALUE}"
 
 ## numeric values
 
 # set v4l2_pallette
 VALUE=$(jq -r ".v4l2_pallette" "${CONFIG_PATH}")
 if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
-  motion.log.trace "Set v4l2_pallette to ${VALUE}"
   sed -i "s/.*v4l2_pallette\s[0-9]\+/v4l2_pallette ${VALUE}/" "${MOTION_CONF}"
   MOTION="${MOTION}"',"v4l2_pallette":'"${VALUE}"
+  motion.log.trace "Set v4l2_pallette to ${VALUE}"
 fi
 
 # set pre_capture
 VALUE=$(jq -r ".pre_capture" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
-motion.log.trace "Set pre_capture to ${VALUE}"
 sed -i "s/.*pre_capture\s[0-9]\+/pre_capture ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"pre_capture":'"${VALUE}"
+motion.log.trace "Set pre_capture to ${VALUE}"
 
 # set post_capture
 VALUE=$(jq -r ".post_capture" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
-motion.log.trace "Set post_capture to ${VALUE}"
 sed -i "s/.*post_capture\s[0-9]\+/post_capture ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"post_capture":'"${VALUE}"
+motion.log.trace "Set post_capture to ${VALUE}"
 
 # set event_gap
 VALUE=$(jq -r ".event_gap" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=10; fi
-motion.log.trace "Set event_gap to ${VALUE}"
 sed -i "s/.*event_gap\s[0-9]\+/event_gap ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"event_gap":'"${VALUE}"
+motion.log.trace "Set event_gap to ${VALUE}"
 
 # set minimum_motion_frames
 VALUE=$(jq -r ".minimum_motion_frames" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=10; fi
-motion.log.trace "Set minimum_motion_frames to ${VALUE}"
 sed -i "s/.*minimum_motion_frames\s[0-9]\+/minimum_motion_frames ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"minimum_motion_frames":'"${VALUE}"
+motion.log.trace "Set minimum_motion_frames to ${VALUE}"
 
 # set quality
 VALUE=$(jq -r ".picture_quality" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=100; fi
-motion.log.trace "Set picture_quality to ${VALUE}"
 sed -i "s/.*picture_quality\s[0-9]\+/picture_quality ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"picture_quality":'"${VALUE}"
+motion.log.trace "Set picture_quality to ${VALUE}"
 
 # set width
 VALUE=$(jq -r ".width" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=640; fi
-motion.log.trace "Set width to ${VALUE}"
 sed -i "s/.*width\s[0-9]\+/width ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"width":'"${VALUE}"
+motion.log.trace "Set width to ${VALUE}"
 
 # set height
 VALUE=$(jq -r ".height" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=480; fi
-motion.log.trace "Set height to ${VALUE}"
 sed -i "s/.*height\s[0-9]\+/height ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"height":'"${VALUE}"
+motion.log.trace "Set height to ${VALUE}"
 
 # set framerate
 VALUE=$(jq -r ".framerate" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=5; fi
-motion.log.trace "Set framerate to ${VALUE}"
 sed -i "s/.*framerate\s[0-9]\+/framerate ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"framerate":'"${VALUE}"
+motion.log.trace "Set framerate to ${VALUE}"
 
 # set minimum_frame_time
 VALUE=$(jq -r ".minimum_frame_time" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
-motion.log.trace "Set minimum_frame_time to ${VALUE}"
 sed -i "s/.*minimum_frame_time\s[0-9]\+/minimum_frame_time ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"minimum_frame_time":'"${VALUE}"
+motion.log.trace "Set minimum_frame_time to ${VALUE}"
 
 ## vid_control_params
 
 # set brightness
 VALUE=$(jq -r ".brightness" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
-motion.log.trace "Set brightness to ${VALUE}"
-#sed -i "s/.*brightness\s[0-9]\+/brightness ${VALUE}/" "${MOTION_CONF}"
-#sed -i "s/brightness=[0-9]\+/brightness=${VALUE}/" "${MOTION_CONF}"
+sed -i "s/brightness=[0-9]\+/brightness=${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"brightness":'"${VALUE}"
+motion.log.trace "Set brightness to ${VALUE}"
 
 # set contrast
 VALUE=$(jq -r ".contrast" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
-motion.log.trace "Set contrast to ${VALUE}"
-#sed -i "s/.*contrast\s[0-9]\+/contrast=${VALUE}/" "${MOTION_CONF}"
 sed -i "s/contrast=[0-9]\+/contrast ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"contrast":'"${VALUE}"
+motion.log.trace "Set contrast to ${VALUE}"
 
 # set saturation
 VALUE=$(jq -r ".saturation" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
-motion.log.trace "Set saturation to ${VALUE}"
 sed -i "s/saturation=[0-9]\+/saturation=${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"saturation":'"${VALUE}"
+motion.log.trace "Set saturation to ${VALUE}"
 
 # set hue
 VALUE=$(jq -r ".hue" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
-motion.log.trace "Set hue to ${VALUE}"
 sed -i "s/hue=[0-9]\+/hue=${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"hue":'"${VALUE}"
+motion.log.trace "Set hue to ${VALUE}"
 
 ## other
 
