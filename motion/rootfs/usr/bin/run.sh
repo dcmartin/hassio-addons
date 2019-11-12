@@ -148,8 +148,23 @@ MOTION='{'
 VALUE=$(jq -r ".log_type" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="all"; fi
 motion.log.trace "Set log_type to ${VALUE}"
-sed -i "s|.*log_type .*|log_type ${VALUE}|" "${MOTION_CONF}"
+sed -i "s|.*log_type.*|log_type ${VALUE}|" "${MOTION_CONF}"
 MOTION="${MOTION}"'"log_type":"'"${VALUE}"'"'
+
+# set log_level
+VALUE=$(jq -r ".log_motion" "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=6; fi
+motion.log.trace "Set motion log_level to ${VALUE}"
+sed -i "s/.*log_level.*/log_level ${VALUE}/" "${MOTION_CONF}"
+MOTION="${MOTION}"',"log_level":'"${VALUE}"
+
+# set log_file
+VALUE=$(jq -r ".log_file" "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="/tmp/motion.log"; fi
+motion.log.trace "Set motion log_file to ${VALUE}"
+sed -i "s/.*log_file.*/log_file ${VALUE}/" "${MOTION_CONF}"
+MOTION="${MOTION}"',"log_file":"'"${VALUE}"'"'
+
 
 # set auto_brightness
 VALUE=$(jq -r ".auto_brightness" "${CONFIG_PATH}")
@@ -201,20 +216,6 @@ sed -i "s/.*netcam_keepalive .*/netcam_keepalive ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"netcam_keepalive":"'"${VALUE}"'"'
 
 ## numeric values
-
-# set log_level
-VALUE=$(jq -r ".log_motion" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=6; fi
-motion.log.trace "Set motion log_level to ${VALUE}"
-sed -i "s/.*log_level\s[0-9]\+/log_level ${VALUE}/" "${MOTION_CONF}"
-MOTION="${MOTION}"',"log_level":'"${VALUE}"
-
-# set log_file
-VALUE=$(jq -r ".log_file" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="/tmp/motion.log"; fi
-motion.log.trace "Set motion log_file to ${VALUE}"
-sed -i "s/.*log_file.*/log_file ${VALUE}/" "${MOTION_CONF}"
-MOTION="${MOTION}"',"log_file":"'"${VALUE}"'"'
 
 # set v4l2_pallette
 VALUE=$(jq -r ".v4l2_pallette" "${CONFIG_PATH}")
