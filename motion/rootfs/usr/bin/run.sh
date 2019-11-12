@@ -768,12 +768,16 @@ if [ -s "${MOTION_APACHE_CONF}" ]; then
   # sed -i 's|^ServerSignature \(.*\)|ServerSignature '"${MOTION_APACHE_SIGNATURE}"'|' "${MOTION_APACHE_CONF}"
   # enable CGI
   sed -i 's|^\([^#]\)#LoadModule cgi|\1LoadModule cgi|' "${MOTION_APACHE_CONF}"
-  # set environment
+  # pass environment
   echo 'PassEnv MOTION_JSON_FILE' >> "${MOTION_APACHE_CONF}"
-  echo 'PassEnv MOTION_CLOUDANT_URL' >> "${MOTION_APACHE_CONF}"
   echo 'PassEnv MOTION_SHARE_DIR' >> "${MOTION_APACHE_CONF}"
   echo 'PassEnv MOTION_DATA_DIR' >> "${MOTION_APACHE_CONF}"
-  echo 'PassEnv MOTION_WATSON_APIKEY' >> "${MOTION_APACHE_CONF}"
+  if [ ! -z "${MOTION_CLOUDANT_URL:-}" ]; then
+    echo 'PassEnv MOTION_CLOUDANT_URL' >> "${MOTION_APACHE_CONF}"
+  fi
+  if [ ! -z "${MOTION_WATSON_APIKEY:-}" ]; then
+    echo 'PassEnv MOTION_WATSON_APIKEY' >> "${MOTION_APACHE_CONF}"
+  fi
   # make /run/apache2 for PID file
   mkdir -p /run/apache2
   # start HTTP daemon in foreground
