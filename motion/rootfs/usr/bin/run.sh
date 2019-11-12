@@ -5,9 +5,6 @@ set -o nounset  # Exit script on use of an undefined variable
 # set -o errexit  # DO NOT Exit script when a command exits with non-zero status
 # set -o errtrace # DO NOT Exit on error inside any functions or sub-shells
 
-# shellcheck disable=SC1091
-source /usr/lib/hassio-addons/base.sh
-
 # motion tools
 source /usr/bin/motion-tools.sh
 
