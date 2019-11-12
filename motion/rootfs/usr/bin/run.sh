@@ -399,10 +399,11 @@ hzn.log.notice "*** Found ${ncamera} cameras"
 MOTION_COUNT=1
 
 for (( i=0; i<ncamera ; i++)) ; do
+  hzn.log.trace "+++ CAMERA ${i}"
 
   ## handle more than one motion process (10 camera/process)
-  if (( i / 10 )); then
-    if (( i % 10 == 0 )); then
+  if [[ i / 10 ]]; then
+    if [[ i % 10 == 0 ]]; then
       CONF="${MOTION_CONF%%.*}.${MOTION_COUNT}.${MOTION_CONF##*.}"
       cp "${MOTION_CONF}" "${CONF}"
       sed -i 's|^camera|; camera|' "${CONF}"
@@ -422,11 +423,10 @@ for (( i=0; i<ncamera ; i++)) ; do
     CNUM=$i
   fi
 
-  hzn.log.trace "CAMERA #: $i CONF: ${MOTION_CONF} NUM: $CNUM"
-
   if [ -z "${CAMERAS:-}" ]; then CAMERAS='['; else CAMERAS="${CAMERAS}"','; fi
 
-  hzn.log.trace "+++ CAMERA ${i}"
+  hzn.log.trace "CAMERA #: $i CONF: ${MOTION_CONF} NUM: $CNUM"
+
 
   ## TOP-LEVEL
   CAMERAS="${CAMERAS}"'{"id":'${i}
