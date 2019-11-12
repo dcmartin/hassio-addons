@@ -491,17 +491,28 @@ for (( i=0; i<ncamera ; i++)) ; do
   echo "stream_port ${VALUE}" >> "${CAMERA_CONF}"
   CAMERAS="${CAMERAS}"',"port":"'"${VALUE}"'"'
 
+  # camera specification; url or device
   VALUE=$(jq -r '.cameras['${i}'].url' "${CONFIG_PATH}")
   if [[ "${VALUE}" == ftpd* ]]; then
     VALUE="${VALUE%*/}.jpg"
     NETCAM_URL=$(echo "${VALUE}" | sed 's|^ftpd|file|')
-  else
+  elif [ ! -z "${VALUE} ]; then
     # HANDLE NETCAM
     NETCAM_URL="${VALUE}"
   fi
-  CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
-  hass.log.trace "Set netcam_url to ${NETCAM_URL}"
-  echo "netcam_url ${NETCAM_URL}" >> "${CAMERA_CONF}"
+  if [ ! -z "${NETCAM_URL}" ]; then
+    CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
+    hass.log.trace "Set netcam_url to ${NETCAM_URL}"
+    echo "netcam_url ${NETCAM_URL}" >> "${CAMERA_CONF}"
+  else
+    VALUE=$(jq -r '.cameras['${i}'].device' "${CONFIG_PATH}")
+    if [[ "${VALUE}" == /dev/video* ]]; then
+      echo "videodevice ${VALUE}" >> "${CAMERA_CONF}"
+      hass.log.trace "Set videodevice to ${VALUE}"
+    else
+      hass.log.error "Invalid videodevice ${VALUE}"
+    fi
+  fi
 
   # palette
   VALUE=$(jq -r '.cameras['${i}'].palette' "${CONFIG_PATH}")
