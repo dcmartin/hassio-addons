@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.8.27",
+  "version": "0.8.28",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -28,7 +28,7 @@
   ],
   "ports": {
     "7999/tcp": 7999,
-    "7999/tcp": 7999,
+    "8000/tcp": 8000,
     "8080/tcp": 8080,
     "8090/tcp": 8090
   },

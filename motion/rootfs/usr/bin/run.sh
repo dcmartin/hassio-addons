@@ -188,7 +188,7 @@ motion.log.trace "Set locate_motion_style to ${VALUE}"
 
 # set picture_output (on, off, first, best, center)
 VALUE=$(jq -r ".picture_output" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="center"; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="on"; fi
 sed -i "s/.*picture_output.*/picture_output ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"picture_output":"'"${VALUE}"'"'
 motion.log.trace "Set picture_output to ${VALUE}"
