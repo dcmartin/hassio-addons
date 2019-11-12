@@ -13,8 +13,7 @@
     "armv7"
   ],
   "audio": true,
-  "devices": [
-  ],
+  "devices": [],
   "hassio_api": true,
   "homeassistant_api": true,
   "privileged": [
@@ -39,6 +38,17 @@
       {
         "name": "sample",
         "url": "mjpeg://192.168.1.174/img/video.mjpeg"
+      },
+      {
+        "name": "local",
+        "device": "/dev/video0",
+        "type": "ps3",
+        "fps": 30,
+        "fov": 75,
+        "width": 640,
+        "height": 480,
+        "rotate": 0,
+        "threshold": 1000
       }
     ],
     "mqtt": {
@@ -66,7 +76,8 @@
     "cameras": [
       {
         "name": "str",
-        "url": "str",
+        "url": "str?",
+        "device": "str?",
         "palette": "int?",
         "mac": "str?",
         "type": "str?",
