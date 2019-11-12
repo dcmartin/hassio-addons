@@ -1,8 +1,10 @@
-ARG BUILD_FROM=hassioaddons/base:2.3.0
+ARG BUILD_FROM=hassioaddons/base
 
 FROM $BUILD_FROM
 
 ENV LANG C.UTF-8
+
+RUN apk update
 
 RUN apk add --no-cache \
   apache2 \
@@ -19,9 +21,7 @@ RUN apk add --no-cache \
   mosquitto-clients \
   python3 \
   tcsh \
-  git
-
-RUN apk add --no-cache \
+  git \
   ffmpeg@edge \
   motion@edge
 
