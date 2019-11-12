@@ -483,7 +483,7 @@ for (( i = 0; i < ncamera; i++)) ; do
 
   # camera specification; url or device
   VALUE=$(jq -r '.cameras['${i}'].url' "${CONFIG_PATH}")
-  if [ -z "${VALUE:-}" ] || [ "${VALUE:-}" == 'null' ]; then
+  if [ ! -z "${VALUE:-}" ] && [ "${VALUE:-}" != 'null' ]; then
     if [[ "${VALUE}" == ftpd* ]]; then
       VALUE="${VALUE%*/}.jpg"
       VALUE=$(echo "${VALUE}" | sed 's|^ftpd|file|')
