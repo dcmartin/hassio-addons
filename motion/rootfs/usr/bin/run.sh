@@ -394,11 +394,8 @@ hzn.log.notice "*** Found ${ncamera} cameras"
 MOTION_COUNT=1
 
 for (( i = 0; i < ncamera; i++)) ; do
-  hzn.log.trace "+++ counted CAMERA ${i}"
-done
-
-for (( i = 0; i < ncamera; i++)) ; do
   hzn.log.trace "+++ CAMERA ${i}"
+
   ## handle more than one motion process (10 camera/process)
   if (( i / 10 )); then
     if (( i % 10 == 0 )); then
@@ -741,7 +738,7 @@ fi
 
 MOTION_CMD=$(command -v motion)
 if [ ! -s "${MOTION_CMD}" ] || [ ! -s "${MOTION_CONF}" ]; then
-  hzn.log.warning "No motion installed (${MOTION_CMD}) or motion configuration ${MOTION_CONF} does not exist"
+  hzn.log.warning "No motion installed ${MOTION_CMD} or motion configuration ${MOTION_CONF} does not exist"
 else
   hzn.log.debug "Starting ${MOTION_COUNT} motion daemons"
   CONF="${MOTION_CONF%%.*}.${MOTION_CONF##*.}"
