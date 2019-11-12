@@ -65,8 +65,9 @@
   },
   "schema": {
     "log_level": "str",
-    "log_motion": "int?",
     "log_type": "str?",
+    "log_motion": "int?",
+    "log_file": "str?",
     "group": "str",
     "device": "str?",
     "username": "str?",
