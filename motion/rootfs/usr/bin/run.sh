@@ -393,9 +393,12 @@ hzn.log.notice "*** Found ${ncamera} cameras"
 
 MOTION_COUNT=1
 
-for (( i = 0; i < ${ncamera} ; i++)) ; do
-  hzn.log.trace "+++ CAMERA ${i}"
+for (( i = 0; i < ncamera; i++)) ; do
+  hzn.log.trace "+++ counted CAMERA ${i}"
+done
 
+for (( i = 0; i < ncamera; i++)) ; do
+  hzn.log.trace "+++ CAMERA ${i}"
   ## handle more than one motion process (10 camera/process)
   if (( i / 10 )); then
     if (( i % 10 == 0 )); then
@@ -406,13 +409,13 @@ for (( i = 0; i < ${ncamera} ; i++)) ; do
       # get webcontrol_port (base)
       VALUE=$(jq -r ".webcontrol_port" "${CONFIG_PATH}")
       if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_CONTROL_PORT}; fi
-      VALUE=$(echo "$VALUE + $MOTION_COUNT" | bc)
+      VALUE=$((VALUE + MOTION_COUNT))
       hzn.log.trace "Set webcontrol_port to ${VALUE}"
       sed -i "s/.*webcontrol_port\s[0-9]\+/webcontrol_port ${VALUE}/" "${MOTION_CONF}"
-      MOTION_COUNT=$(echo "${MOTION_COUNT} + 1" | bc)
+      MOTION_COUNT=$((MOTION_COUNT + 1))
       CNUM=0
     else
-      CNUM=$(echo "$CNUM + 1" | bc)
+      CNUM=$((CNUM + 1))
     fi
   else
     CNUM=$i
