@@ -4,24 +4,32 @@ FROM $BUILD_FROM
 
 ENV LANG C.UTF-8
 
-RUN apk update
-
 RUN apk add --no-cache \
-  apache2 \
-  apache2-utils \
   bc \
   coreutils \
   curl \
   dateutils \
   findutils \
   gawk \
-  imagemagick \
-  inotify-tools \
   jq \
-  mosquitto-clients \
-  python3 \
   tcsh \
-  git \
+  git
+
+RUN apk add --no-cache \
+  python3
+
+RUN apk add --no-cache \
+  inotify-tools \
+  mosquitto-clients
+
+RUN apk add --no-cache \
+  apache2 \
+  apache2-utils
+
+RUN apk add --no-cache \
+  imagemagick
+
+RUN apk add --no-cache \
   ffmpeg@edge \
   motion@edge
 
