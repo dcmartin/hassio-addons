@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.8.23",
+  "version": "0.8.24",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -48,7 +48,9 @@
         "width": 640,
         "height": 480,
         "rotate": 0,
-        "threshold": 1000
+        "picture_quality": 100,
+        "stream_quality": 80,
+        "threshold": 5000
       }
     ],
     "mqtt": {
@@ -86,16 +88,18 @@
         "fps": "int?",
         "userpass": "str?",
         "port": "port?",
-        "quality": "int?",
+        "picture_quality": "int?",
+        "stream_quality": "int?",
         "width": "int?",
         "height": "int?",
         "rotate": "int?",
         "threshold": "int?",
         "event_gap": "int?",
+        "lightswitch": "int?",
+        "hue": "int?",
         "brightness": "int?",
         "contrast": "int?",
-        "saturation": "int?",
-        "lightswitch": "int?"
+        "saturation": "int?"
       }
     ],
     "mqtt": {

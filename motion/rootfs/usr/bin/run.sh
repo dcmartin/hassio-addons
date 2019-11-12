@@ -253,11 +253,11 @@ sed -i "s/.*minimum_motion_frames\s[0-9]\+/minimum_motion_frames ${VALUE}/" "${M
 MOTION="${MOTION}"',"minimum_motion_frames":'"${VALUE}"
 
 # set quality
-VALUE=$(jq -r ".quality" "${CONFIG_PATH}")
+VALUE=$(jq -r ".picture_quality" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=100; fi
-motion.log.trace "Set quality to ${VALUE}"
-sed -i "s/.*quality\s[0-9]\+/quality ${VALUE}/" "${MOTION_CONF}"
-MOTION="${MOTION}"',"quality":'"${VALUE}"
+motion.log.trace "Set picture_quality to ${VALUE}"
+sed -i "s/.*picture_quality\s[0-9]\+/picture_quality ${VALUE}/" "${MOTION_CONF}"
+MOTION="${MOTION}"',"picture_quality":'"${VALUE}"
 
 # set width
 VALUE=$(jq -r ".width" "${CONFIG_PATH}")
@@ -459,24 +459,12 @@ for (( i = 0; i < ncamera; i++)) ; do
   if [ ! -d "${VALUE}" ]; then mkdir -p "${VALUE}"; fi
   CAMERAS="${CAMERAS}"',"target_dir":"'"${VALUE}"'"'
 
-  # process camera fov; WCV80n is 61.5 (62); 56 or 75 degrees for PS3 Eye camera
-  VALUE=$(jq -r '.cameras['${i}'].fov' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then 
-    VALUE=$(jq -r '.fov' "${CONFIG_PATH}")
-    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=62; fi
-  fi
-  motion.log.trace "Set fov to ${VALUE}"
-  CAMERAS="${CAMERAS}"',"fov":'"${VALUE}"
-
-  # process camera fps; set on wcv80n web GUI; default 6
-  VALUE=$(jq -r '.cameras['${i}'].fps' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then 
-    VALUE=$(jq -r '.framerate' "${CONFIG_PATH}")
-    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=5; fi
-  fi
-  motion.log.trace "Set fps to ${VALUE}"
-  echo "framerate ${VALUE}" >> "${CAMERA_CONF}"
-  CAMERAS="${CAMERAS}"',"fps":'"${VALUE}"
+  # stream_port (calculated)
+  VALUE=$(jq -r '.cameras['${i}'].port' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_STREAM_PORT}; VALUE=$((VALUE + i)); fi
+  motion.log.trace "Set stream_port to ${VALUE}"
+  echo "stream_port ${VALUE}" >> "${CAMERA_CONF}"
+  CAMERAS="${CAMERAS}"',"port":"'"${VALUE}"'"'
 
   # process camera type; wcv80n, ps3eye, panasonic
   VALUE=$(jq -r '.cameras['${i}'].type' "${CONFIG_PATH}")
@@ -487,24 +475,33 @@ for (( i = 0; i < ncamera; i++)) ; do
   motion.log.trace "Set type to ${VALUE}"
   CAMERAS="${CAMERAS}"',"type":"'"${VALUE}"'"'
 
-  # stream_port 
-  VALUE=$(jq -r '.cameras['${i}'].port' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_STREAM_PORT}; VALUE=$((VALUE + i)); fi
-  motion.log.trace "Set stream_port to ${VALUE}"
-  echo "stream_port ${VALUE}" >> "${CAMERA_CONF}"
-  CAMERAS="${CAMERAS}"',"port":"'"${VALUE}"'"'
-
   # camera specification; url or device
   VALUE=$(jq -r '.cameras['${i}'].url' "${CONFIG_PATH}")
   if [ ! -z "${VALUE:-}" ] && [ "${VALUE:-}" != 'null' ]; then
+    # url
     if [[ "${VALUE}" == ftpd* ]]; then
       VALUE="${VALUE%*/}.jpg"
       VALUE=$(echo "${VALUE}" | sed 's|^ftpd|file|')
     fi
-    CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
     motion.log.trace "Set netcam_url to ${VALUE}"
+    CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
     echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
+
+    # keepalive 
+    VALUE=$(jq -r '.cameras['${i}'].keepalive' "${CONFIG_PATH}")
+    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_keepalive'); fi
+    motion.log.trace "Set netcam_keepalive to ${VALUE}"
+    echo "netcam_keepalive ${VALUE}" >> "${CAMERA_CONF}"
+    CAMERAS="${CAMERAS}"',"keepalive":"'"${VALUE}"'"'
+
+    # userpass 
+    VALUE=$(jq -r '.cameras['${i}'].userpass' "${CONFIG_PATH}")
+    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=; fi
+    motion.log.trace "Set netcam_userpass to ${VALUE}"
+    echo "netcam_userpass ${VALUE}" >> "${CAMERA_CONF}"
+    # DO NOT RECORD; CAMERAS="${CAMERAS}"',"userpass":"'"${VALUE}"'"'
   else
+    # local device
     VALUE=$(jq -r '.cameras['${i}'].device' "${CONFIG_PATH}")
     if [[ "${VALUE}" == /dev/video* ]]; then
       echo "videodevice ${VALUE}" >> "${CAMERA_CONF}"
@@ -520,25 +517,20 @@ for (( i = 0; i < ncamera; i++)) ; do
   motion.log.trace "Set palette to ${VALUE}"
   CAMERAS="${CAMERAS}"',"palette":'"${VALUE}"
   echo "v4l2_palette ${VALUE}" >> "${CAMERA_CONF}"
-  # keepalive 
-  VALUE=$(jq -r '.cameras['${i}'].keepalive' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_keepalive'); fi
-  motion.log.trace "Set netcam_keepalive to ${VALUE}"
-  echo "netcam_keepalive ${VALUE}" >> "${CAMERA_CONF}"
-  CAMERAS="${CAMERAS}"',"keepalive":"'"${VALUE}"'"'
-  # userpass 
-  VALUE=$(jq -r '.cameras['${i}'].userpass' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=; fi
-  motion.log.trace "Set netcam_userpass to ${VALUE}"
-  echo "netcam_userpass ${VALUE}" >> "${CAMERA_CONF}"
-  # DO NOT RECORD; CAMERAS="${CAMERAS}"',"userpass":"'"${VALUE}"'"'
+
+  # picture_quality 
+  VALUE=$(jq -r '.cameras['${i}'].picture_quality' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.picture_quality'); fi
+  motion.log.trace "Set picture_quality to ${VALUE}"
+  echo "picture_quality ${VALUE}" >> "${CAMERA_CONF}"
+  CAMERAS="${CAMERAS}"',"picture_quality":'"${VALUE}"
 
   # stream_quality 
   VALUE=$(jq -r '.cameras['${i}'].stream_quality' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.stream_quality'); fi
   motion.log.trace "Set stream_quality to ${VALUE}"
   echo "stream_quality ${VALUE}" >> "${CAMERA_CONF}"
-  CAMERAS="${CAMERAS}"',"quality":'"${VALUE}"
+  CAMERAS="${CAMERAS}"',"stream_quality":'"${VALUE}"
 
   # threshold 
   VALUE=$(jq -r '.cameras['${i}'].threshold' "${CONFIG_PATH}")
@@ -567,6 +559,25 @@ for (( i = 0; i < ncamera; i++)) ; do
   motion.log.trace "Set rotate to ${VALUE}"
   echo "rotate ${VALUE}" >> "${CAMERA_CONF}"
   CAMERAS="${CAMERAS}"',"rotate":'"${VALUE}"
+
+  # process camera fov; WCV80n is 61.5 (62); 56 or 75 degrees for PS3 Eye camera
+  VALUE=$(jq -r '.cameras['${i}'].fov' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then 
+    VALUE=$(jq -r '.fov' "${CONFIG_PATH}")
+    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=62; fi
+  fi
+  motion.log.trace "Set fov to ${VALUE}"
+  CAMERAS="${CAMERAS}"',"fov":'"${VALUE}"
+
+  # process camera fps; set on wcv80n web GUI; default 6
+  VALUE=$(jq -r '.cameras['${i}'].fps' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then 
+    VALUE=$(jq -r '.framerate' "${CONFIG_PATH}")
+    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=5; fi
+  fi
+  motion.log.trace "Set fps to ${VALUE}"
+  echo "framerate ${VALUE}" >> "${CAMERA_CONF}"
+  CAMERAS="${CAMERAS}"',"fps":'"${VALUE}"
 
   # process models string to array of strings
   VALUE=$(jq -r '.cameras['${i}'].models' "${CONFIG_PATH}")
