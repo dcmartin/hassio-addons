@@ -213,7 +213,7 @@ MOTION="${MOTION}"',"log_level":'"${VALUE}"
 VALUE=$(jq -r ".log_file" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=/dev/stderr; fi
 hzn.log.trace "Set motion log_file to ${VALUE}"
-sed -i "s/.*log_file\s.*\+/log_file ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/.*log_file.*/log_file ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"log_file":"'"${VALUE}"'"'
 
 # set v4l2_pallette
