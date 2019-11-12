@@ -86,27 +86,6 @@ export MQTT_PORT="${VALUE}"
 JSON="${JSON}"',"mqtt":'"${MQTT}"
 
 ## WATSON
-WVR_URL=$(jq -r ".watson.url" "${CONFIG_PATH}")
-WVR_APIKEY=$(jq -r ".watson.apikey" "${CONFIG_PATH}")
-WVR_CLASSIFIER=$(jq -r ".watson.classifier" "${CONFIG_PATH}")
-WVR_DATE=$(jq -r ".watson.date" "${CONFIG_PATH}")
-WVR_VERSION=$(jq -r ".watson.version" "${CONFIG_PATH}")
-if [ ! -z "${WVR_URL}" ] && [ ! -z "${WVR_APIKEY}" ] && [ ! -z "${WVR_DATE}" ] && [ ! -z "${WVR_VERSION}" ] && [ "${WVR_URL}" != "null" ] && [ "${WVR_APIKEY}" != "null" ] && [ "${WVR_DATE}" != "null" ] && [ "${WVR_VERSION}" != "null" ]; then
-  motion.log.trace "Watson Visual Recognition at ${WVR_URL} date ${WVR_DATE} version ${WVR_VERSION}"
-  WATSON='{"url":"'"${WVR_URL}"'","date":"'"${WVR_DATE}"'","version":"'"${WVR_VERSION}"'","models":['
-  if [ ! -z "${WVR_CLASSIFIER}" ] && [ "${WVR_CLASSIFIER}" != "null" ]; then
-    # quote the model names
-    CLASSIFIERS=$(echo "${WVR_CLASSIFIER}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
-    motion.log.trace "Using classifiers(s): ${CLASSIFIERS}"
-    WATSON="${WATSON}""${CLASSIFIERS}"
-  else
-    # add default iif none specified
-    WATSON="${WATSON}"'"default"'
-  fi
-  WATSON="${WATSON}"']}'
-  # make available
-  export MOTION_WATSON_APIKEY="${WVR_APIKEY}"
-fi
 if [ -n "${WATSON:-}" ]; then
   JSON="${JSON}"',"watson":'"${WATSON}"
 else
@@ -115,20 +94,6 @@ else
 fi
 
 ## DIGITS
-VALUE=$(jq -r ".digits.url" "${CONFIG_PATH}")
-if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
-  DIGITS_SERVER_URL="${VALUE}"
-  DIGITS='{"url":"'"${DIGITS_SERVER_URL}"'"'
-  VALUE=$(jq -r ".digits.jobid" "${CONFIG_PATH}")
-  if [ ! -z "${VALUE}" ] && [ "${VALUE}" != "null" ]; then
-    DIGITS_JOBIDS=$(echo "${VALUE}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
-    motion.log.trace "Using DIGITS at ${DIGITS_SERVER_URL} and ${DIGITS_JOBIDS}"
-    DIGITS="${DIGITS}"',"models":['"${DIGITS_JOBIDS}"']'
-  else
-    DIGITS="${DIGITS}"',"models":[]'
-  fi
-  DIGITS="${DIGITS}"'}'
-fi
 if [ -n "${DIGITS:-}" ]; then
   JSON="${JSON}"',"digits":'"${DIGITS}"
 else
@@ -182,7 +147,7 @@ motion.log.trace "Set locate_motion_mode to ${VALUE}"
 # set locate_motion_style (box, redbox, cross, redcross)
 VALUE=$(jq -r ".locate_motion_style" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="box"; fi
-sed -i "s/.*locate_motion_style .*/locate_motion_style ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/.*locate_motion_style.*/locate_motion_style ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"locate_motion_style":"'"${VALUE}"'"'
 motion.log.trace "Set locate_motion_style to ${VALUE}"
 
