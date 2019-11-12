@@ -12,7 +12,6 @@ RUN apk add --no-cache \
   findutils \
   gawk \
   jq \
-  tcsh \
   git
 
 RUN apk add --no-cache \
@@ -28,6 +27,9 @@ RUN apk add --no-cache \
 
 RUN apk add --no-cache \
   imagemagick
+
+RUN apk add --no-cache \
+  tcsh@edge
 
 RUN apk add --no-cache \
   ffmpeg@edge \
