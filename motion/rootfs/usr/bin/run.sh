@@ -1,9 +1,4 @@
 #!/bin/bash
-# ==============================================================================
-set -o pipefail # Return exit status of the last command in the pipe that failed
-set -o nounset  # Exit script on use of an undefined variable
-# set -o errexit  # DO NOT Exit script when a command exits with non-zero status
-# set -o errtrace # DO NOT Exit on error inside any functions or sub-shells
 
 # motion tools
 source /usr/bin/motion-tools.sh
@@ -398,8 +393,12 @@ hzn.log.notice "*** Found ${ncamera} cameras"
 
 MOTION_COUNT=1
 
+for ((i = 0 ; i <= 1000 ; i++)); do
+  echo "Counter: $i"
+done
+
 hzn.log.trace "*** Processing ${ncamera} cameras"
-for (( i=0; i<ncamera ; i++)) ; do
+for (( i = 0; i < ncamera ; i++)) ; do
   hzn.log.trace "+++ CAMERA ${i}"
 
   ## handle more than one motion process (10 camera/process)
