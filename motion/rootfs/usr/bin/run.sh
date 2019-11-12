@@ -204,16 +204,16 @@ MOTION="${MOTION}"',"netcam_keepalive":"'"${VALUE}"'"'
 
 # set log_level
 VALUE=$(jq -r ".log_motion" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=2; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=9; fi
 hzn.log.trace "Set motion log_level to ${VALUE}"
 sed -i "s/.*log_level\s[0-9]\+/log_level ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"log_level":'"${VALUE}"
 
 # set log_file
 VALUE=$(jq -r ".log_file" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=2; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=/dev/stderr; fi
 hzn.log.trace "Set motion log_file to ${VALUE}"
-sed -i "s/.*log_level\s[0-9]\+/log_file ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/.*log_file\s.*\+/log_file ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"log_file":"'"${VALUE}"'"'
 
 # set v4l2_pallette
