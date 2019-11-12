@@ -1,4 +1,4 @@
-#!/usr/bin/with-contenv bashio
+#!/usr/bin/with-contenv bash
 # ==============================================================================
 set -o pipefail # Return exit status of the last command in the pipe that failed
 set -o nounset  # Exit script on use of an undefined variable
