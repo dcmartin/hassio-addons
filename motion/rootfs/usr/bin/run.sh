@@ -490,8 +490,8 @@ for (( i = 0; i < ncamera; i++)) ; do
     # HANDLE NETCAM
     NETCAM_URL="${VALUE}"
   fi
-  if [ ! -z "${NETCAM_URL}" ]; then
-    CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
+  if [ ! -z "${NETCAM_URL:-}" ] && [ "${NETCAM_URL:-}" != 'null' ]; then
+    CAMERAS="${CAMERAS}"',"url":"'"${NETCAM_URL}"'"'
     hzn.log.trace "Set netcam_url to ${NETCAM_URL}"
     echo "netcam_url ${NETCAM_URL}" >> "${CAMERA_CONF}"
   else
