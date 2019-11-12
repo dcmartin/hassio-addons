@@ -393,12 +393,7 @@ hzn.log.notice "*** Found ${ncamera} cameras"
 
 MOTION_COUNT=1
 
-for ((i = 0 ; i <= 1000 ; i++)); do
-  echo "Counter: $i"
-done
-
-hzn.log.trace "*** Processing ${ncamera} cameras"
-for (( i = 0; i < ncamera ; i++)) ; do
+for (( i = 0; i < ${ncamera} ; i++)) ; do
   hzn.log.trace "+++ CAMERA ${i}"
 
   ## handle more than one motion process (10 camera/process)
