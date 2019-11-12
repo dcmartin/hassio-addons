@@ -483,17 +483,14 @@ for (( i = 0; i < ncamera; i++)) ; do
 
   # camera specification; url or device
   VALUE=$(jq -r '.cameras['${i}'].url' "${CONFIG_PATH}")
-  if [[ "${VALUE}" == ftpd* ]]; then
-    VALUE="${VALUE%*/}.jpg"
-    NETCAM_URL=$(echo "${VALUE}" | sed 's|^ftpd|file|')
-  elif [ ! -z "${VALUE:-}" ] && [ "${VALUE:-}" != 'null' ]; then
-    # HANDLE NETCAM
-    NETCAM_URL="${VALUE}"
-  fi
-  if [ ! -z "${NETCAM_URL:-}" ] && [ "${NETCAM_URL:-}" != 'null' ]; then
-    CAMERAS="${CAMERAS}"',"url":"'"${NETCAM_URL}"'"'
-    hzn.log.trace "Set netcam_url to ${NETCAM_URL}"
-    echo "netcam_url ${NETCAM_URL}" >> "${CAMERA_CONF}"
+  if [ -z "${VALUE:-}" ] || [ "${VALUE:-}" == 'null' ]; then
+    if [[ "${VALUE}" == ftpd* ]]; then
+      VALUE="${VALUE%*/}.jpg"
+      VALUE=$(echo "${VALUE}" | sed 's|^ftpd|file|')
+    fi
+    CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
+    hzn.log.trace "Set netcam_url to ${VALUE}"
+    echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
   else
     VALUE=$(jq -r '.cameras['${i}'].device' "${CONFIG_PATH}")
     if [[ "${VALUE}" == /dev/video* ]]; then
