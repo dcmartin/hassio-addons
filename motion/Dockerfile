@@ -12,8 +12,6 @@ RUN apk add --no-cache \
   curl \
   dateutils \
   findutils \
-  ffmpeg@edge \
-  motion@edge \
   gawk \
   imagemagick \
   inotify-tools \
@@ -23,19 +21,9 @@ RUN apk add --no-cache \
   tcsh \
   git
 
-## CVSKIT
-
-#RUN apk add --update \
-#    python \
-#    python-dev \
-#    py-pip \
-#    build-base
-#
-#RUN pip install --upgrade pip \
-#    && pip install --upgrade setuptools \
-#    && pip install --upgrade csvkit --ignore-installed six \
-#    && rm -rf /var/cache/apk/*
-
+RUN apk add --no-cache \
+  ffmpeg@edge \
+  motion@edge
 
 # environment
 ENV CONFIG_PATH /data/options.json
