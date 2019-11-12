@@ -1,4 +1,4 @@
-#!/usr/bin/with-contenv bash
+#!/bin/bash
 # ==============================================================================
 set -o pipefail # Return exit status of the last command in the pipe that failed
 set -o nounset  # Exit script on use of an undefined variable
@@ -398,6 +398,7 @@ hzn.log.notice "*** Found ${ncamera} cameras"
 
 MOTION_COUNT=1
 
+hzn.log.trace "*** Processing ${ncamera} cameras"
 for (( i=0; i<ncamera ; i++)) ; do
   hzn.log.trace "+++ CAMERA ${i}"
 
