@@ -732,11 +732,11 @@ mkyaml.sh "${CONFIG_PATH}"
 VALUE=$(jq -r ".reload" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="false"; fi
 if [ "${VALUE}" != "false" ]; then 
-  hzn.log.notice "Re-defining configuration YAML (${VALUE})"
+  hzn.log.notice "Re-defining configuration YAML: ${VALUE}"
   JSON="${JSON}"',"reload":'"${VALUE}"
   rlyaml.sh "${VALUE}"
 else
-  hzn.log.notice "Not re-defining configuration YAML (${VALUE})"
+  hzn.log.notice "Not re-defining configuration YAML: ${VALUE}"
 fi
 
 ###
