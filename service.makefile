@@ -1,5 +1,5 @@
 ## ARCHITECTURE
-BUILD_ARCH ?= $(if $(wildcard BUILD_ARCH),$(shell cat BUILD_ARCH),$(shell uname -m | sed 's/x86_64/amd64/'))
+BUILD_ARCH ?= $(if $(wildcard BUILD_ARCH),$(shell cat BUILD_ARCH),$(shell uname -m | sed -e 's/x86_64/amd64/' -e 's/armv7l/armv7/'))
 
 ## GIT
 GIT_REMOTE_URL=$(shell git remote get-url origin)
@@ -91,7 +91,7 @@ login: ~/.docker/config.json
 	    || docker login 2> /dev/null \
 	    || echo "${YELLOW}>>>${NC} MAKE **" $$(date +%T) "** docker login failed ${DOCKER_REGISTRY}""${NC}" > /dev/stderr; \
 
-push: build # login
+push: build login
 	@echo "${MC}>>> MAKE --" $$(date +%T) "-- push: ${DOCKER_NAME}; tag: ${DOCKER_TAG}""${NC}" > /dev/stderr
 	@docker push ${DOCKER_TAG}
 
@@ -103,7 +103,7 @@ push: build # login
 
 BUILD_OUT = build.${BUILD_ARCH}_${SERVICE_ID}_${SERVICE_VERSION}.out
 
-build: Dockerfile build.json config.json rootfs Makefile remove
+build: Dockerfile build.json config.json rootfs makefile remove
 	@echo "${MC}>>> MAKE --" $$(date +%T) "-- build: ${SERVICE_NAME}; tag: ${DOCKER_TAG}""${NC}" > /dev/stderr
 	@export DOCKER_TAG="${DOCKER_TAG}" && docker build --build-arg BUILD_REF=$$(git rev-parse --short HEAD) --build-arg BUILD_DATE=$$(date -u +"%Y-%m-%dT%H:%M:%SZ") --build-arg BUILD_ARCH="$(BUILD_ARCH)" --build-arg BUILD_FROM="$(BUILD_FROM)" --build-arg BUILD_VERSION="${SERVICE_VERSION}" . -t "$(DOCKER_TAG)" # > ${BUILD_OUT}
 
