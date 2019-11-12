@@ -10,7 +10,7 @@
     "aarch64",
     "amd64",
     "armhf",
-    "arm7"
+    "armv7"
   ],
   "audio": true,
   "devices": [
