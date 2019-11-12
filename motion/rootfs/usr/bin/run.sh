@@ -701,16 +701,16 @@ if [ "${URL}" != "null" ] && [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "
     exit 1
   fi
 else
-  hzn.log.warning "Cloudant URL, username and/or password undefined"
+  hzn.log.warn "Cloudant URL, username and/or password undefined"
 fi
 if [ -z "${MOTION_CLOUDANT_URL:-}" ]; then
   hzn.log.notice "Cloudant NOT SPECIFIED"
 fi
 
 # test hassio
-hzn.log.trace "Testing hassio ..." $(curl -sL -H "X-HASSIO-KEY: ${HASSIO_TOKEN}" "http://hassio/supervisor/info" | jq -c '.')
+hzn.log.trace "Testing hassio ... $(curl -sL -H "X-HASSIO-KEY: ${HASSIO_TOKEN}" "http://hassio/supervisor/info" | jq -c '.')"
 # test homeassistant
-hzn.log.trace "Testing homeassistant ..." $(curl -sL -u ":${HASSIO_TOKEN}" "http://hassio/homeassistant/api/states" | jq -c '.')
+hzn.log.trace "Testing homeassistant ... $(curl -sL -u ":${HASSIO_TOKEN}" "http://hassio/homeassistant/api/states" | jq -c '.')"
 
 # start ftp_notifywait for all ftpd:// cameras (uses environment MOTION_JSON_FILE)
 ftp_notifywait.sh "${MOTION_JSON_FILE}"
@@ -735,7 +735,7 @@ fi
 
 MOTION_CMD=$(command -v motion)
 if [ ! -s "${MOTION_CMD}" ] || [ ! -s "${MOTION_CONF}" ]; then
-  hzn.log.warning "No motion installed ${MOTION_CMD} or motion configuration ${MOTION_CONF} does not exist"
+  hzn.log.warn "No motion installed ${MOTION_CMD} or motion configuration ${MOTION_CONF} does not exist"
 else
   hzn.log.debug "Starting ${MOTION_COUNT} motion daemons"
   CONF="${MOTION_CONF%%.*}.${MOTION_CONF##*.}"
