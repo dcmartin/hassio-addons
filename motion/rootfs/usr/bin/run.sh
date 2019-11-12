@@ -153,7 +153,7 @@ MOTION="${MOTION}"'"log_type":"'"${VALUE}"'"'
 
 # set auto_brightness
 VALUE=$(jq -r ".auto_brightness" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="off"; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="on"; fi
 hzn.log.trace "Set auto_brightness to ${VALUE}"
 sed -i "s/.*auto_brightness .*/auto_brightness ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"auto_brightness":"'"${VALUE}"'"'
@@ -174,7 +174,7 @@ MOTION="${MOTION}"',"locate_motion_style":"'"${VALUE}"'"'
 
 # set output_pictures (on, off, first, best, center)
 VALUE=$(jq -r ".output_pictures" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="on"; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="center"; fi
 hzn.log.trace "Set output_pictures to ${VALUE}"
 sed -i "s/.*output_pictures .*/output_pictures ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"output_pictures":"'"${VALUE}"'"'
@@ -188,7 +188,7 @@ MOTION="${MOTION}"',"picture_type":"'"${VALUE}"'"'
 
 # set threshold_tune (jpeg, ppm)
 VALUE=$(jq -r ".threshold_tune" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="off"; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="on"; fi
 hzn.log.trace "Set threshold_tune to ${VALUE}"
 sed -i "s/.*threshold_tune .*/threshold_tune ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"threshold_tune":"'"${VALUE}"'"'
@@ -204,16 +204,16 @@ MOTION="${MOTION}"',"netcam_keepalive":"'"${VALUE}"'"'
 
 # set log_level
 VALUE=$(jq -r ".log_motion" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=9; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=6; fi
 hzn.log.trace "Set motion log_level to ${VALUE}"
 sed -i "s/.*log_level\s[0-9]\+/log_level ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"log_level":'"${VALUE}"
 
 # set log_file
 VALUE=$(jq -r ".log_file" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=/dev/stderr; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="/tmp/motion.log"; fi
 hzn.log.trace "Set motion log_file to ${VALUE}"
-sed -i "s/.*log_file.*/log_file ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/.*logfile.*/logfile ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"log_file":"'"${VALUE}"'"'
 
 # set v4l2_pallette
@@ -247,14 +247,14 @@ MOTION="${MOTION}"',"event_gap":'"${VALUE}"
 
 # set minimum_motion_frames
 VALUE=$(jq -r ".minimum_motion_frames" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=10; fi
 hzn.log.trace "Set minimum_motion_frames to ${VALUE}"
 sed -i "s/.*minimum_motion_frames\s[0-9]\+/minimum_motion_frames ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"minimum_motion_frames":'"${VALUE}"
 
 # set quality
 VALUE=$(jq -r ".quality" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=75; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=100; fi
 hzn.log.trace "Set quality to ${VALUE}"
 sed -i "s/.*quality\s[0-9]\+/quality ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"quality":'"${VALUE}"
@@ -338,7 +338,7 @@ MOTION="${MOTION}"',"stream_port":'"${VALUE}"
 
 # set stream_quality
 VALUE=$(jq -r ".stream_quality" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=50; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=100; fi
 hzn.log.trace "Set stream_quality to ${VALUE}"
 sed -i "s/.*stream_quality\s[0-9]\+/stream_quality ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"stream_quality":'"${VALUE}"
@@ -347,14 +347,14 @@ MOTION="${MOTION}"',"stream_quality":'"${VALUE}"
 VALUE=$(jq -r ".threshold" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1500; fi
 hzn.log.trace "Set threshold to ${VALUE}"
-sed -i "s/.*threshold .*/threshold ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/.*threshold.*/threshold ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"threshold":'"${VALUE}"
 
 # set lightswitch
 VALUE=$(jq -r ".lightswitch" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
 hzn.log.trace "Set lightswitch to ${VALUE}"
-sed -i "s/.*lightswitch\s[0-9]\+/lightswitch ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/.*lightswitch.*/lightswitch ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"lightswitch":'"${VALUE}"
 
 ## process collectively
