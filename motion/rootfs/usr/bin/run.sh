@@ -486,7 +486,7 @@ for (( i = 0; i < ncamera; i++)) ; do
   if [[ "${VALUE}" == ftpd* ]]; then
     VALUE="${VALUE%*/}.jpg"
     NETCAM_URL=$(echo "${VALUE}" | sed 's|^ftpd|file|')
-  elif [ ! -z "${VALUE} ]; then
+  elif [ ! -z "${VALUE}" ]; then
     # HANDLE NETCAM
     NETCAM_URL="${VALUE}"
   fi
