@@ -1,7 +1,6 @@
 #!/bin/tcsh
 setenv DEBUG
 setenv VERBOSE
-setenv USE_MQTT
 
 # legacy
 unsetenv MOTION_FILE_NORMAL
@@ -16,7 +15,6 @@ else if ( -e /usr/bin/dateconv ) then
 else if ( -e /usr/local/bin/dateconv ) then
    set dateconv = /usr/local/bin/dateconv
 else
-  if ($?DEBUG && $?USE_MQTT) mosquitto_pub -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD} -h "$MQTT_HOST" -t "${MOTION_GROUP}/${MOTION_DEVICE}/debug" -m '{"ERROR":"'$0:t'","pid":"'$$'","error":"no date converter; install dateutils"}'
   goto done
 endif
 
@@ -120,7 +118,6 @@ foreach j ( $jpgs )
   endif
 
   if ($?MOTION_FILE_NORMAL) then
-    if ($?VERBOSE && $?USE_MQTT) mosquitto_pub -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD} -h "$MQTT_HOST" -t "${MOTION_GROUP}/${MOTION_DEVICE}/debug" -m '{"INFO":"'$0:t'","pid":"'$$'","info":"moving '$f' to '$output'"}'
     echo "$0:t $$ -- Moving $f to $output" >& /dev/stderr
     set frames = ( $frames $f:t:r )
     mv -f "$f" "${output}"
@@ -153,7 +150,6 @@ endif
 if ($?json) then
   # identify original video
   identify -verbose -moments -unique "$video" | convert rose: json:- | jq -c '.[]|.image.name="'"${input}"'"|.frames=['"$frames"']' >! "$json"
-  if ($?VERBOSE && $?USE_MQTT) mosquitto_pub -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD} -h "$MQTT_HOST" -t "${MOTION_GROUP}/${MOTION_DEVICE}/debug" -f "$json"
 endif
 
 ## ALL DONE

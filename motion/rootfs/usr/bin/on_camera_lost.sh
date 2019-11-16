@@ -16,7 +16,7 @@ source /usr/bin/motion-tools.sh
 ### MAIN
 ###
 
-motion.log.trace "started program"
+motion.log.debug "START ${*}"
 
 CN="${1}"
 YR="${2}"
@@ -30,17 +30,19 @@ TS="${YR}${MO}${DY}${HR}${MN}${SC}"
 # get time
 NOW=$($dateconv -i '%Y%m%d%H%M%S' -f "%s" "$TS")
 
-motion.log.debug "got timestamp: ${TS} and time: ${NOW}"
-
-MOTION_DEVICE=${MOTION_DEVICE:-$(hostname)}
+topic="${MOTION_GROUP}/${MOTION_DEVICE}/${CN}/status/found" 
+message='{"device":"'${MOTION_DEVICE}'","camera":"'"${CN}"'","time":'"${NOW}"',"status":"found"}'
 
 # `status/lost`
-mqtt_pub -q 2 -r -t "${MOTION_GROUP}/${MOTION_DEVICE}/${CN}/status/found" -m '{"device":"'${MOTION_DEVICE}'","camera":"'"${CN}"'","time":'"${NOW}"',"status":"found"}'
+motion.log.debug "sending ${message} to ${topic}"
+motion.mqtt.pub -q 2 -r -t "${topic}" -m "${message}"
 
 # no signal pattern to `image` 
-mqtt_pub -q 2 -r -t "${MOTION_GROUP}/${MOTION_DEVICE}/${CN}/image" -f "/etc/motion/sample.jpg"
+motion.mqtt.pub -q 2 -r -t "${MOTION_GROUP}/${MOTION_DEVICE}/${CN}/image" -f "/etc/motion/sample.jpg"
+motion.mqtt.pub -q 2 -r -t "${MOTION_GROUP}/${MOTION_DEVICE}/${CN}/image/end" -f "/etc/motion/sample.jpg"
 
 # no signal pattern to `image-animated`
-mqtt_pub -q 2 -r -t "$MOTION_GROUP/$MOTION_DEVICE/$CN/image-animated" -f "/etc/motion/sample.gif"
+motion.mqtt.pub -q 2 -r -t "$MOTION_GROUP/$MOTION_DEVICE/$CN/image-animated" -f "/etc/motion/sample.gif"
+motion.mqtt.pub -q 2 -r -t "$MOTION_GROUP/$MOTION_DEVICE/$CN/image-animated-mask" -f "/etc/motion/sample.gif"
 
-motion.log.trace "completed program"
+motion.log.debug "FINISH ${*}"

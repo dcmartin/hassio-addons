@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+###
+### motion-tools.sh
+###
+
 ##
 ## DATEUTILS
 ##
@@ -14,111 +18,240 @@ else
   exit 1
 fi
 
+###
+### CONFIGURATION
+###
+
+motion.config.target_dir()
+{
+  local file=$(motion.config.file)
+  local result=""
+
+  if [ -s "${file}" ]; then
+    result=$(jq -r '.motion.target_dir' ${file})
+  fi
+  echo "${result:-}"
+}
+
+motion.config.share_dir()
+{
+  local file=$(motion.config.file)
+  local result=""
+
+  if [ -s "${file}" ]; then
+    result=$(jq -r '.share_dir' ${file})
+  fi
+  echo "${result:-}"
+}
+
+motion.config.group()
+{
+  local file=$(motion.config.file)
+  local result=""
+
+  if [ -s "${file}" ]; then
+    result=$(jq -r '.group' ${file})
+  fi
+  echo "${result:-}"
+}
+
+motion.config.device()
+{
+  local file=$(motion.config.file)
+  local result=""
+
+  if [ -s "${file}" ]; then
+    result=$(jq -r '.device' ${file})
+  fi
+  echo "${result:-}"
+}
+
+motion.config.mqtt()
+{
+  local file=$(motion.config.file)
+  local result="null"
+
+  if [ -s "${file}" ]; then
+    result=$(jq -c '.mqtt?' ${file})
+  fi
+  echo "${result:-}"
+}
+
+motion.config.cameras()
+{
+  local file=$(motion.config.file)
+  local result="null"
+
+  if [ -s "${file}" ]; then
+    result=$(jq -c '.cameras?' ${file})
+  fi
+  echo "${result:-}"
+}
+
+motion.config.post_pictures()
+{
+  local file=$(motion.config.file)
+  local result=""
+
+  if [ -s "${file}" ]; then
+    result=$(jq -r '.post_pictures' ${file})
+  fi
+  echo "${result:-}"
+}
+
+motion.config.file()
+{
+  local conf="${MOTION_CONF:-}"
+  if [ ! -z "${conf:-}" ]; then
+    conf="${MOTION_CONF%/*}/motion.json"
+  fi
+  echo "${conf:-}"
+}
+
 ##
 ## MQTT
 ##
 
+_motion.mqtt.pub()
+{
+  local ARGS=${*}
+
+  if [ ! -z "$(motion.config.file)" ] && [ -s $(motion.config.file) ]; then
+    local username=$(echo $(motion.config.mqtt) | jq -r '.username')
+    local port=$(echo $(motion.config.mqtt) | jq -r '.port')
+    local host=$(echo $(motion.config.mqtt) | jq -r '.host')
+    local password=$(echo $(motion.config.mqtt) | jq -r '.password')
+
+    if [ ! -z "${ARGS}" ]; then
+      if [ ! -z "${username}" ] && [ "${username}" != 'null' ]; then
+	ARGS='-u '"${username}"' '"${ARGS}"
+      fi
+      if [ ! -z "${password}" ] && [ "${password}" != 'null' ]; then
+	ARGS='-P '"${password}"' '"${ARGS}"
+      fi
+      mosquitto_pub -i "$(motion.config.device)" -h "${host}" -p "${port}" ${ARGS} 2>&1 /dev/null &
+    fi
+  fi
+}
+
+motion.mqtt.pub()
+{
+  motion.log.debug "${FUNCNAME[0]} ${*}"
+  _motion.mqtt.pub "${*}"
+}
+ 
 mqtt_pub()
 {
-  motion.log.trace "${FUNCNAME[0]}"
-
-  if [ -z "${MQTT_DEVICE:-}" ]; then MQTT_DEVICE=$(hostname) && motion.log.notice "MQTT_DEVICE unspecified; using hostname: ${MQTT_DEVICE}"; fi
-  ARGS=${*}
-  if [ ! -z "${ARGS}" ]; then
-    if [ ! -z "${MQTT_USERNAME}" ]; then
-      ARGS='-u '"${MQTT_USERNAME}"' '"${ARGS}"
-    fi
-    if [ ! -z "${MQTT_PASSWORD}" ]; then
-      ARGS='-P '"${MQTT_PASSWORD}"' '"${ARGS}"
-    fi
-    motion.log.debug "mosquitto_pub -i ${MQTT_DEVICE} -h ${MQTT_HOST} -p ${MQTT_PORT} ${ARGS}"
-    mosquitto_pub -i "${MQTT_DEVICE}" -h "${MQTT_HOST}" -p "${MQTT_PORT}" ${ARGS}
-  fi
+  motion.log.debug "${FUNCNAME[0]} ${*}"
+  _motion.mqtt.pub "${*}"
 }
 
 ##
 ## logging
 ##
 
-MOTION_LEVEL_EMERG=0
-MOTION_LEVEL_ALERT=1
-MOTION_LEVEL_CRIT=2
-MOTION_LEVEL_ERROR=3
-MOTION_LEVEL_WARN=4
-MOTION_LEVEL_NOTICE=5
-MOTION_LEVEL_INFO=6
-MOTION_LEVEL_DEBUG=7
-MOTION_LEVEL_TRACE=8
-MOTION_LEVEL_ALL=9
-MOTION_LEVELS=(EMERGENCY ALERT CRITICAL ERROR WARNING NOTICE INFO DEBUG TRACE ALL)
-MOTION_FORMAT_DEFAULT='[TIMESTAMP] LEVEL >>>'
+MOTION_LOG_LEVEL_EMERG=0
+MOTION_LOG_LEVEL_ALERT=1
+MOTION_LOG_LEVEL_CRIT=2
+MOTION_LOG_LEVEL_ERROR=3
+MOTION_LOG_LEVEL_WARN=4
+MOTION_LOG_LEVEL_NOTICE=5
+MOTION_LOG_LEVEL_INFO=6
+MOTION_LOG_LEVEL_DEBUG=7
+MOTION_LOG_LEVEL_TRACE=8
+MOTION_LOG_LEVEL_ALL=9
+MOTION_LOG_LEVELS=(EMERGENCY ALERT CRITICAL ERROR WARNING NOTICE INFO DEBUG TRACE ALL)
+MOTION_LOG_FORMAT_DEFAULT='[TIMESTAMP] LEVEL >>>'
 MOTION_TIMESTAMP_DEFAULT='%FT%TZ'
-MOTION_FORMAT="${MOTION_FORMAT:-${MOTION_FORMAT_DEFAULT}}"
-MOTION_LEVEL="${MOTION_LEVEL:-${MOTION_LEVEL_INFO}}"
+MOTION_LOG_FORMAT="${MOTION_LOG_FORMAT:-${MOTION_LOG_FORMAT_DEFAULT}}"
+MOTION_LOG_LEVEL="${MOTION_LOG_LEVEL:-${MOTION_LOG_LEVEL_INFO}}"
 MOTION_TIMESTAMP_FORMAT="${MOTION_TIMESTAMP_FORMAT:-${MOTION_TIMESTAMP_DEFAULT}}"
 
 # logging by level
 
 motion.log.emerg()
 { 
-  motion.log.logto ${MOTION_LEVEL_EMERG} "${*}"
+  motion.log.logto ${MOTION_LOG_LEVEL_EMERG} "${*}"
 }
 
 motion.log.alert()
 {
-  motion.log.logto ${MOTION_LEVEL_ALERT} "${*}"
+  motion.log.logto ${MOTION_LOG_LEVEL_ALERT} "${*}"
 }
 
 motion.log.crit()
 {
-  motion.log.logto ${MOTION_LEVEL_CRIT} "${*}"
+  motion.log.logto ${MOTION_LOG_LEVEL_CRIT} "${*}"
 }
 
 motion.log.error()
 {
-  motion.log.logto ${MOTION_LEVEL_ERROR} "${*}"
+  motion.log.logto ${MOTION_LOG_LEVEL_ERROR} "${*}"
 }
 
-motion.log.warn()
+motion.log.warning()
 {
-  motion.log.logto ${MOTION_LEVEL_WARN} "${*}"
+  motion.log.logto ${MOTION_LOG_LEVEL_WARN} "${*}"
 }
 
 motion.log.notice()
 {
-  motion.log.logto ${MOTION_LEVEL_NOTICE} "${*}"
+  motion.log.logto ${MOTION_LOG_LEVEL_NOTICE} "${*}"
 }
 
 motion.log.info()
 {
-  motion.log.logto ${MOTION_LEVEL_INFO} "${*}"
+  motion.log.logto ${MOTION_LOG_LEVEL_INFO} "${*}"
 }
 
 motion.log.debug()
 {
-  motion.log.logto ${MOTION_LEVEL_DEBUG} "${*}"
+  motion.log.logto ${MOTION_LOG_LEVEL_DEBUG} "${*}"
 }
 
 motion.log.trace()
 {
-  motion.log.logto ${MOTION_LEVEL_TRACE} "${*}"
+  motion.log.logto ${MOTION_LOG_LEVEL_TRACE} "${*}"
 }
 
 motion.log.level()
 {
-  case "${MOTION_LEVEL}" in
-    emerg) LL=${MOTION_LEVEL_EMERG} ;;
-    alert) LL=${MOTION_LEVEL_ALERT} ;;
-    crit) LL=${MOTION_LEVEL_CRIT} ;;
-    error) LL=${MOTION_LEVEL_ERROR} ;;
-    warn) LL=${MOTION_LEVEL_WARN} ;;
-    notice) LL=${MOTION_LEVEL_NOTICE} ;;
-    info) LL=${MOTION_LEVEL_INFO} ;;
-    debug) LL=${MOTION_LEVEL_DEBUG} ;;
-    trace) LL=${MOTION_LEVEL_TRACE} ;;
-    *) LL=${MOTION_LEVEL_ALL} ;;
+  case "${MOTION_LOG_LEVEL}" in
+    emerg) LL=${MOTION_LOG_LEVEL_EMERG} ;;
+    alert) LL=${MOTION_LOG_LEVEL_ALERT} ;;
+    crit) LL=${MOTION_LOG_LEVEL_CRIT} ;;
+    error) LL=${MOTION_LOG_LEVEL_ERROR} ;;
+    warn) LL=${MOTION_LOG_LEVEL_WARN} ;;
+    notice) LL=${MOTION_LOG_LEVEL_NOTICE} ;;
+    info) LL=${MOTION_LOG_LEVEL_INFO} ;;
+    debug) LL=${MOTION_LOG_LEVEL_DEBUG} ;;
+    trace) LL=${MOTION_LOG_LEVEL_TRACE} ;;
+    *) LL=${MOTION_LOG_LEVEL_ALL} ;;
   esac
-  echo ${LL:-${MOTION_LEVEL_ALL}}
+  echo ${LL:-${MOTION_LOG_LEVEL_ALL}}
+}
+
+motion.log.mqtt()
+{
+  if [ "${MOTION_LOG_MQTT:-false}" = 'true' ]; then
+    local level=${1:-0}
+    local group=$(motion.config.group)
+    local device=$(motion.config.device)
+
+    motion.mqtt.pub -t "${group}/${device}/log/${MOTION_LOG_LEVELS[${level}]}" -m "${*}"
+  fi
+}
+
+motion.log.message()
+{
+  local level="${1:-}"
+  local message="${2:-}"
+  local timestamp=$(date -u +"${MOTION_TIMESTAMP_FORMAT}")
+  local output="${MOTION_LOG_FORMAT}"
+
+  output=$(echo "${output}" | sed 's/TIMESTAMP/'${timestamp}'/')
+  output=$(echo "${output}" | sed 's/LEVEL/'${MOTION_LOG_LEVELS[${level}]}'/')
+  echo "${0##*/} $$ ${output} ${message}"
 }
 
 motion.log.logto()
@@ -136,11 +269,8 @@ motion.log.logto()
    current=
   fi
   if [ "${level:-0}" -le ${current:-9} ]; then
-    message="${2:-}"
-    timestamp=$(date -u +"${MOTION_TIMESTAMP_FORMAT}")
-    output="${MOTION_FORMAT}"
-    output=$(echo "${output}" | sed 's/TIMESTAMP/'${timestamp}'/')
-    output=$(echo "${output}" | sed 's/LEVEL/'${MOTION_LEVELS[${level}]}'/')
-    echo "${0##*/} $$ ${output} ${message}" &>> ${MOTION_LOGTO:-/tmp/motion.log}
+    local output=$(motion.log.message ${level} "${2:-}") 
+    echo "${output}" &>> ${MOTION_LOGTO:-/tmp/motion.log}
+    motion.log.mqtt ${level} "${output}"
   fi
 }

@@ -3,18 +3,18 @@
 source /usr/bin/motion-tools.sh
 
 ###
-### MAIN
+### initcams.sh
 ###
 
-motion.log.trace "started program: $0"
+motion.log.debug "START ${*}"
 
-if [ -z "${MOTION_JSON_FILE:-}" ]; then
-  motion.log.error "cannot find configuration file; specify MOTION_JSON_FILE; exiting"
+if [ -z "${1:-}" ]; then
+  motion.log.error "requires specification of MOTION_JSON_FILE as argument"
   exit 1
 fi
 
 # ger all cameras
-cameras=$(jq -r '.cameras[].name' ${MOTION_JSON_FILE})
+cameras=$(jq -r '.cameras[].name' ${1})
 
 # initiate all cameras
 for c in ${cameras}; do
@@ -26,4 +26,4 @@ for c in ${cameras}; do
   on_camera_found.sh $c $dateattr
 done
 
-motion.log.trace "completed program: $0"
+motion.log.debug "FINISH ${*}"
