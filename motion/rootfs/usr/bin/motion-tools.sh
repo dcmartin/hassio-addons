@@ -129,20 +129,20 @@ _motion.mqtt.pub()
       if [ ! -z "${password}" ] && [ "${password}" != 'null' ]; then
 	ARGS='-P '"${password}"' '"${ARGS}"
       fi
-      mosquitto_pub -i "$(motion.config.device)" -h "${host}" -p "${port}" ${ARGS} 2>&1 /dev/null &
+      mosquitto_pub -i "$(motion.config.device)" -h "${host}" -p "${port}" ${ARGS}
     fi
   fi
 }
 
 motion.mqtt.pub()
 {
-  motion.log.debug "${FUNCNAME[0]} ${*}"
+  motion.log.trace "${FUNCNAME[0]} ${*}"
   _motion.mqtt.pub "${*}"
 }
  
 mqtt_pub()
 {
-  motion.log.debug "${FUNCNAME[0]} ${*}"
+  motion.log.trace "${FUNCNAME[0]} ${*}"
   _motion.mqtt.pub "${*}"
 }
 
@@ -164,7 +164,7 @@ MOTION_LOG_LEVELS=(EMERGENCY ALERT CRITICAL ERROR WARNING NOTICE INFO DEBUG TRAC
 MOTION_LOG_FORMAT_DEFAULT='[TIMESTAMP] LEVEL >>>'
 MOTION_TIMESTAMP_DEFAULT='%FT%TZ'
 MOTION_LOG_FORMAT="${MOTION_LOG_FORMAT:-${MOTION_LOG_FORMAT_DEFAULT}}"
-MOTION_LOG_LEVEL="${MOTION_LOG_LEVEL:-${MOTION_LOG_LEVEL_INFO}}"
+MOTION_LOG_LEVEL="${MOTION_LOG_LEVEL:-${MOTION_LOG_LEVELS[${MOTION_LOG_LEVEL_INFO}]}}"
 MOTION_TIMESTAMP_FORMAT="${MOTION_TIMESTAMP_FORMAT:-${MOTION_TIMESTAMP_DEFAULT}}"
 
 # logging by level

@@ -19,5 +19,4 @@ source /usr/bin/motion-tools.sh
 ### main
 ###
 
-motion.log.debug "START ${*}"
-motion.log.debug "FINISH ${*}"
+motion.log.trace "${0} ${*}"

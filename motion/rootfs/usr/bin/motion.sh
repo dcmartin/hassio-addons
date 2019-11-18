@@ -581,7 +581,7 @@ for (( i = 0; i < ncamera; i++)) ; do
   echo "camera ${CAMERA_CONF}" >> "${MOTION_CONF}"
 done
 
-### DONE w/ MOTION_CONF
+## DONE w/ MOTION_CONF
 
 ## append to configuration JSON
 if [ -n "${CAMERAS:-}" ]; then 
@@ -619,12 +619,6 @@ motion.log.debug "Set interval to ${VALUE}"
 JSON="${JSON}"',"interval":'"${VALUE}"
 export MOTION_EVENT_INTERVAL="${VALUE}"
 
-# set minimum_animate; minimum 2
-VALUE=$(jq -r '.minimum_animate' "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=2; fi
-motion.log.debug "Set minimum_animate to ${VALUE}"
-JSON="${JSON}"',"minimum_animate":'"${VALUE}"
-
 # set post_pictures; enumerated [on,center,first,last,best,most]
 VALUE=$(jq -r '.post_pictures' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="center"; fi
@@ -638,15 +632,10 @@ if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="/share/${MOTION_GR
 motion.log.debug "Set share_dir to ${VALUE}"
 JSON="${JSON}"',"share_dir":"'"${VALUE}"'"'
 
-###
-### DONE w/ JSON
-###
-
+# DONE w/ JSON
 JSON="${JSON}"'}'
 
-###
-### INSPECT FOR QUALITY
-###
+## INSPECT FOR QUALITY
 
 echo "${JSON}" | jq '.' > "$(motion.config.file)"
 if [ ! -s "$(motion.config.file)" ]; then
@@ -695,13 +684,7 @@ for (( i = 1; i <= MOTION_COUNT;  i++)); do
 done
 
 ###
-### initialize camera(s)
-###
- 
-initcams.sh "$(motion.config.file)"
-
-###
-### START HTTPD
+### APACHE
 ###
 
 if [ ! -s "${MOTION_APACHE_CONF}" ]; then
@@ -709,34 +692,38 @@ if [ ! -s "${MOTION_APACHE_CONF}" ]; then
   exit 1
 fi
 
-  # edit defaults
-  sed -i 's|^Listen \(.*\)|Listen '${MOTION_APACHE_PORT}'|' "${MOTION_APACHE_CONF}"
-  sed -i 's|^ServerName \(.*\)|ServerName '"${MOTION_APACHE_HOST}:${MOTION_APACHE_PORT}"'|' "${MOTION_APACHE_CONF}"
-  sed -i 's|^ServerAdmin \(.*\)|ServerAdmin '"${MOTION_APACHE_ADMIN}"'|' "${MOTION_APACHE_CONF}"
-  # sed -i 's|^ServerTokens \(.*\)|ServerTokens '"${MOTION_APACHE_TOKENS}"'|' "${MOTION_APACHE_CONF}"
-  # sed -i 's|^ServerSignature \(.*\)|ServerSignature '"${MOTION_APACHE_SIGNATURE}"'|' "${MOTION_APACHE_CONF}"
-  # enable CGI
-  sed -i 's|^\([^#]\)#LoadModule cgi|\1LoadModule cgi|' "${MOTION_APACHE_CONF}"
-  # export environment
-  export MOTION_JSON_FILE=$(motion.config.file)
-  export MOTION_SHARE_DIR=$(motion.config.share_dir)
-  # pass environment
-  echo 'PassEnv MOTION_JSON_FILE' >> "${MOTION_APACHE_CONF}"
-  echo 'PassEnv MOTION_SHARE_DIR' >> "${MOTION_APACHE_CONF}"
+# edit defaults
+sed -i 's|^Listen \(.*\)|Listen '${MOTION_APACHE_PORT}'|' "${MOTION_APACHE_CONF}"
+sed -i 's|^ServerName \(.*\)|ServerName '"${MOTION_APACHE_HOST}:${MOTION_APACHE_PORT}"'|' "${MOTION_APACHE_CONF}"
+sed -i 's|^ServerAdmin \(.*\)|ServerAdmin '"${MOTION_APACHE_ADMIN}"'|' "${MOTION_APACHE_CONF}"
+# sed -i 's|^ServerTokens \(.*\)|ServerTokens '"${MOTION_APACHE_TOKENS}"'|' "${MOTION_APACHE_CONF}"
+# sed -i 's|^ServerSignature \(.*\)|ServerSignature '"${MOTION_APACHE_SIGNATURE}"'|' "${MOTION_APACHE_CONF}"
 
-  # test CLOUDANT
-  if [ ! -z "${MOTION_CLOUDANT_URL:-}" ]; then
-    echo 'PassEnv MOTION_CLOUDANT_URL' >> "${MOTION_APACHE_CONF}"
-  fi
+# enable CGI
+sed -i 's|^\([^#]\)#LoadModule cgi|\1LoadModule cgi|' "${MOTION_APACHE_CONF}"
 
-  # test WATSON
-  if [ ! -z "${MOTION_WATSON_APIKEY:-}" ]; then
-    echo 'PassEnv MOTION_WATSON_APIKEY' >> "${MOTION_APACHE_CONF}"
-  fi
+# export environment
+export MOTION_JSON_FILE=$(motion.config.file)
+export MOTION_SHARE_DIR=$(motion.config.share_dir)
 
-  # make /run/apache2 for PID file
-  mkdir -p /run/apache2
+# pass environment
+echo 'PassEnv MOTION_JSON_FILE' >> "${MOTION_APACHE_CONF}"
+echo 'PassEnv MOTION_SHARE_DIR' >> "${MOTION_APACHE_CONF}"
 
-  # start HTTP daemon in foreground
-  motion.log.debug "Starting Apache: ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT} ${MOTION_APACHE_HTDOCS}"
-  MOTION_JSON_FILE=$(motion.config.file) httpd -E /dev/stderr -e debug -f "${MOTION_APACHE_CONF}" -DFOREGROUND
+# test CLOUDANT
+if [ ! -z "${MOTION_CLOUDANT_URL:-}" ]; then
+  echo 'PassEnv MOTION_CLOUDANT_URL' >> "${MOTION_APACHE_CONF}"
+fi
+
+# test WATSON
+if [ ! -z "${MOTION_WATSON_APIKEY:-}" ]; then
+  echo 'PassEnv MOTION_WATSON_APIKEY' >> "${MOTION_APACHE_CONF}"
+fi
+
+# make /run/apache2 for PID file
+mkdir -p /run/apache2
+
+# start HTTP daemon in foreground
+motion.log.debug "Starting Apache: ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT} ${MOTION_APACHE_HTDOCS}"
+MOTION_JSON_FILE=$(motion.config.file) httpd -E /dev/stderr -e debug -f "${MOTION_APACHE_CONF}" -DFOREGROUND
+

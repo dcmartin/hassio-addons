@@ -29,14 +29,15 @@ on_event_end()
     MOTION_MQTT_PORT=$(echo $(motion.config.mqtt) | jq -r '.port') \
     MOTION_MQTT_USERNAME=$(echo $(motion.config.mqtt) | jq -r '.username') \
     MOTION_MQTT_PASSWORD=$(echo $(motion.config.mqtt) | jq -r '.password') \
+    MOTION_LOG_LEVEL=${MOTION_LOG_LEVEL} \
+    MOTION_LOGTO=${MOTION_LOGTO} \
+    MOTION_FRAME_SELECT='all' \
     && \
-    /usr/bin/on_event_end.sh.tcsh ${*}
+    /usr/bin/on_event_end.tcsh ${*}
 }
 
 ###
 ### main
 ###
 
-motion.log.debug "START ${*}"
 on_event_end ${*}
-motion.log.debug "FINISH ${*}"

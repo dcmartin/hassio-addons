@@ -17,7 +17,7 @@ source /usr/bin/motion-tools.sh
 
 on_event_start()
 {
-  motion.log.debug "${FUNCNAME[0]} ${*}"
+  motion.log.info "${FUNCNAME[0]} ${*}"
 
   local CN="${1}"
   local EN="${2}"
@@ -42,6 +42,4 @@ on_event_start()
 ### main
 ###
 
-motion.log.debug "START ${*}"
 on_event_start ${*}
-motion.log.debug "FINISH ${*}"

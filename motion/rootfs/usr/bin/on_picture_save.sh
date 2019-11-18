@@ -17,12 +17,11 @@ source /usr/bin/motion-tools.sh
 # Both %f and %n are only defined for on_picture_save, on_movie_start and on_movie_end
 #
 
-
 ## publish JSON and image
 
 on_picture_save()
 {
-  motion.log.debug "${FUNCNAME[0]} ${*}"
+  motion.log.trace "${FUNCNAME[0]} ${*}"
 
   local CN="${1}"
   local EN="${2}"
@@ -39,23 +38,16 @@ on_picture_save()
   local SN=$(echo "${ID}" | sed 's/.*-..-\(.*\).*/\1/')
   local NOW=$($dateconv -i '%Y%m%d%H%M%S' -f "%s" "$TS")
 
-  motion.log.debug "ID: ${ID}; TS: ${TS}; SN: ${SN}; NOW: ${NOW}"
-
   # create JSON
   echo '{"device":"'$(motion.config.device)'","camera":"'"${CN}"'","type":"jpeg","date":'"${NOW}"',"seqno":"'"${SN}"'","event":"'"${EN}"'","id":"'"${ID}"'","center":{"x":'"${MX}"',"y":'"${MY}"'},"width":'"${MW}"',"height":'"${MH}"',"size":'${SZ}',"noise":'${NL}'}' > "${IF%.*}.json"
 
-  motion.log.debug "image: ${IF%.*}.json; contents: $(jq -c '.' ${IF%.*}.json)"
-
-  # post JSON
-  motion.mqtt.pub -q 2 -r -t "$$(motion.config.group)/$$(motion.config.device)/$CN/event/image" -f "${IF%.*}.json"
-
-  # only post JPEG when/if
+  # only post when/if
   if [ $(motion.config.post_pictures) = "on" ]; then
-    motion.log.debug "picture: ${IF}; size: $(wc -c ${IF} | awk '{ print $1 }')"
+    # post JSON
+    motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/$CN/event/image" -f "${IF%.*}.json"
+    # post JPEG
     motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/$CN/image" -f "${IF}"
   fi
 }
 
-motion.log.debug "START"
 on_picture_save ${*}
-motion.log.debug "FINISH"
