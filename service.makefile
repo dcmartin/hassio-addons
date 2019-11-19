@@ -15,18 +15,20 @@ SERVICE_NAME = $(if ${TAG},${SERVICE_LABEL}-${TAG},${SERVICE_LABEL})
 SERVICE_VERSION = $(shell jq -r '.version' config.json | envsubst)
 SERVICE_TAG = "${HZN_ORG_ID}/${SERVICE_ID}_${SERVICE_VERSION}_${BUILD_ARCH}"
 SERVICE_SLUG := $(shell jq -r '.slug' config.json | envsubst)
-SERVICE_ID = $(if ${TAG},${SERVICE_SLUG}-${TAG},${SERVICE_SLUG})
+SERVICE_ID = $(if ${TAG},addon-${SERVICE_SLUG}-${TAG},addon-${SERVICE_SLUG})
+
 SERVICE_ARCH_SUPPORT := $(shell jq -r '.build_from|to_entries[]|select(.value!=null).key' build.json 2> /dev/null)
 
 ## docker
-DOCKER_REGISTRY ?= $(if $(wildcard ../DOCKER_REGISTRY),$(shell cat ../DOCKER_REGISTRY),"docker.io")
+DOCKER_REGISTRY ?= $(if $(wildcard ../DOCKER_REGISTRY),$(shell cat ../DOCKER_REGISTRY),)
 DOCKER_NAMESPACE ?= $(if $(wildcard ../DOCKER_NAMESPACE),$(shell cat ../DOCKER_NAMESPACE),$(shell whoami))
 DOCKER_REPOSITORY ?= $(if $(DOCKER_REGISTRY),$(DOCKER_REGISTRY)/$(DOCKER_NAMESPACE),$(DOCKER_NAMESPACE))
 DOCKER_CONFIG := $(if $(wildcard ~/.docker/config.json),$(shell jq -r '.auths|to_entries[]|select(.key|test("'$(DOCKER_REGISTRY)'"))' ~/.docker/config.json 2> /dev/null),)
 DOCKER_LOGIN ?= $(if $(DOCKER_CONFIG),$(shell echo $(DOCKER_CONFIG) | jq -r '.value.auth' | base64 --decode | awk -F: '${ print $1 }'),)
 DOCKER_PASSWORD ?= $(if $(DOCKER_CONFIG),$(shell echo $(DOCKER_CONFIG) | jq -r '.value.auth' | base64 --decode | awk -F: '${ print $2 }'),)
+# armv7-addon-motion:0.8.30
 DOCKER_NAME = $(SERVICE_ID)
-DOCKER_TAG := $(DOCKER_REPOSITORY)/$(DOCKER_NAME):$(SERVICE_VERSION)
+DOCKER_TAG := $(DOCKER_REPOSITORY)/${BUILD_ARCH}-$(DOCKER_NAME):$(SERVICE_VERSION)
 
 ## ports
 DOCKER_PORT ?= $(shell jq -r '.ports?' config.json | sed 's/\([0-9]*\).*/\1/' | sed 's/null//')
@@ -69,7 +71,10 @@ $(PRIVATE_KEY_FILE) $(PUBLIC_KEY_FILE):
 ##
 
 logs:
-	@docker logs -f $$(docker ps --format '{{.Image}},{{.ID}}' | egrep "${DOCKER_NAME}" | awk -F, '{ print $$2 }')
+	@export \
+	  SERVICE_ID='$(SERVICE_ID)' && \
+	  SERVICE_VERSION='$(SERVICE_VERSION)' && \
+	  docker logs -f $$(docker ps --format '{{.Image}},{{.ID}}' | egrep "$${SERVICE_ID}:$${SERVICE_VERSION}" | awk -F, '{ print $$2 }')
 
 run: stop stop-service
 	@echo "${MC}>>> MAKE --" $$(date +%T) "-- run: ${DOCKER_NAME}; port: ${DOCKER_PORT}:${SERVICE_PORT}; tag: ${DOCKER_TAG}""${NC}" > /dev/stderr

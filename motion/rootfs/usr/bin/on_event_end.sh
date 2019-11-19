@@ -19,6 +19,11 @@ on_event_end()
 {
   motion.log.debug "${FUNCNAME[0]} ${*}"
 
+  # close I/O
+  # exec 0>&- # close stdin
+  # exec 1>&- # close stdout
+  # exec 2>&- # close stderr
+
   # export environment and run legacy tcsh script
   export \
     MOTION_GROUP=$(motion.config.group) \
@@ -31,7 +36,7 @@ on_event_end()
     MOTION_MQTT_PASSWORD=$(echo $(motion.config.mqtt) | jq -r '.password') \
     MOTION_LOG_LEVEL=${MOTION_LOG_LEVEL} \
     MOTION_LOGTO=${MOTION_LOGTO} \
-    MOTION_FRAME_SELECT='all' \
+    MOTION_FRAME_SELECT='key' \
     && \
     /usr/bin/on_event_end.tcsh ${*}
 }
