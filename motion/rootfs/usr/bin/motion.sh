@@ -408,14 +408,14 @@ for (( i = 0; i < ncamera; i++)) ; do
       CNUM=$((CNUM + 1))
     fi
   else
-    CNUM=$i
+    CNUM=$((i+1))
   fi
 
   ## TOP-LEVEL
   if [ -z "${CAMERAS:-}" ]; then CAMERAS='['; else CAMERAS="${CAMERAS}"','; fi
 
   motion.log.debug "CAMERA #: $i CONF: ${MOTION_CONF} NUM: $CNUM"
-  CAMERAS="${CAMERAS}"'{"id":'$((i+1))
+  CAMERAS="${CAMERAS}"'{"id":'${CNUM}
 
   # name
   VALUE=$(jq -r '.cameras['${i}'].name' "${CONFIG_PATH}")
