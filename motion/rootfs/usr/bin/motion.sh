@@ -403,7 +403,7 @@ for (( i = 0; i < ncamera; i++)) ; do
       motion.log.debug "Set webcontrol_port to ${VALUE}"
       sed -i "s/.*webcontrol_port\s[0-9]\+/webcontrol_port ${VALUE}/" "${MOTION_CONF}"
       MOTION_COUNT=$((MOTION_COUNT + 1))
-      CNUM=0
+      CNUM=1
     else
       CNUM=$((CNUM + 1))
     fi
