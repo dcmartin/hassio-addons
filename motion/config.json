@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.8.33",
+  "version": "0.8.34",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -13,7 +13,9 @@
     "armv7"
   ],
   "audio": true,
-  "devices": [ "/dev/video0:/dev/video0:rwm" ],
+  "devices": [
+    "/dev/video0:/dev/video0:rwm"
+  ],
   "hassio_api": true,
   "homeassistant_api": true,
   "privileged": [
@@ -35,11 +37,39 @@
     "log_level": "info",
     "group": "motion",
     "post_pictures": "center",
+    "default": {
+        "brightness": 100,
+        "contrast": 50,
+        "event_gap": 10,
+        "fov": 62,
+        "fps": 5,
+        "hue": 50,
+        "lightswitch": 0,
+        "palette": 15,
+        "picture_quality": 100,
+        "stream_quality": 100,
+        "threshold": 5000,
+        "saturation": 0,
+        "userpass": "username:password"
+        "username": "username",
+        "password": "password",
+        "height": 480,
+        "width": 640 
+    },
     "cameras": [
-      { "name": "sample-mjpeg", "url": "mjpeg://192.168.1.174/img/video.mjpeg" },
+      {
+        "name": "netcam",
+        "url": "http://192.168.1.174/img/video.mjpeg",
+        "mjpeg_url": "http://127.0.0.1:8090/1",
+        "type": "wcv80n",
+        "picture_quality": 100,
+        "stream_quality": 80,
+        "threshold": 7500
+      },
       {
         "name": "local",
         "device": "/dev/video0",
+        "mjpeg_url": "http://127.0.0.1:8090/2",
         "type": "ps3eye",
         "fps": 5,
         "fov": 75,
@@ -48,7 +78,7 @@
         "rotate": 0,
         "picture_quality": 100,
         "stream_quality": 80,
-        "threshold": 5000
+        "threshold": 10000
       }
     ],
     "mqtt": {
@@ -64,42 +94,66 @@
     }
   },
   "schema": {
-    "log_level": "str",
-    "log_type": "str?",
-    "log_motion": "int?",
-    "log_file": "str?",
     "group": "str",
     "device": "str?",
     "username": "str?",
     "password": "str?",
     "timezone": "str?",
     "post_pictures": "str?",
+    "default": {
+        "brightness": "int?",
+        "contrast": "int?",
+        "event_gap": "int?",
+        "fov": "int?",
+        "fps": "int?",
+        "hue": "int?",
+        "lightswitch": "int?",
+        "palette": "int?",
+        "picture_quality": "int?",
+        "stream_quality": "int?",
+        "threshold": "int?",
+        "saturation": "int?",
+        "userpass": "str?",
+        "username": "str?",
+        "password": "password",
+        "height": "int?",
+        "width": "int?"
+    },
     "cameras": [
       {
         "name": "str",
-        "url": "str?",
         "device": "str?",
-        "palette": "int?",
-        "mac": "str?",
+        "icon": "str?",
         "type": "str?",
-        "fov": "int?",
-        "fps": "int?",
-        "userpass": "str?",
+        "mac": "str?",
         "port": "port?",
-        "picture_quality": "int?",
-        "stream_quality": "int?",
-        "width": "int?",
-        "height": "int?",
         "rotate": "int?",
-        "threshold": "int?",
-        "event_gap": "int?",
-        "lightswitch": "int?",
-        "hue": "int?",
+        "url": "str?",
+        "mjpeg_url": "str?",
+        "still_image_url": "str?",
         "brightness": "int?",
         "contrast": "int?",
-        "saturation": "int?"
+        "event_gap": "int?",
+        "fov": "int?",
+        "fps": "int?",
+        "hue": "int?",
+        "lightswitch": "int?",
+        "palette": "int?",
+        "picture_quality": "int?",
+        "stream_quality": "int?",
+        "threshold": "int?",
+        "saturation": "int?",
+        "userpass": "str?",
+        "username": "str?",
+        "password": "password",
+        "height": "int?",
+        "width": "int?"
       }
     ],
+    "log_level": "str",
+    "log_type": "str?",
+    "log_motion": "int?",
+    "log_file": "str?",
     "mqtt": {
       "host": "str?",
       "port": "port?",
