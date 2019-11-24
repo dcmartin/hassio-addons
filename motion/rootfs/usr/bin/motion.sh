@@ -344,8 +344,8 @@ MOTION="${MOTION}"',"lightswitch":'"${VALUE}"
 ## process collectively
 
 # set username and password
-USERNAME=$(jq -r ".username" "${CONFIG_PATH}")
-PASSWORD=$(jq -r ".password" "${CONFIG_PATH}")
+USERNAME=$(jq -r ".default.username" "${CONFIG_PATH}")
+PASSWORD=$(jq -r ".default.password" "${CONFIG_PATH}")
 if [ "${USERNAME}" != "null" ] && [ "${PASSWORD}" != "null" ] && [ ! -z "${USERNAME}" ] && [ ! -z "${PASSWORD}" ]; then
   motion.log.debug "Set authentication to Basic for both stream and webcontrol"
   sed -i "s/.*stream_auth_method.*/stream_auth_method 1/" "${MOTION_CONF}"
