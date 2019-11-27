@@ -94,6 +94,10 @@
     }
   },
   "schema": {
+    "log_level": "str",
+    "log_type": "str?",
+    "log_motion": "int?",
+    "log_file": "str?",
     "group": "str",
     "device": "str?",
     "username": "str?",
@@ -115,7 +119,7 @@
       "saturation": "int?",
       "userpass": "str?",
       "username": "str?",
-      "password": "password",
+      "password": "str?",
       "height": "int?",
       "width": "int?"
     },
@@ -150,10 +154,6 @@
         "width": "int?"
       }
     ],
-    "log_level": "str",
-    "log_type": "str?",
-    "log_motion": "int?",
-    "log_file": "str?",
     "mqtt": {
       "host": "str?",
       "port": "port?",
