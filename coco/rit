@@ -1,0 +1,24 @@
+#!/bin/csh 
+set old = ( `docker ps | egrep coco | awk '{ print $1 }'` )
+if ($?old) then
+  if ($#old) then
+    docker stop $old
+  endif
+endif
+docker rm coco
+if (-d "/home/COCO/") then
+  set vol = "/home/COCO/"
+else if (-d "/Volumes/COCO/") then
+  set vol = "/Volumes/COCO/"
+else
+  echo "No COCODIR"
+  exit
+endif 
+docker run \
+  -d \
+  -i \
+  -t \
+  -p 8888:8888 \
+  -v "$vol":/coco:rw \
+  --name='coco' \
+  coco
