@@ -461,25 +461,29 @@ for (( i = 0; i < ncamera; i++)) ; do
     # url
     if [[ "${VALUE}" == ftpd* ]]; then
       VALUE="${VALUE%*/}.jpg"
-      VALUE=$(echo "${VALUE}" | sed 's|^ftpd|file|')
+      VALUE=$(echo "${VALUE}" | sed 's|^ftpd|jpeg|')
+      motion.log.debug "FTPD source; Set netcam_url to ${VALUE}"
+      CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
+      echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
+    else
+      motion.log.debug "Set netcam_url to ${VALUE}"
+      CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
+      echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
+
+      # keepalive 
+      VALUE=$(jq -r '.cameras['${i}'].keepalive' "${CONFIG_PATH}")
+      if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_keepalive'); fi
+      motion.log.debug "Set netcam_keepalive to ${VALUE}"
+      echo "netcam_keepalive ${VALUE}" >> "${CAMERA_CONF}"
+      CAMERAS="${CAMERAS}"',"keepalive":"'"${VALUE}"'"'
+
+      # userpass 
+      VALUE=$(jq -r '.cameras['${i}'].userpass' "${CONFIG_PATH}")
+      if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=; fi
+      motion.log.debug "Set netcam_userpass to ${VALUE}"
+      echo "netcam_userpass ${VALUE}" >> "${CAMERA_CONF}"
+      # DO NOT RECORD; CAMERAS="${CAMERAS}"',"userpass":"'"${VALUE}"'"'
     fi
-    motion.log.debug "Set netcam_url to ${VALUE}"
-    CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
-    echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
-
-    # keepalive 
-    VALUE=$(jq -r '.cameras['${i}'].keepalive' "${CONFIG_PATH}")
-    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_keepalive'); fi
-    motion.log.debug "Set netcam_keepalive to ${VALUE}"
-    echo "netcam_keepalive ${VALUE}" >> "${CAMERA_CONF}"
-    CAMERAS="${CAMERAS}"',"keepalive":"'"${VALUE}"'"'
-
-    # userpass 
-    VALUE=$(jq -r '.cameras['${i}'].userpass' "${CONFIG_PATH}")
-    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=; fi
-    motion.log.debug "Set netcam_userpass to ${VALUE}"
-    echo "netcam_userpass ${VALUE}" >> "${CAMERA_CONF}"
-    # DO NOT RECORD; CAMERAS="${CAMERAS}"',"userpass":"'"${VALUE}"'"'
   else
     # local device
     VALUE=$(jq -r '.cameras['${i}'].device' "${CONFIG_PATH}")
