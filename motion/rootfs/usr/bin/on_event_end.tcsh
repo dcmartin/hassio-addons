@@ -177,15 +177,6 @@ endif
 if ($?DEBUG) echo "$0:t $$ -- Event JSON updated: $lastjson" `jq -c '.' $lastjson` >> /tmp/motion.log
 mv -f "$lastjson.$$" "$lastjson"
 
-##
-## PUBLISH EVENT
-##
-
-set topic = "${mqtt_topic}/event/end"
-set file = "$lastjson" 
-mosquitto_pub -q 2 -r -i "${MOTION_DEVICE}" -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "$topic" -f "$file" 
-if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> /tmp/motion.log
-
 ###
 ### PROCESS images
 ###
@@ -333,6 +324,15 @@ if ($?DEBUG) echo "$0:t $$ -- Selected $post_pictures image: $IF" >> /tmp/motion
 
 set topic = "${mqtt_topic}/image/end"
 set file = "$IF" 
+mosquitto_pub -q 2 -r -i "${MOTION_DEVICE}" -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "$topic" -f "$file" 
+if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> /tmp/motion.log
+
+##
+## PUBLISH EVENT
+##
+
+set topic = "${mqtt_topic}/event/end"
+set file = "$lastjson" 
 mosquitto_pub -q 2 -r -i "${MOTION_DEVICE}" -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "$topic" -f "$file" 
 if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> /tmp/motion.log
 
