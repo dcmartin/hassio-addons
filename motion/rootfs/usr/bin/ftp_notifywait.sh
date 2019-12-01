@@ -18,9 +18,18 @@ ftp_notifywait()
     if [[ $url =~ ftpd://* ]]; then
       local input=$(echo "$url" | sed "s|ftpd://||")
 
+      # prepare destination
+      motion.log.debug "cleaning directory: ${input%.*}"
+      rm -fr "${input%.*}"
+
+      # create destination
+      motion.log.debug "making directory: ${input%.*}"
       mkdir -p "${input%.*}"
+
+      # make initial target
+      motion.log.debug "copying sample to ${input}"
       cp -f /etc/motion/sample.jpg "${input}"
-  
+
       # setup notifywait
       motion.log.debug "initiating do_ftp_notifywait.sh ${input%.*} ${input}"
       do_ftp_notifywait.sh "${input%.*}" "${input}" &
