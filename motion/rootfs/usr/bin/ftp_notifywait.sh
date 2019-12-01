@@ -22,9 +22,11 @@ ftp_notifywait()
       cp -f /etc/motion/sample.jpg "${input}"
   
       # setup notifywait
+      motion.log.debug "initiating do_ftp_notifywait.sh ${input%.*} ${input}"
       do_ftp_notifywait.sh "${input%.*}" "${input}" &
 
       # manually "find" camera
+      motion.log.debug "running on_camera_found.sh ${name} $($dateconv -f '%Y %m %d %H %M %S' -i '%s' $(date '+%s'))"
       on_camera_found.sh ${name} $($dateconv -f '%Y %m %d %H %M %S' -i "%s" $(date '+%s'))
     fi
   done

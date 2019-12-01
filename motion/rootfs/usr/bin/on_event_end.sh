@@ -11,7 +11,7 @@ source /usr/bin/motion-tools.sh
 # %m - The month as a decimal number (range 01 to 12). 
 # %d - The day of the month as a decimal number (range 01 to 31).
 # %H - The hour as a decimal number using a 24-hour clock (range 00 to 23)
-# %M - The minute as a decimal number (range 00 to 59). >& /dev/stderr
+# %M - The minute as a decimal number (range 00 to 59).
 # %S - The second as a decimal number (range 00 to 61). 
 #
 

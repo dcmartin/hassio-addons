@@ -1,11 +1,14 @@
 #!/bin/tcsh
+
+#
 setenv DEBUG
-setenv VERBOSE
 
 # legacy
 unsetenv MOTION_FILE_NORMAL
 
-if ($?VERBOSE) echo "$0:t $$ -- START $*" `date` >& /dev/stderr
+setenv MOTION_JSON_FILE /etc/motion/motion.json
+
+if ($?DEBUG) echo "$0:t $$ -- START $*" `date` >>& /tmp/motion.log
 
 ## REQUIRES date utilities
 if ( -e /usr/bin/dateutils.dconv ) then
@@ -22,7 +25,7 @@ if ($#argv == 2) then
   set video = "$argv[1]"
   set output = "$argv[2]" 
 else
-  echo "USAGE: $0:t <3gp>" >& /dev/stderr
+  echo "USAGE: $0:t <3gp>" >>& /tmp/motion.log
   exit
 endif
 
@@ -63,11 +66,11 @@ echo "$event" >! "$last"
 set event_id = `echo "$event" | awk '{ printf("%02d",$1) }'`
 
 if ($?MOTION_FILE_NORMAL == 0) then
-  # on_motion_detect.sh %$ %v %Y %m %d %H %M %S
-  if ($?VERBOSE) echo "$0:t $$ -- Calling on_motion_detect.sh $camera $event_id $dateattr" >& /dev/stderr
-  on_motion_detect.sh $camera $event_id $dateattr
+  # on_motion_detected.sh %$ %v %Y %m %d %H %M %S
+  if ($?DEBUG) echo "$0:t $$ -- Calling on_motion_detected.sh $camera $event_id $dateattr" >>& /tmp/motion.log
+  on_motion_detected.sh $camera $event_id $dateattr
   # on_event_start.sh %$ %v %Y %m %d %H %M %S
-  if ($?VERBOSE) echo "$0:t $$ -- Calling on_event_start.sh $camera $event_id $dateattr" >& /dev/stderr
+  if ($?DEBUG) echo "$0:t $$ -- Calling on_event_start.sh $camera $event_id $dateattr" >>& /tmp/motion.log
   on_event_start.sh $camera $event_id $dateattr
 endif
 
@@ -76,19 +79,19 @@ set tmpdir = "/tmpfs/$0:t/$$"
 set pattern = "${input}-%03d.$format"
 mkdir -p "$tmpdir"
 # make all frames
-pushd "$tmpdir" >& /dev/null
-if ($?VERBOSE) echo "$0:t $$ -- Converting video $video into JPEG in directory $tmpdir using pattern $pattern at FPS $fps" >& /dev/stderr
-ffmpeg -r "$fps" -i $video "$pattern" >&! /tmp/$0:t.$$.txt
+pushd "$tmpdir" >>& /dev/null
+if ($?DEBUG) echo "$0:t $$ -- Converting video $video into JPEG in directory $tmpdir using pattern $pattern at FPS $fps" >>& /tmp/motion.log
+ffmpeg -r "$fps" -i $video "$pattern" >>&! /tmp/$0:t.$$.txt
 # move each image in order to output
 set jpgs = ( `echo *."$format"` )
-popd >& /dev/null
+popd >>& /dev/null
 if ($#jpgs == 0) then
-  if ($?DEBUG) echo "$0:t $$ -- Failed to convert video $video into pattern $pattern; exiting" >& /dev/stderr
+  if ($?DEBUG) echo "$0:t $$ -- Failed to convert video $video into pattern $pattern; exiting" >>& /tmp/motion.log
   cat "/tmp/$0:t.$$.txt"
   rm -fr "$tmpdir"
   exit
 else
-  if ($?VERBOSE) echo "$0:t $$ -- Found $#jpgs JPEG in video $video at FPS $fps ($jpgs)" >& /dev/stderr
+  if ($?DEBUG) echo "$0:t $$ -- Found $#jpgs JPEG in video $video at FPS $fps ($jpgs)" >>& /tmp/motion.log
   rm -f "/tmp/$0:t.$$.txt"
 endif
 
@@ -118,7 +121,7 @@ foreach j ( $jpgs )
   endif
 
   if ($?MOTION_FILE_NORMAL) then
-    echo "$0:t $$ -- Moving $f to $output" >& /dev/stderr
+    echo "$0:t $$ -- Moving $f to $output" >>& /tmp/motion.log
     set frames = ( $frames $f:t:r )
     mv -f "$f" "${output}"
     continue
@@ -131,10 +134,10 @@ foreach j ( $jpgs )
   set output = "$target_dir/${datetime}-${event_id}-${seqid}.$format"
   if ($?json == 0) set json = "$target_dir/${datetime}-${event_id}.json"
   set frames = ( $frames $output:t )
-  if ($?VERBOSE) echo "$0:t $$ -- Moving extracted JPEG $f to $output" >& /dev/stderr
+  if ($?DEBUG) echo "$0:t $$ -- Moving extracted JPEG $f to $output" >>& /tmp/motion.log
   mv -f "$f" "${output}"
   # on_picture_save %$ %v %f %n %K %L %i %J %D %N
-  if ($?VERBOSE) echo "$0:t $$ -- Calling on_picture_save.sh $camera $event_id $output $filetype $mx $my $mw $mh 10000 0" >& /dev/stderr
+  if ($?DEBUG) echo "$0:t $$ -- Calling on_picture_save.sh $camera $event_id $output $filetype $mx $my $mw $mh 10000 0" >>& /tmp/motion.log
   on_picture_save.sh $camera $event_id $output $filetype $mx $my $mw $mh 10000 0
 end
 if ($#frames) set frames = ( `echo "$frames" | sed 's/ /,/g' | sed 's/\([^,]*\)/"\1"/g'` )
@@ -142,7 +145,7 @@ rm -fr "$tmpdir"
 
 if ($?MOTION_FILE_NORMAL == 0) then
   # on_event_end.sh %$ %v %Y %m %d %H %M %S
-  if ($?VERBOSE) echo "$0:t $$ -- Calling on_event_end.sh $camera $event_id $dateattr" >& /dev/stderr
+  if ($?DEBUG) echo "$0:t $$ -- Calling on_event_end.sh $camera $event_id $dateattr" >>& /tmp/motion.log
   on_event_end.sh $camera $event_id $dateattr
 endif
 
@@ -154,5 +157,5 @@ endif
 
 ## ALL DONE
 done:
-  if ($?VERBOSE) echo "$0:t $$ -- FINISHED" >& /dev/stderr
+  if ($?DEBUG) echo "$0:t $$ -- FINISHED" >>& /tmp/motion.log
   rm -f "${video}"

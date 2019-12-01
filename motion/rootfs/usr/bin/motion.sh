@@ -384,67 +384,15 @@ JSON="${JSON}"',"motion":'"${MOTION}"
 ncamera=$(jq '.cameras|length' "${CONFIG_PATH}")
 motion.log.notice "*** Found ${ncamera} cameras"
 
-MOTION_COUNT=1
+MOTION_COUNT=0
 
-for (( i = 0; i < ncamera; i++)) ; do
+for (( CNUM=0, i=0; i < ncamera; i++)) ; do
   motion.log.debug "+++ CAMERA ${i}"
-
-  ## handle more than one motion process (10 camera/process)
-  if (( i / 10 )); then
-    if (( i % 10 == 0 )); then
-      CONF="${MOTION_CONF%%.*}.${MOTION_COUNT}.${MOTION_CONF##*.}"
-      cp "${MOTION_CONF}" "${CONF}"
-      sed -i 's|^camera|; camera|' "${CONF}"
-      MOTION_CONF=${CONF}
-      # get webcontrol_port (base)
-      VALUE=$(jq -r ".webcontrol_port" "${CONFIG_PATH}")
-      if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_CONTROL_PORT}; fi
-      VALUE=$((VALUE + MOTION_COUNT))
-      motion.log.debug "Set webcontrol_port to ${VALUE}"
-      sed -i "s/.*webcontrol_port\s[0-9]\+/webcontrol_port ${VALUE}/" "${MOTION_CONF}"
-      MOTION_COUNT=$((MOTION_COUNT + 1))
-      CNUM=1
-    else
-      CNUM=$((CNUM + 1))
-    fi
-  else
-    CNUM=$((i+1))
-  fi
 
   ## TOP-LEVEL
   if [ -z "${CAMERAS:-}" ]; then CAMERAS='['; else CAMERAS="${CAMERAS}"','; fi
-
-  motion.log.debug "CAMERA #: $i CONF: ${MOTION_CONF} NUM: $CNUM"
-  CAMERAS="${CAMERAS}"'{"id":'${CNUM}
-
-  # name
-  VALUE=$(jq -r '.cameras['${i}'].name' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="camera-name${i}"; fi
-  motion.log.debug "Set name to ${VALUE}"
-  CAMERAS="${CAMERAS}"',"name":"'"${VALUE}"'"'
-  CNAME=${VALUE}
-  if [ ${MOTION_CONF%/*} != ${MOTION_CONF} ]; then 
-    CAMERA_CONF="${MOTION_CONF%/*}/${CNAME}.conf"
-  else
-    CAMERA_CONF="${CNAME}.conf"
-  fi
-  echo "camera_id ${CNUM}" > "${CAMERA_CONF}"
-  echo "camera_name ${VALUE}" >> "${CAMERA_CONF}"
-
-  # target_dir 
-  VALUE=$(jq -r '.cameras['${i}'].target_dir' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="${MOTION_TARGET_DIR}/${CNAME}"; fi
-  motion.log.debug "Set target_dir to ${VALUE}"
-  echo "target_dir ${VALUE}" >> "${CAMERA_CONF}"
-  if [ ! -d "${VALUE}" ]; then mkdir -p "${VALUE}"; fi
-  CAMERAS="${CAMERAS}"',"target_dir":"'"${VALUE}"'"'
-
-  # stream_port (calculated)
-  VALUE=$(jq -r '.cameras['${i}'].port' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_STREAM_PORT}; VALUE=$((VALUE + i)); fi
-  motion.log.debug "Set stream_port to ${VALUE}"
-  echo "stream_port ${VALUE}" >> "${CAMERA_CONF}"
-  CAMERAS="${CAMERAS}"',"port":"'"${VALUE}"'"'
+  motion.log.debug "CAMERA #: $i"
+  CAMERAS="${CAMERAS}"'{"id":'${i}
 
   # process camera type; wcv80n, ps3eye, panasonic
   VALUE=$(jq -r '.cameras['${i}'].type' "${CONFIG_PATH}")
@@ -455,45 +403,155 @@ for (( i = 0; i < ncamera; i++)) ; do
   motion.log.debug "Set type to ${VALUE}"
   CAMERAS="${CAMERAS}"',"type":"'"${VALUE}"'"'
 
-  # camera specification; url or device
+  # name
+  VALUE=$(jq -r '.cameras['${i}'].name' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="camera-name${i}"; fi
+  motion.log.debug "Set name to ${VALUE}"
+  CAMERAS="${CAMERAS}"',"name":"'"${VALUE}"'"'
+  CNAME=${VALUE}
+
+  # process models string to array of strings
+  VALUE=$(jq -r '.cameras['${i}'].models' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then 
+    W=$(echo "${WATSON:-}" | jq -r '.models[]'| sed 's/\([^,]*\)\([,]*\)/"wvr:\1"\2/g' | fmt -1000)
+    # motion.log.debug "WATSON: ${WATSON} ${W}"
+    D=$(echo "${DIGITS:-}" | jq -r '.models[]'| sed 's/\([^,]*\)\([,]*\)/"digits:\1"\2/g' | fmt -1000)
+    # motion.log.debug "DIGITS: ${DIGITS} ${D}"
+    VALUE=$(echo ${W} ${D})
+    VALUE=$(echo "${VALUE}" | sed "s/ /,/g")
+  else
+    VALUE=$(echo "${VALUE}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
+  fi
+  motion.log.debug "Set models to ${VALUE}"
+  CAMERAS="${CAMERAS}"',"models":['"${VALUE}"']'
+
+  # process camera fov; WCV80n is 61.5 (62); 56 or 75 degrees for PS3 Eye camera
+  VALUE=$(jq -r '.cameras['${i}'].fov' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then 
+    VALUE=$(jq -r '.fov' "${CONFIG_PATH}")
+    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=62; fi
+  fi
+  motion.log.debug "Set fov to ${VALUE}"
+  CAMERAS="${CAMERAS}"',"fov":'"${VALUE}"
+
+  # target_dir 
+  VALUE=$(jq -r '.cameras['${i}'].target_dir' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="${MOTION_TARGET_DIR}/${CNAME}"; fi
+  motion.log.debug "Set target_dir to ${VALUE}"
+  if [ ! -d "${VALUE}" ]; then mkdir -p "${VALUE}"; fi
+  CAMERAS="${CAMERAS}"',"target_dir":"'"${VALUE}"'"'
+  TARGET_DIR="${VALUE}"
+
+  # width 
+  VALUE=$(jq -r '.cameras['${i}'].width' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.width'); fi
+  CAMERAS="${CAMERAS}"',"width":'"${VALUE}"
+  motion.log.debug "Set width to ${VALUE}"
+  WIDTH=${VALUE}
+
+  # height 
+  VALUE=$(jq -r '.cameras['${i}'].height' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.height'); fi
+  CAMERAS="${CAMERAS}"',"height":'"${VALUE}"
+  motion.log.debug "Set height to ${VALUE}"
+  HEIGHT=${VALUE}
+
+  # process camera fps; set on wcv80n web GUI; default 6
+  VALUE=$(jq -r '.cameras['${i}'].fps' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then 
+    VALUE=$(jq -r '.framerate' "${CONFIG_PATH}")
+    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=5; fi
+  fi
+  motion.log.debug "Set fps to ${VALUE}"
+  CAMERAS="${CAMERAS}"',"fps":'"${VALUE}"
+  FRAMERATE=${VALUE}
+
+  # FTPD type
   VALUE=$(jq -r '.cameras['${i}'].url' "${CONFIG_PATH}")
-  if [ ! -z "${VALUE:-}" ] && [ "${VALUE:-}" != 'null' ]; then
-    # url
-    if [[ "${VALUE}" == ftpd* ]]; then
-      VALUE="${VALUE%*/}.jpg"
-      VALUE=$(echo "${VALUE}" | sed 's|^ftpd|jpeg|')
-      motion.log.debug "FTPD source; Set netcam_url to ${VALUE}"
-      CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
-      echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
+  if [[ "${VALUE}" == ftpd* ]]; then
+    VALUE="${VALUE%*/}.jpg"
+    CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
+    motion.log.debug "FTPD source; Set url to ${VALUE}; not configurig as motion camera"
+    # close CAMERAS structure
+    CAMERAS="${CAMERAS}"'}'
+    # next camera
+    continue
+  fi
+
+  ## handle more than one motion process (10 camera/process)
+  if (( CNUM / 10 )); then
+    if (( CNUM % 10 == 0 )); then
+      MOTION_COUNT=$((MOTION_COUNT + 1))
+      CNUM=1
+      CONF="${MOTION_CONF%%.*}.${MOTION_COUNT}.${MOTION_CONF##*.}"
+      cp "${MOTION_CONF}" "${CONF}"
+      sed -i 's|^camera|; camera|' "${CONF}"
+      MOTION_CONF=${CONF}
+      # get webcontrol_port (base)
+      VALUE=$(jq -r ".webcontrol_port" "${CONFIG_PATH}")
+      if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_CONTROL_PORT}; fi
+      VALUE=$((VALUE + MOTION_COUNT))
+      motion.log.debug "Set webcontrol_port to ${VALUE}"
+      sed -i "s/.*webcontrol_port\s[0-9]\+/webcontrol_port ${VALUE}/" "${MOTION_CONF}"
     else
-      motion.log.debug "Set netcam_url to ${VALUE}"
-      CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
-      echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
-
-      # keepalive 
-      VALUE=$(jq -r '.cameras['${i}'].keepalive' "${CONFIG_PATH}")
-      if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_keepalive'); fi
-      motion.log.debug "Set netcam_keepalive to ${VALUE}"
-      echo "netcam_keepalive ${VALUE}" >> "${CAMERA_CONF}"
-      CAMERAS="${CAMERAS}"',"keepalive":"'"${VALUE}"'"'
-
-      # userpass 
-      VALUE=$(jq -r '.cameras['${i}'].userpass' "${CONFIG_PATH}")
-      if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=; fi
-      motion.log.debug "Set netcam_userpass to ${VALUE}"
-      echo "netcam_userpass ${VALUE}" >> "${CAMERA_CONF}"
-      # DO NOT RECORD; CAMERAS="${CAMERAS}"',"userpass":"'"${VALUE}"'"'
+      CNUM=$((CNUM+1))
     fi
   else
-    # local device
-    VALUE=$(jq -r '.cameras['${i}'].device' "${CONFIG_PATH}")
-    if [[ "${VALUE}" == /dev/video* ]]; then
-      echo "videodevice ${VALUE}" >> "${CAMERA_CONF}"
-      motion.log.debug "Set videodevice to ${VALUE}"
-    else
-      motion.log.error "Invalid videodevice ${VALUE}"
-    fi
+    CNUM=$((CNUM+1))
   fi
+  # create configuration file
+  if [ ${MOTION_CONF%/*} != ${MOTION_CONF} ]; then 
+    CAMERA_CONF="${MOTION_CONF%/*}/${CNAME}.conf"
+  else
+    CAMERA_CONF="${CNAME}.conf"
+  fi
+
+  # document camera number
+  CAMERAS="${CAMERAS}"',"cnum":'"${CNUM}"
+  CAMERAS="${CAMERAS}"',"conf":"'"${CAMERA_CONF}"'"'
+
+  # basics
+  echo "camera_id ${CNUM}" > "${CAMERA_CONF}"
+  echo "camera_name ${CNAME}" >> "${CAMERA_CONF}"
+  echo "target_dir ${TARGET_DIR}" >> "${CAMERA_CONF}"
+  echo "width ${WIDTH}" >> "${CAMERA_CONF}"
+  echo "height ${HEIGHT}" >> "${CAMERA_CONF}"
+  echo "framerate ${FRAMERATE}" >> "${CAMERA_CONF}"
+
+  # local device
+  if [ ! -z "${VALUE:-}" ] && [ "${VALUE:-}" != 'null' ]; then
+    # network camera
+    CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
+    echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
+    motion.log.debug "Set netcam_url to ${VALUE}"
+    # userpass 
+    VALUE=$(jq -r '.cameras['${i}'].userpass' "${CONFIG_PATH}")
+    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=; fi
+    echo "netcam_userpass ${VALUE}" >> "${CAMERA_CONF}"
+    CAMERAS="${CAMERAS}"',"userpass":"'"${VALUE}"'"'
+    motion.log.debug "Set netcam_userpass to ${VALUE}"
+    # keepalive 
+    VALUE=$(jq -r '.cameras['${i}'].keepalive' "${CONFIG_PATH}")
+    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_keepalive'); fi
+    echo "netcam_keepalive ${VALUE}" >> "${CAMERA_CONF}"
+    CAMERAS="${CAMERAS}"',"keepalive":"'"${VALUE}"'"'
+    motion.log.debug "Set netcam_keepalive to ${VALUE}"
+  else 
+    VALUE=$(jq -r '.cameras['${i}'].device' "${CONFIG_PATH}")
+    if [[ "${VALUE}" != /dev/video* ]]; then
+      motion.log.fatal "Camera: ${i}; name: ${CNAME}; invalid videodevice ${VALUE}; exiting"
+      exit 1
+    fi
+    echo "videodevice ${VALUE}" >> "${CAMERA_CONF}"
+    motion.log.debug "Set videodevice to ${VALUE}"
+  fi
+
+  # stream_port (calculated)
+  VALUE=$(jq -r '.cameras['${i}'].port' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_STREAM_PORT}; VALUE=$((VALUE + i)); fi
+  motion.log.debug "Set stream_port to ${VALUE}"
+  echo "stream_port ${VALUE}" >> "${CAMERA_CONF}"
+  CAMERAS="${CAMERAS}"',"port":"'"${VALUE}"'"'
 
   # palette
   VALUE=$(jq -r '.cameras['${i}'].palette' "${CONFIG_PATH}")
@@ -523,20 +581,6 @@ for (( i = 0; i < ncamera; i++)) ; do
   CAMERAS="${CAMERAS}"',"threshold":'"${VALUE}"
   motion.log.debug "Set threshold to ${VALUE}"
 
-  # width 
-  VALUE=$(jq -r '.cameras['${i}'].width' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.width'); fi
-  echo "width ${VALUE}" >> "${CAMERA_CONF}"
-  CAMERAS="${CAMERAS}"',"width":'"${VALUE}"
-  motion.log.debug "Set width to ${VALUE}"
-
-  # height 
-  VALUE=$(jq -r '.cameras['${i}'].height' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.height'); fi
-  echo "height ${VALUE}" >> "${CAMERA_CONF}"
-  CAMERAS="${CAMERAS}"',"height":'"${VALUE}"
-  motion.log.debug "Set height to ${VALUE}"
-
   # rotate 
   VALUE=$(jq -r '.cameras['${i}'].rotate' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.rotate'); fi
@@ -544,41 +588,7 @@ for (( i = 0; i < ncamera; i++)) ; do
   echo "rotate ${VALUE}" >> "${CAMERA_CONF}"
   CAMERAS="${CAMERAS}"',"rotate":'"${VALUE}"
 
-  # process camera fov; WCV80n is 61.5 (62); 56 or 75 degrees for PS3 Eye camera
-  VALUE=$(jq -r '.cameras['${i}'].fov' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then 
-    VALUE=$(jq -r '.fov' "${CONFIG_PATH}")
-    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=62; fi
-  fi
-  motion.log.debug "Set fov to ${VALUE}"
-  CAMERAS="${CAMERAS}"',"fov":'"${VALUE}"
-
-  # process camera fps; set on wcv80n web GUI; default 6
-  VALUE=$(jq -r '.cameras['${i}'].fps' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then 
-    VALUE=$(jq -r '.framerate' "${CONFIG_PATH}")
-    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=5; fi
-  fi
-  motion.log.debug "Set fps to ${VALUE}"
-  echo "framerate ${VALUE}" >> "${CAMERA_CONF}"
-  CAMERAS="${CAMERAS}"',"fps":'"${VALUE}"
-
-  # process models string to array of strings
-  VALUE=$(jq -r '.cameras['${i}'].models' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then 
-    W=$(echo "${WATSON:-}" | jq -r '.models[]'| sed 's/\([^,]*\)\([,]*\)/"wvr:\1"\2/g' | fmt -1000)
-    # motion.log.debug "WATSON: ${WATSON} ${W}"
-    D=$(echo "${DIGITS:-}" | jq -r '.models[]'| sed 's/\([^,]*\)\([,]*\)/"digits:\1"\2/g' | fmt -1000)
-    # motion.log.debug "DIGITS: ${DIGITS} ${D}"
-    VALUE=$(echo ${W} ${D})
-    VALUE=$(echo "${VALUE}" | sed "s/ /,/g")
-  else
-    VALUE=$(echo "${VALUE}" | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g')
-  fi
-  motion.log.debug "Set models to ${VALUE}"
-  CAMERAS="${CAMERAS}"',"models":['"${VALUE}"']'
-
-  ## close CAMERAS structure
+  # close CAMERAS structure
   CAMERAS="${CAMERAS}"'}'
 
   # add new camera configuration
@@ -729,5 +739,5 @@ mkdir -p /run/apache2
 
 # start HTTP daemon in foreground
 motion.log.debug "Starting Apache: ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT} ${MOTION_APACHE_HTDOCS}"
-MOTION_JSON_FILE=$(motion.config.file) httpd -E /dev/stderr -e debug -f "${MOTION_APACHE_CONF}" -DFOREGROUND
+MOTION_JSON_FILE=$(motion.config.file) httpd -E /tmp/motion.log -e debug -f "${MOTION_APACHE_CONF}" -DFOREGROUND
 

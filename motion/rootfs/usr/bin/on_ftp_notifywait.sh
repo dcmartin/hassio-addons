@@ -1,7 +1,6 @@
 #!/bin/tcsh
 
 setenv DEBUG
-setenv VERBOSE
 
 if ($?VERBOSE) echo "$0:t $$ -- START $*" `date` >>& /tmp/motion.log
 
