@@ -385,8 +385,9 @@ ncamera=$(jq '.cameras|length' "${CONFIG_PATH}")
 motion.log.notice "*** Found ${ncamera} cameras"
 
 MOTION_COUNT=0
+CNUM=0
 
-for (( CNUM=0, i=0; i < ncamera; i++)) ; do
+for (( i=0; i < ncamera; i++)) ; do
   motion.log.debug "+++ CAMERA ${i}"
 
   ## TOP-LEVEL
@@ -497,8 +498,10 @@ for (( CNUM=0, i=0; i < ncamera; i++)) ; do
       CNUM=$((CNUM+1))
     fi
   else
+    if [ ${MOTION_COUNT} -eq 0 ]; then MOTION_COUNT=1; fi
     CNUM=$((CNUM+1))
   fi
+
   # create configuration file
   if [ ${MOTION_CONF%/*} != ${MOTION_CONF} ]; then 
     CAMERA_CONF="${MOTION_CONF%/*}/${CNAME}.conf"
