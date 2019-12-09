@@ -1,0 +1,21 @@
+{
+  "name": "RASA NLU",
+  "version": "0.1",
+  "slug": "rasa_nlu",
+  "description": "RASA Natural Language Understanding",
+  "startup": "before",
+  "boot": "auto",
+  "ports": {
+    "5000/tcp":9000
+  },
+  "options": {
+    "config": "/config_spacy.yml",
+    "data": "/rasa/demo-rasa.json",
+    "path": "/projects"
+  },
+  "schema": {
+    "config": "str",
+    "data": "str",
+    "path": "str"
+  }
+}
