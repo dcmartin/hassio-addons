@@ -44,9 +44,9 @@ on_picture_save()
   # only post when/if
   if [ $(motion.config.post_pictures) = "on" ]; then
     # post JSON
-    motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/$CN/event/image" -f "${IF%.*}.json"
+    motion.mqtt.pub -q 2 -t "$(motion.config.group)/$(motion.config.device)/$CN/event/image" -f "${IF%.*}.json"
     # post JPEG
-    motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/$CN/image" -f "${IF}"
+    motion.mqtt.pub -q 2 -t "$(motion.config.group)/$(motion.config.device)/$CN/image" -f "${IF}"
   fi
 }
 
