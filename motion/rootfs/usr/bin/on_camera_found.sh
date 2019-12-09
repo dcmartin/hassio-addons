@@ -8,7 +8,7 @@ source /usr/bin/motion-tools.sh
 # %m - The month as a decimal number (range 01 to 12). 
 # %d - The day of the month as a decimal number (range 01 to 31).
 # %H - The hour as a decimal number using a 24-hour clock (range 00 to 23)
-# %M - The minute as a decimal number (range 00 to 59). >& /dev/stderr
+# %M - The minute as a decimal number (range 00 to 59).
 # %S - The second as a decimal number (range 00 to 61). 
 #
 
@@ -16,7 +16,7 @@ source /usr/bin/motion-tools.sh
 ### MAIN
 ###
 
-hzn.log.trace "started program"
+motion.log.debug "START ${*}"
 
 CN="${1}"
 YR="${2}"
@@ -30,18 +30,17 @@ TS="${YR}${MO}${DY}${HR}${MN}${SC}"
 # get time
 NOW=$($dateconv -i '%Y%m%d%H%M%S' -f "%s" "$TS")
 
-hzn.log.debug "got timestamp: ${TS} and time: ${NOW}"
-
-MOTION_DEVICE=${MOTION_DEVICE:-$(hostname)}
+topic="$(motion.config.group)/$(motion.config.device)/${CN}/status/found"
+message='{"device":"'$(motion.config.device)'","camera":"'"${CN}"'","time":'"${NOW}"',"status":"found"}'
 
 # `status/found`
-mqtt_pub -q 2 -r -t "${MOTION_GROUP}/${MOTION_DEVICE}/${CN}/status/found" -m '{"device":"'${MOTION_DEVICE}'","camera":"'"${CN}"'","time":'"${NOW}"',"status":"found"}'
+motion.log.debug "sending ${message} to ${topic}"
+motion.mqtt.pub -q 2 -r -t "${topic}" -m "${message}"
 
-# test pattern to `image` 
-mqtt_pub -q 2 -r -t "${MOTION_GROUP}/${MOTION_DEVICE}/${CN}/image" -f "/etc/motion/test.jpg"
-mqtt_pub -q 2 -r -t "${MOTION_GROUP}/${MOTION_DEVICE}/${CN}/image/end" -f "/etc/motion/test.jpg"
+# clean any retained messages
+motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/${CN}/event" -n
+motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/${CN}/event/end" -n
+motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/${CN}/image" -n
+motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/${CN}/image/end" -n
 
-# test pattern to `image-animated`
-mqtt_pub -q 2 -r -t "$MOTION_GROUP/$MOTION_DEVICE/$CN/image-animated" -f "/etc/motion/test.gif"
-
-hzn.log.trace "completed program"
+motion.log.debug "FINISH ${*}"

@@ -17,44 +17,37 @@ source /usr/bin/motion-tools.sh
 # Both %f and %n are only defined for on_picture_save, on_movie_start and on_movie_end
 #
 
-###
-### MAIN
-###
+## publish JSON and image
 
-hzn.log.trace "started program"
+on_picture_save()
+{
+  motion.log.trace "${FUNCNAME[0]} ${*}"
 
-# get arguments
-CN="${1}"
-EN="${2}"
-IF="${3}"
-IT="${4}"
-MX="${5}"
-MY="${6}"
-MW="${7}"
-MH="${8}"
-SZ="${9}"
-NL="${10}"
+  local CN="${1}"
+  local EN="${2}"
+  local IF="${3}"
+  local IT="${4}"
+  local MX="${5}"
+  local MY="${6}"
+  local MW="${7}"
+  local MH="${8}"
+  local SZ="${9}"
+  local NL="${10}"
+  local ID=${IF##*/} && ID=${ID%.*}
+  local TS=$(echo "${ID}" | sed 's/\(.*\)-.*-.*/\1/') 
+  local SN=$(echo "${ID}" | sed 's/.*-..-\(.*\).*/\1/')
+  local NOW=$($dateconv -i '%Y%m%d%H%M%S' -f "%s" "$TS")
 
-# image identifier, timestamp, seqno
-ID=${IF##*/} && ID=${ID%.*}
-TS=$(echo "${ID}" | sed 's/\(.*\)-.*-.*/\1/') 
-SN=$(echo "${ID}" | sed 's/.*-..-\(.*\).*/\1/')
-NOW=$($dateconv -i '%Y%m%d%H%M%S' -f "%s" "$TS")
-MOTION_DEVICE=${MOTION_DEVICE:-$(hostname)}
+  # create JSON
+  echo '{"device":"'$(motion.config.device)'","camera":"'"${CN}"'","type":"jpeg","date":'"${NOW}"',"seqno":"'"${SN}"'","event":"'"${EN}"'","id":"'"${ID}"'","center":{"x":'"${MX}"',"y":'"${MY}"'},"width":'"${MW}"',"height":'"${MH}"',"size":'${SZ}',"noise":'${NL}'}' > "${IF%.*}.json"
 
-hzn.log.debug "device: ${MOTION_DEVICE}; timestamp: ${TS}; now: ${NOW}"
+  # only post when/if
+  if [ $(motion.config.post_pictures) = "on" ]; then
+    # post JSON
+    motion.mqtt.pub -q 2 -t "$(motion.config.group)/$(motion.config.device)/$CN/event/image" -f "${IF%.*}.json"
+    # post JPEG
+    motion.mqtt.pub -q 2 -t "$(motion.config.group)/$(motion.config.device)/$CN/image" -f "${IF}"
+  fi
+}
 
-## create JSON
-IJ="${IF%.*}.json"
-echo '{"device":"'${MOTION_DEVICE}'","camera":"'"${CN}"'","type":"jpeg","date":'"${NOW}"',"seqno":"'"${SN}"'","event":"'"${EN}"'","id":"'"${ID}"'","center":{"x":'"${MX}"',"y":'"${MY}"'},"width":'"${MW}"',"height":'"${MH}"',"size":'${SZ}',"noise":'${NL}'}' > "$IJ"
-
-# post JSON
-mqtt_pub -q 2 -r -t "$MOTION_GROUP/$MOTION_DEVICE/$CN/event/image" -f "$IJ"
-
-if [ $(jq -r '.post_pictures' "$MOTION_JSON_FILE") = "on" ]; then
-  # post JPEG
-  mqtt_pub -q 2 -r -t "$MOTION_GROUP/$MOTION_DEVICE/$CN/image" -f "${IF}"
-fi
-
-
-hzn.log.trace "completed program"
+on_picture_save ${*}

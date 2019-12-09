@@ -1,41 +1,39 @@
-ARG BUILD_FROM=hassioaddons/base:2.3.0
+ARG BUILD_FROM=hassioaddons/base
 
 FROM $BUILD_FROM
 
 ENV LANG C.UTF-8
 
 RUN apk add --no-cache \
-  apache2 \
-  apache2-utils \
   bc \
   coreutils \
   curl \
   dateutils \
   findutils \
-  ffmpeg@edge \
-  motion@edge \
   gawk \
-  imagemagick \
-  inotify-tools \
   jq \
-  mosquitto-clients \
-  python3 \
-  tcsh \
   git
 
-## CVSKIT
+RUN apk add --no-cache \
+  python3
 
-#RUN apk add --update \
-#    python \
-#    python-dev \
-#    py-pip \
-#    build-base
-#
-#RUN pip install --upgrade pip \
-#    && pip install --upgrade setuptools \
-#    && pip install --upgrade csvkit --ignore-installed six \
-#    && rm -rf /var/cache/apk/*
+RUN apk add --no-cache \
+  inotify-tools \
+  mosquitto-clients
 
+RUN apk add --no-cache \
+  apache2 \
+  apache2-utils
+
+RUN apk add --no-cache \
+  imagemagick
+
+RUN apk add --no-cache \
+  tcsh@edge
+
+RUN apk add --no-cache \
+  ffmpeg@edge \
+  motion@edge
 
 # environment
 ENV CONFIG_PATH /data/options.json
@@ -63,10 +61,7 @@ ENV MOTION_APACHE_ADMIN "${MOTION_APACHE_ADMIN}"
 # Ports for motion (control and stream)
 EXPOSE ${MOTION_APACHE_PORT}
 
-EXPOSE 8000 8080 8081 8082 
-EXPOSE 8090 8091 8092 8093 8094 8095 8096 8097 8099 8099
-EXPOSE 8100 8101 8102 8103 8104 8105 8106 8107 8109 8109
-EXPOSE 8110 8111 8112 8113 8114 8115 8116 8117 8119 8119
+EXPOSE 7999 8080 8090
 
 CMD [ "/usr/bin/run.sh" ]
 

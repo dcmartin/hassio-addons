@@ -1,23 +1,15 @@
-#!/bin/tcsh
-setenv DEBUG
-setenv VERBOSE
-setenv USE_MQTT
+#!/bin/bash
 
-if ($?VERBOSE) echo "$0:t $$ -- START" `date` >& /dev/stderr
+source /usr/bin/motion-tools.sh
 
-if ($#argv == 2) then
-  set image = "$argv[1]"
-  set output = "$argv[2]" 
-  if ($?VERBOSE) echo "$0:t $$ -- $image to $output" >& /dev/stderr
-else
-  echo "USAGE: $0:t <jpg> <output>" >& /dev/stderr
-  exit
-endif
+motion.log.trace "START"
 
-if ($?VERBOSE && $?USE_MQTT) mosquitto_pub -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD} -h "$MQTT_HOST" -t "${MOTION_GROUP}/${MOTION_DEVICE}/debug" -m '{"INFO":"'$0:t'","pid":"'$$'","info":"moving '$image' to '$output'"}'
+image="${1:-}"
+output="${2:-}"
 
-if ($?VERBOSE) echo "$0:t moving $image to $output" >& /dev/stderr
+if [ ! -z "${image}" ] && [ ! -z "${output}" ]; then
+  motion.log.trace "moving $image to $output"
+  mv -f "$image" "$output"
+fi
 
-mv -f "$image" "$output"
-
-if ($?VERBOSE) echo "$0:t $$ -- FINISH" `date` >& /dev/stderr
+motion.log.trace "FINISH"

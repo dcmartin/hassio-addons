@@ -1,9 +1,8 @@
 #!/bin/tcsh
 
 setenv DEBUG
-setenv VERBOSE
 
-if ($?VERBOSE) echo "$0:t $$ -- START $*" `date` >& /dev/stderr
+if ($?VERBOSE) echo "$0:t $$ -- START $*" `date` >>& /tmp/motion.log
 
 if ($#argv == 2) then
   set file = "$argv[1]"
@@ -17,15 +16,15 @@ if ($#argv == 2) then
 	on_new_jpg.sh "$file" "$output"
 	breaksw
       default:
-	if ($?DEBUG) echo "$0:t $$ -- $file:e unimplemented" >& /dev/stderr
+	if ($?DEBUG) echo "$0:t $$ -- $file:e unimplemented" >>& /tmp/motion.log
 	breaksw
     endsw
   else
-    echo "$0:t $$ -- no such file: $file" >& /dev/stderr
+    echo "$0:t $$ -- no such file: $file" >>& /tmp/motion.log
   endif
 else
-  echo "$0:t $$ -- invalid arguments $*" >& /dev/stderr
+  echo "$0:t $$ -- invalid arguments $*" >>& /tmp/motion.log
 endif
 
 done:
-  if ($?VERBOSE) echo "$0:t $$ -- FINISH" `date` >& /dev/stderr
+  if ($?VERBOSE) echo "$0:t $$ -- FINISH" `date` >>& /tmp/motion.log

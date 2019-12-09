@@ -1,46 +1,50 @@
-#!/bin/tcsh
+#!/bin/bash
 
-echo "$0:t $$ -- START"
+source /usr/bin/motion-tools.sh
 
-if ($#argv == 0) then
-  echo "$0:t $$ -- MOTION_JSON_FILE is not set"
-  exit
-else if ( ! -s "${1}") then
-  echo "$0:t $$ -- MOTION_JSON_FILE ${1} is not found"
-  exit
-else
-  set MOTION_JSON_FILE="${1}"
-  echo "$0:t $$ -- Found MOTION_JSON_FILE ${1}"
-endif
+###
+### ftp_notifywait.sh
+###
 
-set CAMERAS = ( `jq '.cameras' "${MOTION_JSON_FILE}"` )
-if ($#CAMERAS && "$CAMERAS" != "null") then
-  set names = ( `echo "$CAMERAS" | jq -r '.[]|.name'` )
-else
-  echo "$0:t $$ -- ERROR !! no cameras in ${MOTION_JSON_FILE}"
-  got done
-endif
+ftp_notifywait()
+{
+  motion.log.debug "${FUNCNAME[0]} ${*}"
 
-echo "$0:t $$ -- CAMERAS: $CAMERAS"
+  local cameras=$(motion.config.cameras)
 
-foreach name ( $names )
-  set noglob
-  set url = ( `echo "$CAMERAS" | jq -r '.[]|select(.name=="'"$name"'").url'` )
-  echo "$0:t $$ -- camera $name at URL $url"
-  if ($#url == 1 && $url =~ 'ftpd://*') then
-    set input = `echo "$url" | sed "s|ftpd://||"`
-    set output = $input
-    set input = $input:r
-    mkdir -p "$input"
-    echo "$0:t $$ -- waiting on $input to create $output" >& /dev/stderr
-    cp -f /etc/motion/sample.jpg "$output"
-    do_ftp_notifywait.sh "$input" "$output" &
-  else
-    echo "$0:t $$ -- more than one match for ${name}; skipping" >& /dev/stderr
-  endif
-  unset noglob
-end
+  for name in $(echo "${cameras}" | jq -r '.[]|.name'); do
+    local url=$(echo "${cameras}" | jq -r '.[]|select(.name=="'"${name}"'").url')
 
-done:
+    if [[ $url =~ ftpd://* ]]; then
+      local input=$(echo "$url" | sed "s|ftpd://||")
 
-echo "$0:t $$ -- FINISH"
+      # prepare destination
+      motion.log.debug "cleaning directory: ${input%.*}"
+      rm -fr "${input%.*}"
+
+      # create destination
+      motion.log.debug "making directory: ${input%.*}"
+      mkdir -p "${input%.*}"
+
+      # make initial target
+      motion.log.debug "copying sample to ${input}"
+      cp -f /etc/motion/sample.jpg "${input}"
+
+      # setup notifywait
+      motion.log.debug "initiating do_ftp_notifywait.sh ${input%.*} ${input}"
+      do_ftp_notifywait.sh "${input%.*}" "${input}" &
+
+      # manually "find" camera
+      motion.log.debug "running on_camera_found.sh ${name} $($dateconv -f '%Y %m %d %H %M %S' -i '%s' $(date '+%s'))"
+      on_camera_found.sh ${name} $($dateconv -f '%Y %m %d %H %M %S' -i "%s" $(date '+%s'))
+    fi
+  done
+}
+
+###
+### MAIN
+###
+
+motion.log.debug "START ${*}"
+ftp_notifywait ${*}
+motion.log.debug "FINISH ${*}"

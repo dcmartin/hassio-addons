@@ -11,40 +11,35 @@ source /usr/bin/motion-tools.sh
 # %m - The month as a decimal number (range 01 to 12). 
 # %d - The day of the month as a decimal number (range 01 to 31).
 # %H - The hour as a decimal number using a 24-hour clock (range 00 to 23)
-# %M - The minute as a decimal number (range 00 to 59). >& /dev/stderr
+# %M - The minute as a decimal number (range 00 to 59).
 # %S - The second as a decimal number (range 00 to 61). 
 #
 
+on_event_start()
+{
+  motion.log.info "${FUNCNAME[0]} ${*}"
+
+  local CN="${1}"
+  local EN="${2}"
+  local YR="${3}"
+  local MO="${4}"
+  local DY="${5}"
+  local HR="${6}"
+  local MN="${7}"
+  local SC="${8}"
+  local TS="${YR}${MO}${DY}${HR}${MN}${SC}"
+  local NOW=$($dateconv -i '%Y%m%d%H%M%S' -f "%s" "$TS")
+
+  # payload
+  local EJ="$(motion.config.target_dir)/${CN}/${TS}-${EN}.json"
+  echo '{"group":"'$(motion.config.group)'","device":"'$(motion.config.device)'","camera":"'${CN}'","event":"'${EN}'","start":'${NOW}'}' > "${EJ}"
+
+  # send MQTT
+  motion.mqtt.pub -q 2 -t "$(motion.config.group)/$(motion.config.device)/${CN}/event/start" -f "$EJ"
+}
+
 ###
-### MAIN
+### main
 ###
 
-hzn.log.trace "${0} ${*}"
-
-CN="${1}"
-EN="${2}"
-YR="${3}"
-MO="${4}"
-DY="${5}"
-HR="${6}"
-MN="${7}"
-SC="${8}"
-TS="${YR}${MO}${DY}${HR}${MN}${SC}"
-
-# get time
-NOW=$($dateconv -i '%Y%m%d%H%M%S' -f "%s" "$TS")
-
-hzn.log.debug "${0} got timestamp: ${TS} and time: ${NOW}"
-
-EJ="${MOTION_DATA_DIR}/${CN}/${TS}-${EN}.json"
-
-hzn.log.debug "${0} making event JSON: ${EJ}"
-
-# make payload
-MOTION_DEVICE=${MOTION_DEVICE:-$(hostname)}
-echo '{"device":"'${MOTION_DEVICE}'","camera":"'${CN}'","event":"'${EN}'","start":'${NOW}'}' > "${EJ}"
-hzn.log.trace "${0} created ${EJ}: $(jq -c '.' ${EJ})"
-
-# `event/start`
-mqtt_pub -q 2 -r -t "${MOTION_GROUP}/${MOTION_DEVICE}/${CN}/event/start" -f "$EJ"
-
+on_event_start ${*}

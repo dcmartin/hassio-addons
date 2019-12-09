@@ -1,7 +1,7 @@
 {
   "name": "Motion",
   "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.6.5",
+  "version": "0.8.45",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "startup": "before",
@@ -9,11 +9,13 @@
   "arch": [
     "aarch64",
     "amd64",
-    "armhf"
+    "armhf",
+    "armv7"
+  ],
+  "devices": [
+    "/dev/video0:/dev/video0:rwm"
   ],
   "audio": true,
-  "devices": [
-  ],
   "hassio_api": true,
   "homeassistant_api": true,
   "privileged": [
@@ -28,16 +30,55 @@
   ],
   "ports": {
     "7999/tcp": 7999,
-    "8000/tcp": 8000
+    "8080/tcp": 8080,
+    "8090/tcp": 8090
   },
   "options": {
     "log_level": "info",
     "group": "motion",
     "post_pictures": "center",
+    "default": {
+      "brightness": 100,
+      "contrast": 50,
+      "event_gap": 10,
+      "fov": 62,
+      "fps": 5,
+      "hue": 50,
+      "lightswitch": 0,
+      "palette": 15,
+      "picture_quality": 100,
+      "stream_quality": 100,
+      "threshold": 5000,
+      "saturation": 0,
+      "userpass": "username:password",
+      "username": "username",
+      "password": "password",
+      "height": 480,
+      "width": 640
+    },
     "cameras": [
       {
-        "name": "sample",
-        "url": "mjpeg://192.168.1.174/img/video.mjpeg"
+        "name": "netcam",
+        "url": "http://192.168.1.174/img/video.mjpeg",
+        "mjpeg_url": "http://127.0.0.1:8090/1",
+        "type": "wcv80n",
+        "picture_quality": 100,
+        "stream_quality": 80,
+        "threshold": 7500
+      },
+      {
+        "name": "local",
+        "device": "/dev/video0",
+        "mjpeg_url": "http://127.0.0.1:8090/2",
+        "type": "ps3eye",
+        "fps": 5,
+        "fov": 75,
+        "width": 640,
+        "height": 480,
+        "rotate": 0,
+        "picture_quality": 100,
+        "stream_quality": 80,
+        "threshold": 10000
       }
     ],
     "mqtt": {
@@ -48,41 +89,69 @@
     },
     "cloudant": {
       "url": "http://localhost:5984",
-      "username": "admin",
-      "password": "mysecretpassword"
+      "username": "",
+      "password": ""
     }
   },
   "schema": {
     "log_level": "str",
-    "log_motion": "int?",
     "log_type": "str?",
+    "log_motion": "int?",
+    "log_file": "str?",
     "group": "str",
     "device": "str?",
     "username": "str?",
     "password": "str?",
     "timezone": "str?",
     "post_pictures": "str?",
+    "default": {
+      "brightness": "int?",
+      "contrast": "int?",
+      "event_gap": "int?",
+      "fov": "int?",
+      "fps": "int?",
+      "hue": "int?",
+      "lightswitch": "int?",
+      "palette": "int?",
+      "picture_quality": "int?",
+      "stream_quality": "int?",
+      "threshold": "int?",
+      "saturation": "int?",
+      "userpass": "str?",
+      "username": "str?",
+      "password": "str?",
+      "height": "int?",
+      "width": "int?"
+    },
     "cameras": [
       {
         "name": "str",
-        "url": "str",
-        "palette": "int?",
-        "mac": "str?",
+        "device": "str?",
+        "icon": "str?",
         "type": "str?",
-        "fov": "int?",
-        "fps": "int?",
-        "userpass": "str?",
+        "mac": "str?",
         "port": "port?",
-        "quality": "int?",
-        "width": "int?",
-        "height": "int?",
         "rotate": "int?",
-        "threshold": "int?",
-        "event_gap": "int?",
+        "url": "str?",
+        "mjpeg_url": "str?",
+        "still_image_url": "str?",
         "brightness": "int?",
         "contrast": "int?",
+        "event_gap": "int?",
+        "fov": "int?",
+        "fps": "int?",
+        "hue": "int?",
+        "lightswitch": "int?",
+        "palette": "int?",
+        "picture_quality": "int?",
+        "stream_quality": "int?",
+        "threshold": "int?",
         "saturation": "int?",
-        "lightswitch": "int?"
+        "userpass": "str?",
+        "username": "str?",
+        "password": "str?",
+        "height": "int?",
+        "width": "int?"
       }
     ],
     "mqtt": {
