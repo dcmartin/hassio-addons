@@ -37,12 +37,10 @@ message='{"device":"'$(motion.config.device)'","camera":"'"${CN}"'","time":'"${N
 motion.log.debug "sending ${message} to ${topic}"
 motion.mqtt.pub -q 2 -r -t "${topic}" -m "${message}"
 
-# test pattern to `image` 
-#motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/${CN}/image" -f "/etc/motion/test.jpg"
-#motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/${CN}/image/end" -f "/etc/motion/test.jpg"
-
-# test pattern to `image-animated`
-#motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/$CN/image-animated" -f "/etc/motion/test.gif"
-#motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/$CN/image-animated-mask" -f "/etc/motion/test.gif"
+# clean any retained messages
+motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/${CN}/event" -m ""
+motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/${CN}/event/end" -m ""
+motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/${CN}/image" -m ""
+motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/${CN}/image/end" -m ""
 
 motion.log.debug "FINISH ${*}"
