@@ -35,7 +35,7 @@ on_event_start()
   echo '{"group":"'$(motion.config.group)'","device":"'$(motion.config.device)'","camera":"'${CN}'","event":"'${EN}'","start":'${NOW}'}' > "${EJ}"
 
   # send MQTT
-  motion.mqtt.pub -q 2 -t "$(motion.config.group)/$(motion.config.device)/${CN}/event/start" -f "$EJ"
+  motion.mqtt.pub -r -q 2 -t "$(motion.config.group)/$(motion.config.device)/${CN}/event/start" -f "$EJ"
 }
 
 ###
