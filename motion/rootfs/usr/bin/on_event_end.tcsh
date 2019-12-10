@@ -88,14 +88,14 @@ if ( $#jsons == 0 ) then
 endif
 
 # find last event
-set lastjson = $jsons[$#jsons]
-if (! -s "$lastjson") then
-    echo "$0:t $$ -- JSON file $lastjson not found; exiting" >> /tmp/motion.log
+set event_json_file = $jsons[$#jsons]
+if (! -s "$event_json_file") then
+    echo "$0:t $$ -- JSON file $event_json_file not found; exiting" >> /tmp/motion.log
     exit 1
 endif
 
 # find event start
-set START = `jq -r '.start' $lastjson`
+set START = `jq -r '.start' $event_json_file`
 
 # find JPEGs for event
 set jpgs = ( `echo "${dir}"/*"-${EN}-"*.jpg` )
@@ -157,31 +157,22 @@ if ( $#frames == 0 ) then
 endif
 
 ##
-## update lastjson
+## update event_json_file
 ##
 
 set date = `date +%s`
 set images = `echo "$frames" | sed 's/ /,/g' | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g'`
 set images = '['"$images"']'
 
-jq -c '.elapsed='"$elapsed"'|.end='${LAST}'|.date='"$date"'|.images='"$images" "$lastjson" > "$lastjson.$$"
+jq -c '.elapsed='"$elapsed"'|.end='${LAST}'|.date='"$date"'|.images='"$images" "$event_json_file" > "$event_json_file.$$"
 
 # test
-if ( ! -s "$lastjson.$$" ) then
-  echo "$0:t $$ -- Event JSON update failed; JSON: $lastjson" >> /tmp/motion.log
+if ( ! -s "$event_json_file.$$" ) then
+  echo "$0:t $$ -- Event JSON update failed; JSON: $event_json_file" >> /tmp/motion.log
   exit 1
 endif
-if ($?DEBUG) echo "$0:t $$ -- Event JSON updated: $lastjson" `jq -c '.' $lastjson` >> /tmp/motion.log
-mv -f "$lastjson.$$" "$lastjson"
-
-##
-## PUBLISH EVENT
-##
-
-set topic = "${mqtt_topic}/event/end"
-set file = "$lastjson" 
-mosquitto_pub -r -q 2 -i "${MOTION_DEVICE}" -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "$topic" -f "$file" 
-if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- Event JSON updated: $event_json_file" `jq -c '.' $event_json_file` >> /tmp/motion.log
+mv -f "$event_json_file.$$" "$event_json_file"
 
 ###
 ### PROCESS images
@@ -242,7 +233,7 @@ mkdir -p $tmpdir
 
 if ($?DEBUG) echo "$0:t $$ -- Calculating average from $#jpgs JPEGS" >> /tmp/motion.log
 
-set average = "$tmpdir/$lastjson:t:r"'-average.jpg'
+set average = "$tmpdir/$event_json_file:t:r"'-average.jpg'
 convert $jpgs -average $average >&! /tmp/$$.out
 if ( ! -s "$average") then
   set out = `cat "/tmp/$$.out"`
@@ -334,12 +325,33 @@ mosquitto_pub -r -q 2 -i "${MOTION_DEVICE}" -u ${MOTION_MQTT_USERNAME} -P ${MOTI
 if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> /tmp/motion.log
 
 ##
+## add image to event
+##
+set base64_encoded_file = ${IF}:r.b64
+echo -n '{"image":"' > "${base64_encoded_file}"
+if ( -s "${IF}" ) then
+  base64 -w 0 -i "${IF}" >> "${base64_encoded_file}"
+endif
+echo '"}' >> "${base64_encoded_file}"
+jq -c -s add "${event_json_file}" "${base64_encoded_file}" > ${event_json_file}.$$ && mv -f ${event_json_file}.$$ ${event_json_file}
+rm -f ${base64_encoded_file}
+
+##
+## PUBLISH EVENT
+##
+
+set topic = "${mqtt_topic}/event/end"
+set file = "$event_json_file" 
+mosquitto_pub -r -q 2 -i "${MOTION_DEVICE}" -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "$topic" -f "$file" 
+if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> /tmp/motion.log
+
+##
 ## BLEND
 ##
 
 if ($?DEBUG) echo "$0:t $$ -- Calculating blend from $#jpgs JPEGS" >> /tmp/motion.log
 
-set blend = "$tmpdir/$lastjson:t:r"'-blend.jpg'
+set blend = "$tmpdir/$event_json_file:t:r"'-blend.jpg'
 convert $jpgs -compose blend -define 'compose:args=50' -alpha on -composite $blend
 if ( ! -s "$blend") then
   if ($?DEBUG) echo "$0:t $$ -- Failed to convert $#jpgs into a blend: $blend" >> /tmp/motion.log
@@ -385,7 +397,7 @@ endif
 if ($?DEBUG) echo "$0:t $$ -- Calculating composite from $#srcs JPEGS" >> /tmp/motion.log
 
 # start with average
-set composite = "$tmpdir/$lastjson:t:r"'-composite.jpg'
+set composite = "$tmpdir/$event_json_file:t:r"'-composite.jpg'
 cp -f "$average" "$composite"
 
 # loop over all
@@ -431,11 +443,11 @@ set delay = $delay:r
 if ($?DEBUG) echo "$0:t $$ -- Animation delay: $delay ticks; camera: $CN; fps: $fps" >> /tmp/motion.log
 
 ## animated GIF
-set gif = "$tmpdir/$lastjson:t:r.gif"
+set gif = "$tmpdir/$event_json_file:t:r.gif"
 convert -loop 0 -delay $delay $jpgs $gif
 
 ## animated GIF mask
-set mask = $tmpdir/$lastjson:t:r.mask.gif
+set mask = $tmpdir/$event_json_file:t:r.mask.gif
 pushd "$dir" >& /dev/null
 convert -loop 0 -delay $delay $diffs $mask
 popd >& /dev/null
