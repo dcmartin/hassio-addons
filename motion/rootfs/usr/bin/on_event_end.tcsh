@@ -161,10 +161,11 @@ endif
 ##
 
 set date = `date +%s`
+set timestamp = `date -u +%FT%TZ`
 set images = `echo "$frames" | sed 's/ /,/g' | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g'`
 set images = '['"$images"']'
 
-jq -c '.elapsed='"$elapsed"'|.end='${LAST}'|.date='"$date"'|.images='"$images" "$event_json_file" > "$event_json_file.$$"
+jq -c '.elapsed='"$elapsed"'|.end='${LAST}'|.timestamp="'$timestamp'"|.date='"$date"'|.images='"$images" "$event_json_file" > "$event_json_file.$$"
 
 # test
 if ( ! -s "$event_json_file.$$" ) then
@@ -316,15 +317,6 @@ endif
 if ($?DEBUG) echo "$0:t $$ -- Selected $post_pictures image: $IF" >> /tmp/motion.log
 
 ##
-## PUBLISH EVENT IMAGE
-##
-
-set topic = "${mqtt_topic}/image/end"
-set file = "$IF" 
-mosquitto_pub -r -q 2 -i "${MOTION_DEVICE}" -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "$topic" -f "$file" 
-if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> /tmp/motion.log
-
-##
 ## add image to event
 ##
 set base64_encoded_file = ${IF}:r.b64
@@ -344,6 +336,16 @@ set topic = "${mqtt_topic}/event/end"
 set file = "$event_json_file" 
 mosquitto_pub -r -q 2 -i "${MOTION_DEVICE}" -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "$topic" -f "$file" 
 if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> /tmp/motion.log
+
+##
+## PUBLISH EVENT IMAGE
+##
+
+set topic = "${mqtt_topic}/image/end"
+set file = "$IF" 
+mosquitto_pub -r -q 2 -i "${MOTION_DEVICE}" -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "$topic" -f "$file" 
+if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> /tmp/motion.log
+
 
 ##
 ## BLEND
