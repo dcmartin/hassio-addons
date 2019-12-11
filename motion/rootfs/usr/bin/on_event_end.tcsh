@@ -161,10 +161,11 @@ endif
 ##
 
 set date = `date +%s`
+set timestamp = `date -u +%FT%TZ`
 set images = `echo "$frames" | sed 's/ /,/g' | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g'`
 set images = '['"$images"']'
 
-jq -c '.elapsed='"$elapsed"'|.end='${LAST}'|.date='"$date"'|.images='"$images" "$event_json_file" > "$event_json_file.$$"
+jq -c '.elapsed='"$elapsed"'|.end='${LAST}'|.timestamp="'$timestamp'"|.date='"$date"'|.images='"$images" "$event_json_file" > "$event_json_file.$$"
 
 # test
 if ( ! -s "$event_json_file.$$" ) then
