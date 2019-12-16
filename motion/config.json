@@ -1,27 +1,32 @@
 {
   "name": "Motion",
-  "url": "https://github.com/dcmartin/hassio-addons",
-  "version": "0.8.53",
+  "version": "0.8.55",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
-  "startup": "before",
+  "url": "https://github.com/dcmartin/hassio-addons",
+  "webui": "http://[HOST]:[PORT:7999]/",
+  "startup": "application",
   "boot": "auto",
+  "homeassistant": "0.92.0b2",
   "arch": [
     "aarch64",
     "amd64",
     "armhf",
     "armv7"
   ],
+  "ingress": true,
+  "ingress_port": 7999,
   "devices": [
     "/dev/video0:/dev/video0:rwm"
   ],
   "audio": true,
   "hassio_api": true,
+  "hassio_role": "default",
+  "host_network": true,
   "homeassistant_api": true,
   "privileged": [
     "SYS_ADMIN"
   ],
-  "webui": "http://[HOST]:[PORT:7999]/",
   "timeout": 90,
   "tmpfs": "size=256m,uid=0,rw",
   "map": [
@@ -39,7 +44,6 @@
     "8080/tcp": "Motion interface",
     "8090/tcp": "Camera interface" 
   },
-  "hassio_role": "default",
   "options": {
     "log_level": "info",
     "group": "motion",
