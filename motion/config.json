@@ -1,6 +1,6 @@
 {
   "name": "Motion",
-  "version": "0.8.56",
+  "version": "0.8.57",
   "slug": "motion",
   "description": "Motion addon from LINUX package https://motion-project.github.io/",
   "url": "https://github.com/dcmartin/hassio-addons",
@@ -139,8 +139,8 @@
     "cameras": [
       {
         "name": "str",
-        "source": "match(local|http|ftpd)?",
-        "type": "match(ps3eye|wcv80n|panasonic|kinect|rpiv2|generic)",
+        "origin": "match(local|http|ftpd|mqtt)?",
+        "type": "match(ps3eye|wcv80n|panasonic|kinect|rpiv2|generic)?",
         "icon": "str?",
         "device": "str?",
         "mac": "str?",
