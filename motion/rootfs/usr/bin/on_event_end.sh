@@ -3,12 +3,12 @@
 source /usr/bin/motion-tools.sh
 
 ###
-### FUNCTIONS
+### functions
 ###
 
 motion.util.dateconv()
 { 
-  motion.log.trace "${FUNCNAME[0]} ${*}"
+  motion.log.trace "${funcname[0]} ${*}"
   local dateconv=''
 
   if [ -e /usr/bin/dateutils.dconv ]; then
@@ -23,9 +23,9 @@ motion.util.dateconv()
 
   if [ ! -z "${dateconv:-}" ]; then
     result=$(${dateconv} ${*})
-    motion.log.debug "Success; convert ${*}; result: ${result}"
+    motion.log.debug "success; convert ${*}; result: ${result}"
   else
-    motion.log.error "Failure; convert ${*}"
+    motion.log.error "failure; convert ${*}"
   fi
   echo "${result:-}"
 }
@@ -40,7 +40,7 @@ motion.util.dateconv()
 
 motion_event_json()
 {
-  motion.log.trace "${FUNCNAME[0]} ${*}"
+  motion.log.trace "${funcname[0]} ${*}"
 
   local cn="${1}"
   local ts="${2}"
@@ -52,20 +52,20 @@ motion_event_json()
   local jsons=($(echo "$dir"/??????????????"-${en}".json))
 
   local njson=${#jsons[@]}
-  motion.log.debug "Found ${njson} metadata files"
+  motion.log.debug "found ${njson} metadata files"
 
   if [ ${njson} -eq 0 ]; then
-    motion.log.error "NO metadata"
+    motion.log.error "no metadata"
   else
     local lastjson="${jsons[$((njson-1))]}"
 
-    motion.log.debug "Last metadata file: ${lastjson}"
+    motion.log.debug "last metadata file: ${lastjson}"
 
     if [ ! -z "${lastjson:-}" ] && [ -s "${lastjson:-}" ]; then
-      motion.log.debug "FOUND metadata; file: ${lastjson}"
+      motion.log.debug "found metadata; file: ${lastjson}"
       result=${lastjson}
     else
-      motion.log.error "MISSING metadata; file: ${lastjson}"
+      motion.log.error "missing metadata; file: ${lastjson}"
     fi
   fi
   echo "${result:-}"
@@ -91,7 +91,7 @@ motion_event_json()
 
 motion_event_images()
 {
-  motion.log.trace "${FUNCNAME[0]}" "${*}"
+  motion.log.trace "${funcname[0]}" "${*}"
 
   local lj=${1}
   local gp=$(jq -r '.group' "${lj}")
@@ -123,7 +123,7 @@ motion_event_images()
           local this=$(echo "${image:-null}" | jq -r '.date')
           local ago=$((this - start))
 
-          motion.log.debug "id: ${id}; date: ${this}; ago: ${ago}; file: ${json}"
+          motion.log.trace "id: ${id}; date: ${this}; ago: ${ago}"
 
           if [ ${ago} -lt 0 ]; then start=${this}; fi
           if [ ${this} -gt ${end} ]; then end=${this}; fi
@@ -138,9 +138,9 @@ motion_event_images()
       metadata=$(echo "${metadata}" | jq -c '.start='${start}'|.end='${end}'|.elapsed='$((end - start)))
       # update event metadata
       if [ ! -z "${images}" ]; then images='['"${images}"']'; else images='null'; fi
-      #echo "${metadata}" | jq '.array='"${images}" > ${lj}.$$ && mv -f ${lj}.$$ ${lj} || motion.log.error "Failed to update event metadata"
-      motion.log.info "COMPLETE: ${en}; file: ${lj}; contents:" $(jq -c '.' "${lj}")
-      result="${jpegs[@]}"
+      metadata=$(echo "${metadata}" | jq -c '.images='"${images}")
+      motion.log.info "SUCCESS: event: ${en}; file: ${lj}"
+      result="${metadata}"
     else
       motion.log.error "FAILURE: no event images"
     fi
@@ -150,9 +150,95 @@ motion_event_images()
   echo "${result:-}"
 }
 
+motion_event_images_average()
+{
+  local jpegs="${*}"
+  local average=$(mktemp)
+  local result
+
+  if [ ${#jpegs[@]} -gt 1 ]; then
+    # calculate average from images
+    convert ${jpegs} -average ${average} &> /dev/null
+    if [ -s "${average}" ]; then
+      result="${average}"
+    else
+      motion.log.error "no average calculated"
+    fi
+  elif [ ${#jpegs[@]} -eq 1 ]; then
+    motion.log.warn "using single image as average"
+    cp ${jpegs[0]} ${average}
+    result="${average}"
+  else
+    motion.log.error "no images"
+  fi
+
+  echo "${result:-}"
+}
+
+motion_event_images_process()
+{
+  motion.log.trace "${funcname[0]} ${*}"
+
+  local metadata="${*}"
+  local result
+  local images=$(echo "${metadata:-null}" | jq -c '.images')
+  local nimage=$(echo "${images:-null}" | jq '.|length')
+  local ids=($(echo "${images:-null}" | jq -r '.[].id'))
+  local jpegs=()
+  local i=0
+  local result
+  local first=$(echo "${images:-null}" | jq -c '.[0]')
+  local last=$(echo "${images:-null}" | jq -c '.[-1]')
+  local least=$(echo "${images:-null}" | jq -c '.|sort_by(.size)[0]')
+  local most=$(echo "${images:-null}" | jq -c '.|sort_by(.size)[-1]')
+  local center=$(echo "${images:-null}" | jq -c '.['$((nimage/2))']')
+  local cn=$(echo "${metadata}" | jq -r '.camera')
+  local dir="$(motion.config.target_dir)/${cn}"
+
+  while [ ${i} -lt ${#ids[@]} ]; do
+    local id=${ids[${i}]}
+    local jpeg=${dir}/${id}.jpg
+
+    if [ -s "${jpeg}" ]; then
+      jpegs=(${jpegs[@]} ${jpeg})
+    else
+      motion.log.error "FAILURE: no image file; id: ${id}"
+    fi
+    i=$((i+1))
+  done
+
+  # calculate average image
+  local image_avg=$(motion_event_images_average ${jpegs})
+  if [ ! -z "${image_avg}" ] && [ ! -s "${image_avg}" ]; then
+    motion.log.error "FAILURE: no average image; metadata: ${metadata}"
+  else
+    motion.log.debug "average image calculated; file: ${image_avg}"
+    metadata=$(echo "${metadata}" | jq -c '.average="'${image_avg}'"')
+  fi
+
+  # return updated metadata
+  echo "${metadata:-}"
+}
+
+motion_event_process()
+{
+  motion.log.trace "${funcname[0]} ${*}"
+
+  local metadata="${*}"
+  local output=$(motion_event_images_process "${metadata}")
+
+  if [ ! -z "${output}" ]; then
+    metadata=$(echo "${metadata}" | jq -c '.output='${output:-null})
+  else
+    motion.log.error "FAILURE: average; metadata: ${metadata}"
+    rm -f "${average}"
+  fi
+  echo "${metadata:-null}"
+}
+
 motion_event_end()
 {
-  motion.log.trace "${FUNCNAME[0]} ${*}"
+  motion.log.trace "${funcname[0]} ${*}"
 
   local cn="${1}"
   local en="${2}"
@@ -167,43 +253,52 @@ motion_event_end()
   local json=$(motion_event_json "${cn}" "${ts}" "${en}")
 
   if [ ! -z "${json:-}" ]; then
-    local jpegs=($(motion_event_images "${json}"))
-    local njpeg=${#jpegs[@]}
+    local metadata=$(motion_event_images "${json}")
+    local njpeg=$(echo "${metadata:-null}" | jq -r '.images|length')
 
     if [ ${njpeg} -gt 0 ]; then
-      local metadata=$(jq -c '.' "${json}")
       local now=$(date +%s)
-      local this=$(echo "${metadata}" | jq -r '.start')
-      local ago=$((now - this))
+      local start=$(echo "${metadata}" | jq -r '.start')
+      local ago=$((now - start))
 
-      motion.log.debug "SUCCESS: ${njpeg} images; json: ${json}; metadata: ${metadata}"
+      motion.log.debug "SUCCESS: images: event: ${en}; camera: ${cn}; event: ${en}; images: ${njpeg}"
+
+      metadata=$(motion_event_process "${metadata}")
+      if [ ! -z "${metadata}" ]; then
+        now=$(date +%s)
+        ago=$((now - start))
+
+        motion.log.debug "COMPLETE: process: event: ${en}; camera: ${cn}; event: ${en}; metadata: ${metadata}"
+      else
+        motion.log.error "FAILURE: no images processed; camera: ${cn}; event: ${en}"
+      fi
     else
-      motion.log.error "FAILURE: no images; camera: ${cn}; event: ${en}; json: ${json}"
+      motion.log.error "FAILURE: no images; camera: ${cn}; event: ${en}; metadata: ${metadata}"
     fi
   else
-    motion.log.error "NO metadata; camera: ${cn}; timestamp: ${ts}; event: ${en}"
+    motion.log.error "FAILURE: no metadata; camera: ${cn}; timestamp: ${ts}; event: ${en}"
   fi
   echo "${result:-false}"
 }
 
 #
-# on_event_end.sh %$ %v %Y %m %d %H %M %S
+# on_event_end.sh %$ %v %y %m %d %h %m %s
 #
 # %$ - camera name
-# %v - Event number. An event is a series of motion detections happening with less than 'gap' seconds between them. 
-# %Y - The year as a decimal number including the century. 
-# %m - The month as a decimal number (range 01 to 12). 
-# %d - The day of the month as a decimal number (range 01 to 31).
-# %H - The hour as a decimal number using a 24-hour clock (range 00 to 23)
-# %M - The minute as a decimal number (range 00 to 59).
-# %S - The second as a decimal number (range 00 to 61). 
+# %v - event number. an event is a series of motion detections happening with less than 'gap' seconds between them. 
+# %y - the year as a decimal number including the century. 
+# %m - the month as a decimal number (range 01 to 12). 
+# %d - the day of the month as a decimal number (range 01 to 31).
+# %h - the hour as a decimal number using a 24-hour clock (range 00 to 23)
+# %m - the minute as a decimal number (range 00 to 59).
+# %s - the second as a decimal number (range 00 to 61). 
 #
 
 on_event_end()
 {
-  motion.log.trace "${FUNCNAME[0]}" "${*}"
+  motion.log.trace "${funcname[0]}" "${*}"
 
-  # close I/O
+  # close i/o
   # exec 0>&- # close stdin
   # exec 1>&- # close stdout
   # exec 2>&- # close stderr
