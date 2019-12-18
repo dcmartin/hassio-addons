@@ -81,7 +81,7 @@ if ($?DEBUG) echo "$0:t $$ -- Processing $dir; camera: $CN; event: $EN; date: $N
 
 # find events (YYYYMMDDHHMMSS-##.json)
 set jsons = ( `echo "$dir"/??????????????"-${EN}".json` )
-if ($?DEBUG) echo "$0:t $$ -- Event JSONs found ($#jsons); camera: $CN; event: $EN; date: $NOW" >> /tmp/motion.log
+if ($?DEBUG) echo "$0:t $$ -- Event JSONs found ($#jsons); camera: $CN; event: $EN; date: $NOW; jsons: ${jsons}" >> /tmp/motion.log
 if ( $#jsons == 0 ) then
   echo "$0:t $$ -- Event JSON not found; exiting" >> /tmp/motion.log
   exit 1
@@ -186,9 +186,10 @@ foreach f ( $frames )
   # get image information
   if (-e "$jpg:r.json") then
     if ($?DEBUG) echo "$0:t $$ -- Found JSON $jpg:r.json" >> /tmp/motion.log
-    set info = ( `identify "$jpg" | awk '{ printf("{\"type\":\"%s\",\"size\":\"%s\",\"bps\":\"%s\",\"color\":\"%s\"}", $2, $3, $5, $6) }' | jq '.'` )
-    if ($?DEBUG) echo "$0:t $$ -- Identified $jpg as $info" >> /tmp/motion.log
-    jq '.info='"$info"'|.end='"${NOW}" "$jpg:r.json" >! /tmp/$0:t.$$.json
+    #set info = ( `identify "$jpg" | awk '{ printf("{\"type\":\"%s\",\"size\":\"%s\",\"bps\":\"%s\",\"color\":\"%s\"}", $2, $3, $5, $6) }' | jq '.'` )
+    #if ($?DEBUG) echo "$0:t $$ -- Identified $jpg as $info" >> /tmp/motion.log
+    #jq '.info='"$info"'|.end='"${NOW}" "$jpg:r.json" >! /tmp/$0:t.$$.json
+    jq '.end='"${NOW}" "$jpg:r.json" >! /tmp/$0:t.$$.json
     if (-s /tmp/$0:t.$$.json) then
       mv /tmp/$0:t.$$.json "$jpg:r.json"
       set jpgs = ( $jpgs "$jpg" )
