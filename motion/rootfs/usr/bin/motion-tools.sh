@@ -24,61 +24,84 @@ fi
 
 motion.config.target_dir()
 {
+  motion.log.trace "${FUNCNAME[0]}"
+
   local file=$(motion.config.file)
   local result=""
 
   if [ -s "${file}" ]; then
     result=$(jq -r '.motion.target_dir' ${file})
+    motion.log.debug "configuration target_dir: ${result}"
+  else
+    motion.log.warn "no configuration JSON: ${file}"
   fi
   echo "${result:-}"
 }
 
 motion.config.share_dir()
 {
+  motion.log.trace "${FUNCNAME[0]}"
+
   local file=$(motion.config.file)
   local result=""
 
   if [ -s "${file}" ]; then
     result=$(jq -r '.share_dir' ${file})
+  else
+    motion.log.warn "no configuration file"
   fi
   echo "${result:-}"
 }
 
 motion.config.group()
 {
+  motion.log.trace "${FUNCNAME[0]}"
+
   local file=$(motion.config.file)
   local result=""
 
   if [ -s "${file}" ]; then
     result=$(jq -r '.group' ${file})
+  else
+    motion.log.warn "no configuration file"
   fi
   echo "${result:-}"
 }
 
 motion.config.device()
 {
+  motion.log.trace "${FUNCNAME[0]}"
+
   local file=$(motion.config.file)
   local result=""
 
   if [ -s "${file}" ]; then
     result=$(jq -r '.device' ${file})
+  else
+    motion.log.debug "no configuration file"
   fi
   echo "${result:-}"
 }
 
 motion.config.mqtt()
 {
+  motion.log.trace "${FUNCNAME[0]}"
+
   local file=$(motion.config.file)
   local result="null"
 
   if [ -s "${file}" ]; then
     result=$(jq -c '.mqtt?' ${file})
+  else
+    motion.log.warn "no configuration file"
   fi
   echo "${result:-}"
 }
 
 motion.config.cameras()
 {
+  motion.log.trace "${FUNCNAME[0]}"
+
   local file=$(motion.config.file)
   local result="null"
 
@@ -90,6 +113,8 @@ motion.config.cameras()
 
 motion.config.post_pictures()
 {
+  motion.log.trace "${FUNCNAME[0]}"
+
   local file=$(motion.config.file)
   local result=""
 
@@ -101,9 +126,14 @@ motion.config.post_pictures()
 
 motion.config.file()
 {
+  motion.log.trace "${FUNCNAME[0]}"
+
   local conf="${MOTION_CONF:-}"
   if [ ! -z "${conf:-}" ]; then
     conf="${MOTION_CONF%/*}/motion.json"
+  else
+    conf="/etc/motion/motion.json"
+    motion.log.warn "using default, static, motion configuration JSON file: ${conf}"
   fi
   echo "${conf:-}"
 }
