@@ -128,8 +128,10 @@ while ($i > 0)
       continue
     endif
 
-    set THIS = `echo "$jpg:t:r" | sed 's/\(.*\)-.*-.*/\1/'`
-    set THIS = `$dateconv -i '%Y%m%d%H%M%S' -f "%s" $THIS`
+#    set THIS = `echo "$jpg:t:r" | sed 's/\(.*\)-.*-.*/\1/'`
+#    set THIS = `$dateconv -i '%Y%m%d%H%M%S' -f "%s" $THIS`
+
+    set THIS = `jq -r '.date' "${jsn}"`
 
     @ seconds = $THIS - $START
     # test for breaking conditions
@@ -139,7 +141,11 @@ while ($i > 0)
     endif
 
     # add frame to this interval
-    if ($?LAST == 0) set LAST = $THIS
+    if ($?LAST == 0) then
+      set LAST = $THIS
+    else
+      if ($THIS > $LAST) set LAST = $THIS
+    endif
     set frames = ( "$jpg:t:r" $frames )
     if ($?DEBUG) echo "$0:t $$ -- $i; adding to images: $jpg:t:r" >> /tmp/motion.log
     if ( $seconds > $elapsed ) set elapsed = $seconds
@@ -165,8 +171,7 @@ set timestamp = `date -u +%FT%TZ`
 set images = `echo "$frames" | sed 's/ /,/g' | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g'`
 set images = '['"$images"']'
 
-jq -c '.elapsed='"$elapsed"'|.end='${LAST}'|.timestamp="'$timestamp'"|.date='"$date"'|.images='"$images" "$event_json_file" > "$event_json_file.$$"
-
+jq -c '.elapsed='"$elapsed"'|.end='${date}'|.timestamp="'$timestamp'"|.date='"$date"'|.images='"$images" "$event_json_file" > "$event_json_file.$$"
 # test
 if ( ! -s "$event_json_file.$$" ) then
   echo "$0:t $$ -- Event JSON update failed; JSON: $event_json_file" >> /tmp/motion.log
@@ -186,18 +191,7 @@ foreach f ( $frames )
   # get image information
   if (-e "$jpg:r.json") then
     if ($?DEBUG) echo "$0:t $$ -- Found JSON $jpg:r.json" >> /tmp/motion.log
-    #set info = ( `identify "$jpg" | awk '{ printf("{\"type\":\"%s\",\"size\":\"%s\",\"bps\":\"%s\",\"color\":\"%s\"}", $2, $3, $5, $6) }' | jq '.'` )
-    #if ($?DEBUG) echo "$0:t $$ -- Identified $jpg as $info" >> /tmp/motion.log
-    #jq '.info='"$info"'|.end='"${NOW}" "$jpg:r.json" >! /tmp/$0:t.$$.json
-    jq '.end='"${NOW}" "$jpg:r.json" >! /tmp/$0:t.$$.json
-    if (-s /tmp/$0:t.$$.json) then
-      mv /tmp/$0:t.$$.json "$jpg:r.json"
-      set jpgs = ( $jpgs "$jpg" )
-    else
-      rm -f /tmp/$0:t.$$.json
-      if ($?DEBUG) echo "$0:t $$ -- JSON failed; skipping" >> /tmp/motion.log
-      continue
-    endif
+    set jpgs = ( $jpgs "$jpg" )
   else
     if ($?DEBUG) echo "$0:t $$ -- Failed to find JSON $jpg:r.json; skipped" >> /tmp/motion.log
   endif
