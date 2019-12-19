@@ -219,7 +219,7 @@ motion.log.error()
   motion.log.logto ${MOTION_LOG_LEVEL_ERROR} "${*}"
 }
 
-motion.log.warning()
+motion.log.warn()
 {
   motion.log.logto ${MOTION_LOG_LEVEL_WARN} "${*}"
 }
