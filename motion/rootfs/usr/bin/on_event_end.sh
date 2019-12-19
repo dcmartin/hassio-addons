@@ -175,6 +175,49 @@ motion_event_images_average()
   echo "${result:-}"
 }
 
+motion_event_images_differ()
+{
+  motion.log.trace "${funcname[0]} ${*}"
+
+  local tmpdir=$(mktemp -d)
+  local jpegs=(${*})
+  local njpeg=${#jpegs[@]}
+  local diffs=()
+  local fuzz=20
+  local most
+
+  local avgdiff=0
+  local changed=()
+  local avgsize=0
+  local maxsize=0
+  local biggest=()
+  local totaldiff=0
+  local totalsize=0
+  local ps=()
+
+  if [ ${njpeg} -gt 1 ]; then
+    local first=${jpegs[0]}
+    local i=1
+    local maxdiff=0
+
+    while [ ${i} -lt ${njpeg} ]; do 
+      local jpeg=${jpegs[${i}]}
+      local file="${jpeg##*/}"
+      local diff="${tmpdir}/${file%.*}-mask.jpg"
+      local p=$(compare -metric fuzz -fuzz "${fuzz}%" "${jpeg}" "${first}" -compose src -highlight-color white -lowlight-color black "${diff}" 2>&1 | awk '{ print $1 }')
+
+      totaldiff=$((totaldiff+p))
+      if [ ${diff} -gt ${maxdiff:-0} ]; then maxdiff=${diff}; most=${jpeg}; fi
+      diffs=(${diffs[@]} ${diff})
+      i=$((i+1))
+    done
+    avgdiff=$((totaldiff/njpeg))
+  else
+    motion.log.warn "Insufficient images to compare"
+  fi
+  echo "${diffs[@]}"
+}
+
 motion_event_images_process()
 {
   motion.log.trace "${funcname[0]} ${*}"
@@ -212,9 +255,10 @@ motion_event_images_process()
   if [ ! -z "${image_avg}" ] && [ ! -s "${image_avg}" ]; then
     motion.log.error "FAILURE: no average image; metadata: ${metadata}"
   else
-    motion.log.debug "average image calculated; file: ${image_avg}"
+    motion.log.debug "SUCCESS: average calculated; file: ${image_avg}"
     metadata=$(echo "${metadata}" | jq -c '.average="'${image_avg}'"')
   fi
+
 
   # return updated metadata
   echo "${metadata:-}"
@@ -249,8 +293,8 @@ motion_event_end()
   local mn="${7}"
   local sc="${8}"
   local ts="${yr}${mo}${dy}${hr}${mn}${sc}"
-
   local json=$(motion_event_json "${cn}" "${ts}" "${en}")
+  local result=''
 
   if [ ! -z "${json:-}" ]; then
     local metadata=$(motion_event_images "${json}")
@@ -261,14 +305,16 @@ motion_event_end()
       local start=$(echo "${metadata}" | jq -r '.start')
       local ago=$((now - start))
 
-      motion.log.debug "SUCCESS: images: event: ${en}; camera: ${cn}; event: ${en}; images: ${njpeg}"
-
       metadata=$(motion_event_process "${metadata}")
-      if [ ! -z "${metadata}" ]; then
+      if [ "${metadata:-null}" != 'null' ]; then
         now=$(date +%s)
         ago=$((now - start))
-
-        motion.log.debug "COMPLETE: process: event: ${en}; camera: ${cn}; event: ${en}; metadata: ${metadata}"
+        local timestamp=$(date -u +%FT%TZ)
+        
+        # update metadata timestamp
+        metadata=$(echo "${metadata}" | jq -c '.timestamp="'${timestamp}'"')
+        result="${metadata}"
+        motion.log.info "COMPLETE: process: event: ${en}; camera: ${cn}; timestamp: ${timestamp}"
       else
         motion.log.error "FAILURE: no images processed; camera: ${cn}; event: ${en}"
       fi
@@ -278,7 +324,7 @@ motion_event_end()
   else
     motion.log.error "FAILURE: no metadata; camera: ${cn}; timestamp: ${ts}; event: ${en}"
   fi
-  echo "${result:-false}"
+  echo "${result:-null}"
 }
 
 #
@@ -303,7 +349,7 @@ on_event_end()
   # exec 1>&- # close stdout
   # exec 2>&- # close stderr
 
-  motion_event_end ${*}
+  motion.log.notice $(motion_event_end ${*} | jq -c '.')
 
   # export environment and run legacy tcsh script
   export \
