@@ -30,11 +30,12 @@ TS="${YR}${MO}${DY}${HR}${MN}${SC}"
 # get time
 NOW=$($dateconv -i '%Y%m%d%H%M%S' -f "%s" "$TS")
 
-topic="$(motion.config.group)/$(motion.config.device)/${CN}/status/found" 
-message='{"device":"'$(motion.config.device)'","camera":"'"${CN}"'","time":'"${NOW}"',"status":"found"}'
+topic="$(motion.config.group)/$(motion.config.device)/${CN}/status/lost" 
+message='{"device":"'$(motion.config.device)'","camera":"'"${CN}"'","time":'"${NOW}"',"status":"lost"}'
+
+motion.log.notice "Camera lost: ${CN}"
 
 # `status/lost`
-motion.log.debug "sending ${message} to ${topic}"
 motion.mqtt.pub -q 2 -r -t "${topic}" -m "${message}"
 
 # no signal pattern to `image` 

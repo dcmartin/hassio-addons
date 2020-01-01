@@ -33,8 +33,9 @@ NOW=$($dateconv -i '%Y%m%d%H%M%S' -f "%s" "$TS")
 topic="$(motion.config.group)/$(motion.config.device)/${CN}/status/found"
 message='{"device":"'$(motion.config.device)'","camera":"'"${CN}"'","time":'"${NOW}"',"status":"found"}'
 
+motion.log.notice "Camera found: ${CN}"
+
 # `status/found`
-motion.log.debug "sending ${message} to ${topic}"
 motion.mqtt.pub -q 2 -r -t "${topic}" -m "${message}"
 
 # clean any retained messages
