@@ -1,0 +1,220 @@
+{
+  "name": "Motion",
+  "version": "0.1.1",
+  "slug": "motion",
+  "description": "Motion addon with local camera support",
+  "url": "https://github.com/dcmartin/hassio-addons",
+  "webui": "http://[HOST]:[PORT:7999]/",
+  "startup": "application",
+  "boot": "auto",
+  "homeassistant": "0.92.0b2",
+  "arch": [
+    "aarch64",
+    "amd64",
+    "armhf",
+    "armv7"
+  ],
+  "ingress": true,
+  "ingress_port": 7999,
+  "devices": [
+    "/dev/video0:/dev/video0:rwm"
+  ],
+  "audio": true,
+  "hassio_api": true,
+  "hassio_role": "default",
+  "host_network": true,
+  "homeassistant_api": true,
+  "privileged": [
+    "SYS_ADMIN"
+  ],
+  "timeout": 90,
+  "tmpfs": "size=256m,uid=0,rw",
+  "map": [
+    "share:rw",
+    "config:rw"
+  ],
+  "panel_icon": "mdi:motion-sensor",
+  "ports": {
+    "7999/tcp": 7999,
+    "8080/tcp": 8080,
+    "8090/tcp": 8090
+  },
+  "ports_description": {
+    "7999/tcp": "Web interface",
+    "8080/tcp": "Motion interface",
+    "8090/tcp": "Camera interface"
+  },
+  "options": {
+    "log_level": "info",
+    "group": "motion",
+    "default": {
+      "post_pictures": "center",
+      "interval": 30,
+      "despeckle": "EedDl",
+      "changes": "off",
+      "text_scale": 1,
+      "framerate": 5,
+      "brightness": 100,
+      "contrast": 50,
+      "event_gap": 10,
+      "fov": 62,
+      "framerate": 5,
+      "hue": 50,
+      "lightswitch": 0,
+      "palette": 15,
+      "picture_quality": 100,
+      "stream_quality": 100,
+      "threshold_percent": 10,
+      "saturation": 0,
+      "netcam_userpass": "username:password",
+      "username": "username",
+      "password": "password",
+      "height": 480,
+      "width": 640,
+      "movie_output": "off",
+      "movie_max": 15,
+      "movie_quality": 60
+    },
+    "cameras": [
+      {
+        "name": "wyzecam",
+        "type": "rtsp",
+        "netcam_url": "rtsp://192.168.1.223/live",
+        "netcam_userpass": "username:password",
+        "picture_quality": 100,
+        "stream_quality": 80,
+        "threshold_percent": 20
+      },
+      {
+        "name": "ps3eye",
+        "type": "local",
+        "device": "/dev/video0",
+        "framerate": 5,
+        "fov": 75,
+        "width": 640,
+        "height": 480,
+        "rotate": 0,
+        "picture_quality": 100,
+        "stream_quality": 80,
+        "threshold_percent": 5
+      },
+      {
+        "name": "pi3b+",
+        "type": "ftpd",
+        "netcam_url": "http://192.168.1.174/img/video.mjpeg",
+        "netcam_userpass": "user:pass",
+        "framerate": 5,
+        "fov": 75
+      }
+    ],
+    "mqtt": {
+      "host": "core-mosquitto",
+      "port": "1883",
+      "username": "username",
+      "password": "password"
+    },
+    "cloudant": {
+      "url": "http://localhost:5984",
+      "username": "",
+      "password": ""
+    }
+  },
+  "schema": {
+    "log_level": "str",
+    "log_type": "str?",
+    "log_motion": "int?",
+    "log_file": "str?",
+    "group": "str",
+    "device": "str?",
+    "client": "str?",
+    "username": "str?",
+    "password": "str?",
+    "timezone": "str?",
+    "default": {
+      "post_pictures": "list(first|last|best|most|center)",
+      "brightness": "int?",
+      "changes": "list(on|off)?",
+      "contrast": "int?",
+      "despeckle": "str?",
+      "event_gap": "int?",
+      "fov": "int?",
+      "framerate": "int?",
+      "framerate": "int(2,100)?",
+      "height": "int?",
+      "hue": "int?",
+      "interval": "int(1,120)?",
+      "lightswitch": "int?",
+      "movie_max": "int(1,60)?",
+      "movie_output": "list(off|mp4|mpeg4|3gp)?",
+      "movie_quality": "int(1,100)?",
+      "netcam_userpass": "str?",
+      "palette": "int?",
+      "password": "str?",
+      "picture_quality": "int?",
+      "post_capture": "int?",
+      "pre_capture": "int?",
+      "saturation": "int?",
+      "stream_quality": "int?",
+      "text_scale": "int(1,10)?",
+      "threshold": "int?",
+      "threshold_percent": "int(0,100)?",
+      "type": "list(local|mjpeg|rtsp|ftpd|mqtt)?",
+      "username": "str?",
+      "width": "int?"
+    },
+    "cameras": [
+      {
+        "name": "str",
+        "type": "list(local|mjpeg|rtsp|ftpd|mqtt)",
+        "brightness": "int?",
+        "changes": "list(on|off)?",
+        "contrast": "int?",
+        "despeckle": "str?",
+        "device": "str?",
+        "event_gap": "int?",
+        "fov": "int?",
+        "framerate": "int?",
+        "height": "int?",
+        "hue": "int?",
+        "icon": "str?",
+        "lightswitch": "int?",
+        "mac": "str?",
+        "mjpeg_url": "str?",
+        "movie_max": "int(1,60)?",
+        "movie_output": "list(off|mp4|mpeg4|3gp)?",
+        "movie_quality": "int(1,100)?",
+        "netcam_url": "str?",
+        "netcam_userpass": "str?",
+        "palette": "int?",
+        "password": "str?",
+        "picture_quality": "int?",
+        "port": "port?",
+        "rotate": "int?",
+        "saturation": "int?",
+        "still_image_url": "str?",
+        "stream_quality": "int?",
+        "text_scale": "int(1,10)?",
+        "threshold": "int?",
+        "threshold_percent": "int(0,100)?",
+        "username": "str?",
+        "userpass": "str?",
+        "width": "int?"
+      }
+    ],
+    "mqtt": {
+      "host": "str?",
+      "port": "port?",
+      "username": "str?",
+      "password": "str?"
+    },
+    "cloudant": {
+      "url": "str?",
+      "username": "str?",
+      "password": "str?"
+    },
+    "reload": "str?"
+  },
+  "environment": {
+    "LOG_FORMAT": "{LEVEL}: {MESSAGE}"
+  }
+}
