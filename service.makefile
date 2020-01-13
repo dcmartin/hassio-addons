@@ -90,15 +90,14 @@ check:
 	@rm -f check.json
 	@export JQ_FILTER="$(TEST_JQ_FILTER)" && curl -sSL "http://localhost:${DOCKER_PORT}" -o check.json && jq "$${JQ_FILTER}" check.json
 
-login: ~/.docker/config.json
-	@echo "${MC}>>> MAKE --" $$(date +%T) "-- login: $(DOCKER_REGISTRY)""${NC}" > /dev/stderr
-	@echo $(DOCKER_PASSWORD) | docker login -u ${DOCKER_LOGIN} --password-stdin  ${DOCKER_REGISTR} 2> /dev/null \
-	    || docker login 2> /dev/null \
-	    || echo "${YELLOW}>>>${NC} MAKE **" $$(date +%T) "** docker login failed ${DOCKER_REGISTRY}""${NC}" > /dev/stderr; \
-
-push: build login
+push: build 
 	@echo "${MC}>>> MAKE --" $$(date +%T) "-- push: ${DOCKER_NAME}; tag: ${DOCKER_TAG}""${NC}" > /dev/stderr
 	@docker push ${DOCKER_TAG}
+
+latest:
+	@echo "${MC}>>> MAKE --" $$(date +%T) "-- making latest ${DOCKER_TAG}""${NC}" > /dev/stderr
+	@docker push $(DOCKER_REPOSITORY)/${BUILD_ARCH}-$(DOCKER_NAME):latest
+
 
 ##
 ## SERVICES
@@ -110,7 +109,7 @@ BUILD_OUT = build.${BUILD_ARCH}_${SERVICE_ID}_${SERVICE_VERSION}.out
 
 build: Dockerfile build.json config.json rootfs makefile remove
 	@echo "${MC}>>> MAKE --" $$(date +%T) "-- build: ${SERVICE_NAME}; tag: ${DOCKER_TAG}""${NC}" > /dev/stderr
-	@export DOCKER_TAG="${DOCKER_TAG}" && docker build --build-arg BUILD_REF=$$(git rev-parse --short HEAD) --build-arg BUILD_DATE=$$(date -u +"%Y-%m-%dT%H:%M:%SZ") --build-arg BUILD_ARCH="$(BUILD_ARCH)" --build-arg BUILD_FROM="$(BUILD_FROM)" --build-arg BUILD_VERSION="${SERVICE_VERSION}" . -t "$(DOCKER_TAG)" # > ${BUILD_OUT}
+	@export DOCKER_TAG="${DOCKER_TAG}" && docker build --build-arg BUILD_REF=$$(git rev-parse --short HEAD) --build-arg BUILD_DATE=$$(date -u +"%Y-%m-%dT%H:%M:%SZ") --build-arg BUILD_ARCH="$(BUILD_ARCH)" --build-arg BUILD_FROM="$(BUILD_FROM)" --build-arg BUILD_VERSION="${SERVICE_VERSION}" . -t "$(DOCKER_TAG)" > ${BUILD_OUT}
 
 build-service: build
 	@echo "${MC}>>> MAKE --" $$(date +%T) "-- build-service: ${SERVICE_NAME}; architecture: ${BUILD_ARCH}""${NC}" > /dev/stderr

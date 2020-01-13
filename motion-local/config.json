@@ -1,8 +1,8 @@
 {
-  "name": "Motion",
+  "name": "Motion Local",
   "version": "0.1.1",
-  "slug": "motion",
-  "description": "Motion addon with local camera support",
+  "slug": "motion-video0",
+  "description": "Motion addon with support for /dev/video0 access",
   "url": "https://github.com/dcmartin/hassio-addons",
   "webui": "http://[HOST]:[PORT:7999]/",
   "startup": "application",
@@ -77,15 +77,6 @@
     },
     "cameras": [
       {
-        "name": "wyzecam",
-        "type": "rtsp",
-        "netcam_url": "rtsp://192.168.1.223/live",
-        "netcam_userpass": "username:password",
-        "picture_quality": 100,
-        "stream_quality": 80,
-        "threshold_percent": 20
-      },
-      {
         "name": "ps3eye",
         "type": "local",
         "device": "/dev/video0",
@@ -97,14 +88,6 @@
         "picture_quality": 100,
         "stream_quality": 80,
         "threshold_percent": 5
-      },
-      {
-        "name": "pi3b+",
-        "type": "ftpd",
-        "netcam_url": "http://192.168.1.174/img/video.mjpeg",
-        "netcam_userpass": "user:pass",
-        "framerate": 5,
-        "fov": 75
       }
     ],
     "mqtt": {
@@ -112,11 +95,6 @@
       "port": "1883",
       "username": "username",
       "password": "password"
-    },
-    "cloudant": {
-      "url": "http://localhost:5984",
-      "username": "",
-      "password": ""
     }
   },
   "schema": {
@@ -158,14 +136,14 @@
       "text_scale": "int(1,10)?",
       "threshold": "int?",
       "threshold_percent": "int(0,100)?",
-      "type": "list(local|mjpeg|rtsp|ftpd|mqtt)?",
+      "type": "list(local|netcam|ftpd|mqtt)?",
       "username": "str?",
       "width": "int?"
     },
     "cameras": [
       {
         "name": "str",
-        "type": "list(local|mjpeg|rtsp|ftpd|mqtt)",
+        "type": "list(local|netcam|ftpd|mqtt)",
         "brightness": "int?",
         "changes": "list(on|off)?",
         "contrast": "int?",
