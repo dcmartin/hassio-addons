@@ -2,7 +2,7 @@
 
 ## intialize log level from top-level
 export MOTION_LOG_LEVEL="${1}"
-source /usr/bin/motion-tools.sh
+source rootfs/usr/bin/motion-tools.sh
 
 ###
 ### START
@@ -13,7 +13,6 @@ if [ -z "${MOTION_STREAM_PORT:-}" ]; then MOTION_STREAM_PORT=8090; fi
 if [ -z "${MOTION_CONTROL_PORT:-}" ]; then MOTION_CONTROL_PORT=8080; fi
 if [ -z "${MOTION_DEFAULT_PALETTE:-}" ]; then MOTION_DEFAULT_PALETTE=15; fi
 
-
 ## build internal configuration
 JSON='{"config_path":"'"${CONFIG_PATH}"'","ipaddr":"'$(hostname -i)'","hostname":"'"$(hostname)"'","arch":"'$(arch)'","date":'$(/bin/date +%s)
 
@@ -21,7 +20,8 @@ JSON='{"config_path":"'"${CONFIG_PATH}"'","ipaddr":"'$(hostname -i)'","hostname"
 VALUE=$(jq -r ".device" "${CONFIG_PATH}")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="${HOSTNAME}"; fi
 JSON="${JSON}"',"device":"'"${VALUE}"'"'
-motion.log.debug "setting device ${VALUE} [MOTION_DEVICE]"
+motion.log.debug "setting device ${VALUE}"
+MOTION_DEVICE="${VALUE}"
 
 # device group
 VALUE=$(jq -r ".group" "${CONFIG_PATH}")
@@ -30,11 +30,12 @@ JSON="${JSON}"',"group":"'"${VALUE}"'"'
 motion.log.debug "setting group ${VALUE} [MOTION_GROUP]"
 MOTION_GROUP="${VALUE}"
 
-## web
-VALUE=$(jq -r ".www" "${CONFIG_PATH}")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="${MOTION_DEVICE}.local"; fi
-motion.log.debug "setting www ${VALUE}"
-JSON="${JSON}"',"www":"'"${VALUE}"'"'
+# client
+VALUE=$(jq -r ".client" "${CONFIG_PATH}")
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="${MOTION_DEVICE}"; fi
+JSON="${JSON}"',"client":"'"${VALUE}"'"'
+motion.log.debug "setting group ${VALUE} [MOTION_GROUP]"
+MOTION_CLIENT="${VALUE}"
 
 ## time zone
 VALUE=$(jq -r ".timezone" "${CONFIG_PATH}")
@@ -123,127 +124,172 @@ sed -i "s|.*log_file.*|log_file ${VALUE}|" "${MOTION_CONF}"
 MOTION="${MOTION}"',"log_file":"'"${VALUE}"'"'
 motion.log.debug "Set log_file to ${VALUE}"
 
+# set unit_system for events
+VALUE=$(jq -r '.unit_system' "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="imperial"; fi
+motion.log.debug "Set unit_system to ${VALUE}"
+JSON="${JSON}"',"unit_system":"'"${VALUE}"'"'
+
+# set latitude for events
+VALUE=$(jq -r '.latitude' "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0.0; fi
+motion.log.debug "Set latitude to ${VALUE}"
+JSON="${JSON}"',"latitude":'"${VALUE}"
+
+# set longitude for events
+VALUE=$(jq -r '.longitude' "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0.0; fi
+motion.log.debug "Set longitude to ${VALUE}"
+JSON="${JSON}"',"longitude":'"${VALUE}"
+
+# set elevation for events
+VALUE=$(jq -r '.elevation' "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
+motion.log.debug "Set elevation to ${VALUE}"
+JSON="${JSON}"',"elevation":'"${VALUE}"
+
+# shared directory for results (not images and JSON)
+VALUE=$(jq -r ".share_dir" "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="/share/${MOTION_GROUP}"; fi
+motion.log.debug "Set share_dir to ${VALUE}"
+JSON="${JSON}"',"share_dir":"'"${VALUE}"'"'
+MOTION_SHARE_DIR="${VALUE}"
+
+# base target_dir
+VALUE=$(jq -r ".default.target_dir" "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="${MOTION_APACHE_HTDOCS}/cameras"; fi
+motion.log.debug "Set target_dir to ${VALUE}"
+sed -i "s|.*target_dir.*|target_dir ${VALUE}|" "${MOTION_CONF}"
+MOTION="${MOTION}"',"target_dir":"'"${VALUE}"'"'
+MOTION_TARGET_DIR="${VALUE}"
+
 # set auto_brightness
-VALUE=$(jq -r ".auto_brightness" "${CONFIG_PATH}")
+VALUE=$(jq -r ".default.auto_brightness" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="on"; fi
 sed -i "s/.*auto_brightness.*/auto_brightness ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"auto_brightness":"'"${VALUE}"'"'
 motion.log.debug "Set auto_brightness to ${VALUE}"
 
 # set locate_motion_mode
-VALUE=$(jq -r ".locate_motion_mode" "${CONFIG_PATH}")
+VALUE=$(jq -r ".default.locate_motion_mode" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="off"; fi
 sed -i "s/.*locate_motion_mode.*/locate_motion_mode ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"locate_motion_mode":"'"${VALUE}"'"'
 motion.log.debug "Set locate_motion_mode to ${VALUE}"
 
 # set locate_motion_style (box, redbox, cross, redcross)
-VALUE=$(jq -r ".locate_motion_style" "${CONFIG_PATH}")
+VALUE=$(jq -r ".default.locate_motion_style" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="box"; fi
 sed -i "s/.*locate_motion_style.*/locate_motion_style ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"locate_motion_style":"'"${VALUE}"'"'
 motion.log.debug "Set locate_motion_style to ${VALUE}"
 
 # set picture_output (on, off, first, best, center)
-VALUE=$(jq -r ".picture_output" "${CONFIG_PATH}")
+VALUE=$(jq -r ".default.picture_output" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="on"; fi
 sed -i "s/.*picture_output.*/picture_output ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"picture_output":"'"${VALUE}"'"'
 motion.log.debug "Set picture_output to ${VALUE}"
 
 # set picture_type (jpeg, ppm)
-VALUE=$(jq -r ".picture_type" "${CONFIG_PATH}")
+VALUE=$(jq -r ".default.picture_type" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="jpeg"; fi
 sed -i "s/.*picture_type .*/picture_type ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"picture_type":"'"${VALUE}"'"'
 motion.log.debug "Set picture_type to ${VALUE}"
 
-# set threshold_tune (jpeg, ppm)
-VALUE=$(jq -r ".threshold_tune" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="on"; fi
-sed -i "s/.*threshold_tune .*/threshold_tune ${VALUE}/" "${MOTION_CONF}"
-MOTION="${MOTION}"',"threshold_tune":"'"${VALUE}"'"'
-motion.log.debug "Set threshold_tune to ${VALUE}"
-
 # set netcam_keepalive (off,force,on)
-VALUE=$(jq -r ".netcam_keepalive" "${CONFIG_PATH}")
+VALUE=$(jq -r ".default.netcam_keepalive" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="on"; fi
 sed -i "s/.*netcam_keepalive .*/netcam_keepalive ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"netcam_keepalive":"'"${VALUE}"'"'
 motion.log.debug "Set netcam_keepalive to ${VALUE}"
 
+# set netcam_userpass 
+VALUE=$(jq -r ".default.netcam_userpass" "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=""; fi
+sed -i "s/.*netcam_userpass .*/netcam_userpass ${VALUE}/" "${MOTION_CONF}"
+MOTION="${MOTION}"',"netcam_userpass":"'"${VALUE}"'"'
+motion.log.debug "Set netcam_userpass to ${VALUE}"
+
 ## numeric values
 
-# set v4l2_pallette
-VALUE=$(jq -r ".v4l2_pallette" "${CONFIG_PATH}")
+# set v4l2_palette
+VALUE=$(jq -r ".default.palette" "${CONFIG_PATH}")
 if [ "${VALUE}" != "null" ] && [ ! -z "${VALUE}" ]; then
-  sed -i "s/.*v4l2_pallette\s[0-9]\+/v4l2_pallette ${VALUE}/" "${MOTION_CONF}"
-  MOTION="${MOTION}"',"v4l2_pallette":'"${VALUE}"
-  motion.log.debug "Set v4l2_pallette to ${VALUE}"
+  sed -i "s/.*v4l2_palette\s[0-9]\+/v4l2_palette ${VALUE}/" "${MOTION_CONF}"
+  MOTION="${MOTION}"',"palette":'"${VALUE}"
+  motion.log.debug "Set palette to ${VALUE}"
 fi
 
 # set pre_capture
-VALUE=$(jq -r ".pre_capture" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
+VALUE=$(jq -r ".default.pre_capture" "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1; fi
 sed -i "s/.*pre_capture\s[0-9]\+/pre_capture ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"pre_capture":'"${VALUE}"
 motion.log.debug "Set pre_capture to ${VALUE}"
 
 # set post_capture
-VALUE=$(jq -r ".post_capture" "${CONFIG_PATH}")
+VALUE=$(jq -r ".default.post_capture" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
 sed -i "s/.*post_capture\s[0-9]\+/post_capture ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"post_capture":'"${VALUE}"
 motion.log.debug "Set post_capture to ${VALUE}"
 
 # set event_gap
-VALUE=$(jq -r ".event_gap" "${CONFIG_PATH}")
+VALUE=$(jq -r ".default.event_gap" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=10; fi
 sed -i "s/.*event_gap\s[0-9]\+/event_gap ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"event_gap":'"${VALUE}"
 motion.log.debug "Set event_gap to ${VALUE}"
 
+# set fov
+VALUE=$(jq -r ".default.fov" "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=60; fi
+MOTION="${MOTION}"',"fov":'"${VALUE}"
+motion.log.debug "Set fov to ${VALUE}"
+
 # set minimum_motion_frames
-VALUE=$(jq -r ".minimum_motion_frames" "${CONFIG_PATH}")
+VALUE=$(jq -r ".default.minimum_motion_frames" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=10; fi
 sed -i "s/.*minimum_motion_frames\s[0-9]\+/minimum_motion_frames ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"minimum_motion_frames":'"${VALUE}"
 motion.log.debug "Set minimum_motion_frames to ${VALUE}"
 
 # set quality
-VALUE=$(jq -r ".picture_quality" "${CONFIG_PATH}")
+VALUE=$(jq -r ".default.picture_quality" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=100; fi
 sed -i "s/.*picture_quality\s[0-9]\+/picture_quality ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"picture_quality":'"${VALUE}"
 motion.log.debug "Set picture_quality to ${VALUE}"
 
-# set width
-VALUE=$(jq -r ".width" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=640; fi
-sed -i "s/.*width\s[0-9]\+/width ${VALUE}/" "${MOTION_CONF}"
-MOTION="${MOTION}"',"width":'"${VALUE}"
-motion.log.debug "Set width to ${VALUE}"
-
-# set height
-VALUE=$(jq -r ".height" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=480; fi
-sed -i "s/.*height\s[0-9]\+/height ${VALUE}/" "${MOTION_CONF}"
-MOTION="${MOTION}"',"height":'"${VALUE}"
-motion.log.debug "Set height to ${VALUE}"
-
 # set framerate
-VALUE=$(jq -r ".framerate" "${CONFIG_PATH}")
+VALUE=$(jq -r ".default.framerate" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=5; fi
 sed -i "s/.*framerate\s[0-9]\+/framerate ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"framerate":'"${VALUE}"
 motion.log.debug "Set framerate to ${VALUE}"
 
-# set minimum_frame_time
-VALUE=$(jq -r ".minimum_frame_time" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
-sed -i "s/.*minimum_frame_time\s[0-9]\+/minimum_frame_time ${VALUE}/" "${MOTION_CONF}"
-MOTION="${MOTION}"',"minimum_frame_time":'"${VALUE}"
-motion.log.debug "Set minimum_frame_time to ${VALUE}"
+# set text_changes
+VALUE=$(jq -r ".default.changes" "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE='off'; fi
+sed -i "s/.*text_changes\s[0-9]\+/text_changes ${VALUE}/" "${MOTION_CONF}"
+MOTION="${MOTION}"',"changes":"'"${VALUE}"'"'
+motion.log.debug "Set text_changes to ${VALUE}"
+
+# set text_scale
+VALUE=$(jq -r ".default.text_scale" "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1; fi
+sed -i "s/.*text_scale\s[0-9]\+/text_scale ${VALUE}/" "${MOTION_CONF}"
+MOTION="${MOTION}"',"text_scale":'"${VALUE}"
+motion.log.debug "Set text_scale to ${VALUE}"
+
+# set despeckle_filter
+VALUE=$(jq -r ".default.despeckle" "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE='EedDl'; fi
+sed -i "s/.*despeckle_filter\s[0-9]\+/despeckle_filter ${VALUE}/" "${MOTION_CONF}"
+MOTION="${MOTION}"',"despeckle_filter":"'"${VALUE}"'"'
+motion.log.debug "Set despeckle_filter to ${VALUE}"
 
 ## vid_control_params
 
@@ -270,28 +316,28 @@ motion.log.debug "Set minimum_frame_time to ${VALUE}"
 # --------------------------
 
 # set brightness
-VALUE=$(jq -r ".brightness" "${CONFIG_PATH}")
+VALUE=$(jq -r ".default.brightness" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
 sed -i "s/brightness=[0-9]\+/brightness=${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"brightness":'"${VALUE}"
 motion.log.debug "Set brightness to ${VALUE}"
 
 # set contrast
-VALUE=$(jq -r ".contrast" "${CONFIG_PATH}")
+VALUE=$(jq -r ".default.contrast" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
 sed -i "s/contrast=[0-9]\+/contrast=${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"contrast":'"${VALUE}"
 motion.log.debug "Set contrast to ${VALUE}"
 
 # set saturation
-VALUE=$(jq -r ".saturation" "${CONFIG_PATH}")
+VALUE=$(jq -r ".default.saturation" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
 sed -i "s/saturation=[0-9]\+/saturation=${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"saturation":'"${VALUE}"
 motion.log.debug "Set saturation to ${VALUE}"
 
 # set hue
-VALUE=$(jq -r ".hue" "${CONFIG_PATH}")
+VALUE=$(jq -r ".default.hue" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
 sed -i "s/hue=[0-9]\+/hue=${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"hue":'"${VALUE}"
@@ -300,46 +346,103 @@ motion.log.debug "Set hue to ${VALUE}"
 ## other
 
 # set rotate
-VALUE=$(jq -r ".rotate" "${CONFIG_PATH}")
+VALUE=$(jq -r ".default.rotate" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
 motion.log.debug "Set rotate to ${VALUE}"
 sed -i "s/.*rotate\s[0-9]\+/rotate ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"rotate":'"${VALUE}"
 
 # set webcontrol_port
-VALUE=$(jq -r ".webcontrol_port" "${CONFIG_PATH}")
+VALUE=$(jq -r ".default.webcontrol_port" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_CONTROL_PORT}; fi
 motion.log.debug "Set webcontrol_port to ${VALUE}"
 sed -i "s/.*webcontrol_port\s[0-9]\+/webcontrol_port ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"webcontrol_port":'"${VALUE}"
 
 # set stream_port
-VALUE=$(jq -r ".stream_port" "${CONFIG_PATH}")
+VALUE=$(jq -r ".default.stream_port" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_STREAM_PORT}; fi
 motion.log.debug "Set stream_port to ${VALUE}"
 sed -i "s/.*stream_port\s[0-9]\+/stream_port ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"stream_port":'"${VALUE}"
 
 # set stream_quality
-VALUE=$(jq -r ".stream_quality" "${CONFIG_PATH}")
+VALUE=$(jq -r ".default.stream_quality" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=100; fi
 motion.log.debug "Set stream_quality to ${VALUE}"
 sed -i "s/.*stream_quality\s[0-9]\+/stream_quality ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"stream_quality":'"${VALUE}"
 
+# set width
+VALUE=$(jq -r ".default.width" "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=640; fi
+sed -i "s/.*width\s[0-9]\+/width ${VALUE}/" "${MOTION_CONF}"
+MOTION="${MOTION}"',"width":'"${VALUE}"
+WIDTH=${VALUE}
+motion.log.debug "Set width to ${VALUE}"
+
+# set height
+VALUE=$(jq -r ".default.height" "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=480; fi
+sed -i "s/.*height\s[0-9]\+/height ${VALUE}/" "${MOTION_CONF}"
+MOTION="${MOTION}"',"height":'"${VALUE}"
+HEIGHT=${VALUE}
+motion.log.debug "Set height to ${VALUE}"
+
+# set threshold_tune (on/off)
+VALUE=$(jq -r ".default.threshold_tune" "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="on"; fi
+sed -i "s/.*threshold_tune .*/threshold_tune ${VALUE}/" "${MOTION_CONF}"
+MOTION="${MOTION}"',"threshold_tune":"'"${VALUE}"'"'
+motion.log.debug "Set threshold_tune to ${VALUE}"
+
+# set threshold_percent
+VALUE=$(jq -r ".default.threshold_percent" "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [ ${VALUE:-0} == 0 ]; then 
+  VALUE=$(jq -r ".default.threshold" "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then 
+    VALUE=10
+    motion.log.debug "DEFAULT threshold_percent to ${VALUE}"
+    MOTION="${MOTION}"',"threshold_percent":'"${VALUE}"
+    VALUE=$((VALUE * WIDTH * HEIGHT / 100))
+  fi
+else
+  motion.log.debug "Set threshold_percent to ${VALUE}"
+  MOTION="${MOTION}"',"threshold_percent":'"${VALUE}"
+  VALUE=$((VALUE * WIDTH * HEIGHT / 100))
+fi
 # set threshold
-VALUE=$(jq -r ".threshold" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1500; fi
 motion.log.debug "Set threshold to ${VALUE}"
 sed -i "s/.*threshold.*/threshold ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"threshold":'"${VALUE}"
 
 # set lightswitch
-VALUE=$(jq -r ".lightswitch" "${CONFIG_PATH}")
+VALUE=$(jq -r ".default.lightswitch" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
 motion.log.debug "Set lightswitch to ${VALUE}"
 sed -i "s/.*lightswitch.*/lightswitch ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"lightswitch":'"${VALUE}"
+
+# set interval for events
+VALUE=$(jq -r '.default.interval' "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=30; fi
+motion.log.debug "Set interval to ${VALUE}"
+MOTION="${MOTION}"',"interval":'"${VALUE}"
+export MOTION_EVENT_INTERVAL="${VALUE}"
+
+# set post_pictures; enumerated [on,center,first,last,best,most]
+VALUE=$(jq -r '.default.post_pictures' "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="center"; fi
+motion.log.debug "Set post_pictures to ${VALUE}"
+MOTION="${MOTION}"',"post_pictures":"'"${VALUE}"'"'
+export MOTION_POST_PICTURES="${VALUE}"
+
+# set type
+VALUE=$(jq -r '.default.type' "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="rtsp"; fi
+motion.log.debug "Set type to ${VALUE}"
+MOTION="${MOTION}"',"type":"'"${VALUE}"'"'
+
 
 ## process collectively
 
@@ -361,14 +464,6 @@ else
   sed -i "s/.*webcontrol_localhost .*/webcontrol_localhost on/" "${MOTION_CONF}"
 fi
 
-# base target_dir
-VALUE=$(jq -r ".target_dir" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="${MOTION_APACHE_HTDOCS}/cameras"; fi
-motion.log.debug "Set target_dir to ${VALUE}"
-sed -i "s|.*target_dir.*|target_dir ${VALUE}|" "${MOTION_CONF}"
-MOTION="${MOTION}"',"target_dir":"'"${VALUE}"'"'
-MOTION_TARGET_DIR="${VALUE}"
-
 ## end motion structure; cameras section depends on well-formed JSON for $MOTION
 MOTION="${MOTION}"'}'
 
@@ -387,7 +482,12 @@ motion.log.notice "*** Found ${ncamera} cameras"
 MOTION_COUNT=0
 CNUM=0
 
-for (( i=0; i < ncamera; i++)) ; do
+##
+## LOOP THROUGH ALL CAMERAS
+##
+
+for (( i=0; i < ncamera; i++)); do
+
   motion.log.debug "+++ CAMERA ${i}"
 
   ## TOP-LEVEL
@@ -395,10 +495,10 @@ for (( i=0; i < ncamera; i++)) ; do
   motion.log.debug "CAMERA #: $i"
   CAMERAS="${CAMERAS}"'{"id":'${i}
 
-  # process camera type; wcv80n, ps3eye, panasonic
+  # process camera type
   VALUE=$(jq -r '.cameras['${i}'].type' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then 
-    VALUE=$(jq -r '.camera_type' "${CONFIG_PATH}")
+    VALUE=$(jq -r '.default.type' "${CONFIG_PATH}")
     if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="wcv80n"; fi
   fi
   motion.log.debug "Set type to ${VALUE}"
@@ -428,20 +528,9 @@ for (( i=0; i < ncamera; i++)) ; do
 
   # process camera fov; WCV80n is 61.5 (62); 56 or 75 degrees for PS3 Eye camera
   VALUE=$(jq -r '.cameras['${i}'].fov' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then 
-    VALUE=$(jq -r '.fov' "${CONFIG_PATH}")
-    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=62; fi
-  fi
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [ ${VALUE} -lt 1 ]; then VALUE=$(echo "${MOTION}" | jq -r '.fov'); fi
   motion.log.debug "Set fov to ${VALUE}"
   CAMERAS="${CAMERAS}"',"fov":'"${VALUE}"
-
-  # target_dir 
-  VALUE=$(jq -r '.cameras['${i}'].target_dir' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="${MOTION_TARGET_DIR}/${CNAME}"; fi
-  motion.log.debug "Set target_dir to ${VALUE}"
-  if [ ! -d "${VALUE}" ]; then mkdir -p "${VALUE}"; fi
-  CAMERAS="${CAMERAS}"',"target_dir":"'"${VALUE}"'"'
-  TARGET_DIR="${VALUE}"
 
   # width 
   VALUE=$(jq -r '.cameras['${i}'].width' "${CONFIG_PATH}")
@@ -457,32 +546,96 @@ for (( i=0; i < ncamera; i++)) ; do
   motion.log.debug "Set height to ${VALUE}"
   HEIGHT=${VALUE}
 
-  # process camera fps; set on wcv80n web GUI; default 6
-  VALUE=$(jq -r '.cameras['${i}'].fps' "${CONFIG_PATH}")
+  # process camera framerate; set on wcv80n web GUI; default 6
+  VALUE=$(jq -r '.cameras['${i}'].framerate' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then 
     VALUE=$(jq -r '.framerate' "${CONFIG_PATH}")
-    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=5; fi
+    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=$(echo "${MOTION}" | jq -r '.framerate'); fi
   fi
-  motion.log.debug "Set fps to ${VALUE}"
-  CAMERAS="${CAMERAS}"',"fps":'"${VALUE}"
+  motion.log.debug "Set framerate to ${VALUE}"
+  CAMERAS="${CAMERAS}"',"framerate":'"${VALUE}"
   FRAMERATE=${VALUE}
 
-  # FTPD type
-  VALUE=$(jq -r '.cameras['${i}'].url' "${CONFIG_PATH}")
-  if [[ "${VALUE}" == ftpd* ]]; then
-    VALUE="${VALUE%*/}.jpg"
-    CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
-    motion.log.debug "FTPD source; Set url to ${VALUE}; not configurig as motion camera"
-    # close CAMERAS structure
-    CAMERAS="${CAMERAS}"'}'
-    # next camera
-    continue
+  # process camera event_gap; set on wcv80n web GUI; default 6
+  VALUE=$(jq -r '.cameras['${i}'].event_gap' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then 
+    VALUE=$(jq -r '.event_gap' "${CONFIG_PATH}")
+    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [[ ${VALUE} < 1 ]]; then VALUE=$(echo "${MOTION}" | jq -r '.event_gap'); fi
   fi
+  motion.log.debug "Set event_gap to ${VALUE}"
+  CAMERAS="${CAMERAS}"',"event_gap":'"${VALUE}"
+  EVENT_GAP=${VALUE}
 
+  # target_dir 
+  VALUE=$(jq -r '.cameras['${i}'].target_dir' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="${MOTION_TARGET_DIR}/${CNAME}"; fi
+  motion.log.debug "Set target_dir to ${VALUE}"
+  if [ ! -d "${VALUE}" ]; then mkdir -p "${VALUE}"; fi
+  CAMERAS="${CAMERAS}"',"target_dir":"'"${VALUE}"'"'
+  TARGET_DIR="${VALUE}"
+
+  # TYPE
+  VALUE=$(jq -r '.cameras['${i}'].type' "${CONFIG_PATH}")
+  case "${VALUE}" in
+    local|netcam)
+        TYPE="${VALUE}"
+        motion.log.info "Camera: ${CNAME}; number: ${CNUM}; type: ${TYPE}"
+        CAMERAS="${CAMERAS}"',"type":"'"${TYPE}"'"'
+	;;
+    ftpd|mqtt)
+        TYPE="${VALUE}"
+        motion.log.info "Camera: ${CNAME}; number: ${CNUM}; type: ${TYPE}"
+        CAMERAS="${CAMERAS}"',"type":"'"${TYPE}"'"'
+
+        # live
+        VALUE=$(jq -r '.cameras['${i}'].netcam_url' "${CONFIG_PATH}")
+        if [ "${VALUE}" != "null" ] || [ ! -z "${VALUE}" ]; then 
+          CAMERAS="${CAMERAS}"',"netcam_url":"'"${VALUE}"'"'
+          UP=$(jq -r '.cameras['${i}'].netcam_userpass' "${CONFIG_PATH}")
+          if [ "${UP}" != "null" ] && [ ! -z "${UP}" ]; then 
+            CAMERAS="${CAMERAS}"',"netcam_userpass":"'"${UP}"'"'
+            VALUE="${VALUE%%//*}//${UP}@${VALUE##*://}"
+          fi
+        fi
+        motion.log.debug "Set mjpeg_url to ${VALUE}"
+        CAMERAS="${CAMERAS}"',"mjpeg_url":"'"${VALUE}"'"'
+
+        # icon
+        VALUE=$(jq -r '.cameras['${i}'].icon' "${CONFIG_PATH}")
+        if [ "${VALUE}" != "null" ] || [ ! -z "${VALUE}" ]; then 
+          motion.log.debug "Set icon to ${VALUE}"
+          CAMERAS="${CAMERAS}"',"icon":"'"${VALUE}"'"'
+        fi
+
+        # FTP share_dir
+        if [ "${TYPE}" == 'ftpd' ]; then
+          VALUE="${MOTION_SHARE_DIR%/*}/ftp/${CNAME}"
+          motion.log.debug "Set share_dir to ${VALUE}"
+          CAMERAS="${CAMERAS}"',"share_dir":"'"${VALUE}"'"'
+        fi
+
+        # complete
+        CAMERAS="${CAMERAS}"'}'
+        continue
+	;;
+    *)
+        TYPE="unknown"
+        motion.log.error "Camera: ${CNAME}; number: ${CNUM}; invalid camera type: ${VALUE}; setting to ${TYPE}; skipping"
+        CAMERAS="${CAMERAS}"',"type":"'"${TYPE}"'"'
+        # complete
+        CAMERAS="${CAMERAS}"'}'
+        continue
+	;;
+  esac
+
+  ##
   ## handle more than one motion process (10 camera/process)
+  ##
+
   if (( CNUM / 10 )); then
     if (( CNUM % 10 == 0 )); then
       MOTION_COUNT=$((MOTION_COUNT + 1))
+      MOTION_STREAM_PORT=$((MOTION_STREAM_PORT + MOTION_COUNT))
       CNUM=1
       CONF="${MOTION_CONF%%.*}.${MOTION_COUNT}.${MOTION_CONF##*.}"
       cp "${MOTION_CONF}" "${CONF}"
@@ -501,17 +654,26 @@ for (( i=0; i < ncamera; i++)) ; do
     if [ ${MOTION_COUNT} -eq 0 ]; then MOTION_COUNT=1; fi
     CNUM=$((CNUM+1))
   fi
-
   # create configuration file
   if [ ${MOTION_CONF%/*} != ${MOTION_CONF} ]; then 
     CAMERA_CONF="${MOTION_CONF%/*}/${CNAME}.conf"
   else
     CAMERA_CONF="${CNAME}.conf"
   fi
-
-  # document camera number
+  # add to JSON
+  CAMERAS="${CAMERAS}"',"server":'"${MOTION_COUNT}"
   CAMERAS="${CAMERAS}"',"cnum":'"${CNUM}"
   CAMERAS="${CAMERAS}"',"conf":"'"${CAMERA_CONF}"'"'
+
+  # calculate mjpeg_url for camera
+  VALUE="http://127.0.0.1:${MOTION_STREAM_PORT}/${CNUM}"
+  motion.log.debug "Set mjpeg_url to ${VALUE}"
+  CAMERAS="${CAMERAS}"',"mjpeg_url":"'${VALUE}'"'
+
+
+  ##
+  ## make camera configuration file
+  ##
 
   # basics
   echo "camera_id ${CNUM}" > "${CAMERA_CONF}"
@@ -520,48 +682,14 @@ for (( i=0; i < ncamera; i++)) ; do
   echo "width ${WIDTH}" >> "${CAMERA_CONF}"
   echo "height ${HEIGHT}" >> "${CAMERA_CONF}"
   echo "framerate ${FRAMERATE}" >> "${CAMERA_CONF}"
+  echo "event_gap ${EVENT_GAP}" >> "${CAMERA_CONF}"
 
-  # local device
-  if [ ! -z "${VALUE:-}" ] && [ "${VALUE:-}" != 'null' ]; then
-    # network camera
-    CAMERAS="${CAMERAS}"',"url":"'"${VALUE}"'"'
-    echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
-    motion.log.debug "Set netcam_url to ${VALUE}"
-    # userpass 
-    VALUE=$(jq -r '.cameras['${i}'].userpass' "${CONFIG_PATH}")
-    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=; fi
-    echo "netcam_userpass ${VALUE}" >> "${CAMERA_CONF}"
-    CAMERAS="${CAMERAS}"',"userpass":"'"${VALUE}"'"'
-    motion.log.debug "Set netcam_userpass to ${VALUE}"
-    # keepalive 
-    VALUE=$(jq -r '.cameras['${i}'].keepalive' "${CONFIG_PATH}")
-    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_keepalive'); fi
-    echo "netcam_keepalive ${VALUE}" >> "${CAMERA_CONF}"
-    CAMERAS="${CAMERAS}"',"keepalive":"'"${VALUE}"'"'
-    motion.log.debug "Set netcam_keepalive to ${VALUE}"
-  else 
-    VALUE=$(jq -r '.cameras['${i}'].device' "${CONFIG_PATH}")
-    if [[ "${VALUE}" != /dev/video* ]]; then
-      motion.log.fatal "Camera: ${i}; name: ${CNAME}; invalid videodevice ${VALUE}; exiting"
-      exit 1
-    fi
-    echo "videodevice ${VALUE}" >> "${CAMERA_CONF}"
-    motion.log.debug "Set videodevice to ${VALUE}"
-  fi
-
-  # stream_port (calculated)
-  VALUE=$(jq -r '.cameras['${i}'].port' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_STREAM_PORT}; VALUE=$((VALUE + i)); fi
-  motion.log.debug "Set stream_port to ${VALUE}"
-  echo "stream_port ${VALUE}" >> "${CAMERA_CONF}"
-  CAMERAS="${CAMERAS}"',"port":"'"${VALUE}"'"'
-
-  # palette
-  VALUE=$(jq -r '.cameras['${i}'].palette' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=${MOTION_DEFAULT_PALETTE}; fi
-  CAMERAS="${CAMERAS}"',"palette":'"${VALUE}"
-  echo "v4l2_palette ${VALUE}" >> "${CAMERA_CONF}"
-  motion.log.debug "Set palette to ${VALUE}"
+  # rotate 
+  VALUE=$(jq -r '.cameras['${i}'].rotate' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.rotate'); fi
+  motion.log.debug "Set rotate to ${VALUE}"
+  echo "rotate ${VALUE}" >> "${CAMERA_CONF}"
+  CAMERAS="${CAMERAS}"',"rotate":'"${VALUE}"
 
   # picture_quality 
   VALUE=$(jq -r '.cameras['${i}'].picture_quality' "${CONFIG_PATH}")
@@ -578,18 +706,67 @@ for (( i=0; i < ncamera; i++)) ; do
   motion.log.debug "Set stream_quality to ${VALUE}"
 
   # threshold 
-  VALUE=$(jq -r '.cameras['${i}'].threshold' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.threshold'); fi
+  VALUE=$(jq -r '.cameras['${i}'].threshold_percent' "${CONFIG_PATH}")
+  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [ ${VALUE:-0} == 0 ]; then 
+    VALUE=$(jq -r '.cameras['${i}'].threshold' "${CONFIG_PATH}")
+    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then 
+      VALUE=$(echo "${MOTION}" | jq -r '.threshold_percent')
+      if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [ ${VALUE:-0} == 0 ]; then 
+        VALUE=$(echo "${MOTION}" | jq -r '.threshold')
+      fi
+    fi
+  else
+    # threshold as percent
+    motion.log.debug "Set threshold_percent to ${VALUE}"
+    CAMERAS="${CAMERAS}"',"threshold_percent":'"${VALUE}"
+    VALUE=$((VALUE * WIDTH * HEIGHT / 100))
+  fi
+  motion.log.debug "Set threshold to ${VALUE}"
   echo "threshold ${VALUE}" >> "${CAMERA_CONF}"
   CAMERAS="${CAMERAS}"',"threshold":'"${VALUE}"
-  motion.log.debug "Set threshold to ${VALUE}"
 
-  # rotate 
-  VALUE=$(jq -r '.cameras['${i}'].rotate' "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.rotate'); fi
-  motion.log.debug "Set rotate to ${VALUE}"
-  echo "rotate ${VALUE}" >> "${CAMERA_CONF}"
-  CAMERAS="${CAMERAS}"',"rotate":'"${VALUE}"
+  if [ "${TYPE}" == 'netcam' ]; then
+    # network camera
+    VALUE=$(jq -r '.cameras['${i}'].netcam_url' "${CONFIG_PATH}")
+    if [ ! -z "${VALUE:-}" ] && [ "${VALUE:-}" != 'null' ]; then
+      # network camera
+      CAMERAS="${CAMERAS}"',"netcam_url":"'"${VALUE}"'"'
+      echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
+      motion.log.debug "Set netcam_url to ${VALUE}"
+      # userpass 
+      VALUE=$(jq -r '.cameras['${i}'].userpass' "${CONFIG_PATH}")
+      if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_userpass'); fi
+      echo "netcam_userpass ${VALUE}" >> "${CAMERA_CONF}"
+      CAMERAS="${CAMERAS}"',"userpass":"'"${VALUE}"'"'
+      motion.log.debug "Set netcam_userpass to ${VALUE}"
+      # keepalive 
+      VALUE=$(jq -r '.cameras['${i}'].keepalive' "${CONFIG_PATH}")
+      if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_keepalive'); fi
+      echo "netcam_keepalive ${VALUE}" >> "${CAMERA_CONF}"
+      CAMERAS="${CAMERAS}"',"keepalive":"'"${VALUE}"'"'
+      motion.log.debug "Set netcam_keepalive to ${VALUE}"
+    else
+      motion.log.error "No netcam_url specified; skipping"
+      # close CAMERAS structure
+      CAMERAS="${CAMERAS}"'}'
+      continue;
+    fi
+  elif [ "${TYPE}" == 'local' ]; then
+    # local camera
+    VALUE=$(jq -r '.cameras['${i}'].device' "${CONFIG_PATH}")
+    if [[ "${VALUE}" != /dev/video* ]]; then
+      motion.log.fatal "Camera: ${i}; name: ${CNAME}; invalid videodevice ${VALUE}; exiting"
+      exit 1
+    fi
+    echo "videodevice ${VALUE}" >> "${CAMERA_CONF}"
+    motion.log.debug "Set videodevice to ${VALUE}"
+    # palette
+    VALUE=$(jq -r '.cameras['${i}'].palette' "${CONFIG_PATH}")
+    if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.palette'); fi
+    CAMERAS="${CAMERAS}"',"palette":'"${VALUE}"
+    echo "v4l2_palette ${VALUE}" >> "${CAMERA_CONF}"
+    motion.log.debug "Set palette to ${VALUE}"
+  fi
 
   # close CAMERAS structure
   CAMERAS="${CAMERAS}"'}'
@@ -604,50 +781,6 @@ done
 if [ -n "${CAMERAS:-}" ]; then 
   JSON="${JSON}"',"cameras":'"${CAMERAS}"']'
 fi
-
-# set unit_system for events
-VALUE=$(jq -r '.unit_system' "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="imperial"; fi
-motion.log.debug "Set unit_system to ${VALUE}"
-JSON="${JSON}"',"unit_system":"'"${VALUE}"'"'
-
-# set latitude for events
-VALUE=$(jq -r '.latitude' "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0.0; fi
-motion.log.debug "Set latitude to ${VALUE}"
-JSON="${JSON}"',"latitude":'"${VALUE}"
-
-# set longitude for events
-VALUE=$(jq -r '.longitude' "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0.0; fi
-motion.log.debug "Set longitude to ${VALUE}"
-JSON="${JSON}"',"longitude":'"${VALUE}"
-
-# set elevation for events
-VALUE=$(jq -r '.elevation' "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
-motion.log.debug "Set elevation to ${VALUE}"
-JSON="${JSON}"',"elevation":'"${VALUE}"
-
-# set interval for events
-VALUE=$(jq -r '.interval' "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
-motion.log.debug "Set interval to ${VALUE}"
-JSON="${JSON}"',"interval":'"${VALUE}"
-export MOTION_EVENT_INTERVAL="${VALUE}"
-
-# set post_pictures; enumerated [on,center,first,last,best,most]
-VALUE=$(jq -r '.post_pictures' "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="center"; fi
-motion.log.debug "Set post_pictures to ${VALUE}"
-JSON="${JSON}"',"post_pictures":"'"${VALUE}"'"'
-export MOTION_POST_PICTURES="${VALUE}"
-
-# shared directory for results (not images and JSON)
-VALUE=$(jq -r ".share_dir" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="/share/${MOTION_GROUP}"; fi
-motion.log.debug "Set share_dir to ${VALUE}"
-JSON="${JSON}"',"share_dir":"'"${VALUE}"'"'
 
 # DONE w/ JSON
 JSON="${JSON}"'}'

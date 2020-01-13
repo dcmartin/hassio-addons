@@ -39,7 +39,7 @@ set dateattr = ( `$dateconv -f '%Y %m %d %H %M %S' -i "%s" "$mtime"` )
 set datetime = "${dateattr[1]}${dateattr[2]}${dateattr[3]}${dateattr[4]}${dateattr[5]}${dateattr[6]}"
 
 ## get configuration for this camera
-set fps = ( `jq -r '.cameras[]|select(.name=="'"$camera"'").fps' "$MOTION_JSON_FILE"` )
+set fps = ( `jq -r '.cameras[]|select(.name=="'"$camera"'").framerate' "$MOTION_JSON_FILE"` )
 set width = ( `jq -r '.cameras[]|select(.name=="'"$camera"'").width' "$MOTION_JSON_FILE"` )
 set height = ( `jq -r '.cameras[]|select(.name=="'"$camera"'").height' "$MOTION_JSON_FILE"` )
 set target_dir = ( `jq -r '.cameras[]|select(.name=="'"$camera"'").target_dir' "$MOTION_JSON_FILE"` )

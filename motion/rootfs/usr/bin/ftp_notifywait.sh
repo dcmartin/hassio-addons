@@ -13,10 +13,11 @@ ftp_notifywait()
   local cameras=$(motion.config.cameras)
 
   for name in $(echo "${cameras}" | jq -r '.[]|.name'); do
-    local url=$(echo "${cameras}" | jq -r '.[]|select(.name=="'"${name}"'").url')
+    local type=$(echo "${cameras}" | jq -r '.[]|select(.name=="'"${name}"'").type')
 
-    if [[ $url =~ ftpd://* ]]; then
-      local input=$(echo "$url" | sed "s|ftpd://||")
+    if [ "${type}" == 'ftpd' ]; then
+      local dir=$(echo "${cameras}" | jq -r '.[]|select(.name=="'"${name}"'").share_dir')
+      local input="${dir}.jpg"
 
       # prepare destination
       motion.log.debug "cleaning directory: ${input%.*}"

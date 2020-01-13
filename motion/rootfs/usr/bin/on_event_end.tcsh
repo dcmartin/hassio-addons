@@ -279,8 +279,9 @@ if ($?DEBUG) echo "$0:t $$ -- Calculated difference: $avgdiff; avgsize: $avgsize
 ## SELECT image to represent event
 ##
 
-set post_pictures = `jq -r '.post_pictures' "${MOTION_JSON_FILE}"`
-if ($?DEBUG) echo "$0:t $$ -- Selecting $post_pictures image" >> /tmp/motion.log
+set post_pictures = `jq -r '.motion.post_pictures' "${MOTION_JSON_FILE}"`
+
+if ($?DEBUG) echo "$0:t $$ -- Finding $post_pictures image" >> /tmp/motion.log
 
 set IF = ()
 switch ( "$post_pictures" )
@@ -422,9 +423,9 @@ if ($?DEBUG) echo "$0:t $$ -- Calculated composite: $composite" >> /tmp/motion.l
 if ($?DEBUG) echo "$0:t $$ -- Calculating animation and mask from $#jpgs JPEGS" >> /tmp/motion.log
 
 ## find frames per second for this camera
-set fps = ( `jq '.cameras[]|select(.name=="'"$CN"'").fps' "${MOTION_JSON_FILE}"` )
+set fps = ( `jq '.cameras[]|select(.name=="'"$CN"'").framerate' "${MOTION_JSON_FILE}"` )
 if ($#fps == 0) then
-  if ($?DEBUG) echo "$0:t $$ -- Warning!  Did not find camera $CN in ${MOTION_JSON_FILE}" >> /tmp/motion.log
+  if ($?DEBUG) echo "$0:t $$ -- Warning!  Did not find framerate for camera $CN in ${MOTION_JSON_FILE}" >> /tmp/motion.log
   set fps = `echo "$#frames / $elapsed" | bc -l`
   set rem = `echo $fps:e | sed "s/\(.\).*/\1/"`
   if ($rem >= 5) then

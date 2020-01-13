@@ -119,7 +119,7 @@ motion.config.post_pictures()
   local result=""
 
   if [ -s "${file}" ]; then
-    result=$(jq -r '.post_pictures' ${file})
+    result=$(jq -r '.motion.post_pictures' ${file})
   fi
   echo "${result:-}"
 }

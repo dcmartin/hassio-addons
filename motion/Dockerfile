@@ -1,4 +1,4 @@
-ARG BUILD_FROM=hassioaddons/base
+ARG BUILD_FROM=hassioaddons/base-aarch64:5.0.1
 
 FROM $BUILD_FROM
 
@@ -34,6 +34,43 @@ RUN apk add --no-cache \
 RUN apk add --no-cache \
   ffmpeg@edge \
   motion@edge
+
+## LIVE555
+RUN \
+    apk add --no-cache \
+	live-media-dev \
+	git \
+	g++ \
+	make \
+    \
+    && apk add --no-cache \
+	live-media-utils
+
+RUN \
+    cd /tmp \
+    && \
+    git clone https://github.com/rgaufman/live555.git \
+    && \
+    cd live555 \
+    && \
+    sed -i -e 's/proxyStream\-\%d/stream%02d/g' ./proxyServer/live555ProxyServer.cpp \
+    && \
+    sed -i -e "s/proxyStream/stream/g" ./proxyServer/live555ProxyServer.cpp \
+    && \
+    ./genMakefiles linux
+
+RUN \
+    cd /tmp/live555 \
+    && \
+    make -j4
+
+RUN \
+    cd /tmp/live555 \
+    && \
+    cp proxyServer/live555ProxyServer /usr/local/bin/
+
+RUN \
+    rm -rf /tmp/*
 
 # environment
 ENV CONFIG_PATH /data/options.json
