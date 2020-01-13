@@ -2,7 +2,7 @@
 
 ## intialize log level from top-level
 export MOTION_LOG_LEVEL="${1}"
-source rootfs/usr/bin/motion-tools.sh
+source /usr/bin/motion-tools.sh
 
 ###
 ### START
@@ -734,10 +734,10 @@ for (( i=0; i < ncamera; i++)); do
       echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
       motion.log.debug "Set netcam_url to ${VALUE}"
       # userpass 
-      VALUE=$(jq -r '.cameras['${i}'].userpass' "${CONFIG_PATH}")
+      VALUE=$(jq -r '.cameras['${i}'].netcam_userpass' "${CONFIG_PATH}")
       if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_userpass'); fi
       echo "netcam_userpass ${VALUE}" >> "${CAMERA_CONF}"
-      CAMERAS="${CAMERAS}"',"userpass":"'"${VALUE}"'"'
+      CAMERAS="${CAMERAS}"',"netcam_userpass":"'"${VALUE}"'"'
       motion.log.debug "Set netcam_userpass to ${VALUE}"
       # keepalive 
       VALUE=$(jq -r '.cameras['${i}'].keepalive' "${CONFIG_PATH}")

@@ -16,7 +16,7 @@
   ],
   "ingress": true,
   "ingress_port": 7999,
-  "devices": null,
+  "devices": [],
   "hassio_api": true,
   "hassio_role": "default",
   "host_network": true,
@@ -78,8 +78,8 @@
         "type": "netcam",
         "netcam_url": "rtsp://192.168.1.223/live",
         "netcam_userpass": "wyzeuser:wyzepass",
+        "framerate": 10,
         "threshold_percent": 20
-        "framerate": 10
       },
       {
         "name": "webcam",
