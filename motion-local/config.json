@@ -88,6 +88,27 @@
         "picture_quality": 100,
         "stream_quality": 80,
         "threshold_percent": 5
+      },
+      {
+        "name": "wyzecam",
+        "type": "netcam",
+        "netcam_url": "rtsp://192.168.1.223/live",
+        "netcam_userpass": "wyzeuser:wyzepass",
+        "framerate": 10,
+        "threshold_percent": 20
+      },
+      {
+        "name": "webcam",
+        "type": "ftpd",
+        "netcam_url": "http://192.168.1.174/img/video.mjpeg",
+        "netcam_userpass": "webcamuser:webcampass",
+        "framerate": 5
+      },
+      {
+        "name": "rpi",
+        "type": "mqtt",
+        "netcam_url": "http://192.168.1.175:8090/1",
+        "netcam_userpass": "rpiuser:rpipass"
       }
     ],
     "mqtt": {
@@ -182,11 +203,6 @@
     "mqtt": {
       "host": "str?",
       "port": "port?",
-      "username": "str?",
-      "password": "str?"
-    },
-    "cloudant": {
-      "url": "str?",
       "username": "str?",
       "password": "str?"
     },
