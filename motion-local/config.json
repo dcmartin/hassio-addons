@@ -206,7 +206,7 @@
       "username": "str?",
       "password": "str?"
     },
-    "reload": "str?"
+    "reload": "bool?"
   },
   "environment": {
     "LOG_FORMAT": "{LEVEL}: {MESSAGE}"
