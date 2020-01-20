@@ -49,7 +49,7 @@ motion_event_json()
   local result=''
 
   motion.log.debug "directory: ${dir}"
-  local jsons=($(echo "$dir"/??????????????"-${en}".json))
+  local jsons=($(find "$dir" -name "??????????????-${en}.json" -print))
 
   local njson=${#jsons[@]}
   motion.log.debug "found ${njson} metadata files"
