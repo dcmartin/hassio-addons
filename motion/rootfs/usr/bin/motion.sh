@@ -1,17 +1,33 @@
 #!/bin/bash
 
-## intialize log level from top-level
 export MOTION_LOG_LEVEL="${1}"
 source /usr/bin/motion-tools.sh
-
-###
-### START
-###
 
 # defaults
 if [ -z "${MOTION_STREAM_PORT:-}" ]; then MOTION_STREAM_PORT=8090; fi
 if [ -z "${MOTION_CONTROL_PORT:-}" ]; then MOTION_CONTROL_PORT=8080; fi
 if [ -z "${MOTION_DEFAULT_PALETTE:-}" ]; then MOTION_DEFAULT_PALETTE=15; fi
+
+###
+### APACHE
+###
+
+if [ ! -s "${MOTION_APACHE_CONF}" ]; then
+  motion.log.fatal "Missing Apache configuration"
+  exit 1
+fi
+if [ -z "${MOTION_APACHE_HOST:-}" ]; then
+  motion.log.fatal "Missing Apache ServerName"
+  exit 1
+fi
+if [ -z "${MOTION_APACHE_HOST:-}" ]; then
+  motion.log.fatal "Missing Apache ServerAdmin"
+  exit 1
+fi
+
+###
+### START
+###
 
 ## build internal configuration
 JSON='{"config_path":"'"${CONFIG_PATH}"'","ipaddr":"'$(hostname -i)'","hostname":"'"$(hostname)"'","arch":"'$(arch)'","date":'$(/bin/date +%s)
@@ -186,10 +202,23 @@ motion.log.debug "Set locate_motion_style to ${VALUE}"
 
 # set picture_output (on, off, first, best, center)
 VALUE=$(jq -r ".default.picture_output" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="on"; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="best"; fi
 sed -i "s/.*picture_output.*/picture_output ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"picture_output":"'"${VALUE}"'"'
 motion.log.debug "Set picture_output to ${VALUE}"
+
+# set movie_output (on, off, first, best, center)
+VALUE=$(jq -r ".default.movie_output" "${CONFIG_PATH}")
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then 
+  if [ "${PICTURE_OUTPUT:-}" == 'on' ]; then
+    VALUE="off"
+  else
+    VALUE="on"
+  fi
+fi
+sed -i "s/.*movie_output.*/movie_output ${VALUE}/" "${MOTION_CONF}"
+MOTION="${MOTION}"',"movie_output":"'"${VALUE}"'"'
+motion.log.debug "Set movie_output to ${VALUE}"
 
 # set picture_type (jpeg, ppm)
 VALUE=$(jq -r ".default.picture_type" "${CONFIG_PATH}")
@@ -877,3 +906,337 @@ mkdir -p /run/apache2
 motion.log.debug "Starting Apache: ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT} ${MOTION_APACHE_HTDOCS}"
 MOTION_JSON_FILE=$(motion.config.file) httpd -E /tmp/motion.log -e debug -f "${MOTION_APACHE_CONF}" -DFOREGROUND
 
+
+###
+## start_apache
+###
+
+start_apache()
+{
+  motion.log.trace "${FUNCNAME[0]}" "${*}"
+
+  local conf=${1}
+  local host=${2}
+  local port=${3}
+  local admin=${4:-root@${host}}
+  local tokens=${5:-}
+  local signature=${6:-}
+
+  # edit defaults
+  sed -i 's|^Listen .*|Listen '${port}'|' "${conf}"
+  sed -i 's|^ServerName .*|ServerName '"${host}:${port}"'|' "${conf}"
+  sed -i 's|^ServerAdmin .*|ServerAdmin '"${admin}"'|' "${conf}"
+
+  # SSL
+  if [ ! -z "${tokens:-}" ]; then
+    sed -i 's|^ServerTokens.*|ServerTokens '"${tokens}"'|' "${conf}"
+  fi
+  if [ ! -z "${signature:-}" ]; then
+    sed -i 's|^ServerSignature.*|ServerSignature '"${signature}"'|' "${conf}"
+  fi
+
+  # enable CGI
+  sed -i 's|^\([^#]\)#LoadModule cgi|\1LoadModule cgi|' "${conf}"
+
+  # export environment
+  export MOTION_JSON_FILE=$(motion.config.file)
+  export MOTION_SHARE_DIR=$(motion.config.share_dir)
+
+  # pass environment
+  echo 'PassEnv MOTION_JSON_FILE' >> "${conf}"
+  echo 'PassEnv MOTION_SHARE_DIR' >> "${conf}"
+
+  # make /run/apache2 for PID file
+  mkdir -p /run/apache2
+
+  # start HTTP daemon
+  motion.log.debug "Starting Apache: ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT} ${MOTION_APACHE_HTDOCS}"
+
+  MOTION_JSON_FILE=$(motion.config.file) httpd -E /tmp/motion.log -e debug -f "${MOTION_APACHE_CONF}" # -DFOREGROUND
+}
+
+##
+## MQTT
+##
+
+process_config_mqtt()
+{
+  motion.log.trace "${FUNCNAME[0]}" "${*}"
+
+  local config="${*}"
+  local result=
+  local value
+  local json
+
+  # local json server (hassio addon)
+  value=$(echo "${config}" | jq -r ".host")
+  if [ "${value}" == "null" ] || [ -z "${value}" ]; then value="core-mosquitto"; fi
+  motion.log.debug "Using json at ${value}"
+  json='{"host":"'"${value}"'"'
+
+  # username
+  value=$(echo "${config}" | jq -r ".username")
+  if [ "${value}" == "null" ] || [ -z "${value}" ]; then value=""; fi
+  motion.log.debug "Using MQTT username: ${value}"
+  json="${json}"',"username":"'"${value}"'"'
+
+  # password
+  value=$(echo "${config}" | jq -r ".password")
+  if [ "${value}" == "null" ] || [ -z "${value}" ]; then value=""; fi
+  motion.log.debug "Using MQTT password: ${value}"
+  json="${json}"',"password":"'"${value}"'"'
+
+  # port
+  value=$(echo "${config}" | jq -r ".port")
+  if [ "${value}" == "null" ] || [ -z "${value}" ]; then value=1883; fi
+  motion.log.debug "Using MQTT port: ${value}"
+  json="${json}"',"port":'"${value}"'}'
+
+  echo "${json:-null}"
+}
+
+
+process_config_system()
+{
+  motion.log.trace "${FUNCNAME[0]}" "${*}"
+
+  local timestamp=$(date -u +%FT%TZ)
+  local hostname=$(hostname)
+  local json='{"ipaddr":"'$(hostname-i)'","hostname":"'${hostname}'","arch":"'$(arch)'","date":'$(/bin/date+%s)',"timestamp":"'${timestamp}'"}'
+
+  echo "${json:-null}"
+}
+
+process_config_motion()
+{
+  motion.log.trace "${FUNCNAME[0]}" "${*}"
+
+  local path=${1}
+  local json
+
+  # group
+  value=$(jq -r ".group" "${path}")
+  if [ -z "${value}" ] || [ "${value}" == "null" ]; then value="motion"; fi
+  json=$(echo "${json}" | jq '.group="'${value}'"')
+
+  # device
+  value=$(jq -r ".device" "${path}")
+  if [ -z "${value}" ] || [ "${value}" == "null" ]; then value="${hostname}"; fi
+  json=$(echo "${json}" | jq '.device="'${value}'"')
+
+  # client
+  value=$(jq -r ".client" "${path}")
+  if [ -z "${value}" ] || [ "${value}" == "null" ]; then value="${hostname}"; fi
+  json=$(echo "${json}" | jq '.client="'${value}'"')
+
+  # device post_pictures
+  value=$(jq -r ".post_pictures" "${path}")
+  if [ -z "${value}" ] || [ "${value}" == "null" ]; then value="center"; fi
+  json=$(echo "${json}" | jq '.post_pictures="'${value}'"')
+
+  ## web
+  value=$(jq -r ".www" "${path}")
+  if [ -z "${value}" ] || [ "${value}" == "null" ]; then value="${hostname}.local"; fi
+  motion.log.debug "setting www ${value}"
+  json=$(echo "${json}" | jq '.www="'${value}'"')
+
+  ## time zone
+  value=$(jq -r ".timezone" "${path}")
+  # Set the correct timezone
+  if [ -z "${value}" ] || [ "${value}" == "null" ]; then value="GMT"; fi
+  if [ ! -e "/usr/share/zoneinfo/${value}" ]; then
+    motion.log.error "Invalid timezone: ${value}; defaulting to GMT"
+    value="GMT"
+  fi
+  motion.log.debug "setting TIMEZONE ${value}"
+  cp "/usr/share/zoneinfo/${value}" /etc/localtime
+  json=$(echo "${json}" | jq '.timezone="'${value}'"')
+
+  ## motion defaults
+  json=$(echo "${json}" | jq '.defaults='$(process_config_defaults $(jq -c '.defaults' ${path})))
+
+  ## cameras
+  json=$(echo "${json}" | jq '.cameras='$(process_config_cameras $(jq -c '.cameras' ${path})))
+
+  echo "${json:-null}"
+}
+
+process_config_log()
+{
+  motion.log.trace "${FUNCNAME[0]}" "${*}"
+
+  local path=${1}
+  local conf=${2}
+  local json='null'
+  local value
+
+  value=$(jq -r ".log_type" "${path}")
+  if [ "${value}" == "null" ] || [ -z "${value}" ]; then value="all"; fi
+  json=$(echo "${json}" | jq '.log_type="'${value}'"')
+  motion.log.debug "Set log_type to ${value}"
+
+  value=$(jq -r ".log_motion" "${path}")
+  if [ "${value}" == "null" ] || [ -z "${value}" ]; then value=6; fi
+  sed -i "s/.*log_level.*/log_level ${value}/" "${conf}"
+  json=$(echo "${json}" | jq '.log_motion="'${value}'"')
+  motion.log.debug "Set log_motion to ${value}"
+
+  value=$(jq -r ".log_file" "${path}")
+  if [ "${value}" == "null" ] || [ -z "${value}" ]; then value="/tmp/motion.log"; fi
+  sed -i "s|.*log_file.*|log_file ${value}|" "${conf}"
+  json=$(echo "${json}" | jq '.log_file="'${value}'"')
+  motion.log.debug "Set log_file to ${value}"
+
+  echo "${json:-null}"
+}
+
+motion_apply_log()
+{
+  motion.log.trace "${FUNCNAME[0]}" "${*}"
+
+  local conf=${1}
+  if [ ! -z "${conf}" ] && [ -e "${conf}" ]; then
+    shift
+    local config="${*}"
+    local value=$(echo "${config}" | jq -r '.motion.log.type')
+
+    value="${value:-all}"
+    sed -i 's|.*log_type.*|log_type ${value}|' "${conf}"
+  else
+    motion.log.error "Unspecified motion configuration file"
+  fi
+}
+
+
+## process configuration 
+process_config()
+{
+  motion.log.trace "${FUNCNAME[0]}" "${*}"
+
+  local path=${1}
+  local conf=${2}
+  local json=$(process_config_system)
+  local hostname=$(echo "${json}" | jq -r '.hostname')
+
+  ## motion
+  json=$(echo "${json}" | jq '.motion='$(process_config_motion ${path}))
+
+  ## logging
+  json=$(echo "${json}" | jq '.log='$(process_config_log ${path} ${conf}))
+
+  ## mqtt
+  json=$(echo "${json}" | jq '.mqtt='$(process_config_mqtt $(jq -c '.mqtt' ${path})))
+
+  echo "${json:-null}"
+}
+
+process_config_camera_rtsp()
+{
+  motion.log.trace "${FUNCNAME[0]}" "${*}"
+
+  local config="${*}"
+  local json='null'
+  local value
+
+  echo "${json:-null}"
+}
+
+process_config_camera_ftpd()
+{
+}
+
+process_config_camera_mjpeg()
+{
+}
+
+process_config_camera_http()
+{
+}
+
+## V4L2 - vid_control_params
+#
+# ps3eye 
+# ---------Controls---------
+#   V4L2 ID   Name and Range
+# ID09963776 Brightness, 0 to 255
+# ID09963777 Contrast, 0 to 255
+# ID09963778 Saturation, 0 to 255
+# ID09963779 Hue, -90 to 90
+# ID09963788 White Balance, Automatic, 0 to 1
+# ID09963793 Exposure, 0 to 255
+# ID09963794 Gain, Automatic, 0 to 1
+# ID09963795 Gain, 0 to 63
+# ID09963796 Horizontal Flip, 0 to 1
+# ID09963797 Vertical Flip, 0 to 1
+# ID09963800 Power Line Frequency, 0 to 1
+#   menu item: Value 0 Disabled
+#   menu item: Value 1 50 Hz
+# ID09963803 Sharpness, 0 to 63
+# ID10094849 Auto Exposure, 0 to 1
+#   menu item: Value 0 Auto Mode
+#   menu item: Value 1 Manual Mode
+# --------------------------
+
+process_config_camera_v4l2()
+{
+  motion.log.trace "${FUNCNAME[0]}" "${*}"
+
+  local config="${*}"
+  local json='null'
+  local value
+  
+  # set v4l2_pallette
+  value=$(echo "${config:-null}" | jq -r ".v4l2_pallette")
+  if [ "${value}" == "null" ] || [ -z "${value}" ]; then value=15; fi
+  json=$(echo "${json}" | jq '.v4l2_palette='${value})
+  sed -i "s/.*v4l2_palette\s[0-9]\+/v4l2_palette ${value}/" "${MOTION_CONF}"
+  MOTION="${MOTION}"',"v4l2_palette":'"${value}"
+  motion.log.debug "Set v4l2_palette to ${value}"
+  
+  # set brightness
+  value=$(echo "${config:-null}" | jq -r ".v4l2_brightness")
+  if [ "${value}" == "null" ] || [ -z "${value}" ]; then value=0; fi
+  sed -i "s/brightness=[0-9]\+/brightness=${value}/" "${MOTION_CONF}"
+  MOTION="${MOTION}"',"brightness":'"${value}"
+  motion.log.debug "Set brightness to ${value}"
+  
+  # set contrast
+  value=$(jq -r ".v4l2_contrast" "${CONFIG_PATH}")
+  if [ "${value}" == "null" ] || [ -z "${value}" ]; then value=0; fi
+  sed -i "s/contrast=[0-9]\+/contrast=${value}/" "${MOTION_CONF}"
+  MOTION="${MOTION}"',"contrast":'"${value}"
+  motion.log.debug "Set contrast to ${value}"
+  
+  # set saturation
+  value=$(jq -r ".v4l2_saturation" "${CONFIG_PATH}")
+  if [ "${value}" == "null" ] || [ -z "${value}" ]; then value=0; fi
+  sed -i "s/saturation=[0-9]\+/saturation=${value}/" "${MOTION_CONF}"
+  MOTION="${MOTION}"',"saturation":'"${value}"
+  motion.log.debug "Set saturation to ${value}"
+  
+  # set hue
+  value=$(jq -r ".v4l2_hue" "${CONFIG_PATH}")
+  if [ "${value}" == "null" ] || [ -z "${value}" ]; then value=0; fi
+  sed -i "s/hue=[0-9]\+/hue=${value}/" "${MOTION_CONF}"
+  MOTION="${MOTION}"',"hue":'"${value}"
+  motion.log.debug "Set hue to ${value}"
+
+  echo "${json:-null}"
+}
+
+
+process_config_defaults()
+{
+  local config="${*}"
+  local json='null'
+  local value
+
+  echo "${json:-null}"
+}
+
+motion_config()
+{
+  motion_config_defaults
+  motion_config_cameras
+
+}

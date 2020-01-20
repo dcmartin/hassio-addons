@@ -4,7 +4,6 @@
 setenv DEBUG
 
 # legacy
-unsetenv MOTION_FILE_NORMAL
 
 setenv MOTION_JSON_FILE /etc/motion/motion.json
 
@@ -65,14 +64,12 @@ echo "$event" >! "$last"
 # image identity
 set event_id = `echo "$event" | awk '{ printf("%02d",$1) }'`
 
-if ($?MOTION_FILE_NORMAL == 0) then
   # on_motion_detected.sh %$ %v %Y %m %d %H %M %S
   if ($?DEBUG) echo "$0:t $$ -- Calling on_motion_detected.sh $camera $event_id $dateattr" >>& /tmp/motion.log
   on_motion_detected.sh $camera $event_id $dateattr
   # on_event_start.sh %$ %v %Y %m %d %H %M %S
   if ($?DEBUG) echo "$0:t $$ -- Calling on_event_start.sh $camera $event_id $dateattr" >>& /tmp/motion.log
   on_event_start.sh $camera $event_id $dateattr
-endif
 
 ### breakdown video into frames
 set tmpdir = "/tmpfs/$0:t/$$"
@@ -120,15 +117,6 @@ foreach j ( $jpgs )
     @ seqno++
   endif
 
-  if ($?MOTION_FILE_NORMAL) then
-    echo "$0:t $$ -- Moving $f to $output" >>& /tmp/motion.log
-    set frames = ( $frames $f:t:r )
-    mv -f "$f" "${output}"
-    continue
-  else
-    # would probably screw things up
-    # cp -f "$f" "${output}"
-  endif
   # manually execute sequence
   set seqid = `echo "$seqno" | awk '{ printf("%02d",$1) }'`
   set output = "$target_dir/${datetime}-${event_id}-${seqid}.$format"
@@ -143,11 +131,9 @@ end
 if ($#frames) set frames = ( `echo "$frames" | sed 's/ /,/g' | sed 's/\([^,]*\)/"\1"/g'` )
 rm -fr "$tmpdir"
 
-if ($?MOTION_FILE_NORMAL == 0) then
   # on_event_end.sh %$ %v %Y %m %d %H %M %S
   if ($?DEBUG) echo "$0:t $$ -- Calling on_event_end.sh $camera $event_id $dateattr" >>& /tmp/motion.log
   on_event_end.sh $camera $event_id $dateattr
-endif
 
 # document
 if ($?json) then
