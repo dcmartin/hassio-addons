@@ -742,6 +742,10 @@ for (( i=0; i < ncamera; i++)); do
       VALUE=$(echo "${MOTION}" | jq -r '.threshold_percent')
       if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ] || [ ${VALUE:-0} == 0 ]; then 
         VALUE=$(echo "${MOTION}" | jq -r '.threshold')
+      else
+        motion.log.debug "Set threshold_percent to ${VALUE}"
+        CAMERAS="${CAMERAS}"',"threshold_percent":'"${VALUE}"
+        VALUE=$((VALUE * WIDTH * HEIGHT / 100))
       fi
     fi
   else
