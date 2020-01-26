@@ -139,6 +139,8 @@ echo "$(date '+%T') INFO $0 $$ -- over-writing hostapd default:" $(cat ${HOSTAPD
 # reload
 echo "$(date '+%T') INFO $0 $$ -- reloading daemons"
 systemctl daemon-reload
+systemctl unmask hostapd
+systemctl enable hostapd
 
 # start
 echo "$(date '+%T') INFO $0 $$ -- restarting daemons"
