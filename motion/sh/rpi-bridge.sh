@@ -88,8 +88,9 @@ echo "$(date '+%T') INFO $0 $$ -- configured DHCP" $(cat ${DHCPD_CONF})
 DNSMASQ_CONF="/etc/dnsmasq.conf"
 if [ -s "${DNSMASQ_CONF}" ]; then
   echo "$(date '+%T') INFO $0 $$ -- over-writing existing ${DNSMASQ_CONF}"
+  # rm -f ${DNSMASQ_CONF}
 fi
-echo 'interface=wlan0' > "${DNSMASQ_CONF}"
+echo 'interface=wlan0' >> "${DNSMASQ_CONF}"
 echo "  dhcp-range=${DHCPD_START},${DHCPD_FINISH},${DHCPD_NETMASK},${DHCPD_DURATION}" >> "${DNSMASQ_CONF}"
 echo "$(date '+%T') INFO $0 $$ -- configured DNSMASQ" $(cat ${DNSMASQ_CONF})
 
@@ -105,7 +106,7 @@ NETWORK_INTERFACES="/etc/network/interfaces"
 if [ -s ${NETWORK_INTERFACES} ]; then
   echo "$(date '+%T') INFO $0 $$ -- over-writing existing ${NETWORK_INTERFACES}"
 fi
-echo 'auto br0' > ${NETWORK_INTERFACES}
+echo 'auto br0' >> ${NETWORK_INTERFACES}
 echo 'iface br0 inet manual' >> ${NETWORK_INTERFACES}
 echo 'bridge_ports eth0 wlan0' >> ${NETWORK_INTERFACES}
 echo 'dns-nameservers' "${DNS_NAMESERVERS}" >> ${NETWORK_INTERFACES}
