@@ -68,6 +68,37 @@ systemctl stop dnsmasq
 systemctl stop hostapd
 
 ###
+# DNSMASQ
+###
+
+version=$(dnsmasq --version | head -1 | awk '{ print $3 }') && major=${version%.*} && minor=${version#*.}
+if [ ${major:-0} -ge 2 ] && [ ${minor} -ge 77 ]; then
+  echo "DNSMASQ; version; ${version}"
+else
+  echo "DNSMASQ; version; ${version}; removing dns-root-data"
+  apt -qq -y --purge remove dns-root-data
+fi
+
+DNSMASQ_CONF="/etc/dnsmasq.conf"
+if [ -s "${DNSMASQ_CONF}" ]; then
+  if [ ! -s "${DNSMASQ_CONF}.bak" ]; then
+    cp ${DNSMASQ_CONF} ${DNSMASQ_CONF}.bak
+  else
+    cp ${DNSMASQ_CONF}.bak ${DNSMASQ_CONF}
+  fi
+fi
+
+# overwrite
+echo 'interface=wlan0' > "${DNSMASQ_CONF}"
+echo 'bind-dynamic' >> "${DNSMASQ_CONF}"
+echo 'domain-needed' >> "${DNSMASQ_CONF}"
+echo 'bogus-priv' >> "${DNSMASQ_CONF}"
+echo "dhcp-range=${DHCP_START},${DHCP_FINISH},${DHCP_NETMASK},${DHCP_DURATION}" >> "${DNSMASQ_CONF}"
+
+# report
+echo "$(date '+%T') INFO $0 $$ -- configured DNSMASQ" $(cat ${DNSMASQ_CONF})
+
+###
 # DHCP
 ###
 
@@ -88,34 +119,14 @@ if [ -s "${DHCP_CONF}" ]; then
 fi
 
 ## append
+echo 'nohook wpa_supplicant' >> "${DHCP_CONF}"
 echo 'denyinterfaces wlan0' >> "${DHCP_CONF}"
 echo 'denyinterfaces eth0' >> "${DHCP_CONF}"
 echo 'interface wlan0' >> "${DHCP_CONF}"
 echo "  static ip_address=${DHCP_IPADDR}/${DHCP_NETSIZE}" >> "${DHCP_CONF}"
-echo '  nohook wpa_supplicant' >> "${DHCP_CONF}"
 
 ## report
 echo "$(date '+%T') INFO $0 $$ -- configured DHCP: ${DHCP_CONF}; ip=${DHCP_IPADDR}; netsize: ${DHCP_NETSIZE}; netmask: ${DHCP_NETMASK}; start: ${DHCP_START}; finish: ${DHCP_FINISH}; duration: ${DHCP_DURATION}"
-
-###
-# DNSMASQ
-###
-
-DNSMASQ_CONF="/etc/dnsmasq.conf"
-if [ -s "${DNSMASQ_CONF}" ]; then
-  if [ ! -s "${DNSMASQ_CONF}.bak" ]; then
-    cp ${DNSMASQ_CONF} ${DNSMASQ_CONF}.bak
-  else
-    cp ${DNSMASQ_CONF}.bak ${DNSMASQ_CONF}
-  fi
-fi
-
-# overwrite
-echo 'interface=wlan0' > "${DNSMASQ_CONF}"
-echo "dhcp-range=${DHCP_START},${DHCP_FINISH},${DHCP_NETMASK},${DHCP_DURATION}" >> "${DNSMASQ_CONF}"
-
-# report
-echo "$(date '+%T') INFO $0 $$ -- configured DNSMASQ" $(cat ${DNSMASQ_CONF})
 
 ###
 # BRIDGE
@@ -196,38 +207,45 @@ if [ -z "$(egrep '^net.ipv4.ip_forward=' "${SYSCTL_CONF}")" ]; then
 else
   echo "$(date '+%T') INFO $0 $$ -- existing IPv4 forwarding" $(egrep "^net.ipv4.ip_forward=" ${SYSCTL_CONF})
 fi
+echo 1 > /proc/sys/net/ipv4/ip_forward
 
 ###
 ## /etc/iptables
 ###
 
-IPTABLES_NAT="/etc/iptables.ipv4.nat"
-if [ ! -s "/etc/iptables.ipv4.nat" ]; then
-  echo "$(date '+%T') INFO $0 $$ -- enabling POSTROUTING / MASQUERADE on eth0"
-  iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-  echo "$(date '+%T') INFO $0 $$ -- saving iptables to ${IPTABLES_NAT}"
-  sh -c "iptables-save > ${IPTABLES_NAT}"
-else
-  echo "$(date '+%T') INFO $0 $$ -- existing ${IPTABLES_NAT}" $(cat ${IPTABLES_NAT})
-fi
+echo > /etc/iptables-ap.sh << EOF
+#!/bin/bash
+echo "$(date '+%T') INFO $0 $$ -- enabling POSTROUTING / MASQUERADE on eth0"
+iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+iptables -A FORWARD -i eth0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT
+EOF
+chmod 755 /etc/iptables-ap.sh
 
-if [ -z "$(egrep "iptables-restore" /etc/rc.local)" ]; then
-  echo "$(date '+%T') INFO $0 $$ -- adding iptables-restore to /etc/rc.local"
-  egrep -v '^exit 0' /etc/rc.local > /tmp/$$.rc
-  echo "if [ -s ${IPTABLES_NAT} ]; then iptables-restore < ${IPTABLES_NAT}; fi" >> /tmp/$$.rc
-  echo 'exit 0' >> /tmp/$$.rc
-  mv -f /tmp/$$.rc /etc/rc.local
-else
-  echo "$(date '+%T') INFO $0 $$ -- iptables-restore present in /etc/rc.local" $(egrep "iptables-restore" /etc/rc.local)
-fi
+## systemd
+echo > /etc/systemd/system/iptables-ap.service << EOF
+[Unit]
+Description=iptables for access point
+After=network-pre.target
+Before=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/etc/iptables-ap.sh
+
+[Install]
+WantedBy=multi-user.target
+EOF
+# enable
+systemctl enable iptables-ap
+
+# start
+echo "$(date '+%T') INFO $0 $$ -- restarting daemons"
+systemctl unmask hostapd
+systemctl enable hostapd
+systemctl restart hostapd
+systemctl restart dnsmasq
 
 # reload
 echo "$(date '+%T') INFO $0 $$ -- reloading daemons"
 systemctl daemon-reload
-systemctl unmask hostapd
-systemctl enable hostapd
-
-# start
-echo "$(date '+%T') INFO $0 $$ -- restarting daemons"
-systemctl restart hostapd
-systemctl restart dnsmasq
