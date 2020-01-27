@@ -40,7 +40,7 @@ fi
 SSID=${SSID:-TEST}
 echo "$(date '+%T') INFO $0 $$ -- SSID: ${SSID}"
 
-WPA_PASSPHRASE=$(WPA_PASSPHRASE:-0123456789}
+WPA_PASSPHRASE=${WPA_PASSPHRASE:-0123456789}
 echo "$(date '+%T') INFO $0 $$ -- WPA_PASSPHRASE: ${WPA_PASSPHRASE}"
 
 for pr in hostapd dnsmasq brctl nslookup; do
