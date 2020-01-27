@@ -40,82 +40,133 @@ fi
 SSID=${SSID:-TEST}
 echo "$(date '+%T') INFO $0 $$ -- SSID: ${SSID}"
 
-WPA_PASSPHRASE=${WPA_PASSPHRASE:-0123456789}
-echo "$(date '+%T') INFO $0 $$ -- WPA_PASSPHRASE: ${WPA_PASSPHRASE}"
+WPA_PASSWORD=${WPA_PASSWORD:-0123456789}
+echo "$(date '+%T') INFO $0 $$ -- WPA_PASSWORD: ${WPA_PASSWORD}"
 
+packages=()
 for pr in hostapd dnsmasq brctl nslookup; do
   if [ -z $(command -v "${pr}") ]; then
     case "${pr}" in
       "brctl")
-        package="bridge-utils"
+        packages=(${packages[@]} "bridge-utils")
         ;;
       "nslookup")
-        package="dnsutils"
+        packages=(${packages[@]} "dnsutils")
         ;;
       *)
-        package="${pr}"
+        packages=(${packages[@]} "${pr}")
         ;;
     esac
-    echo "+++ WARN $0 $$ -- installing ${package}"
-    apt install -y "${package}" &> /dev/null
   fi
 done
+if [ ${#packages[@]} -gt 0 ]; then
+  echo "*** ERROR $0 $$ -- install packages: ${packages[@]}"
+  exit
+fi
 
 systemctl stop dnsmasq
 systemctl stop hostapd
 
-DHCPD_CONF="/etc/dhcpcd.conf"
-DHCPD_IPADDR=${DHCPD_IPADDR:-192.168.0.1}
-DHCPD_START=${DHCPD_START:-192.168.0.2}
-DHCPD_FINISH=${DHCPD_FINISH:-192.168.0.254}
-DHCPD_NETMASK=${DHCPD_NETMASK:-255.255.255.0}
-DHCPD_NETSIZE=${DHCPD_NETSIZE:-24}
-DHCPD_DURATION=${DHCPD_DURATION:-24h}
+###
+# DHCP
+###
 
-echo "DHCPD: ${DHCPD_CONF}; ip=${DHCPD_IPADDR}; netsize: ${DHCPD_NETSIZE}; netmask: ${DHCPD_NETMASK}; start: ${DHCPD_START}; finish: ${DHCPD_FINISH}; duration: ${DHCPD_DURATION}"
+DHCP_CONF="/etc/dhcpcd.conf"
+DHCP_IPADDR=${DHCP_IPADDR:-192.168.0.1}
+DHCP_START=${DHCP_START:-192.168.0.2}
+DHCP_FINISH=${DHCP_FINISH:-192.168.0.254}
+DHCP_NETMASK=${DHCP_NETMASK:-255.255.255.0}
+DHCP_NETSIZE=${DHCP_NETSIZE:-24}
+DHCP_DURATION=${DHCP_DURATION:-24h}
 
-if [ -s "${DHCPD_CONF}" ]; then
-  echo "$(date '+%T') INFO $0 $$ -- over-writing existing ${DHCPD_CONF}"
-  rm -f ${DHCPD_CONF}
+if [ -s "${DHCP_CONF}" ]; then
+  if [ ! -s "${DHCP_CONF}.bak" ]; then
+    cp ${DHCP_CONF} ${DHCP_CONF}.bak
+  else
+    cp ${DHCP_CONF}.bak ${DHCP_CONF}
+  fi
 fi
-echo 'denyinterfaces wlan0' >> "${DHCPD_CONF}"
-echo 'denyinterfaces eth0' >> "${DHCPD_CONF}"
-echo 'interface wlan0' >> "${DHCPD_CONF}"
-echo "  static ip_address=${DHCPD_IPADDR}/${DHCPD_NETSIZE}" >> "${DHCPD_CONF}"
-echo '  nohook wpa_supplicant' >> "${DHCPD_CONF}"
-echo "$(date '+%T') INFO $0 $$ -- configured DHCP" $(cat ${DHCPD_CONF})
+
+## append
+echo 'denyinterfaces wlan0' >> "${DHCP_CONF}"
+echo 'denyinterfaces eth0' >> "${DHCP_CONF}"
+echo 'interface wlan0' >> "${DHCP_CONF}"
+echo "  static ip_address=${DHCP_IPADDR}/${DHCP_NETSIZE}" >> "${DHCP_CONF}"
+echo '  nohook wpa_supplicant' >> "${DHCP_CONF}"
+
+## report
+echo "$(date '+%T') INFO $0 $$ -- configured DHCP: ${DHCP_CONF}; ip=${DHCP_IPADDR}; netsize: ${DHCP_NETSIZE}; netmask: ${DHCP_NETMASK}; start: ${DHCP_START}; finish: ${DHCP_FINISH}; duration: ${DHCP_DURATION}"
+
+###
+# DNSMASQ
+###
 
 DNSMASQ_CONF="/etc/dnsmasq.conf"
 if [ -s "${DNSMASQ_CONF}" ]; then
-  echo "$(date '+%T') INFO $0 $$ -- over-writing existing ${DNSMASQ_CONF}"
-  # rm -f ${DNSMASQ_CONF}
+  if [ ! -s "${DNSMASQ_CONF}.bak" ]; then
+    cp ${DNSMASQ_CONF} ${DNSMASQ_CONF}.bak
+  else
+    cp ${DNSMASQ_CONF}.bak ${DNSMASQ_CONF}
+  fi
 fi
-echo 'interface=wlan0' >> "${DNSMASQ_CONF}"
-echo "  dhcp-range=${DHCPD_START},${DHCPD_FINISH},${DHCPD_NETMASK},${DHCPD_DURATION}" >> "${DNSMASQ_CONF}"
+
+# overwrite
+echo 'interface=wlan0' > "${DNSMASQ_CONF}"
+echo "dhcp-range=${DHCP_START},${DHCP_FINISH},${DHCP_NETMASK},${DHCP_DURATION}" >> "${DNSMASQ_CONF}"
+
+# report
 echo "$(date '+%T') INFO $0 $$ -- configured DNSMASQ" $(cat ${DNSMASQ_CONF})
 
-if [ $(brctl show | wc -l) -le 1 ]; then
+###
+# BRIDGE
+###
+
+if [ $(brctl show | egrep 'br0' | wc -l) -le 1 ]; then
   echo "$(date '+%T') INFO $0 $$ -- building bridge br0 to eth0"
   brctl addbr br0
   brctl addif br0 eth0
 else
-  echo "$(date '+%T') INFO $0 $$ -- existing bridge built" $(brctl show)
+  echo "$(date '+%T') INFO $0 $$ -- existing bridge br0; not making"
 fi
 
-NETWORK_INTERFACES="/etc/network/interfaces"
-if [ -s ${NETWORK_INTERFACES} ]; then
-  echo "$(date '+%T') INFO $0 $$ -- over-writing existing ${NETWORK_INTERFACES}"
+NETWORK_CONF="/etc/network/interfaces"
+if [ -s ${NETWORK_CONF} ]; then
+  if [ ! -s "${NETWORK_CONF}.bak" ]; then
+    cp ${NETWORK_CONF} ${NETWORK_CONF}.bak
+  else
+    cp ${NETWORK_CONF}.bak ${NETWORK_CONF}
+  fi
 fi
-echo 'auto br0' >> ${NETWORK_INTERFACES}
-echo 'iface br0 inet manual' >> ${NETWORK_INTERFACES}
-echo 'bridge_ports eth0 wlan0' >> ${NETWORK_INTERFACES}
-echo 'dns-nameservers' "${DNS_NAMESERVERS}" >> ${NETWORK_INTERFACES}
-echo "$(date '+%T') INFO $0 $$ -- configured NETWORK" $(cat ${NETWORK_INTERFACES})
+
+# append
+echo 'auto br0' >> ${NETWORK_CONF}
+echo 'iface br0 inet manual' >> ${NETWORK_CONF}
+echo 'bridge_ports eth0 wlan0' >> ${NETWORK_CONF}
+echo 'dns-nameservers' "${DNS_NAMESERVERS}" >> ${NETWORK_CONF}
+
+# report
+echo "$(date '+%T') INFO $0 $$ -- configured NETWORK: ${NETWORK_CONF}"
+
+
+###
+# HOSTAPD
+###
 
 HOSTAPD_CONF="/etc/hostapd/hostapd.conf"
 if [ -s ${HOSTAPD_CONF} ]; then
-  echo "$(date '+%T') INFO $0 $$ -- over-writing existing ${HOSTAPD_CONF}"
+  if [ ! -s "${HOSTAPD_CONF}.bak" ]; then
+    cp ${HOSTAPD_CONF} ${HOSTAPD_CONF}.bak
+  else
+    cp ${HOSTAPD_CONF}.bak ${HOSTAPD_CONF}
+  fi
 fi
+
+# default
+HOSTAPD_DEFAULT="/etc/default/hostapd"
+echo "$(date '+%T') INFO $0 $$ -- setting configuration default ${HOSTAPD_DEFAULT}; DAEMON_CONF=${HOSTAPD_CONF}"
+sed -i 's|.*DAEMON_CONF=.*|DAEMON_CONF='${HOSTAPD_CONF}'|' "${HOSTAPD_DEFAULT}"
+
+# overwrite
 echo 'interface=wlan0' > ${HOSTAPD_CONF}
 echo 'bridge=br0' >> ${HOSTAPD_CONF}
 echo 'ssid='"${SSID}" >> ${HOSTAPD_CONF}
@@ -126,29 +177,18 @@ echo 'macaddr_acl=0' >> ${HOSTAPD_CONF}
 echo 'auth_algs=1' >> ${HOSTAPD_CONF}
 echo 'ignore_broadcast_ssid=0' >> ${HOSTAPD_CONF}
 echo 'wpa=2' >> ${HOSTAPD_CONF}
-echo 'wpa_passphrase='"${WPA_PASSPHRASE}" >> ${HOSTAPD_CONF}
+echo 'wpa_passphrase='"${WPA_PASSWORD}" >> ${HOSTAPD_CONF}
 echo 'wpa_key_mgmt=WPA-PSK' >> ${HOSTAPD_CONF}
 echo 'wpa_pairwise=TKIP' >> ${HOSTAPD_CONF}
 echo 'rsn_pairwise=CCMP' >> ${HOSTAPD_CONF}
-echo "$(date '+%T') INFO $0 $$ -- configured hostapd: ${HOSTAPD_CONF}"
 
-# set default for hostapd
-HOSTAPD_DEFAULT="/etc/default/hostapd"
-echo 'DAEMON_CONF="'"${HOSTAPD_CONF}"'"' > ${HOSTAPD_DEFAULT}
-echo "$(date '+%T') INFO $0 $$ -- over-writing hostapd default:" $(cat ${HOSTAPD_DEFAULT})
+# report
+echo "$(date '+%T') INFO $0 $$ -- configured hostapd: ${HOSTAPD_CONF}; ssid: ${SSID}; mode: ${HW_MODE}; channel: ${CHANNEL}; password: ${WPA_PASSWORD}"
 
-# reload
-echo "$(date '+%T') INFO $0 $$ -- reloading daemons"
-systemctl daemon-reload
-systemctl unmask hostapd
-systemctl enable hostapd
+###
+## /etc/sysctl.conf
+###
 
-# start
-echo "$(date '+%T') INFO $0 $$ -- restarting daemons"
-systemctl restart hostapd
-systemctl restart dnsmasq
-
-# /etc/sysctl.conf
 SYSCTL_CONF="/etc/sysctl.conf"
 if [ -z "$(egrep '^net.ipv4.ip_forward=' "${SYSCTL_CONF}")" ]; then
   echo "$(date '+%T') INFO $0 $$ -- enabling IPv4 forwarding in ${SYSCTL_CONF}"
@@ -157,7 +197,10 @@ else
   echo "$(date '+%T') INFO $0 $$ -- existing IPv4 forwarding" $(egrep "^net.ipv4.ip_forward=" ${SYSCTL_CONF})
 fi
 
-# /etc/iptables
+###
+## /etc/iptables
+###
+
 IPTABLES_NAT="/etc/iptables.ipv4.nat"
 if [ ! -s "/etc/iptables.ipv4.nat" ]; then
   echo "$(date '+%T') INFO $0 $$ -- enabling POSTROUTING / MASQUERADE on eth0"
@@ -177,3 +220,14 @@ if [ -z "$(egrep "iptables-restore" /etc/rc.local)" ]; then
 else
   echo "$(date '+%T') INFO $0 $$ -- iptables-restore present in /etc/rc.local" $(egrep "iptables-restore" /etc/rc.local)
 fi
+
+# reload
+echo "$(date '+%T') INFO $0 $$ -- reloading daemons"
+systemctl daemon-reload
+systemctl unmask hostapd
+systemctl enable hostapd
+
+# start
+echo "$(date '+%T') INFO $0 $$ -- restarting daemons"
+systemctl restart hostapd
+systemctl restart dnsmasq
