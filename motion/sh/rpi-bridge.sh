@@ -120,8 +120,8 @@ fi
 
 ## append
 echo 'nohook wpa_supplicant' >> "${DHCP_CONF}"
-echo 'denyinterfaces wlan0' >> "${DHCP_CONF}"
-echo 'denyinterfaces eth0' >> "${DHCP_CONF}"
+#echo 'denyinterfaces wlan0' >> "${DHCP_CONF}"
+#echo 'denyinterfaces eth0' >> "${DHCP_CONF}"
 echo 'interface wlan0' >> "${DHCP_CONF}"
 echo "  static ip_address=${DHCP_IPADDR}/${DHCP_NETSIZE}" >> "${DHCP_CONF}"
 
