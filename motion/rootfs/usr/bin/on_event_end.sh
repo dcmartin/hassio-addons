@@ -1,183 +1,69 @@
 #!/bin/bash
 
-source /usr/bin/motion-tools.sh
+source ${USRBIN:-/usr/bin}/motion-tools.sh
 
 ###
 ### functions
 ###
 
-motion.util.dateconv()
-{ 
-  motion.log.trace "${funcname[0]} ${*}"
-  local dateconv=''
+motion_event_movie_convert()
+{
+  motion.log.trace "${FUNCNAME[0]}" "${*}"
 
-  if [ -e /usr/bin/dateutils.dconv ]; then
-    dateconv=/usr/bin/dateutils.dconv
-  elif [ -e /usr/bin/dateconv ]; then
-    dateconv=/usr/bin/dateconv
-  elif [ -e /usr/local/bin/dateconv ]; then
-    dateconv=/usr/local/bin/dateconv
-  fi
-  
-  motion.log.debug "dateconv: ${dateconv}"
+  local input="${1}"
+  local output="${2}"
+  local fps=${3:-5}
+  local seconds=${4:-15}
+  local scale=${5:-640}
 
-  if [ ! -z "${dateconv:-}" ]; then
-    result=$(${dateconv} ${*})
-    motion.log.debug "success; convert ${*}; result: ${result}"
-  else
-    motion.log.error "failure; convert ${*}"
+  ffmpeg -i "${input}" -t ${seconds} -vf "fps=${fps},scale=${scale}:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 "${output}" &> /dev/null
+  if [ ! -s "${output}" ]; then
+    output=
   fi
-  echo "${result:-}"
+  echo "${output}"
 }
 
-# {
-#   "group": "motion",
-#   "device": "nano-1",
-#   "camera": "local",
-#   "event": "01",
-#   "start": 1576601014
-# }
-
-motion_event_json()
+motion_event_animated()
 {
-  motion.log.trace "${funcname[0]} ${*}"
+  motion.log.trace "${FUNCNAME[0]}" "${*}"
 
-  local cn="${1}"
-  local ts="${2}"
-  local en="${3}"
-  local dir="$(motion.config.target_dir)/${cn}"
-  local result=''
-
-  motion.log.debug "directory: ${dir}"
-  local jsons=($(find "$dir" -name "??????????????-${en}.json" -print))
-
-  local njson=${#jsons[@]}
-  motion.log.debug "found ${njson} metadata files"
-
-  if [ ${njson} -eq 0 ]; then
-    motion.log.error "no metadata"
-  else
-    local lastjson="${jsons[$((njson-1))]}"
-
-    motion.log.debug "last metadata file: ${lastjson}"
-
-    if [ ! -z "${lastjson:-}" ] && [ -s "${lastjson:-}" ]; then
-      motion.log.debug "found metadata; file: ${lastjson}"
-      result=${lastjson}
-    else
-      motion.log.error "missing metadata; file: ${lastjson}"
-    fi
-  fi
-  echo "${result:-}"
-}
-
-# {
-#   "device": "nano-1",
-#   "camera": "local",
-#   "type": "jpeg",
-#   "date": 1576600148,
-#   "seqno": "01",
-#   "event": "01",
-#   "id": "20191217162908-01-01",
-#   "center": {
-#     "x": 281,
-#     "y": 124
-#   },
-#   "width": 158,
-#   "height": 180,
-#   "size": 23830,
-#   "noise": 173
-# }
-
-motion_event_images()
-{
-  motion.log.trace "${funcname[0]}" "${*}"
-
-  local lj=${1}
-  local gp=$(jq -r '.group' "${lj}")
-  local dv=$(jq -r '.device' "${lj}")
-  local cn=$(jq -r '.camera' "${lj}")
-  local en=$(jq -r '.event' "${lj}")
-  local start=$(jq -r '.start' "${lj}")
-  local metadata="$(jq -c '.' ${lj})"
   local result
+  local jsonfile="${1}"
+  local camera=$(jq -r '.camera' ${jsonfile})
+  local width=$(jq -r '.cameras[]|select(.name=="'${camera}'").width' $(motion.config.file))
+  local movie=$(jq '.movie' ${jsonfile})
 
-  if [ ! -z "${lj:-}" ] && [ -s "${lj:-}" ]; then
-    local dir="${lj%/*}"
-    local jpgs=($(find "${dir}" -name "[0-9][0-9]*-${en}-[0-9][0-9]*.jpg" -print | sort))
-    local njpg=${#jpgs[@]}
+  if [ "${movie:-null}" != 'null' ]; then
+    local input=$(echo "${movie}" | jq -r '.file')
 
-    motion.log.debug "event: ${en}; image count: ${njpg}"
+    if [ -s "${input:-}" ]; then
+      local elapsed=$(jq -r '.elapsed' ${jsonfile})
+      local fps=$(echo "${movie}" | jq -r '.fps')
 
-    local jpegs=''
-    local images=''
-    local end=0
-    if [ "${njpg:-0}" -gt 0 ]; then
-      i=$((njpg-1)); while [ ${i} -ge 0 ]; do
-        local jpg=${jpgs[${i}]}
-        local json="${jpg%.*}.json"
+      if [ ${elapsed:-0} -gt 0 ]; then
+        local id=$(jq -r '.id' ${jsonfile})
+        local output=$(motion_event_movie_convert "${input}" "${input%/*}/${id}.gif" ${fps:-5} ${elapsed} ${width:-640}
 
-        if [ ! -z "${jpg:-}" ] && [ -s "${json}" ]; then
-          local image="$(jq -c '.' ${json})"
-          local id=$(echo "${image:-null}" | jq -r '.id')
-          local this=$(echo "${image:-null}" | jq -r '.date')
-          local ago=$((this - start))
-
-          motion.log.trace "id: ${id}; date: ${this}; ago: ${ago}"
-
-          if [ ${ago} -lt 0 ]; then start=${this}; fi
-          if [ ${this} -gt ${end} ]; then end=${this}; fi
-          # concatenate
-          if [ -z "${images:-}" ]; then images="${image}"; else images="${image},${images}"; fi
-          jpegs=(${id} ${jpegs[@]})
+        if [ "${output:-null}" != 'null' ]; then
+          result="${output}"
         else
-          motion.log.warn "missing metadata for image: ${jpeg}"
+          motion.log.error "${FUNCNAME[0]} No GIF output"
         fi
-        i=$((i-1))
-      done
-      metadata=$(echo "${metadata}" | jq -c '.start='${start}'|.end='${end}'|.elapsed='$((end - start)))
-      # update event metadata
-      if [ ! -z "${images}" ]; then images='['"${images}"']'; else images='null'; fi
-      metadata=$(echo "${metadata}" | jq -c '.images='"${images}")
-      motion.log.info "SUCCESS: event: ${en}; file: ${lj}"
-      result="${metadata}"
+      else
+        motion.log.error "${FUNCNAME[0]} Elapsed time invalid: ${elapsed}"
+      fi
     else
-      motion.log.error "FAILURE: no event images"
+      motion.log.error "${FUNCNAME[0]} No MP4 input: ${input}"
     fi
   else
-    motion.log.error "FAILURE: no event metadata file: ${lj:-}"
+    motion.log.warn "${FUNCNAME[0]} No movie specified; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
   fi
-  echo "${result:-}"
-}
-
-motion_event_images_average()
-{
-  local jpegs="${*}"
-  local average=$(mktemp)
-  local result
-
-  if [ ${#jpegs[@]} -gt 1 ]; then
-    # calculate average from images
-    convert ${jpegs} -average ${average} &> /dev/null
-    if [ -s "${average}" ]; then
-      result="${average}"
-    else
-      motion.log.error "no average calculated"
-    fi
-  elif [ ${#jpegs[@]} -eq 1 ]; then
-    motion.log.warn "using single image as average"
-    cp ${jpegs[0]} ${average}
-    result="${average}"
-  else
-    motion.log.error "no images"
-  fi
-
-  echo "${result:-}"
+  echo "${result:-null}"
 }
 
 motion_event_images_differ()
 {
-  motion.log.trace "${funcname[0]} ${*}"
+  motion.log.trace "${FUNCNAME[0]}; args: ${*}"
 
   local tmpdir=$(mktemp -d)
   local jpegs=(${*})
@@ -213,77 +99,286 @@ motion_event_images_differ()
     done
     avgdiff=$((totaldiff/njpeg))
   else
-    motion.log.warn "Insufficient images to compare"
+    motion.log.warn "${FUNCNAME[0]} Insufficient images to compare"
   fi
   echo "${diffs[@]}"
 }
 
-motion_event_images_process()
+motion_event_images_average()
 {
-  motion.log.trace "${funcname[0]} ${*}"
+  motion.log.trace "${FUNCNAME[0]}; args: ${*}"
 
-  local metadata="${*}"
-  local result
-  local images=$(echo "${metadata:-null}" | jq -c '.images')
-  local nimage=$(echo "${images:-null}" | jq '.|length')
-  local ids=($(echo "${images:-null}" | jq -r '.[].id'))
+  local jsonfile="${1}"
+  local camera=$(jq -r '.camera' ${jsonfile})
+  local jpgs=$(jq -r '.images[].id' ${jsonfile})
   local jpegs=()
-  local i=0
+  local average="$(mktemp).jpg"
   local result
-  local first=$(echo "${images:-null}" | jq -c '.[0]')
-  local last=$(echo "${images:-null}" | jq -c '.[-1]')
-  local least=$(echo "${images:-null}" | jq -c '.|sort_by(.size)[0]')
-  local most=$(echo "${images:-null}" | jq -c '.|sort_by(.size)[-1]')
-  local center=$(echo "${images:-null}" | jq -c '.['$((nimage/2))']')
-  local cn=$(echo "${metadata}" | jq -r '.camera')
-  local dir="$(motion.config.target_dir)/${cn}"
 
-  while [ ${i} -lt ${#ids[@]} ]; do
-    local id=${ids[${i}]}
-    local jpeg=${dir}/${id}.jpg
+  for jpg in ${jpgs}; do
+    local jpegfile=$(motion.config.target_dir)/${camera}/${jpg}.jpg
 
-    if [ -s "${jpeg}" ]; then
-      jpegs=(${jpegs[@]} ${jpeg})
+    if [ -s ${jpegfile} ]; then
+      jpegs=(${jpegs[@]} ${jpegfile})
     else
-      motion.log.error "FAILURE: no image file; id: ${id}"
-    fi
-    i=$((i+1))
+      motion.log.warn "${FUNCNAME[0]} Cannot find JPEG file: ${jpegfile}"
+    fi 
   done
 
-  # calculate average image
-  local image_avg=$(motion_event_images_average ${jpegs})
-  if [ ! -z "${image_avg}" ] && [ ! -s "${image_avg}" ]; then
-    motion.log.error "FAILURE: no average image; metadata: ${metadata}"
+  if [ ${#jpegs[@]} -gt 1 ]; then
+    # calculate average from images
+    convert ${jpegs} -average ${average} &> /dev/null
+    if [ -s "${average}" ]; then
+      result="${average}"
+    else
+      motion.log.error "${FUNCNAME[0]} Failed to calculate average; jpegs: ${jpegs[@]}"
+    fi
+  elif [ ${#jpegs[@]} -eq 1 ]; then
+    ln -s ${jpegs[0]} ${average}
+    result="${average}"
   else
-    motion.log.debug "SUCCESS: average calculated; file: ${image_avg}"
-    metadata=$(echo "${metadata}" | jq -c '.average="'${image_avg}'"')
+    motion.log.error "${FUNCNAME[0]} No images found"
+  fi
+  echo "${result:-}"
+}
+
+motion_event_json()
+{
+  motion.log.trace "${FUNCNAME[0]}; args: ${*}"
+
+  local result
+  local cn="${1}"
+  local ts="${2}"
+  local en="${3}"
+  local jsonfile
+  local dir="$(motion.config.target_dir)/${cn}"
+  local name="??????????????-${en}.json"
+  local jsons=($(find "$dir" -name "${name}" -print))
+
+  if [ ${#jsons[@]} -gt 0 ]; then
+    local njson=${#jsons[@]}
+
+    jsonfile="${jsons[$((njson-1))]}"
+  else
+    motion.log.warn "${FUNCNAME[0]} No JSON found in directory: ${dir}"
   fi
 
+  if [ "${jsonfile:-null}" != 'null' ] && [ -s "${jsonfile:-}" ]; then
+    local start=$(jq -r '.start' ${jsonfile})
+    local end=$(motion.util.dateconv -i '%Y%m%d%H%M%S' -f "%s" "$ts")
+    local elapsed=$((end-start))
 
-  # return updated metadata
-  echo "${metadata:-}"
+    jq '.id="'${ts}-${en}'"|.end='${end}'|.elapsed='${elapsed} ${jsonfile} > ${jsonfile}.$$ && mv -f ${jsonfile}.$$ ${jsonfile} && result="${jsonfile}"
+  else
+    motion.log.error "${FUNCNAME[0]} No JSON file: ${jsonfile}"
+  fi
+  echo "${result:-}"
+}
+
+# {
+#   "device": "nano-1",
+#   "camera": "local",
+#   "type": "jpeg",
+#   "date": 1576600148,
+#   "seqno": "01",
+#   "event": "01",
+#   "id": "20191217162908-01-01",
+#   "center": {
+#     "x": 281,
+#     "y": 124
+#   },
+#   "width": 158,
+#   "height": 180,
+#   "size": 23830,
+#   "noise": 173
+# }
+
+motion_event_images()
+{
+  motion.log.trace "${FUNCNAME[0]}; args: ${*}"
+
+  local result
+  local jsonfile="${1}"
+  local event=$(jq -r '.event' ${jsonfile})
+  local camera=$(jq -r '.camera' ${jsonfile})
+  local start=$(jq -r '.start' ${jsonfile})
+  local end=$(jq -r '.end' ${jsonfile})
+  local dir="$(motion.config.target_dir)/${camera}"
+  local jpgs=($(find "${dir}" -name "[0-9][0-9]*-${event}-[0-9][0-9]*.jpg" -print | sort))
+  local njpg=${#jpgs[@]}
+
+  if [ "${njpg:-0}" -gt 0 ]; then
+    local images=''
+
+    i=$((njpg-1)); while [ ${i} -ge 0 ]; do
+      local jpg=${jpgs[${i}]}
+      local json="${jpg%.*}.json"
+
+      if [ ! -z "${jpg:-}" ] && [ -s "${json}" ]; then
+        local image="$(jq -c '.' ${json})"
+        local id=$(echo "${image:-null}" | jq -r '.id')
+        local this=$(echo "${image:-null}" | jq -r '.date')
+        local ago=$((this - start))
+
+        if [ ${ago} -lt 0 ]; then start=${this}; fi
+        if [ ${this} -gt ${end} ]; then end=${this}; fi
+        # concatenate
+        if [ -z "${images:-}" ]; then images="${image}"; else images="${image},${images}"; fi
+      else
+        motion.log.warn "${FUNCNAME[0]} Missing metadata for image: ${jpeg}"
+      fi
+      i=$((i-1))
+    done
+
+    # complete array iff non-null
+    if [ ! -z "${images}" ]; then 
+      # update event metadata
+      jq -c '.start='${start}'|.end='${end}'|.elapsed='$((end - start))'|.images=['"${images}"']' ${jsonfile} > ${jsonfile}.$$ && mv -f ${jsonfile}.$$ ${jsonfile}
+      result=$(jq '.images|length' ${jsonfile})
+    else
+      motion.log.error "${FUNCNAME[0]} Failed to process images; event: ${event}; camera: ${camera}; found: ${njpgs}"
+    fi
+  else
+    motion.log.error "${FUNCNAME[0]} Unable to find(1) any images; event: ${event}; camera: ${camera}; directory: ${dir}"
+  fi
+
+  motion.log.trace "${FUNCNAME[0]}; result: ${result:-null}"
+  echo "${result:-0}"
+}
+
+motion_event_picture()
+{
+  motion.log.trace "${FUNCNAME[0]}; args: ${*}"
+
+  local result
+  local jsonfile="${1}"
+  local pp=$(motion.config.post_pictures)
+  local nimage=$(jq '.images|length' ${jsonfile})
+
+  case "${pp:-null}" in
+    first|best)
+      result=$(jq -r '.images[0].id' ${jsonfile})
+      ;;
+    last)
+      result=$(jq -r '.images[-1].id' ${jsonfile})
+      ;;
+    least)
+      result=$(jq -r '.images|sort_by(.size)[0].id' ${jsonfile})
+      ;;
+    most)
+      result=$(jq -r '.images|sort_by(.size)[-1].id' ${jsonfile})
+      ;;
+    center)
+      result=$(jq -r '.images['$((nimage/2))'].id' ${jsonfile})
+      ;;
+    null)
+      motion.log.error "${FUNCNAME[0]} Invalid post_picturess: ${pp}"
+      ;;
+  esac
+
+  echo "${result:-}"
+}
+
+motion_event_append_picture()
+{
+  motion.log.trace "${FUNCNAME[0]}; args: ${*}"
+
+  local result
+  local jsonfile="${1}"
+  local camera=$(jq -r '.camera' ${jsonfile})
+  local jpg_id=$(motion_event_picture ${jsonfile})
+
+  if [ "${jpg_id:-null}" != 'null' ]; then
+    local jpgfile=$(motion.config.target_dir)/${camera}/${jpg_id}.jpg
+    local b64file=$(mktemp)
+
+    # initiate B64 file
+    echo -n '{"image":"' > "${b64file}"
+    # encode selected image
+    base64 -w 0 -i "${jpgfile}" >> "${b64file}"
+    # close
+    echo '"}' >> "${b64file}"
+
+    # add both JSON
+    jq -c -s add "${jsonfile}" "${b64file}" > ${jsonfile}.$$ && mv -f ${jsonfile}.$$ ${jsonfile} && rm -f ${b64file}
+
+    if [ -s "${jsonfile}" ] && [ ! -e ${b64file} ]; then
+      result="${jpgfile}"
+    else
+      motion.log.error "${FUNCNAME[0]} failed to create aggregated JSON with base64 encoded JPEG; metadata: $(jq -c '.' ${jsonfile})"
+    fi
+  else
+    motion.log.error "${FUNCNAME[0]} no JPEG file; post_picture: ${pp}; metadata: $(jq -c '.' ${jsonfile})"
+  fi
+
+  echo "${result:-null}"
+}
+
+motion_event_publish()
+{
+  motion.log.trace "${FUNCNAME[0]}; args: ${*}"
+
+  local result=true
+  local jsonfile="${1}"
+  local jpgfile="${2}"
+  local giffile="${3}"
+  local camera=$(jq -r '.camera' ${jsonfile})
+  local device=$(jq -r '.device' ${jsonfile})
+
+  # flatten JSON
+  jq -c '.date='$(date +%s) ${jsonfile} > ${jsonfile}.$$ && mv -f ${jsonfile}.$$ ${jsonfile}
+  # publish JSON to MQTT
+  motion.mqtt.pub -r -q 2 -t "$(motion.config.group)/${device}/${camera}/event/end" -f "${jsonfile}" && rm -f ${temp} || result=false
+  # publish JPEG to MQTT
+  motion.mqtt.pub -r -q 2 -t "$(motion.config.group)/${device}/${camera}/image/end" -f "${jpgfile}" || result=false
+  # publish GIF
+  motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/${device}/${camera}/image-animated" -f "${giffile}" || result=false
+
+  echo "${result:-false}"
 }
 
 motion_event_process()
 {
-  motion.log.trace "${funcname[0]} ${*}"
+  motion.log.trace "${FUNCNAME[0]}; args: ${*}"
 
-  local metadata="${*}"
-  local output=$(motion_event_images_process "${metadata}")
+  local result
+  local jsonfile="${1}"
+  local jpgfile=$(motion_event_append_picture ${jsonfile})
 
-  if [ ! -z "${output}" ]; then
-    metadata=$(echo "${metadata}" | jq -c '.output='${output:-null})
+  motion.log.trace "${FUNCNAME[0]} created aggregated JSON with base64 encoded JPEG"
+  if [ "${jpgfile:-null}" != 'null' ]; then
+    local avgfile=$(motion_event_images_average ${jsonfile} ${jpgfile})
+
+    if [ -s "${avgfile}" ]; then
+      motion.log.trace "${FUNCNAME[0]} created average JPEG"
+
+      local giffile=$(motion_event_animated ${jsonfile} ${avgfile})
+      if [ -s "${giffile}" ]; then
+        motion.log.trace "${FUNCNAME[0]} created GIF output: ${giffile}"
+
+        if [ $(motion_event_publish ${jsonfile} ${jpgfile} ${giffile}) = 'true' ]; then
+          motion.log.trace "${FUNCNAME[0]} published to MQTT; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
+          result=true
+        else
+          motion.log.error "${FUNCNAME[0]} failed to publish; metadata: $(jq -c '.' ${jsonfile})"
+        fi
+      else
+        motion.log.error "${FUNCNAME[0]} failed to calculate animated GIF; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
+      fi
+    else
+      motion.log.error "${FUNCNAME[0]} failed to calculate average image; metadatai $(jq -c '.image=(.image!=null)' ${jsonfile})"
+    fi
   else
-    motion.log.error "FAILURE: average; metadata: ${metadata}"
-    rm -f "${average}"
+    motion.log.error "${FUNCNAME[0]} failed to append picture; metadata: $(jq -c '.' ${jsonfile})"
   fi
-  echo "${metadata:-null}"
+  echo "${result:-false}"
 }
 
 motion_event_end()
 {
-  motion.log.trace "${funcname[0]} ${*}"
+  motion.log.trace "${FUNCNAME[0]}; args: ${*}"
 
+  local result
   local cn="${1}"
   local en="${2}"
   local yr="${3}"
@@ -293,36 +388,44 @@ motion_event_end()
   local mn="${7}"
   local sc="${8}"
   local ts="${yr}${mo}${dy}${hr}${mn}${sc}"
-  local json=$(motion_event_json "${cn}" "${ts}" "${en}")
-  local result=''
+  local jsonfile=$(motion_event_json "${cn}" "${ts}" "${en}")
 
-  if [ ! -z "${json:-}" ]; then
-    local metadata=$(motion_event_images "${json}")
-    local njpeg=$(echo "${metadata:-null}" | jq -r '.images|length')
+  if [ "${jsonfile:-null}" != 'null' ]; then
+    local njpeg=$(motion_event_images ${jsonfile})
 
-    if [ ${njpeg} -gt 0 ]; then
-      local now=$(date +%s)
-      local start=$(echo "${metadata}" | jq -r '.start')
-      local ago=$((now - start))
-
-      metadata=$(motion_event_process "${metadata}")
-      if [ "${metadata:-null}" != 'null' ]; then
-        now=$(date +%s)
-        ago=$((now - start))
-        local timestamp=$(date -u +%FT%TZ)
-        
-        # update metadata timestamp
-        metadata=$(echo "${metadata}" | jq -c '.timestamp="'${timestamp}'"')
-        result="${metadata}"
-        motion.log.info "COMPLETE: process: event: ${en}; camera: ${cn}; timestamp: ${timestamp}"
+    if [ ${njpeg:-0} -eq 1 ]; then
+      # process single image event
+      if [ $(motion_event_process ${jsonfile}) != 'false' ]; then
+        motion.log.info "${FUNCNAME[0]} success: event: ${en}; camera: ${cn}; metadata: $(jq '.image=(.image!=null)' ${jsonfile})"
+        result='true'
       else
-        motion.log.error "FAILURE: no images processed; camera: ${cn}; event: ${en}"
+        motion.log.error "${FUNCNAME[0]} failed: event: ${en}; camera: ${cn}; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
+        result='false'
       fi
+    elif [ ${njpeg:-0} > 0 ]; then
+      motion.log.trace "${FUNCNAME[0]} legacy processing: event: ${en}; camera: ${cn}; count: ${njpeg}"
+
+      # process multi-image event with legacy code
+      export \
+        MOTION_GROUP=$(motion.config.group) \
+        MOTION_DEVICE=$(motion.config.device) \
+        MOTION_JSON_FILE=$(motion.config.file) \
+        MOTION_TARGET_DIR=$(motion.config.target_dir) \
+        MOTION_MQTT_HOST=$(echo $(motion.config.mqtt) | jq -r '.host') \
+        MOTION_MQTT_PORT=$(echo $(motion.config.mqtt) | jq -r '.port') \
+        MOTION_MQTT_USERNAME=$(echo $(motion.config.mqtt) | jq -r '.username') \
+        MOTION_MQTT_PASSWORD=$(echo $(motion.config.mqtt) | jq -r '.password') \
+        MOTION_LOG_LEVEL=${MOTION_LOG_LEVEL} \
+        MOTION_LOGTO=${MOTION_LOGTO} \
+        MOTION_FRAME_SELECT='key' \
+        && \
+        /usr/bin/on_event_end.tcsh ${*}
+      result='legacy'
     else
-      motion.log.error "FAILURE: no images; camera: ${cn}; event: ${en}; metadata: ${metadata}"
+      motion.log.error "${FUNCNAME[0]} FAILURE: no images; event: ${en}; camera: ${cn}; metadata: $(jq -c '.' ${jsonfile})"
     fi
   else
-    motion.log.error "FAILURE: no metadata; camera: ${cn}; timestamp: ${ts}; event: ${en}"
+    motion.log.error "${FUNCNAME[0]} FAILURE: no metadata; event: ${en}; camera: ${cn}; metadata: $(jq -c '.' ${jsonfile})"
   fi
   echo "${result:-null}"
 }
@@ -342,34 +445,22 @@ motion_event_end()
 
 on_event_end()
 {
-  motion.log.trace "${funcname[0]}" "${*}"
+  motion.log.trace "${FUNCNAME[0]}; args: ${*}"
 
   # close i/o
   # exec 0>&- # close stdin
   # exec 1>&- # close stdout
-  # exec 2>&- # close stderr
+  # exec 2>&- =''# close stderr
 
-  motion.log.notice $(motion_event_end ${*} | jq -c '.')
+  motion.log.info "${FUNCNAME[0]} begin; event: ${*}; date: $(date +%s)"
 
-  # export environment and run legacy tcsh script
-  export \
-    MOTION_GROUP=$(motion.config.group) \
-    MOTION_DEVICE=$(motion.config.device) \
-    MOTION_JSON_FILE=$(motion.config.file) \
-    MOTION_TARGET_DIR=$(motion.config.target_dir) \
-    MOTION_MQTT_HOST=$(echo $(motion.config.mqtt) | jq -r '.host') \
-    MOTION_MQTT_PORT=$(echo $(motion.config.mqtt) | jq -r '.port') \
-    MOTION_MQTT_USERNAME=$(echo $(motion.config.mqtt) | jq -r '.username') \
-    MOTION_MQTT_PASSWORD=$(echo $(motion.config.mqtt) | jq -r '.password') \
-    MOTION_LOG_LEVEL=${MOTION_LOG_LEVEL} \
-    MOTION_LOGTO=${MOTION_LOGTO} \
-    MOTION_FRAME_SELECT='key' \
-    && \
-    /usr/bin/on_event_end.tcsh ${*}
+  local result=$(motion_event_end ${*} | jq -c '.')
+
+  motion.log.info "${FUNCNAME[0]} finish; event: ${*}; date: $(date +%s); result: ${result}"
 }
 
-motion.log.debug "START"
+###
+### MAIN
+###
 
 on_event_end ${*}
-
-motion.log.debug "FINISH"
