@@ -19,6 +19,31 @@ else
 fi
 
 ###
+### UTILITY
+###
+
+motion.util.dateconv()
+{
+  motion.log.trace "${FUNCNAME[0]}; args: ${*}"
+
+  local dateconv
+
+  if [ -e /usr/bin/dateutils.dconv ]; then
+    dateconv=/usr/bin/dateutils.dconv
+  elif [ -e /usr/bin/dateconv ]; then
+    dateconv=/usr/bin/dateconv
+  elif [ -e /usr/local/bin/dateconv ]; then
+    dateconv=/usr/local/bin/dateconv
+  fi
+  if [ ! -z "${dateconv:-}" ]; then
+    result=$(${dateconv} ${*})
+  else
+    motion.log.error "failure; no dateutils installed ${*}"
+  fi
+  echo "${result:-}"
+}
+
+###
 ### CONFIGURATION
 ###
 
@@ -31,7 +56,6 @@ motion.config.target_dir()
 
   if [ -s "${file}" ]; then
     result=$(jq -r '.motion.target_dir' ${file})
-    motion.log.debug "configuration target_dir: ${result}"
   else
     motion.log.warn "no configuration JSON: ${file}"
   fi
@@ -78,7 +102,7 @@ motion.config.device()
   if [ -s "${file}" ]; then
     result=$(jq -r '.device' ${file})
   else
-    motion.log.debug "no configuration file"
+    motion.log.warn "no configuration file"
   fi
   echo "${result:-}"
 }
