@@ -47,16 +47,16 @@ motion_event_animated()
         if [ "${output:-null}" != 'null' ]; then
           result="${output}"
         else
-          motion.log.error "${FUNCNAME[0]} No GIF output"
+          motion.log.error "${FUNCNAME[0]} no GIF output"
         fi
       else
-        motion.log.error "${FUNCNAME[0]} Elapsed time invalid: ${elapsed}"
+        motion.log.error "${FUNCNAME[0]} elapsed time invalid: ${elapsed}"
       fi
     else
-      motion.log.error "${FUNCNAME[0]} No MP4 input: ${input}"
+      motion.log.error "${FUNCNAME[0]} no MP4 input: ${input}"
     fi
   else
-    motion.log.warn "${FUNCNAME[0]} No movie specified; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
+    motion.log.warn "${FUNCNAME[0]} no movie specified; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
   fi
   echo "${result:-null}"
 }
@@ -137,7 +137,7 @@ motion_event_images_average()
     ln -s ${jpegs[0]} ${average}
     result="${average}"
   else
-    motion.log.error "${FUNCNAME[0]} No images found"
+    motion.log.error "${FUNCNAME[0]} no images found"
   fi
   echo "${result:-}"
 }
@@ -160,7 +160,7 @@ motion_event_json()
 
     jsonfile="${jsons[$((njson-1))]}"
   else
-    motion.log.warn "${FUNCNAME[0]} No JSON found in directory: ${dir}"
+    motion.log.warn "${FUNCNAME[0]} no JSON found; directory: ${dir}"
   fi
 
   if [ "${jsonfile:-null}" != 'null' ] && [ -s "${jsonfile:-}" ]; then
@@ -170,7 +170,7 @@ motion_event_json()
 
     jq '.id="'${ts}-${en}'"|.end='${end}'|.elapsed='${elapsed} ${jsonfile} > ${jsonfile}.$$ && mv -f ${jsonfile}.$$ ${jsonfile} && result="${jsonfile}"
   else
-    motion.log.error "${FUNCNAME[0]} No JSON file: ${jsonfile}"
+    motion.log.error "${FUNCNAME[0]} no JSON file: ${jsonfile}"
   fi
   echo "${result:-}"
 }
