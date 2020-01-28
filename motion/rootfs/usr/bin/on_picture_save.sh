@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source /usr/bin/motion-tools.sh
+source ${USRBIN:-/usr/bin}/motion-tools.sh
 
 # 
 # on_picture_save on_picture_save.sh %$ %v %f %n %K %L %i %J %D %N
@@ -21,7 +21,7 @@ source /usr/bin/motion-tools.sh
 
 on_picture_save()
 {
-  motion.log.trace "${FUNCNAME[0]} ${*}"
+  motion.log.debug "${FUNCNAME[0]} ${*}"
 
   local CN="${1}"
   local EN="${2}"
@@ -37,9 +37,10 @@ on_picture_save()
   local TS=$(echo "${ID}" | sed 's/\(.*\)-.*-.*/\1/') 
   local SN=$(echo "${ID}" | sed 's/.*-..-\(.*\).*/\1/')
   local NOW=$($dateconv -i '%Y%m%d%H%M%S' -f "%s" "$TS")
+  local timestamp=$(date -u +%FT%TZ)
 
   # create JSON
-  echo '{"device":"'$(motion.config.device)'","camera":"'"${CN}"'","type":"jpeg","date":'"${NOW}"',"seqno":"'"${SN}"'","event":"'"${EN}"'","id":"'"${ID}"'","center":{"x":'"${MX}"',"y":'"${MY}"'},"width":'"${MW}"',"height":'"${MH}"',"size":'${SZ}',"noise":'${NL}'}' > "${IF%.*}.json"
+  echo '{"device":"'$(motion.config.device)'","camera":"'"${CN}"'","type":"jpeg","timestamp":"'${timestamp}'","date":'"${NOW}"',"seqno":"'"${SN}"'","event":"'"${EN}"'","id":"'"${ID}"'","center":{"x":'"${MX}"',"y":'"${MY}"'},"width":'"${MW}"',"height":'"${MH}"',"size":'${SZ}',"noise":'${NL}'}' > "${IF%.*}.json"
 
   # only post when/if
   if [ $(motion.config.post_pictures) = "on" ]; then
