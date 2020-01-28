@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source /usr/bin/motion-tools.sh
+source ${USRBIN:-/usr/bin}/motion-tools.sh
 
 #
 # on_event_start.sh %$ %v %Y %m %d %H %M %S
@@ -17,7 +17,7 @@ source /usr/bin/motion-tools.sh
 
 on_event_start()
 {
-  motion.log.info "${FUNCNAME[0]} ${*}"
+  motion.log.debug ${FUNCNAME[0]} ${*}
 
   local CN="${1}"
   local EN="${2}"
@@ -29,13 +29,23 @@ on_event_start()
   local SC="${8}"
   local TS="${YR}${MO}${DY}${HR}${MN}${SC}"
   local NOW=$($dateconv -i '%Y%m%d%H%M%S' -f "%s" "$TS")
+  local dir=$(motion.config.target_dir)
+  local timestamp=$(date -u +%FT%TZ)
+  local EJ="${dir}/${CN}/${TS}-${EN}.json"
+  local event='{"group":"'$(motion.config.group)'","device":"'$(motion.config.device)'","camera":"'${CN}'","event":"'${EN}'","start":'${NOW}',"timestamp":"'${timestamp}'"}'
 
-  # payload
-  local EJ="$(motion.config.target_dir)/${CN}/${TS}-${EN}.json"
-  echo '{"group":"'$(motion.config.group)'","device":"'$(motion.config.device)'","camera":"'${CN}'","event":"'${EN}'","start":'${NOW}'}' > "${EJ}"
+  if [ -s "${EJ}" ]; then
+    jq '.+='"${event}" ${EJ} > ${EJ}.$$ && mv -f ${EJ}.$$ ${EJ} 
+  else
+    echo "${event}" > "${EJ}"
+  fi
 
-  # send MQTT
-  motion.mqtt.pub -r -q 2 -t "$(motion.config.group)/$(motion.config.device)/${CN}/event/start" -f "$EJ"
+  if [ -s "${EJ:-}" ]; then
+    # send MQTT
+    motion.mqtt.pub -r -q 2 -t "$(motion.config.group)/$(motion.config.device)/${CN}/event/start" -f "$EJ"
+  else
+    motion.log.error "${FUNCNAME[0]} Failure processing START event: ${*}"
+  fi
 }
 
 ###
