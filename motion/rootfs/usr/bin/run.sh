@@ -16,4 +16,4 @@ fi
 ### start
 ###
 
-/usr/bin/motion.sh "$(bashio::string.lower "$(bashio::config log_level)")"
+${USRBIN:-/usr/bin}/motion.sh "$(bashio::string.lower "$(bashio::config log_level)")"
