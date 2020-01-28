@@ -128,9 +128,6 @@ while ($i > 0)
       continue
     endif
 
-#    set THIS = `echo "$jpg:t:r" | sed 's/\(.*\)-.*-.*/\1/'`
-#    set THIS = `$dateconv -i '%Y%m%d%H%M%S' -f "%s" $THIS`
-
     set THIS = `jq -r '.date' "${jsn}"`
 
     @ seconds = $THIS - $START
@@ -177,7 +174,6 @@ if ( ! -s "$event_json_file.$$" ) then
   echo "$0:t $$ -- Event JSON update failed; JSON: $event_json_file" >> /tmp/motion.log
   exit 1
 endif
-if ($?DEBUG) echo "$0:t $$ -- Event JSON updated: $event_json_file" `jq -c '.' $event_json_file` >> /tmp/motion.log
 mv -f "$event_json_file.$$" "$event_json_file"
 
 ###
@@ -230,15 +226,18 @@ mkdir -p $tmpdir
 if ($?DEBUG) echo "$0:t $$ -- Calculating average from $#jpgs JPEGS" >> /tmp/motion.log
 
 set average = "$tmpdir/$event_json_file:t:r"'-average.jpg'
-convert $jpgs -average $average >&! /tmp/$$.out
-if ( ! -s "$average") then
-  set out = `cat "/tmp/$$.out"`
-  echo "$0:t $$ -- Failed to calculate average image from $#jpgs JPEGS" `cat $out` >> /tmp/motion.log
-  rm -f "/tmp/$$.out" $average
-  exit 1
+if ($#jpgs > 1) then
+  convert $jpgs -average $average >&! /tmp/$$.out
+  if ($?DEBUG) echo "$0:t $$ -- Calculated average image: $average" >> /tmp/motion.log
+  if ( ! -s "$average") then
+    set out = `cat "/tmp/$$.out"`
+    echo "$0:t $$ -- Failed to calculate average image from $#jpgs JPEGS" `cat $out` >> /tmp/motion.log
+    rm -f "/tmp/$$.out" $average
+    exit 1
+  endif
+else
+  cp $jpgs $average
 endif
-
-if ($?DEBUG) echo "$0:t $$ -- Calculated average image: $average" >> /tmp/motion.log
 
 ##
 ## DIFFS
