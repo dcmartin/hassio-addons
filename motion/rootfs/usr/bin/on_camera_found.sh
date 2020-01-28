@@ -1,7 +1,6 @@
 #!/bin/bash
 
-source /usr/bin/motion-tools.sh
-
+source ${USRBIN:-/usr/bin}/motion-tools.sh
 #
 # %$ - camera name
 # %Y - The year as a decimal number including the century. 
@@ -12,37 +11,46 @@ source /usr/bin/motion-tools.sh
 # %S - The second as a decimal number (range 00 to 61). 
 #
 
+on_camera_found()
+{
+
+  motion.log.trace "${FUNCNAME[0]} ${*}"
+
+  local CN="${1}"
+  local YR="${2}"
+  local MO="${3}"
+  local DY="${4}"
+  local HR="${5}"
+  local MN="${6}"
+  local SC="${7}"
+  local TS="${YR}${MO}${DY}${HR}${MN}${SC}"
+  local NOW=$(motion.util.dateconv -i '%Y%m%d%H%M%S' -f "%s" "$TS")
+  local timestamp=$(date -u +%FT%TZ)
+  local topic="$(motion.config.group)/$(motion.config.device)/${CN}/status/found"
+  local message='{"device":"'$(motion.config.device)'","camera":"'"${CN}"'","date":'"${NOW}"',"timestamp":"'${timestamp:-none}'","status":"found"}'
+
+  motion.log.notice "Camera found: ${CN}; $(echo "${message:-null}" | jq -c '.')"
+
+  # `status/found`
+  motion.mqtt.pub -q 2 -r -t "${topic}" -m "${message}"
+}
+
+camera_mqtt_found_reset()
+{
+  local CN="${1}"
+
+  # clean any retained messages
+  if [ "${CN:-null}" != 'null' ]; then
+    motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/${CN}/event" -n
+    motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/${CN}/event/start" -n
+    motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/${CN}/event/end" -n
+    motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/${CN}/image" -n
+    motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/${CN}/image/end" -n
+  fi
+}
+
 ###
 ### MAIN
 ###
 
-motion.log.debug "START ${*}"
-
-CN="${1}"
-YR="${2}"
-MO="${3}"
-DY="${4}"
-HR="${5}"
-MN="${6}"
-SC="${7}"
-TS="${YR}${MO}${DY}${HR}${MN}${SC}"
-
-# get time
-NOW=$($dateconv -i '%Y%m%d%H%M%S' -f "%s" "$TS")
-
-topic="$(motion.config.group)/$(motion.config.device)/${CN}/status/found"
-message='{"device":"'$(motion.config.device)'","camera":"'"${CN}"'","time":'"${NOW}"',"status":"found"}'
-
-motion.log.notice "Camera found: ${CN}"
-
-# `status/found`
-motion.mqtt.pub -q 2 -r -t "${topic}" -m "${message}"
-
-# clean any retained messages
-#motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/${CN}/event" -n
-#motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/${CN}/event/start" -n
-#motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/${CN}/event/end" -n
-#motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/${CN}/image" -n
-#motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/${CN}/image/end" -n
-
-motion.log.debug "FINISH ${*}"
+on_camera_found ${*}
