@@ -72,6 +72,9 @@ RUN \
 RUN \
     rm -rf /tmp/*
 
+RUN apk add --no-cache \
+  openssh-client
+
 # environment
 ENV CONFIG_PATH /data/options.json
 ENV MOTION_CONF /etc/motion/motion.conf
