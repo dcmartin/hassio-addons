@@ -1,8 +1,7 @@
 #!/bin/bash
 
-source /usr/bin/motion-tools.sh
+source ${USRBIN:-/usr/bin}/motion-tools.sh
 
-#
 # %$ - camera name
 # %Y - The year as a decimal number including the century. 
 # %m - The month as a decimal number (range 01 to 12). 
@@ -12,38 +11,47 @@ source /usr/bin/motion-tools.sh
 # %S - The second as a decimal number (range 00 to 61). 
 #
 
+on_camera_lost()
+{
+
+  motion.log.trace "${FUNCNAME[0]} ${*}"
+
+  local CN="${1}"
+  local YR="${2}"
+  local MO="${3}"
+  local DY="${4}"
+  local HR="${5}"
+  local MN="${6}"
+  local SC="${7}"
+  local TS="${YR}${MO}${DY}${HR}${MN}${SC}"
+  local NOW=$(motion.util.dateconv -i '%Y%m%d%H%M%S' -f "%s" "$TS")
+  local timestamp=$(date -u +%FT%TZ)
+  local topic="$(motion.config.group)/$(motion.config.device)/${CN}/status/lost"
+  local message='{"device":"'$(motion.config.device)'","camera":"'"${CN}"'","date":'"${NOW}"',"timestamp":"'${timestamp:-none}'","status":"lost"}'
+
+  motion.log.notice "Camera lost: ${CN}; $(echo "${message:-null}" | jq -c '.')"
+
+  # `status/lost`
+  motion.mqtt.pub -q 2 -r -t "${topic}" -m "${message}"
+}
+
+camera_mqtt_lost_reset()
+{
+  local CN="${1}"
+
+  # clean any retained messages
+  if [ "${CN:-null}" != 'null' ]; then
+    # no signal pattern to `image` 
+    motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/${CN}/image" -f "/etc/motion/sample.jpg"
+    motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/${CN}/image/end" -f "/etc/motion/sample.jpg"
+    # no signal pattern to `image-animated`
+    motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/$CN/image-animated" -f "/etc/motion/sample.gif"
+    motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/$CN/image-animated-mask" -f "/etc/motion/sample.gif"
+  fi
+}
+
 ###
 ### MAIN
 ###
 
-motion.log.debug "START ${*}"
-
-CN="${1}"
-YR="${2}"
-MO="${3}"
-DY="${4}"
-HR="${5}"
-MN="${6}"
-SC="${7}"
-TS="${YR}${MO}${DY}${HR}${MN}${SC}"
-
-# get time
-NOW=$($dateconv -i '%Y%m%d%H%M%S' -f "%s" "$TS")
-
-topic="$(motion.config.group)/$(motion.config.device)/${CN}/status/lost" 
-message='{"device":"'$(motion.config.device)'","camera":"'"${CN}"'","time":'"${NOW}"',"status":"lost"}'
-
-motion.log.notice "Camera lost: ${CN}"
-
-# `status/lost`
-motion.mqtt.pub -q 2 -r -t "${topic}" -m "${message}"
-
-# no signal pattern to `image` 
-#motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/${CN}/image" -f "/etc/motion/sample.jpg"
-#motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/${CN}/image/end" -f "/etc/motion/sample.jpg"
-
-# no signal pattern to `image-animated`
-#motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/$CN/image-animated" -f "/etc/motion/sample.gif"
-#motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/$(motion.config.device)/$CN/image-animated-mask" -f "/etc/motion/sample.gif"
-
-motion.log.debug "FINISH ${*}"
+on_camera_lost ${*}
