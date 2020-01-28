@@ -68,6 +68,38 @@ systemctl stop dnsmasq
 systemctl stop hostapd
 
 ###
+# DHCP
+###
+
+DHCP_CONF="/etc/dhcpcd.conf"
+DHCP_IPADDR=${DHCP_IPADDR:-192.168.0.2}
+DHCP_START=${DHCP_START:-192.168.0.3}
+DHCP_FINISH=${DHCP_FINISH:-192.168.0.254}
+DHCP_NETMASK=${DHCP_NETMASK:-255.255.255.0}
+DHCP_NETSIZE=${DHCP_NETSIZE:-24}
+DHCP_DURATION=${DHCP_DURATION:-24h}
+
+if [ -s "${DHCP_CONF}" ]; then
+  if [ ! -s "${DHCP_CONF}.bak" ]; then
+    cp ${DHCP_CONF} ${DHCP_CONF}.bak
+  else
+    cp ${DHCP_CONF}.bak ${DHCP_CONF}
+  fi
+fi
+
+## append
+echo 'nohook wpa_supplicant' >> "${DHCP_CONF}"
+#echo 'denyinterfaces wlan0' >> "${DHCP_CONF}"
+#echo 'denyinterfaces eth0' >> "${DHCP_CONF}"
+echo 'interface wlan0' >> "${DHCP_CONF}"
+echo "static ip_address=${DHCP_IPADDR}/${DHCP_NETSIZE}" >> "${DHCP_CONF}"
+echo "static routers=192.168.0.1" >> "${DHCP_CONF}"
+echo "static domain_name_servers=192.168.1.50 192.168.1.40 9.9.9.9" >> "${DHCP_CONF}"
+
+## report
+echo "$(date '+%T') INFO $0 $$ -- configured DHCP: ${DHCP_CONF}; ip=${DHCP_IPADDR}; netsize: ${DHCP_NETSIZE}; netmask: ${DHCP_NETMASK}; start: ${DHCP_START}; finish: ${DHCP_FINISH}; duration: ${DHCP_DURATION}"
+
+###
 # DNSMASQ
 ###
 
@@ -99,64 +131,36 @@ echo "dhcp-range=${DHCP_START},${DHCP_FINISH},${DHCP_NETMASK},${DHCP_DURATION}" 
 echo "$(date '+%T') INFO $0 $$ -- configured DNSMASQ" $(cat ${DNSMASQ_CONF})
 
 ###
-# DHCP
-###
-
-DHCP_CONF="/etc/dhcpcd.conf"
-DHCP_IPADDR=${DHCP_IPADDR:-192.168.0.1}
-DHCP_START=${DHCP_START:-192.168.0.2}
-DHCP_FINISH=${DHCP_FINISH:-192.168.0.254}
-DHCP_NETMASK=${DHCP_NETMASK:-255.255.255.0}
-DHCP_NETSIZE=${DHCP_NETSIZE:-24}
-DHCP_DURATION=${DHCP_DURATION:-24h}
-
-if [ -s "${DHCP_CONF}" ]; then
-  if [ ! -s "${DHCP_CONF}.bak" ]; then
-    cp ${DHCP_CONF} ${DHCP_CONF}.bak
-  else
-    cp ${DHCP_CONF}.bak ${DHCP_CONF}
-  fi
-fi
-
-## append
-echo 'nohook wpa_supplicant' >> "${DHCP_CONF}"
-#echo 'denyinterfaces wlan0' >> "${DHCP_CONF}"
-#echo 'denyinterfaces eth0' >> "${DHCP_CONF}"
-echo 'interface wlan0' >> "${DHCP_CONF}"
-echo "  static ip_address=${DHCP_IPADDR}/${DHCP_NETSIZE}" >> "${DHCP_CONF}"
-
-## report
-echo "$(date '+%T') INFO $0 $$ -- configured DHCP: ${DHCP_CONF}; ip=${DHCP_IPADDR}; netsize: ${DHCP_NETSIZE}; netmask: ${DHCP_NETMASK}; start: ${DHCP_START}; finish: ${DHCP_FINISH}; duration: ${DHCP_DURATION}"
-
-###
 # BRIDGE
 ###
 
-if [ $(brctl show | egrep 'br0' | wc -l) -le 1 ]; then
-  echo "$(date '+%T') INFO $0 $$ -- building bridge br0 to eth0"
-  brctl addbr br0
-  brctl addif br0 eth0
-else
-  echo "$(date '+%T') INFO $0 $$ -- existing bridge br0; not making"
-fi
-
-NETWORK_CONF="/etc/network/interfaces"
-if [ -s ${NETWORK_CONF} ]; then
-  if [ ! -s "${NETWORK_CONF}.bak" ]; then
-    cp ${NETWORK_CONF} ${NETWORK_CONF}.bak
+if [ "${BRIDGING:-false}" = 'true' ]; then
+  if [ $(brctl show | egrep 'br0' | wc -l) -le 1 ]; then
+    echo "$(date '+%T') INFO $0 $$ -- building bridge br0 to eth0"
+    brctl addbr br0
+    brctl addif br0 eth0
   else
-    cp ${NETWORK_CONF}.bak ${NETWORK_CONF}
+    echo "$(date '+%T') INFO $0 $$ -- existing bridge br0; not making"
   fi
+
+  NETWORK_CONF="/etc/network/interfaces"
+  if [ -s ${NETWORK_CONF} ]; then
+    if [ ! -s "${NETWORK_CONF}.bak" ]; then
+      cp ${NETWORK_CONF} ${NETWORK_CONF}.bak
+    else
+      cp ${NETWORK_CONF}.bak ${NETWORK_CONF}
+    fi
+  fi
+
+  # append
+  echo 'auto br0' >> ${NETWORK_CONF}
+  echo 'iface br0 inet manual' >> ${NETWORK_CONF}
+  echo 'bridge_ports eth0 wlan0' >> ${NETWORK_CONF}
+  echo 'dns-nameservers' "${DNS_NAMESERVERS}" >> ${NETWORK_CONF}
+
+  # report
+  echo "$(date '+%T') INFO $0 $$ -- configured NETWORK: ${NETWORK_CONF}"
 fi
-
-# append
-echo 'auto br0' >> ${NETWORK_CONF}
-echo 'iface br0 inet manual' >> ${NETWORK_CONF}
-echo 'bridge_ports eth0 wlan0' >> ${NETWORK_CONF}
-echo 'dns-nameservers' "${DNS_NAMESERVERS}" >> ${NETWORK_CONF}
-
-# report
-echo "$(date '+%T') INFO $0 $$ -- configured NETWORK: ${NETWORK_CONF}"
 
 
 ###
@@ -179,8 +183,6 @@ sed -i 's|.*DAEMON_CONF=.*|DAEMON_CONF='${HOSTAPD_CONF}'|' "${HOSTAPD_DEFAULT}"
 
 # overwrite
 echo 'interface=wlan0' > ${HOSTAPD_CONF}
-echo 'bridge=br0' >> ${HOSTAPD_CONF}
-echo 'ssid='"${SSID}" >> ${HOSTAPD_CONF}
 echo 'hw_mode='"${HW_MODE}" >> ${HOSTAPD_CONF}
 echo 'channel='"${CHANNEL}" >> ${HOSTAPD_CONF}
 echo 'wmm_enabled=0' >> ${HOSTAPD_CONF}
@@ -188,10 +190,15 @@ echo 'macaddr_acl=0' >> ${HOSTAPD_CONF}
 echo 'auth_algs=1' >> ${HOSTAPD_CONF}
 echo 'ignore_broadcast_ssid=0' >> ${HOSTAPD_CONF}
 echo 'wpa=2' >> ${HOSTAPD_CONF}
-echo 'wpa_passphrase='"${WPA_PASSWORD}" >> ${HOSTAPD_CONF}
 echo 'wpa_key_mgmt=WPA-PSK' >> ${HOSTAPD_CONF}
 echo 'wpa_pairwise=TKIP' >> ${HOSTAPD_CONF}
 echo 'rsn_pairwise=CCMP' >> ${HOSTAPD_CONF}
+echo 'ssid='"${SSID}" >> ${HOSTAPD_CONF}
+echo 'wpa_passphrase='"${WPA_PASSWORD}" >> ${HOSTAPD_CONF}
+
+if [ "${BRIDGING:-false}" = 'true' ]; then
+  echo 'bridge=br0' >> ${HOSTAPD_CONF}
+fi
 
 # report
 echo "$(date '+%T') INFO $0 $$ -- configured hostapd: ${HOSTAPD_CONF}; ssid: ${SSID}; mode: ${HW_MODE}; channel: ${CHANNEL}; password: ${WPA_PASSWORD}"
@@ -213,17 +220,18 @@ echo 1 > /proc/sys/net/ipv4/ip_forward
 ## /etc/iptables
 ###
 
-echo > /etc/iptables-ap.sh << EOF
+if [ ! -z $(command -v "iptables-legacy") ]; then IPTABLES='iptables-legacy'; else IPTABLES='iptables'; fi
+
+cat > /etc/iptables.sh << EOF
 #!/bin/bash
-echo "$(date '+%T') INFO $0 $$ -- enabling POSTROUTING / MASQUERADE on eth0"
-iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-iptables -A FORWARD -i eth0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT
-iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT
+${IPTABLES} -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+${IPTABLES} -A FORWARD -i eth0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+${IPTABLES} -A FORWARD -i wlan0 -o eth0 -j ACCEPT
 EOF
-chmod 755 /etc/iptables-ap.sh
+chmod 755 /etc/iptables.sh
 
 ## systemd
-echo > /etc/systemd/system/iptables-ap.service << EOF
+cat > /etc/systemd/system/iptables.service << EOF
 [Unit]
 Description=iptables for access point
 After=network-pre.target
@@ -231,13 +239,14 @@ Before=network-online.target
 
 [Service]
 Type=simple
-ExecStart=/etc/iptables-ap.sh
+ExecStart=/etc/iptables.sh
 
 [Install]
 WantedBy=multi-user.target
 EOF
+
 # enable
-systemctl enable iptables-ap
+systemctl enable iptables
 
 # start
 echo "$(date '+%T') INFO $0 $$ -- restarting daemons"
