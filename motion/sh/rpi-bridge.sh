@@ -72,11 +72,12 @@ systemctl stop hostapd
 ###
 
 DHCP_CONF="/etc/dhcpcd.conf"
-DHCP_IPADDR=${DHCP_IPADDR:-192.168.0.1}
+HOST_IPADDR=$(hostname -I | awk '{ print $1 }') && HOSTIP=${HOST_IPADDR##*.}
+DHCP_IPADDR=${DHCP_IPADDR:-192.168.${HOSTIP}.1}
 DHCP_ROUTER=${DHCP_ROUTER:-${DHCP_IPADDR}}
 DHCP_DNS=${DHCP_DNS:-9.9.9.9 1.1.1.1}
-DHCP_START=${DHCP_START:-192.168.0.2}
-DHCP_FINISH=${DHCP_FINISH:-192.168.0.254}
+DHCP_START=${DHCP_START:-192.168.${HOSTIP}.2}
+DHCP_FINISH=${DHCP_FINISH:-192.168.${HOSTIP}.254}
 DHCP_NETMASK=${DHCP_NETMASK:-255.255.255.0}
 DHCP_NETSIZE=${DHCP_NETSIZE:-24}
 DHCP_DURATION=${DHCP_DURATION:-24h}
@@ -159,7 +160,6 @@ if [ "${BRIDGING:-false}" = 'true' ]; then
   echo 'iface br0 inet manual' >> ${NETWORK_CONF}
   echo 'bridge_ports eth0 wlan0' >> ${NETWORK_CONF}
   echo 'dns-nameservers' "${DNS_NAMESERVERS}" >> ${NETWORK_CONF}
-
   # report
   echo "$(date '+%T') INFO $0 $$ -- configured NETWORK: ${NETWORK_CONF}"
 fi
@@ -197,6 +197,7 @@ echo 'wpa_pairwise=TKIP' >> ${HOSTAPD_CONF}
 echo 'rsn_pairwise=CCMP' >> ${HOSTAPD_CONF}
 echo 'ssid='"${SSID}" >> ${HOSTAPD_CONF}
 echo 'wpa_passphrase='"${WPA_PASSWORD}" >> ${HOSTAPD_CONF}
+echo "ctrl_interface=/var/run/hostapd" >> ${HOSTAPD_CONF}
 
 if [ "${BRIDGING:-false}" = 'true' ]; then
   echo 'bridge=br0' >> ${HOSTAPD_CONF}
@@ -235,6 +236,7 @@ fi
 IPTABLES_SCRIPT="/etc/iptables.sh"
 echo '#!/bin/bash' > ${IPTABLES_SCRIPT}
 echo 'iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE' >> ${IPTABLES_SCRIPT}
+
 if [ "${BRIDGING:-false}" = 'false' ]; then
   echo 'iptables -A FORWARD -i eth0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT' >> ${IPTABLES_SCRIPT}
   echo 'iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT' >> ${IPTABLES_SCRIPT}
