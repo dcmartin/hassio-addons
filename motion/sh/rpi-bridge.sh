@@ -60,7 +60,7 @@ for pr in hostapd dnsmasq brctl nslookup; do
   fi
 done
 if [ ${#packages[@]} -gt 0 ]; then
-  echo "*** ERROR $0 $$ -- install packages: ${packages[@]}"
+  echo "*** ERROR $0 $$ -- install packages: ${packages[@]}; apt install -qq -y ${packages}"
   exit
 fi
 
@@ -72,8 +72,10 @@ systemctl stop hostapd
 ###
 
 DHCP_CONF="/etc/dhcpcd.conf"
-DHCP_IPADDR=${DHCP_IPADDR:-192.168.0.2}
-DHCP_START=${DHCP_START:-192.168.0.3}
+DHCP_IPADDR=${DHCP_IPADDR:-192.168.0.1}
+DHCP_ROUTER=${DHCP_ROUTER:-${DHCP_IPADDR}}
+DHCP_DNS=${DHCP_DNS:-9.9.9.9 1.1.1.1}
+DHCP_START=${DHCP_START:-192.168.0.2}
 DHCP_FINISH=${DHCP_FINISH:-192.168.0.254}
 DHCP_NETMASK=${DHCP_NETMASK:-255.255.255.0}
 DHCP_NETSIZE=${DHCP_NETSIZE:-24}
@@ -93,8 +95,8 @@ echo 'nohook wpa_supplicant' >> "${DHCP_CONF}"
 #echo 'denyinterfaces eth0' >> "${DHCP_CONF}"
 echo 'interface wlan0' >> "${DHCP_CONF}"
 echo "static ip_address=${DHCP_IPADDR}/${DHCP_NETSIZE}" >> "${DHCP_CONF}"
-echo "static routers=192.168.0.1" >> "${DHCP_CONF}"
-echo "static domain_name_servers=192.168.1.50 192.168.1.40 9.9.9.9" >> "${DHCP_CONF}"
+echo "static routers=${DHCP_ROUTER}" >> "${DHCP_CONF}"
+echo "static domain_name_servers=${DHCP_DNS}" >> "${DHCP_CONF}"
 
 ## report
 echo "$(date '+%T') INFO $0 $$ -- configured DHCP: ${DHCP_CONF}; ip=${DHCP_IPADDR}; netsize: ${DHCP_NETSIZE}; netmask: ${DHCP_NETMASK}; start: ${DHCP_START}; finish: ${DHCP_FINISH}; duration: ${DHCP_DURATION}"
@@ -217,38 +219,47 @@ fi
 echo 1 > /proc/sys/net/ipv4/ip_forward
 
 ###
-## /etc/iptables
+## IPTABLES
 ###
 
-if [ ! -z $(command -v "iptables-legacy") ]; then IPTABLES='iptables-legacy'; else IPTABLES='iptables'; fi
+# test if legacy required (>= Buster)
+if [ ! -z $(command -v "iptables-legacy") ]; then 
+  echo "$(date '+%T') INFO $0 $$ -- update-alternatives for iptables to legacy"
+  update-alternatives --set iptables /usr/sbin/iptables-legacy
+  update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
+  update-alternatives --set arptables /usr/sbin/arptables-legacy
+  update-alternatives --set ebtables /usr/sbin/ebtables-legacy
+fi
 
-cat > /etc/iptables.sh << EOF
-#!/bin/bash
-${IPTABLES} -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-${IPTABLES} -A FORWARD -i eth0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT
-${IPTABLES} -A FORWARD -i wlan0 -o eth0 -j ACCEPT
-EOF
-chmod 755 /etc/iptables.sh
+# make script
+IPTABLES_SCRIPT="/etc/iptables.sh"
+echo '#!/bin/bash' > ${IPTABLES_SCRIPT}
+echo 'iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE' >> ${IPTABLES_SCRIPT}
+if [ "${BRIDGING:-false}" = 'false' ]; then
+  echo 'iptables -A FORWARD -i eth0 -o wlan0 -m state --state RELATED,ESTABLISHED -j ACCEPT' >> ${IPTABLES_SCRIPT}
+  echo 'iptables -A FORWARD -i wlan0 -o eth0 -j ACCEPT' >> ${IPTABLES_SCRIPT}
+fi
+chmod 755 ${IPTABLES_SCRIPT}
 
-## systemd
-cat > /etc/systemd/system/iptables.service << EOF
-[Unit]
-Description=iptables for access point
-After=network-pre.target
-Before=network-online.target
-
-[Service]
-Type=simple
-ExecStart=/etc/iptables.sh
-
-[Install]
-WantedBy=multi-user.target
-EOF
+# make service
+IPTABLES_SERVICE="/etc/systemd/system/iptables.service"
+echo '[Unit]' > ${IPTABLES_SERVICE}
+echo 'Description=iptables for access point' >> ${IPTABLES_SERVICE}
+echo 'After=network-pre.target' >> ${IPTABLES_SERVICE}
+echo 'Before=network-online.target' >> ${IPTABLES_SERVICE}
+echo '[Service]' >> ${IPTABLES_SERVICE}
+echo 'Type=simple' >> ${IPTABLES_SERVICE}
+echo "ExecStart=${IPTABLES_SCRIPT}" >> ${IPTABLES_SERVICE}
+echo '[Install]' >> ${IPTABLES_SERVICE}
+echo 'WantedBy=multi-user.target' >> ${IPTABLES_SERVICE}
 
 # enable
 systemctl enable iptables
 
-# start
+###
+## START
+###
+
 echo "$(date '+%T') INFO $0 $$ -- restarting daemons"
 systemctl unmask hostapd
 systemctl enable hostapd
