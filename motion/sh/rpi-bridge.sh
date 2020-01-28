@@ -106,32 +106,36 @@ echo "$(date '+%T') INFO $0 $$ -- configured DHCP: ${DHCP_CONF}; ip=${DHCP_IPADD
 # DNSMASQ
 ###
 
-version=$(dnsmasq --version | head -1 | awk '{ print $3 }') && major=${version%.*} && minor=${version#*.}
-if [ ${major:-0} -ge 2 ] && [ ${minor} -ge 77 ]; then
-  echo "DNSMASQ; version; ${version}"
-else
-  echo "DNSMASQ; version; ${version}; removing dns-root-data"
-  apt -qq -y --purge remove dns-root-data
-fi
-
-DNSMASQ_CONF="/etc/dnsmasq.conf"
-if [ -s "${DNSMASQ_CONF}" ]; then
-  if [ ! -s "${DNSMASQ_CONF}.bak" ]; then
-    cp ${DNSMASQ_CONF} ${DNSMASQ_CONF}.bak
+if [ "${BRIDGING:-false}" = 'false' ]; then
+  version=$(dnsmasq --version | head -1 | awk '{ print $3 }') && major=${version%.*} && minor=${version#*.}
+  if [ ${major:-0} -ge 2 ] && [ ${minor} -ge 77 ]; then
+    echo "DNSMASQ; version; ${version}"
   else
-    cp ${DNSMASQ_CONF}.bak ${DNSMASQ_CONF}
+    echo "DNSMASQ; version; ${version}; removing dns-root-data"
+    apt -qq -y --purge remove dns-root-data
   fi
+
+  DNSMASQ_CONF="/etc/dnsmasq.conf"
+  if [ -s "${DNSMASQ_CONF}" ]; then
+    if [ ! -s "${DNSMASQ_CONF}.bak" ]; then
+      cp ${DNSMASQ_CONF} ${DNSMASQ_CONF}.bak
+    else
+      cp ${DNSMASQ_CONF}.bak ${DNSMASQ_CONF}
+    fi
+  fi
+
+  # overwrite
+  echo 'interface=wlan0' > "${DNSMASQ_CONF}"
+  echo 'bind-dynamic' >> "${DNSMASQ_CONF}"
+  echo 'domain-needed' >> "${DNSMASQ_CONF}"
+  echo 'bogus-priv' >> "${DNSMASQ_CONF}"
+  echo "dhcp-range=${DHCP_START},${DHCP_FINISH},${DHCP_NETMASK},${DHCP_DURATION}" >> "${DNSMASQ_CONF}"
+
+  # report
+  echo "$(date '+%T') INFO $0 $$ -- configured DNSMASQ"
+else
+  echo "$(date '+%T') INFO $0 $$ -- bridging; no DNSMASQ"
 fi
-
-# overwrite
-echo 'interface=wlan0' > "${DNSMASQ_CONF}"
-echo 'bind-dynamic' >> "${DNSMASQ_CONF}"
-echo 'domain-needed' >> "${DNSMASQ_CONF}"
-echo 'bogus-priv' >> "${DNSMASQ_CONF}"
-echo "dhcp-range=${DHCP_START},${DHCP_FINISH},${DHCP_NETMASK},${DHCP_DURATION}" >> "${DNSMASQ_CONF}"
-
-# report
-echo "$(date '+%T') INFO $0 $$ -- configured DNSMASQ" $(cat ${DNSMASQ_CONF})
 
 ###
 # BRIDGE
