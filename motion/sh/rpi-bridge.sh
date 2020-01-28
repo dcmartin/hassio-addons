@@ -60,7 +60,7 @@ for pr in hostapd dnsmasq brctl nslookup; do
   fi
 done
 if [ ${#packages[@]} -gt 0 ]; then
-  echo "*** ERROR $0 $$ -- install packages: ${packages[@]}; apt install -qq -y ${packages}"
+  echo "*** ERROR $0 $$ -- install packages: ${packages[@]}; apt install -qq -y ${packages[@]}"
   exit
 fi
 
@@ -223,7 +223,7 @@ echo 1 > /proc/sys/net/ipv4/ip_forward
 ###
 
 # test if legacy required (>= Buster)
-if [ ! -z $(command -v "iptables-legacy") ]; then 
+if [ "${IPTABLES_LEGACY:-false}" = 'true' ] && [ ! -z $(command -v "iptables-legacy") ]; then 
   echo "$(date '+%T') INFO $0 $$ -- update-alternatives for iptables to legacy"
   update-alternatives --set iptables /usr/sbin/iptables-legacy
   update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
