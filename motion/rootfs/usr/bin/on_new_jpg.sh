@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source /usr/bin/motion-tools.sh
+source ${USRBIN:-/usr/bin}/motion-tools.sh
 
 motion.log.trace "START"
 
