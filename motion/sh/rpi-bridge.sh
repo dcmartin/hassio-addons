@@ -67,7 +67,7 @@ setup_iptables()
   echo '[Install]' >> ${iptables_service}
   echo 'WantedBy=multi-user.target' >> ${iptables_service}
 
-  result='{"script":'${iptables_script}',"service":"'${iptables_service}'"}'
+  result='{"script":"'${iptables_script}'","service":"'${iptables_service}'"}'
 
   # enable
   systemctl unmask iptables &> /dev/stderr
@@ -83,9 +83,9 @@ setup_iptables()
 
 setup_dnsmasq()
 {
-  local dnsmasq_conf="${1:-${DNSMASQ_CONF}}"
-  local dhcp_conf="${2:-${DHCP_CONF}}"
-  local interface="${3:-wlan0}"
+  local interface="${1:-wlan0}"
+  local dnsmasq_conf="${2:-${DNSMASQ_CONF}}"
+  local dhcp_conf="${3:-${DHCP_CONF}}"
 
   local version=$(dnsmasq --version | head -1 | awk '{ print $3 }')
   local major=${version%.*}
@@ -113,7 +113,7 @@ setup_dnsmasq()
   echo "dhcp-range=${start},${finish},${netmask},${duration}" >> "${dnsmasq_conf}"
 
   ## report
-  result='{"version":"'${version}'","iptables":"'$(setup_iptables ${interface})'","dhcp":'${dhcp}',"options":["bind-dynamic","domain-needed","bogus-priv"]}'
+  result='{"version":"'${version}'","iptables":'$(setup_iptables ${interface})',"dhcp":'${dhcp}',"options":["bind-dynamic","domain-needed","bogus-priv"]}'
 
   systemctl unmask dnsmasq &> /dev/stderr
   systemctl enable dnsmasq &> /dev/stderr
@@ -165,15 +165,15 @@ setup_bridge()
 
 setup_hostapd()
 {
-  local channel=${1:-${CHANNEL}}
-  local ssid=${1:-${SSID}}
-  local password=${1:-${WPA_PASSWORD}}
-  local hw_mode=${1:-${HW_MODE}}
-  local wpa=${1:-2}
-  local interface=${1:-wlan0}
-  local bridge=$(echo "${setup}" | jq '.bridge.name?')
+  local setup="${*:-null}"
+  local interface=$(echo "${setup}" | jq -r '.interface')
+  local bridge=$(echo "${setup}" | jq -r '.bridge.name')
 
-  echo "$(date '+%T') INFO $0 $$ -- setting configuration default ${HOSTAPD_DEFAULT}; DAEMON_CONF=${HOSTAPD_CONF}" &> /dev/stderr
+  local channel=${CHANNEL:-8}
+  local ssid=${SSID:-TEST}
+  local wpa_passphrase=${WPA_PASSPHRASE:-0123456789}
+  local hw_mode=${HW_MODE:-g}
+  local wpa=${WPA_MODE:-2}
 
   sed -i 's|.*DAEMON_CONF=.*|DAEMON_CONF='${HOSTAPD_CONF}'|' "${HOSTAPD_DEFAULT}"
 
@@ -183,7 +183,7 @@ setup_hostapd()
   echo "channel=${channel}" >> ${HOSTAPD_CONF}
   echo "wpa=${wpa}" >> ${HOSTAPD_CONF}
   echo "ssid=${ssid}" >> ${HOSTAPD_CONF}
-  echo "wpa_passphrase=${wpa_password}" >> ${HOSTAPD_CONF}
+  echo "wpa_passphrase=${wpa_passphrase}" >> ${HOSTAPD_CONF}
 
   # bridge (or not)
   if [ "${bridge:-null}" != 'null' ]; then echo "bridge=${bridge}" >> ${HOSTAPD_CONF}; fi
@@ -198,7 +198,7 @@ setup_hostapd()
   echo "rsn_pairwise=CCMP" >> ${HOSTAPD_CONF}
   echo "ctrl_interface=/var/run/hostapd" >> ${HOSTAPD_CONF}
 
-  result='{"channel":'${channel}',"bridge":"'${bridge}'","hw_mode":"'${hw_mode}'","wpa":'${wpa}',"ssid":"'${ssid}'","wpa_passphrase":"'${password}'"}'
+  result='{"interface":"'${interface}'","channel":'${channel}',"bridge":"'${bridge}'","hw_mode":"'${hw_mode}'","wpa":'${wpa}',"ssid":"'${ssid}'","wpa_passphrase":"'${password}'"}'
 
   systemctl unmask hostapd &> /dev/stderr
   systemctl enable hostapd &> /dev/stderr
@@ -237,10 +237,10 @@ setup_device()
       echo "*** ERROR $0 $$ -- failed to setup bridge" &> /dev/stderr
     fi
   else
-    result=$(setup_dnsmasq ${DNSMASQ_CONF})
+    result=$(setup_dnsmasq ${interface})
 
     if [ "${result:-null}" != 'null' ]; then
-      result='{"date":"'$(date -u +%FT%TZ)'","interface":"'${interface}'","dnsmasq":'"${result}"'}'
+      result='{"date":"'$(date -u +%FT%TZ)'","interface":"'${interface}'","dnsmasq":'${result}'}'
     else
       echo "*** ERROR $0 $$ -- failed to setup dnsmasq" &> /dev/stderr
     fi
@@ -307,6 +307,7 @@ rpi_bridge()
 {
   local result
   local bridge=${1:-false}
+  local interface=${2:-wlan0}
 
   echo "+++ INFO $0 $$ -- installing; bridge: ${bridge}" &> /dev/stderr
 
@@ -316,7 +317,7 @@ rpi_bridge()
     if [ ! -z "$(command -v hostapd)" ]; then systemctl stop hostapd &> /dev/stderr; fi
 
     # setup
-    result=$(setup_device ${bridge})
+    result=$(setup_device ${interface} ${bridge})
 
     # reload
     if [ "${result:-null}" != 'null' ]; then
@@ -346,7 +347,7 @@ HOSTIP=${HOST_IPADDR##*.}
 
 ## dynamic
 SSID=${SSID:-TEST}
-WPA_PASSWORD=${WPA_PASSWORD:-0123456789}
+WPA_PASSPHRASE=${WPA_PASSPHRASE:-0123456789}
 DNS_NAMESERVERS="${DNS_NAMESERVERS:-9.9.9.9 1.1.1.1}"
 CHANNEL=${CHANNEL:-8}
 
