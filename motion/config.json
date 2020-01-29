@@ -43,9 +43,11 @@
   },
   "options": {
     "log_level": "info",
+    "log_motion_level": "info",
+    "log_motion_type": "ALL",
     "group": "motion",
     "default": {
-      "post_pictures": "center",
+      "post_pictures": "best",
       "interval": 30,
       "despeckle": "EedDl",
       "changes": "off",
@@ -69,8 +71,8 @@
       "height": 480,
       "width": 640,
       "movie_output": "off",
-      "movie_max": 15,
-      "movie_quality": 60
+      "movie_max": 60,
+      "movie_quality": 80
     },
     "cameras": [
       {
@@ -106,6 +108,8 @@
     "log_level": "str",
     "log_type": "str?",
     "log_motion": "int?",
+    "log_motion_level": "list(emergency|alert|critical|error|warn|notice|info|debug|all)?",
+    "log_motion_type": "list(COR|STR|ENC|NET|DBL|EVT|TRK|VID|ALL)?",
     "log_file": "str?",
     "group": "str",
     "device": "str?",
