@@ -67,7 +67,7 @@ setup_iptables()
   echo 'Before=network-online.target' >> ${iptables_service}
   echo '[Service]' >> ${iptables_service}
   echo 'Type=simple' >> ${iptables_service}
-  echo "ExecStart=${iptables_service}" >> ${iptables_service}
+  echo "ExecStart=${iptables_script}" >> ${iptables_service}
   echo '[Install]' >> ${iptables_service}
   echo 'WantedBy=multi-user.target' >> ${iptables_service}
 
@@ -76,6 +76,7 @@ setup_iptables()
   # enable
   systemctl unmask iptables &> /dev/stderr
   systemctl enable iptables &> /dev/stderr
+  systemctl start iptables &> /dev/stderr
 
   echo "${result:-null}"
 }
@@ -121,8 +122,10 @@ setup_dnsmasq()
   # enable services
   systemctl unmask dnsmasq &> /dev/stderr
   systemctl enable dnsmasq &> /dev/stderr
+  systemctl start dnsmasq &> /dev/stderr
   systemctl unmask dhcpcd &> /dev/stderr
   systemctl enable dhcpcd &> /dev/stderr
+  systemctl start dhcpcd &> /dev/stderr
 
   ## report
   result='{"version":"'${version}'","iptables":'$(setup_iptables ${interface})',"dhcp":'${dhcp}',"options":["bind-dynamic","domain-needed","bogus-priv"]}'
@@ -215,6 +218,7 @@ setup_hostapd()
 
   systemctl unmask hostapd &> /dev/stderr
   systemctl enable hostapd &> /dev/stderr
+  systemctl start hostapd &> /dev/stderr
 
   echo "${result:-null}"
 }
@@ -356,7 +360,6 @@ rpi_bridge()
       if [ "${hostapd:-null}" != 'null' ]; then
         result=$(echo "${result}" | jq '.hostapd='"${hostapd}")
 
-        systemctl restart hostapd &> /dev/stderr
         systemctl daemon-reload &> /dev/stderr
       else
         echo "*** ERROR $0 $$ -- hostapd setup failed" &> /dev/stderr
