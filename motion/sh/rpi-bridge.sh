@@ -8,8 +8,8 @@ setup_dhcp()
 {
   if [ "${DEBUG:-false}" = 'true' ]; then echo "--- FUNCTION: ${FUNCNAME[0]} ${*}" &> /dev/stderr; fi
 
-  local dhcp_conf="${1:-${DHCP_CONF}}"
-  local interface="${2:-wlan0}"
+  local interface="${1:-wlan0}"
+  local dhcp_conf="${2:-${DHCP_CONF}}"
   
   if [ -s "${dhcp_conf}" ]; then
     if [ ! -s "${dhcp_conf}.bak" ]; then
@@ -36,13 +36,25 @@ setup_dhcp()
 ## IPTABLES
 ###
 
+###
+## MIT mitm proxy settings
+###
+
+MITM=false
+MITM_PROXY_PORT=8080
+MITM_WEBUI_PORT=8081
+
+start_mitm()
+{
+  docker run --restart=unless-stopped -d -p ${MITM_PROXY_PORT}:${MITM_PROXY_PORT} -p ${MITM_WEBUI_PORT}:${MITM_WEBUI_PORT} mitmproxy/mitmproxy:latest-ARMv7 mitmweb --web-iface 0.0.0.0
+}
+
 setup_iptables()
 {
   if [ "${DEBUG:-false}" = 'true' ]; then echo "--- FUNCTION: ${FUNCNAME[0]} ${*}" &> /dev/stderr; fi
 
   local interface=${1:-wlan0}
-  local iptables_script=${2:-${IPTABLES_SCRIPT}}
-  local iptables_service=${3:-${IPTABLES_SERVICE}}
+  local bridge=${2:-null}
 
   # test if legacy required (>= Buster)
   if [ "${IPTABLES_LEGACY:-false}" = 'true' ] && [ ! -z "$(command -v iptables-legacy)" ]; then 
@@ -54,24 +66,37 @@ setup_iptables()
   fi
 
   # make script
-  echo '#!/bin/bash' > ${iptables_script}
-  echo 'iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE' >> ${iptables_script}
-  echo 'iptables -A FORWARD -i eth0 -o '${interface}' -m state --state RELATED,ESTABLISHED -j ACCEPT' >> ${iptables_script}
-  echo 'iptables -A FORWARD -i '${interface}' -o eth0 -j ACCEPT' >> ${iptables_script}
-  chmod 755 ${iptables_script}
+  echo '#!/bin/bash' > ${IPTABLES_SCRIPT}
+
+  # whenever you want to route
+  echo 'iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE' >> ${IPTABLES_SCRIPT}
+
+  # when no bridge
+  if [ "${bridge:-null}" = 'null' ]; then
+    echo 'iptables -A FORWARD -i eth0 -o '${interface}' -m state --state RELATED,ESTABLISHED -j ACCEPT' >> ${IPTABLES_SCRIPT}
+    echo 'iptables -A FORWARD -i '${interface}' -o eth0 -j ACCEPT' >> ${IPTABLES_SCRIPT}
+  fi
+
+  # for MIT man-in-the-middle
+  if [ "${MITM:-false}" = 'true' ]; then
+    echo 'iptables -t nat -A PREROUTING -i '${interface}' -p tcp -m tcp --dport 80 -j REDIRECT --to-ports '${MITM_PROXY_PORT} >> ${IPTABLES_SCRIPT}
+    echo 'iptables -t nat -A PREROUTING -i '${interface}' -p tcp -m tcp --dport 443 -j REDIRECT --to-ports '${MITM_PROXY_PORT} >> ${IPTABLES_SCRIPT}
+  fi
+
+  chmod 755 ${IPTABLES_SCRIPT}
 
   # make service
-  echo '[Unit]' > ${iptables_service}
-  echo 'Description=iptables for access point' >> ${iptables_service}
-  echo 'After=network-pre.target' >> ${iptables_service}
-  echo 'Before=network-online.target' >> ${iptables_service}
-  echo '[Service]' >> ${iptables_service}
-  echo 'Type=simple' >> ${iptables_service}
-  echo "ExecStart=${iptables_script}" >> ${iptables_service}
-  echo '[Install]' >> ${iptables_service}
-  echo 'WantedBy=multi-user.target' >> ${iptables_service}
+  echo '[Unit]' > ${IPTABLES_SERVICE}
+  echo 'Description=iptables for access point' >> ${IPTABLES_SERVICE}
+  echo 'After=network-pre.target' >> ${IPTABLES_SERVICE}
+  echo 'Before=network-online.target' >> ${IPTABLES_SERVICE}
+  echo '[Service]' >> ${IPTABLES_SERVICE}
+  echo 'Type=simple' >> ${IPTABLES_SERVICE}
+  echo "ExecStart=${IPTABLES_SCRIPT}" >> ${IPTABLES_SERVICE}
+  echo '[Install]' >> ${IPTABLES_SERVICE}
+  echo 'WantedBy=multi-user.target' >> ${IPTABLES_SERVICE}
 
-  result='{"script":"'${iptables_script}'","service":"'${iptables_service}'"}'
+  result='{"script":"'${IPTABLES_SCRIPT}'","service":"'${IPTABLES_SERVICE}'"}'
 
   # enable
   systemctl unmask iptables &> /dev/stderr
@@ -105,7 +130,7 @@ setup_dnsmasq()
     apt -qq -y --purge remove dns-root-data
   fi
 
-  local dhcp=$(setup_dhcp ${dhcp_conf} ${interface})
+  local dhcp=$(setup_dhcp ${interface} ${dhcp_conf})
   local start=$(echo "${dhcp}" | jq -r '.start')
   local finish=$(echo "${dhcp}" | jq -r '.finish')
   local netmask=$(echo "${dhcp}" | jq -r '.netmask')
@@ -128,7 +153,7 @@ setup_dnsmasq()
   systemctl start dhcpcd &> /dev/stderr
 
   ## report
-  result='{"version":"'${version}'","iptables":'$(setup_iptables ${interface})',"dhcp":'${dhcp}',"options":["bind-dynamic","domain-needed","bogus-priv"]}'
+  result='{"version":"'${version}'","dhcp":'${dhcp}',"options":["bind-dynamic","domain-needed","bogus-priv"]}'
 
   echo "${result:-null}"
 }
@@ -272,6 +297,16 @@ setup_device()
     fi
   fi
 
+  # if successful, setup iptables
+  if [ "${result:-null}" != 'null' ]; then
+    local iptables=$(setup_iptables ${interface} ${bridge})
+
+    if [ "${iptables:-null}" != 'null' ]; then
+      result=$(echo "${result}" | jq -c '.iptables='"${iptables}")
+    fi
+  fi
+
+  # enable forwarding packages for IPv4
   enable_ipv4_forward
 
   echo "${result:-null}"
@@ -358,7 +393,7 @@ rpi_bridge()
     if [ "${result:-null}" != 'null' ]; then
       local hostapd=$(setup_hostapd "${result}")
       if [ "${hostapd:-null}" != 'null' ]; then
-        result=$(echo "${result}" | jq '.hostapd='"${hostapd}")
+        result=$(echo "${result}" | jq -c '.hostapd='"${hostapd}")
 
         systemctl daemon-reload &> /dev/stderr
       else
