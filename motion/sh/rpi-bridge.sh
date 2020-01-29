@@ -8,8 +8,8 @@ setup_dhcp()
 {
   if [ "${DEBUG:-false}" = 'true' ]; then echo "--- FUNCTION: ${FUNCNAME[0]} ${*}" &> /dev/stderr; fi
 
-  local dhcp_conf="${1:-${DHCP_CONF}}"
-  local interface="${2:-wlan0}"
+  local interface="${1:-wlan0}"
+  local dhcp_conf="${2:-${DHCP_CONF}}"
   
   if [ -s "${dhcp_conf}" ]; then
     if [ ! -s "${dhcp_conf}.bak" ]; then
@@ -105,7 +105,7 @@ setup_dnsmasq()
     apt -qq -y --purge remove dns-root-data
   fi
 
-  local dhcp=$(setup_dhcp ${dhcp_conf} ${interface})
+  local dhcp=$(setup_dhcp ${interface} ${dhcp_conf})
   local start=$(echo "${dhcp}" | jq -r '.start')
   local finish=$(echo "${dhcp}" | jq -r '.finish')
   local netmask=$(echo "${dhcp}" | jq -r '.netmask')
