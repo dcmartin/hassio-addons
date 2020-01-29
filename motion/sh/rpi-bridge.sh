@@ -25,155 +25,10 @@ setup_dhcp()
   echo "static domain_name_servers=${DHCP_DNS}" >> "${dhcp_conf}"
 
   ## report
-  result='{"date":'$(date +%T)',"ip":"'${DHCP_IPADDR}'","netsize":'${DHCP_NETSIZE}',"netmask":"'${DHCP_NETMASK}'","start":"'${DHCP_START}'","finish":"'${DHCP_FINISH}'","duration":"'${DHCP_DURATION}'"}'
+  result='{"ip":"'${DHCP_IPADDR}'","netsize":'${DHCP_NETSIZE}',"netmask":"'${DHCP_NETMASK}'","start":"'${DHCP_START}'","finish":"'${DHCP_FINISH}'","duration":"'${DHCP_DURATION}'"}'
 
   echo "${result:-null}"
 }
-
-###
-# DNSMASQ
-###
-
-setup_dnsmasq()
-{
-  local dnsmasq_conf="${1:-${DNSMASQ_CONF}}"
-  local dhcp_conf="${2:-${DHCP_CONF}}"
-  local interface="${3:-wlan0}"
-
-  local version=$(dnsmasq --version | head -1 | awk '{ print $3 }')
-  local major=${version%.*}
-  local minor=${version#*.}
-
-  if [ ${major:-0} -ge 2 ] && [ ${minor} -ge 77 ]; then
-    echo "DNSMASQ; version; ${version}"
-  else
-    echo "DNSMASQ; version; ${version}; removing dns-root-data"
-    apt -qq -y --purge remove dns-root-data
-  fi
-
-  local dhcp=$(setup_dhcp ${dhcp_conf} ${interface})
-  local start=$(echo "${dhcp}" | jq -r '.start')
-  local finish=$(echo "${dhcp}" | jq -r '.finish')
-  local netmask=$(echo "${dhcp}" | jq -r '.netmask')
-  local netsize=$(echo "${dhcp}" | jq -r '.netsize')
-  local duration=$(echo "${dhcp}" | jq -r '.duration')
-
-  # overwrite
-  echo "interface=${interface}" > "${dnsmasq_conf}"
-  echo 'bind-dynamic' >> "${dnsmasq_conf}"
-  echo 'domain-needed' >> "${dnsmasq_conf}"
-  echo 'bogus-priv' >> "${dnsmasq_conf}"
-  echo "dhcp-range=${start},${finish},${netmask},${duration}" >> "${dnsmasq_conf}"
-
-  ## report
-  result='{"date":'$(date +%T)',"version":"'${version}'","interface":"'${interface}'","dhcp":'${dhcp}',"finish":"'${finish}'","netmask":"'${netmask}'","duration":"'${duration}'","options":["bind-dynamic","domain-needed","bogus-priv"]}'
-
-  systemctl unmask dnsmasq
-  systemctl enable dnsmasq
-
-  echo "${result:-null}"
-}
-
-###
-# BRIDGE
-###
-
-setup_network()
-{
-  local bridge=${1:-br0}
-  shift
-  local interface="${1:-wlan0}"
-  shift
-  local dns_nameservers="${*:-${DNS_NAMESERVERS}}"
-
-  if [ $(brctl show | egrep "${bridge}" | wc -l) -le 1 ]; then
-    echo "$(date '+%T') INFO $0 $$ -- building bridge ${bridge} to eth0"
-    brctl addbr ${bridge}
-    #brctl addif ${bridge} eth0
-  else
-    echo "$(date '+%T') INFO $0 $$ -- existing bridge br0; not making"
-  fi
-
-  if [ -s ${network_conf} ]; then
-    if [ ! -s "${network_conf}.bak" ]; then
-      cp ${network_conf} ${network_conf}.bak
-    else
-      cp ${network_conf}.bak ${network_conf}
-    fi
-  fi
-
-  # append
-  echo "auto ${bridge}" >> ${network_conf}
-  echo "iface ${bridge} inet manual" >> ${network_conf}
-  echo "bridge_ports eth0 ${interface}" >> ${network_conf}
-  echo "dns-nameservers ${dns_nameservers}" >> ${network_conf}
-
-  # report
-  result='{"date":'$(date +%T)',"bridge":"'${bridge}'","interface":"'${interface}'","dns_nameservers":"'${dns_nameservers}'"}'
-
-  echo "${result:-null}"
-}
-
-###
-# HOSTAPD
-###
-
-setup_hostapd()
-{
-  local default=${1:-${HOSTAPD_DEFAULT}}
-  local conf=${2:-${HOSTAPD_CONF}}
-  local interface=${3:-wlan0}
-  local channel=${4:-${CHANNEL}}
-  local ssid=${5:-${SSID}}
-  local password=${5:-${WPA_PASSWORD}}
-  local hw_mode=${7:-${HW_MODE}}
-  local wpa=${7:-2}
-
-  echo "$(date '+%T') INFO $0 $$ -- setting configuration default ${HOSTAPD_DEFAULT}; DAEMON_CONF=${HOSTAPD_CONF}"
-
-  sed -i 's|.*DAEMON_CONF=.*|DAEMON_CONF='${HOSTAPD_CONF}'|' "${HOSTAPD_DEFAULT}"
-
-  # overwrite
-  echo "interface=${interface}" > ${conf}
-  echo "hw_mode=${hw_mode}" >> ${conf}
-  echo "channel=${channel}" >> ${conf}
-  echo "wpa=${wpa}" >> ${conf}
-  echo "ssid=${ssid}" >> ${conf}
-  echo "wpa_passphrase=${wpa_password}" >> ${conf}
-  # static
-  echo "wmm_enabled=0" >> ${conf}
-  echo "macaddr_acl=0" >> ${conf}
-  echo "auth_algs=1" >> ${conf}
-  echo "ignore_broadcast_ssid=0" >> ${conf}
-  echo "wpa_key_mgmt=WPA-PSK" >> ${conf}
-  echo "wpa_pairwise=TKIP" >> ${conf}
-  echo "rsn_pairwise=CCMP" >> ${conf}
-  echo "ctrl_interface=/var/run/hostapd" >> ${conf}
-
-  if [ "${BRIDGE:-false}" = 'true' ]; then
-    echo 'bridge=br0' >> ${conf}
-  fi
-
-  result='{"date":'$(date +%T)',"interface":"'${interface}'","channel":'${channel}',"hw_mode":"'${hw_mode}'","wpa":'${wpa}',"ssid":"'${ssid}'","wpa_passphrase":"'${password}'"}'
-
-  systemctl unmask hostapd
-  systemctl enable hostapd
-
-  echo "${result:-null}"
-}
-
-###
-## /etc/sysctl.conf
-###
-
-SYSCTL_CONF="/etc/sysctl.conf"
-if [ -z "$(egrep '^net.ipv4.ip_forward=' "${SYSCTL_CONF}")" ]; then
-  echo "$(date '+%T') INFO $0 $$ -- enabling IPv4 forwarding in ${SYSCTL_CONF}"
-  sed -i 's|.*net.ipv4.ip_forward.*|net.ipv4.ip_forward=1|' "${SYSCTL_CONF}"
-else
-  echo "$(date '+%T') INFO $0 $$ -- existing IPv4 forwarding" $(egrep "^net.ipv4.ip_forward=" ${SYSCTL_CONF})
-fi
-echo 1 > /proc/sys/net/ipv4/ip_forward
 
 ###
 ## IPTABLES
@@ -182,11 +37,11 @@ echo 1 > /proc/sys/net/ipv4/ip_forward
 setup_iptables()
 {
   local interface=${1:-wlan0}
-  local script=${2:-${IPTABLES_SCRIPT}}
-  local service=${3:-${IPTABLES_SERVICE}}
+  local iptables_script=${2:-${IPTABLES_SCRIPT}}
+  local iptables_service=${3:-${IPTABLES_SERVICE}}
 
   # test if legacy required (>= Buster)
-  if [ "${IPTABLES_LEGACY:-false}" = 'true' ] && [ ! -z $(command -v "iptables-legacy") ]; then 
+  if [ "${IPTABLES_LEGACY:-false}" = 'true' ] && [ ! -z "$(command -v iptables-legacy)" ]; then 
     echo "$(date '+%T') INFO $0 $$ -- update-alternatives for iptables to legacy"
     update-alternatives --set iptables /usr/sbin/iptables-legacy
     update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
@@ -212,38 +67,187 @@ setup_iptables()
   echo '[Install]' >> ${iptables_service}
   echo 'WantedBy=multi-user.target' >> ${iptables_service}
 
-  result='{"date":'$(date +%T)',"interface":"'${interface}'","channel":'${channel}',"hw_mode":"'${hw_mode}'","wpa":'${wpa}',"ssid":"'${ssid}'","wpa_passphrase":"'${password}'"}'
+  result='{"script":'${iptables_script}',"service":"'${iptables_service}'"}'
 
   # enable
-  systemctl unmask iptables
-  systemctl enable iptables
+  systemctl unmask iptables &> /dev/stderr
+  systemctl enable iptables &> /dev/stderr
 
   echo "${result:-null}"
 }
 
-setup()
+
+###
+# DNSMASQ
+###
+
+setup_dnsmasq()
 {
-  local bridge="${1:-false}"
+  local dnsmasq_conf="${1:-${DNSMASQ_CONF}}"
+  local dhcp_conf="${2:-${DHCP_CONF}}"
+  local interface="${3:-wlan0}"
+
+  local version=$(dnsmasq --version | head -1 | awk '{ print $3 }')
+  local major=${version%.*}
+  local minor=${version#*.}
+
+  if [ ${major:-0} -ge 2 ] && [ ${minor} -ge 77 ]; then
+    echo "DNSMASQ; version; ${version}" &> /dev/stderr
+  else
+    echo "DNSMASQ; version; ${version}; removing dns-root-data" &> /dev/stderr
+    apt -qq -y --purge remove dns-root-data
+  fi
+
+  local dhcp=$(setup_dhcp ${dhcp_conf} ${interface})
+  local start=$(echo "${dhcp}" | jq -r '.start')
+  local finish=$(echo "${dhcp}" | jq -r '.finish')
+  local netmask=$(echo "${dhcp}" | jq -r '.netmask')
+  local netsize=$(echo "${dhcp}" | jq -r '.netsize')
+  local duration=$(echo "${dhcp}" | jq -r '.duration')
+
+  # overwrite
+  echo "interface=${interface}" > "${dnsmasq_conf}"
+  echo 'bind-dynamic' >> "${dnsmasq_conf}"
+  echo 'domain-needed' >> "${dnsmasq_conf}"
+  echo 'bogus-priv' >> "${dnsmasq_conf}"
+  echo "dhcp-range=${start},${finish},${netmask},${duration}" >> "${dnsmasq_conf}"
+
+  ## report
+  result='{"version":"'${version}'","iptables":"'$(setup_iptables ${interface})'","dhcp":'${dhcp}',"options":["bind-dynamic","domain-needed","bogus-priv"]}'
+
+  systemctl unmask dnsmasq &> /dev/stderr
+  systemctl enable dnsmasq &> /dev/stderr
+
+  echo "${result:-null}"
+}
+
+###
+# BRIDGE
+###
+
+setup_bridge()
+{
+  local interface="${1:-wlan0}"; shift
+  local bridge=${1:-br0}; shift
+  local dns_nameservers="${*:-${DNS_NAMESERVERS}}"
+
+  if [ $(brctl show | egrep "${bridge}" | wc -l) -le 1 ]; then
+    echo "$(date '+%T') INFO $0 $$ -- building bridge ${bridge} to eth0" &> /dev/stderr
+    brctl addbr ${bridge}
+    #brctl addif ${bridge} eth0
+  else
+    echo "$(date '+%T') INFO $0 $$ -- existing bridge br0; not making" &> /dev/stderr
+  fi
+
+  if [ -s ${network_conf} ]; then
+    if [ ! -s "${network_conf}.bak" ]; then
+      cp ${network_conf} ${network_conf}.bak
+    else
+      cp ${network_conf}.bak ${network_conf}
+    fi
+  fi
+
+  # append
+  echo "auto ${bridge}" >> ${network_conf}
+  echo "iface ${bridge} inet manual" >> ${network_conf}
+  echo "bridge_ports eth0 ${interface}" >> ${network_conf}
+  echo "dns-nameservers ${dns_nameservers}" >> ${network_conf}
+
+  # report
+  result='{"date":"'$(date -u +%FT%TZ)'","name":"'${bridge}'","interface":"'${interface}'","dns_nameservers":"'${dns_nameservers}'"}'
+
+  echo "${result:-null}"
+}
+
+###
+# HOSTAPD
+###
+
+setup_hostapd()
+{
+  local channel=${1:-${CHANNEL}}
+  local ssid=${1:-${SSID}}
+  local password=${1:-${WPA_PASSWORD}}
+  local hw_mode=${1:-${HW_MODE}}
+  local wpa=${1:-2}
+  local interface=${1:-wlan0}
+  local bridge=$(echo "${setup}" | jq '.bridge.name?')
+
+  echo "$(date '+%T') INFO $0 $$ -- setting configuration default ${HOSTAPD_DEFAULT}; DAEMON_CONF=${HOSTAPD_CONF}" &> /dev/stderr
+
+  sed -i 's|.*DAEMON_CONF=.*|DAEMON_CONF='${HOSTAPD_CONF}'|' "${HOSTAPD_DEFAULT}"
+
+  # overwrite
+  echo "interface=${interface}" > ${HOSTAPD_CONF}
+  echo "hw_mode=${hw_mode}" >> ${HOSTAPD_CONF}
+  echo "channel=${channel}" >> ${HOSTAPD_CONF}
+  echo "wpa=${wpa}" >> ${HOSTAPD_CONF}
+  echo "ssid=${ssid}" >> ${HOSTAPD_CONF}
+  echo "wpa_passphrase=${wpa_password}" >> ${HOSTAPD_CONF}
+
+  # bridge (or not)
+  if [ "${bridge:-null}" != 'null' ]; then echo "bridge=${bridge}" >> ${HOSTAPD_CONF}; fi
+
+  # static
+  echo "wmm_enabled=0" >> ${HOSTAPD_CONF}
+  echo "macaddr_acl=0" >> ${HOSTAPD_CONF}
+  echo "auth_algs=1" >> ${HOSTAPD_CONF}
+  echo "ignore_broadcast_ssid=0" >> ${HOSTAPD_CONF}
+  echo "wpa_key_mgmt=WPA-PSK" >> ${HOSTAPD_CONF}
+  echo "wpa_pairwise=TKIP" >> ${HOSTAPD_CONF}
+  echo "rsn_pairwise=CCMP" >> ${HOSTAPD_CONF}
+  echo "ctrl_interface=/var/run/hostapd" >> ${HOSTAPD_CONF}
+
+  result='{"channel":'${channel}',"bridge":"'${bridge}'","hw_mode":"'${hw_mode}'","wpa":'${wpa}',"ssid":"'${ssid}'","wpa_passphrase":"'${password}'"}'
+
+  systemctl unmask hostapd &> /dev/stderr
+  systemctl enable hostapd &> /dev/stderr
+
+  echo "${result:-null}"
+}
+
+###
+## /etc/sysctl.conf
+###
+
+enable_ipv4_forward()
+{
+  sed -i 's|.*net.ipv4.ip_forward.*|net.ipv4.ip_forward=1|' "${SYSCTL_CONF}"
+  echo 1 > /proc/sys/net/ipv4/ip_forward
+}
+
+## build a bridge
+setup_device()
+{
+  local interface="${1:-wlan0}"
+  local bridge="${2:-false}"
   local result 
 
-  if [ "${bridge:-false}" = 'true' ]; then
-    result=$(setup_network ${NETWORK_CONF})
+  if [ "${bridge:-false}" != 'false' ]; then
+    result=$(setup_bridge ${interface} ${bridge})
 
-    if [ ! -z $(command -v "dnsmasq") ]; then
-      echo "$(date '+%T') INFO $0 $$ -- stopping and disabling dnsmasq"
-      systemctl stop dnsmasq
-      systemctl disable dnsmasq
+    if [ "${result:-null}" != 'null' ]; then
+      result='{"date":"'$(date -u +%FT%TZ)'","interface":"'${interface}'","bridge":'"${result}"'}'
+      if [ ! -z "$(command -v dnsmasq)" ]; then
+        echo "$(date '+%T') INFO $0 $$ -- stopping and disabling dnsmasq"
+        systemctl stop dnsmasq &> /dev/stderr
+        systemctl disable dnsmasq &> /dev/stderr
+      fi
+    else
+      echo "*** ERROR $0 $$ -- failed to setup bridge" &> /dev/stderr
     fi
   else
     result=$(setup_dnsmasq ${DNSMASQ_CONF})
 
-    if [ "${setup:-null}" != 'null' ]; then
-      systemctl restart dnsmasq
-      systemctl restart hostapd
+    if [ "${result:-null}" != 'null' ]; then
+      result='{"date":"'$(date -u +%FT%TZ)'","interface":"'${interface}'","dnsmasq":'"${result}"'}'
     else
-      echo "*** ERROR $0 $$ -- failed to setup dnsmasq"
+      echo "*** ERROR $0 $$ -- failed to setup dnsmasq" &> /dev/stderr
     fi
   fi
+
+  enable_ipv4_forward
+
   echo "${result:-null}"
 }
 
@@ -255,13 +259,13 @@ package_check()
   local commands=
  
   if [ "${bridge:-false}" = 'true' ]; then
-    commands="hostapd brctl nslookup"
+    commands="jq hostapd brctl nslookup"
   else
-    commands="hostapd dnsmasq nslookup"
+    commands="jq hostapd dnsmasq nslookup"
   fi
 
   for pr in ${commands}; do
-    if [ -z $(command -v "${pr}") ]; then
+    if [ -z "$(command -v ${pr})" ]; then
       case "${pr}" in
         "brctl")
           packages=(${packages[@]} "bridge-utils")
@@ -291,7 +295,7 @@ required_packages()
   local missing=$(package_check ${bridge}) 
 
   if [ "${missing:-null}" != 'null' ]; then
-    echo "*** ERROR $0 $$ -- install packages: ${missing[@]}; apt install -qq -y ${missing[@]}"
+    echo "*** ERROR $0 $$ -- install packages: ${missing[@]}; apt install -qq -y ${missing[@]}" &> /dev/stderr
   else
     result='true'
   fi
@@ -304,20 +308,31 @@ rpi_bridge()
   local result
   local bridge=${1:-false}
 
-  echo "+++ INFO $0 $$ -- installing; bridge: ${bridge}"
+  echo "+++ INFO $0 $$ -- installing; bridge: ${bridge}" &> /dev/stderr
 
-  if [ $(required_packages ${bridge}) = 'true' ]; then
+  if [ "$(required_packages ${bridge})" = 'true' ]; then
     # turn off
-    if [ ! -z $(command -v "dnsmasq") ]; then systemctl stop dnsmasq; fi
-    if [ ! -z $(command -v "hostapd") ]; then systemctl stop hostapd; fi
+    if [ ! -z "$(command -v dnsmasq)" ]; then systemctl stop dnsmasq &> /dev/stderr; fi
+    if [ ! -z "$(command -v hostapd)" ]; then systemctl stop hostapd &> /dev/stderr; fi
 
     # setup
-    result=$(setup ${bridge})
+    result=$(setup_device ${bridge})
 
     # reload
-    systemctl daemon-reload
-  fi
+    if [ "${result:-null}" != 'null' ]; then
+      local hostapd=$(setup_hostapd "${result}")
+      if [ "${hostapd:-null}" != 'null' ]; then
+        result=$(echo "${result}" | jq '.hostapd='"${hostapd}")
 
+        systemctl restart hostapd &> /dev/stderr
+        systemctl daemon-reload &> /dev/stderr
+      else
+        echo "*** ERROR $0 $$ -- hostapd setup failed" &> /dev/stderr
+      fi
+    else
+      echo "*** ERROR $0 $$ -- device setup failed" &> /dev/stderr
+    fi
+  fi
   echo "${result:-null}"
 }
 
@@ -349,6 +364,7 @@ DHCP_NETSIZE=${DHCP_NETSIZE:-24}
 DHCP_DURATION=${DHCP_DURATION:-24h}
 
 ## static
+SYSCTL_CONF="/etc/sysctl.conf"
 NETWORK_CONF="/etc/network/interfaces"
 DHCP_CONF="/etc/dhcpcd.conf"
 DNSMASQ_CONF="/etc/dnsmasq.conf"
@@ -361,6 +377,7 @@ IPTABLES_SERVICE="/etc/systemd/system/iptables.service"
 ### MAIN
 ###
 
-if [ $(whoami) != "root" ]; then echo "*** ERROR $0 $$ -- run as root"; exit 1; fi
+if [ $(whoami) != "root" ]; then echo "*** ERROR $0 $$ -- run as root" &> /dev/stderr; exit 1; fi
 
-rpi_bridge ${*}
+# doit
+rpi_bridge ${*} | jq '.'
