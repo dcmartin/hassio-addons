@@ -42,7 +42,7 @@ motion_event_animated()
 
       if [ ${elapsed:-0} -gt 0 ]; then
         local id=$(jq -r '.id' ${jsonfile})
-        local output=$(motion_event_movie_convert "${input}" "${input%/*}/${id}.gif" ${fps:-5} ${elapsed} ${width:-640}
+        local output=$(motion_event_movie_convert "${input}" "${input%/*}/${id}.gif" ${fps:-5} ${elapsed} ${width:-640})
 
         if [ "${output:-null}" != 'null' ]; then
           result="${output}"
