@@ -67,10 +67,8 @@ on_movie_end()
        update='{"video_'${FT}'":'"${update}"'}'
        ;;
     esac
-
+    # update with video
     jq '.+='"${update}" ${jsonfile} > ${jsonfile}.$$ && mv -f ${jsonfile}.$$ ${jsonfile} && result="${jsonfile}"
-
-    motion.log.debug "JSON: ${jsonfile}; metadata: $(jq -c '.' ${jsonfile})"
   else
     motion.log.error "${FUNCNAME[0]} not found or invalid JSON file: ${jsonfile}"
   fi
