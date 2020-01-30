@@ -14,7 +14,7 @@ source ${USRBIN:-/usr/bin}/motion-tools.sh
 on_camera_lost()
 {
 
-  motion.log.trace "${FUNCNAME[0]} ${*}"
+  motion.log.debug "${FUNCNAME[0]} ${*}"
 
   local CN="${1}"
   local YR="${2}"

@@ -8,7 +8,7 @@ source ${USRBIN:-/usr/bin}/motion-tools.sh
 
 motion_event_movie_convert()
 {
-  motion.log.trace "${FUNCNAME[0]}" "${*}"
+  motion.log.debug "${FUNCNAME[0]}" "${*}"
 
   local input="${1}"
   local output="${2}"
@@ -25,7 +25,7 @@ motion_event_movie_convert()
 
 motion_event_animated()
 {
-  motion.log.trace "${FUNCNAME[0]}" "${*}"
+  motion.log.debug "${FUNCNAME[0]}" "${*}"
 
   local result
   local jsonfile="${1}"
@@ -63,7 +63,7 @@ motion_event_animated()
 
 motion_event_images_differ()
 {
-  motion.log.trace "${FUNCNAME[0]}; args: ${*}"
+  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
 
   local tmpdir=$(mktemp -d)
   local jpegs=(${*})
@@ -106,7 +106,7 @@ motion_event_images_differ()
 
 motion_event_images_average()
 {
-  motion.log.trace "${FUNCNAME[0]}; args: ${*}"
+  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
 
   local jsonfile="${1}"
   local camera=$(jq -r '.camera' ${jsonfile})
@@ -144,7 +144,7 @@ motion_event_images_average()
 
 motion_event_json()
 {
-  motion.log.trace "${FUNCNAME[0]}; args: ${*}"
+  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
 
   local result
   local cn="${1}"
@@ -195,7 +195,7 @@ motion_event_json()
 
 motion_event_images()
 {
-  motion.log.trace "${FUNCNAME[0]}; args: ${*}"
+  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
 
   local result
   local jsonfile="${1}"
@@ -242,13 +242,13 @@ motion_event_images()
     motion.log.error "${FUNCNAME[0]} Unable to find(1) any images; event: ${event}; camera: ${camera}; directory: ${dir}"
   fi
 
-  motion.log.trace "${FUNCNAME[0]}; result: ${result:-null}"
+  motion.log.debug "${FUNCNAME[0]}; result: ${result:-null}"
   echo "${result:-0}"
 }
 
 motion_event_picture()
 {
-  motion.log.trace "${FUNCNAME[0]}; args: ${*}"
+  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
 
   local result
   local jsonfile="${1}"
@@ -281,7 +281,7 @@ motion_event_picture()
 
 motion_event_append_picture()
 {
-  motion.log.trace "${FUNCNAME[0]}; args: ${*}"
+  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
 
   local result
   local jsonfile="${1}"
@@ -316,7 +316,7 @@ motion_event_append_picture()
 
 motion_event_publish()
 {
-  motion.log.trace "${FUNCNAME[0]}; args: ${*}"
+  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
 
   local result=true
   local jsonfile="${1}"
@@ -339,25 +339,25 @@ motion_event_publish()
 
 motion_event_process()
 {
-  motion.log.trace "${FUNCNAME[0]}; args: ${*}"
+  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
 
   local result
   local jsonfile="${1}"
   local jpgfile=$(motion_event_append_picture ${jsonfile})
 
-  motion.log.trace "${FUNCNAME[0]} created aggregated JSON with base64 encoded JPEG"
+  motion.log.debug "${FUNCNAME[0]} created aggregated JSON with base64 encoded JPEG"
   if [ "${jpgfile:-null}" != 'null' ]; then
     local avgfile=$(motion_event_images_average ${jsonfile} ${jpgfile})
 
     if [ -s "${avgfile}" ]; then
-      motion.log.trace "${FUNCNAME[0]} created average JPEG"
+      motion.log.debug "${FUNCNAME[0]} created average JPEG"
 
       local giffile=$(motion_event_animated ${jsonfile} ${avgfile})
       if [ -s "${giffile}" ]; then
-        motion.log.trace "${FUNCNAME[0]} created GIF output: ${giffile}"
+        motion.log.debug "${FUNCNAME[0]} created GIF output: ${giffile}"
 
         if [ $(motion_event_publish ${jsonfile} ${jpgfile} ${giffile}) = 'true' ]; then
-          motion.log.trace "${FUNCNAME[0]} published to MQTT; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
+          motion.log.debug "${FUNCNAME[0]} published to MQTT; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
           result=true
         else
           motion.log.error "${FUNCNAME[0]} failed to publish; metadata: $(jq -c '.' ${jsonfile})"
@@ -376,7 +376,7 @@ motion_event_process()
 
 motion_event_end()
 {
-  motion.log.trace "${FUNCNAME[0]}; args: ${*}"
+  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
 
   local result
   local cn="${1}"
@@ -403,7 +403,7 @@ motion_event_end()
         result='false'
       fi
     elif [ ${njpeg:-0} > 0 ]; then
-      motion.log.trace "${FUNCNAME[0]} legacy processing: event: ${en}; camera: ${cn}; count: ${njpeg}"
+      motion.log.debug "${FUNCNAME[0]} legacy processing: event: ${en}; camera: ${cn}; count: ${njpeg}"
 
       # process multi-image event with legacy code
       export \
@@ -445,7 +445,7 @@ motion_event_end()
 
 on_event_end()
 {
-  motion.log.trace "${FUNCNAME[0]}; args: ${*}"
+  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
 
   # close i/o
   # exec 0>&- # close stdin

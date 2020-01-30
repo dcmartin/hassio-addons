@@ -46,6 +46,4 @@ ftp_notifywait()
 ### MAIN
 ###
 
-motion.log.debug "START ${*}"
 ftp_notifywait ${*}
-motion.log.debug "FINISH ${*}"
