@@ -32,7 +32,7 @@ on_event_start()
   local dir=$(motion.config.target_dir)
   local timestamp=$(date -u +%FT%TZ)
   local EJ="${dir}/${CN}/${TS}-${EN}.json"
-  local event='{"group":"'$(motion.config.group)'","device":"'$(motion.config.device)'","camera":"'${CN}'","event":"'${EN}'","start":'${NOW}',"timestamp":"'${timestamp}'"}'
+  local event='{"group":"'$(motion.config.group)'","device":"'$(motion.config.device)'","camera":"'${CN}'","event":"'${EN}'","start":'${NOW}',"timestamp":{"start":"'${timestamp}'"}}'
 
   if [ -s "${EJ}" ]; then
     jq '.+='"${event}" ${EJ} > ${EJ}.$$ && mv -f ${EJ}.$$ ${EJ} 
