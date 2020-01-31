@@ -167,8 +167,9 @@ motion_event_json()
     local start=$(jq -r '.start' ${jsonfile})
     local end=$(motion.util.dateconv -i '%Y%m%d%H%M%S' -f "%s" "$ts")
     local elapsed=$((end-start))
+    local timestamp=$(date -u +%FT%TZ)
 
-    jq '.id="'${ts}-${en}'"|.end='${end}'|.elapsed='${elapsed} ${jsonfile} > ${jsonfile}.$$ && mv -f ${jsonfile}.$$ ${jsonfile} && result="${jsonfile}"
+    jq '.id="'${ts}-${en}'"|.end='${end}'|.elapsed='${elapsed}'|.timestamp.end="'${timestamp}'"' ${jsonfile} > ${jsonfile}.$$ && mv -f ${jsonfile}.$$ ${jsonfile} && result="${jsonfile}"
   else
     motion.log.error "${FUNCNAME[0]} no JSON file: ${jsonfile}"
   fi
@@ -324,9 +325,11 @@ motion_event_publish()
   local giffile="${3}"
   local camera=$(jq -r '.camera' ${jsonfile})
   local device=$(jq -r '.device' ${jsonfile})
+  local timestamp=$(date -u +%FT%TZ)
 
   # flatten JSON
-  jq -c '.date='$(date +%s) ${jsonfile} > ${jsonfile}.$$ && mv -f ${jsonfile}.$$ ${jsonfile}
+  jq -c '.date='$(date +%s)'|.timestamp.publish="'${timestamp}'"' ${jsonfile} > ${jsonfile}.$$ && mv -f ${jsonfile}.$$ ${jsonfile}
+
   # publish JSON to MQTT
   motion.mqtt.pub -r -q 2 -t "$(motion.config.group)/${device}/${camera}/event/end" -f "${jsonfile}" && rm -f ${temp} || result=false
   # publish JPEG to MQTT
