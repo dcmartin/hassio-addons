@@ -28,7 +28,7 @@ on_event_start()
   local MN="${7}"
   local SC="${8}"
   local TS="${YR}${MO}${DY}${HR}${MN}${SC}"
-  local NOW=$($dateconv -i '%Y%m%d%H%M%S' -f "%s" "$TS")
+  local NOW=$(motion.util.dateconv -i '%Y%m%d%H%M%S' -f "%s" "$TS")
   local dir=$(motion.config.target_dir)
   local timestamp=$(date -u +%FT%TZ)
   local EJ="${dir}/${CN}/${TS}-${EN}.json"
