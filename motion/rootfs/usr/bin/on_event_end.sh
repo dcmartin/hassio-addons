@@ -14,9 +14,9 @@ motion_event_movie_convert()
   local output="${2}"
   local fps=${3:-5}
   local seconds=${4:-15}
-  local scale=${5:-640}
+  local width=${5:-640}
 
-  ffmpeg -i "${input}" -t ${seconds} -vf "fps=${fps},scale=${scale}:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 "${output}" &> /dev/null
+  ffmpeg -i "${input}" -t ${seconds} -vf "fps=${fps},scale=${width}:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 "${output}" &> /dev/null
   if [ ! -s "${output}" ]; then
     output=
   fi
@@ -277,6 +277,11 @@ motion_event_picture()
       ;;
   esac
 
+  if [ "${result:-null}" != 'null' ]; then
+    local camera=$(jq -r '.camera' ${jsonfile})
+
+    result=$(motion.config.target_dir)/${camera}/${result}.jpg
+  fi
   echo "${result:-}"
 }
 
@@ -286,13 +291,10 @@ motion_event_append_picture()
 
   local result
   local jsonfile="${1}"
-  local camera=$(jq -r '.camera' ${jsonfile})
-  local jpg_id=$(motion_event_picture ${jsonfile})
+  local jpgfile="${2}"
+  local b64file=$(mktemp)
 
-  if [ "${jpg_id:-null}" != 'null' ]; then
-    local jpgfile=$(motion.config.target_dir)/${camera}/${jpg_id}.jpg
-    local b64file=$(mktemp)
-
+  if [ -s "${jpgfile:-}" ]; then
     # initiate B64 file
     echo -n '{"image":"' > "${b64file}"
     # encode selected image
@@ -304,7 +306,7 @@ motion_event_append_picture()
     jq -c -s add "${jsonfile}" "${b64file}" > ${jsonfile}.$$ && mv -f ${jsonfile}.$$ ${jsonfile} && rm -f ${b64file}
 
     if [ -s "${jsonfile}" ] && [ ! -e ${b64file} ]; then
-      result="${jpgfile}"
+      result='true'
     else
       motion.log.error "${FUNCNAME[0]} failed to create aggregated JSON with base64 encoded JPEG; metadata: $(jq -c '.' ${jsonfile})"
     fi
@@ -319,24 +321,84 @@ motion_event_publish()
 {
   motion.log.debug "${FUNCNAME[0]}; args: ${*}"
 
-  local result=true
+  local result
   local jsonfile="${1}"
-  local jpgfile="${2}"
-  local giffile="${3}"
   local camera=$(jq -r '.camera' ${jsonfile})
   local device=$(jq -r '.device' ${jsonfile})
   local timestamp=$(date -u +%FT%TZ)
 
   # flatten JSON
   jq -c '.date='$(date +%s)'|.timestamp.publish="'${timestamp}'"' ${jsonfile} > ${jsonfile}.$$ && mv -f ${jsonfile}.$$ ${jsonfile}
+  if [ -s "${jsonfile}" ]; then
+    # publish JSON to MQTT
+    motion.mqtt.pub -r -q 2 -t "$(motion.config.group)/${device}/${camera}/event/end" -f "${jsonfile}" && rm -f ${temp} || result=false
+    result='true'
+  else
+    motion.log.error "${FUNCNAME[0]} failed to flatten and timestamp; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
+  fi
 
-  # publish JSON to MQTT
-  motion.mqtt.pub -r -q 2 -t "$(motion.config.group)/${device}/${camera}/event/end" -f "${jsonfile}" && rm -f ${temp} || result=false
-  # publish JPEG to MQTT
-  motion.mqtt.pub -r -q 2 -t "$(motion.config.group)/${device}/${camera}/image/end" -f "${jpgfile}" || result=false
-  # publish GIF
-  motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/${device}/${camera}/image-animated" -f "${giffile}" || result=false
+  echo "${result:-false}"
+}
 
+motion_create_average()
+{
+  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
+
+  local result
+  local jsonfile="${1}"
+  local jpgfile="${2}"
+  local avgfile=$(motion_event_images_average ${jsonfile} ${jpgfile})
+
+  if [ -s "${avgfile}" ]; then
+    result="${avgfile}"
+    motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/${device}/${camera}/image-animated" -f "${avgfile}" || result=false
+  else
+    motion.log.error "${FUNCNAME[0]} failed to calculate average image; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
+  fi
+  echo "${result:-false}"
+}
+
+motion_create_animated()
+{
+  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
+
+  local result
+  local jsonfile="${1}"
+  local giffile=$(motion_event_animated ${jsonfile})
+
+  if [ -s "${giffile}" ]; then
+    result="${giffile}"
+    motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/${device}/${camera}/image-animated" -f "${giffile}" || result=false
+    rm -f "${giffile}"
+  else
+    motion.log.error "${FUNCNAME[0]} failed to calculate animated GIF; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
+  fi
+  echo "${result:-false}"
+}
+
+motion_create_annotated()
+{
+  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
+
+  local result
+  local jsonfile="${1}"
+  local jpgfile="${2}"
+  local annfile=$(motion_event_annotated ${jsonfile} ${jpgfile})
+
+  if [ -s "${annfile}" ]; then
+    motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/${device}/${camera}/event/end/" -f "${annfile}" || result=false
+    result="${annfile}"
+  else
+    motion.log.error "${FUNCNAME[0]} failed annotated image; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
+  fi
+  echo "${result:-false}"
+}
+
+motion_create_composite()
+{
+  motion.log.debug "${FUNCNAME[0]}; args: ${*}"
+
+  local result
   echo "${result:-false}"
 }
 
@@ -346,33 +408,40 @@ motion_event_process()
 
   local result
   local jsonfile="${1}"
-  local jpgfile=$(motion_event_append_picture ${jsonfile})
+  local jpgfile=$(motion_event_picture ${jsonfile})
 
-  motion.log.debug "${FUNCNAME[0]} created aggregated JSON with base64 encoded JPEG"
+  # key frame
   if [ "${jpgfile:-null}" != 'null' ]; then
-    local avgfile=$(motion_event_images_average ${jsonfile} ${jpgfile})
+    local camera=$(jq -r '.camera' ${jsonfile})
+    local device=$(jq -r '.device' ${jsonfile})
 
-    if [ -s "${avgfile}" ]; then
-      motion.log.debug "${FUNCNAME[0]} created average JPEG"
-
-      local giffile=$(motion_event_animated ${jsonfile} ${avgfile})
-      if [ -s "${giffile}" ]; then
-        motion.log.debug "${FUNCNAME[0]} created GIF output: ${giffile}"
-
-        if [ $(motion_event_publish ${jsonfile} ${jpgfile} ${giffile}) = 'true' ]; then
-          motion.log.debug "${FUNCNAME[0]} published to MQTT; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
-          result=true
-        else
-          motion.log.error "${FUNCNAME[0]} failed to publish; metadata: $(jq -c '.' ${jsonfile})"
-        fi
-      else
-        motion.log.error "${FUNCNAME[0]} failed to calculate animated GIF; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
-      fi
-    else
-      motion.log.error "${FUNCNAME[0]} failed to calculate average image; metadatai $(jq -c '.image=(.image!=null)' ${jsonfile})"
-    fi
+    # publish JPEG to MQTT
+    motion.mqtt.pub -r -q 2 -t "$(motion.config.group)/${device}/${camera}/image/end" -f "${jpgfile}" || result=false
   else
     motion.log.error "${FUNCNAME[0]} failed to append picture; metadata: $(jq -c '.' ${jsonfile})"
+    result='false'
+  fi
+
+  if [ "${result:-}" != 'false' ] && [ $(motion_event_append_picture ${jsonfile} ${jpgfile}) = 'true' ]; then
+    if [ $(motion_event_publish ${jsonfile}) = 'true' ]; then
+      motion.log.debug "${FUNCNAME[0]} published to MQTT; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
+      result=true
+    else
+      motion.log.error "${FUNCNAME[0]} failed to publish; metadata: $(jq -c '.' ${jsonfile})"
+    fi
+  else
+    motion.log.error "${FUNCNAME[0]} failed append picture; metadata: $(jq -c '.' ${jsonfile})"
+  fi
+
+  if [ "${result:-}" != 'false' ]; then
+    local giffile=$(motion_create_animated "${jsonfile}")
+
+    if [ -s "${giffile:-}" ]; then
+      result='true'
+    else
+      motion.log.error "${FUNCNAME[0]} no GIF returned; from: motion_create_animated ${jsonfile}"
+      result='false'
+    fi  
   fi
   echo "${result:-false}"
 }
