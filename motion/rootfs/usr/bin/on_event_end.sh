@@ -16,7 +16,16 @@ motion_event_movie_convert()
   local seconds=${4:-15}
   local width=${5:-640}
 
-  ffmpeg -i "${input}" -t ${seconds} -vf "fps=${fps},scale=${width}:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 "${output}" &> /dev/null
+  if [ ${seconds} -gt 15 ]; then 
+    motion.log.warn "${FUNCNAME[0]} elapsed ${seconds}; exceeded 15 seconds; trimming"
+    seconds=15
+  fi
+  if [ ${seconds} -gt 0 ]; then
+    motion.log.debug "${FUNCNAME[0]} converting; elapsed ${seconds}; fps: ${fps}; width: ${width}"
+    ffmpeg -i "${input}" -t ${seconds} -vf "fps=${fps},scale=${width}:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 "${output}" &> /dev/null
+  else
+    motion.log.error "${FUNCNAME[0]} ZERO seconds"
+  fi
   if [ ! -s "${output}" ]; then
     output=
   fi
@@ -170,6 +179,7 @@ motion_event_json()
     local timestamp=$(date -u +%FT%TZ)
 
     jq '.id="'${ts}-${en}'"|.end='${end}'|.elapsed='${elapsed}'|.timestamp.end="'${timestamp}'"' ${jsonfile} > ${jsonfile}.$$ && mv -f ${jsonfile}.$$ ${jsonfile} && result="${jsonfile}"
+    motion.log.debug "${FUNCNAME[0]}; metdata: $(jq -c '.' ${jsonfile})"
   else
     motion.log.error "${FUNCNAME[0]} no JSON file: ${jsonfile}"
   fi
@@ -317,7 +327,7 @@ motion_event_append_picture()
   echo "${result:-null}"
 }
 
-motion_event_publish()
+motion_publish_event()
 {
   motion.log.debug "${FUNCNAME[0]}; args: ${*}"
 
@@ -340,7 +350,7 @@ motion_event_publish()
   echo "${result:-false}"
 }
 
-motion_create_average()
+motion_publish_average()
 {
   motion.log.debug "${FUNCNAME[0]}; args: ${*}"
 
@@ -358,7 +368,7 @@ motion_create_average()
   echo "${result:-false}"
 }
 
-motion_create_animated()
+motion_publish_animated()
 {
   motion.log.debug "${FUNCNAME[0]}; args: ${*}"
 
@@ -367,16 +377,16 @@ motion_create_animated()
   local giffile=$(motion_event_animated ${jsonfile})
 
   if [ -s "${giffile}" ]; then
-    result="${giffile}"
     motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/${device}/${camera}/image-animated" -f "${giffile}" || result=false
     rm -f "${giffile}"
+    result='true'
   else
     motion.log.error "${FUNCNAME[0]} failed to calculate animated GIF; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
   fi
   echo "${result:-false}"
 }
 
-motion_create_annotated()
+motion_publish_annotated()
 {
   motion.log.debug "${FUNCNAME[0]}; args: ${*}"
 
@@ -394,7 +404,7 @@ motion_create_annotated()
   echo "${result:-false}"
 }
 
-motion_create_composite()
+motion_publish_composite()
 {
   motion.log.debug "${FUNCNAME[0]}; args: ${*}"
 
@@ -422,8 +432,9 @@ motion_event_process()
     result='false'
   fi
 
+  # add picture to event JSON and publish
   if [ "${result:-}" != 'false' ] && [ $(motion_event_append_picture ${jsonfile} ${jpgfile}) = 'true' ]; then
-    if [ $(motion_event_publish ${jsonfile}) = 'true' ]; then
+    if [ $(motion_publish_event ${jsonfile}) = 'true' ]; then
       motion.log.debug "${FUNCNAME[0]} published to MQTT; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
       result=true
     else
@@ -433,15 +444,12 @@ motion_event_process()
     motion.log.error "${FUNCNAME[0]} failed append picture; metadata: $(jq -c '.' ${jsonfile})"
   fi
 
-  if [ "${result:-}" != 'false' ]; then
-    local giffile=$(motion_create_animated "${jsonfile}")
-
-    if [ -s "${giffile:-}" ]; then
+  # create animated GIF and publish
+  if [ "${result:-}" != 'false' ] && [ $(motion_publish_animated "${jsonfile}") = 'true' ]; then
       result='true'
-    else
-      motion.log.error "${FUNCNAME[0]} no GIF returned; from: motion_create_animated ${jsonfile}"
-      result='false'
-    fi  
+  else
+    motion.log.error "${FUNCNAME[0]} no GIF returned; from: motion_publish_animated ${jsonfile}"
+    result='false'
   fi
   echo "${result:-false}"
 }
