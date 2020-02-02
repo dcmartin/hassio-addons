@@ -15,6 +15,7 @@ motion_event_movie_convert()
   local fps=${3:-5}
   local seconds=${4:-15}
   local width=${5:-640}
+  local ffmpeg=$(mktemp)
 
   if [ ${seconds} -gt 15 ]; then 
     motion.log.warn "${FUNCNAME[0]} elapsed ${seconds}; exceeded 15 seconds; trimming"
@@ -22,13 +23,15 @@ motion_event_movie_convert()
   fi
   if [ ${seconds} -gt 0 ]; then
     motion.log.debug "${FUNCNAME[0]} converting; elapsed ${seconds}; fps: ${fps}; width: ${width}"
-    ffmpeg -i "${input}" -t ${seconds} -vf "fps=${fps},scale=${width}:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 "${output}" &> /dev/null
+    ffmpeg -t ${seconds} -i -t ${seconds} "${input}" -vf "fps=${fps},scale=${width}:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 "${output}" &> ${ffmpeg}
   else
-    motion.log.error "${FUNCNAME[0]} ZERO seconds"
+    motion.log.warn "${FUNCNAME[0]} ZERO seconds"
   fi
   if [ ! -s "${output}" ]; then
+    motion.log.error "${FUNCNAME[0]} ffmpeg failed: $(cat ${ffmpeg})"
     output=
   fi
+  rm -f "${ffmpeg:-}"
   echo "${output}"
 }
 
