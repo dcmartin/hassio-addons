@@ -23,7 +23,7 @@ motion_event_movie_convert()
   fi
   if [ ${seconds} -gt 0 ]; then
     motion.log.debug "${FUNCNAME[0]} converting; elapsed ${seconds}; fps: ${fps}; width: ${width}"
-    ffmpeg -t ${seconds} -i -t ${seconds} "${input}" -vf "fps=${fps},scale=${width}:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 "${output}" &> ${ffmpeg}
+    ffmpeg -t ${seconds} -i "${input}" -t ${seconds} -vf "fps=${fps},scale=${width}:-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -loop 0 "${output}" &> ${ffmpeg}
   else
     motion.log.warn "${FUNCNAME[0]} ZERO seconds"
   fi
