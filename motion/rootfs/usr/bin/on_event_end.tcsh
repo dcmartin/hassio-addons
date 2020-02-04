@@ -67,7 +67,8 @@ set HR = "$6"
 set MN = "$7"
 set SC = "$8"
 set TS = "${YR}${MO}${DY}${HR}${MN}${SC}"
-set NOW = `$dateconv -i '%Y%m%d%H%M%S' -f "%s" "$TS"`
+set timezone = `cat /etc/timezone`
+set NOW = `$dateconv --from-zone ${timezone} -i '%Y%m%d%H%M%S' -f "%s" "$TS"`
 
 ## base of MQTT topic
 set mqtt_topic = "${MOTION_GROUP}/${MOTION_DEVICE}/${CN}"
@@ -163,7 +164,7 @@ endif
 ## update event_json_file
 ##
 
-set date = `date +%s`
+set date = `date -u +%s`
 set timestamp = `date -u +%FT%TZ`
 set images = `echo "$frames" | sed 's/ /,/g' | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g'`
 set images = '['"$images"']'

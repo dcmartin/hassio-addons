@@ -176,8 +176,9 @@ motion_event_json()
   fi
 
   if [ "${jsonfile:-null}" != 'null' ] && [ -s "${jsonfile:-}" ]; then
+    local timezone=$(cat /etc/timezone)
+    local end=$(motion.util.dateconv --from-zone ${timezone} -i '%Y%m%d%H%M%S' -f "%s" "$ts")
     local start=$(jq -r '.start' ${jsonfile})
-    local end=$(motion.util.dateconv -i '%Y%m%d%H%M%S' -f "%s" "$ts")
     local elapsed=$((end-start))
     local timestamp=$(date -u +%FT%TZ)
 
@@ -341,7 +342,7 @@ motion_publish_event()
   local timestamp=$(date -u +%FT%TZ)
 
   # flatten JSON
-  jq -c '.date='$(date +%s)'|.timestamp.publish="'${timestamp}'"' ${jsonfile} > ${jsonfile}.$$ && mv -f ${jsonfile}.$$ ${jsonfile}
+  jq -c '.date='$(date -u +%s)'|.timestamp.publish="'${timestamp}'"' ${jsonfile} > ${jsonfile}.$$ && mv -f ${jsonfile}.$$ ${jsonfile}
   if [ -s "${jsonfile}" ]; then
     # publish JSON to MQTT
     motion.mqtt.pub -r -q 2 -t "$(motion.config.group)/${device}/${camera}/event/end" -f "${jsonfile}" && rm -f ${temp} || result=false
@@ -535,11 +536,11 @@ on_event_end()
   # exec 1>&- # close stdout
   # exec 2>&- =''# close stderr
 
-  motion.log.info "${FUNCNAME[0]} begin; event: ${*}; date: $(date +%s)"
+  motion.log.info "${FUNCNAME[0]} begin; event: ${*}"
 
   local result=$(motion_event_end ${*} | jq -c '.')
 
-  motion.log.info "${FUNCNAME[0]} finish; event: ${*}; date: $(date +%s); result: ${result}"
+  motion.log.info "${FUNCNAME[0]} finish; event: ${*}; result: ${result}"
 }
 
 ###

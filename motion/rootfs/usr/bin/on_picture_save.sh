@@ -36,7 +36,9 @@ on_picture_save()
   local ID=${IF##*/} && ID=${ID%.*}
   local TS=$(echo "${ID}" | sed 's/\(.*\)-.*-.*/\1/') 
   local SN=$(echo "${ID}" | sed 's/.*-..-\(.*\).*/\1/')
-  local NOW=$($dateconv -i '%Y%m%d%H%M%S' -f "%s" "$TS")
+  local timezone=$(cat /etc/timezone)
+  #local NOW=$(motion.util.dateconv -i '%Y%m%d%H%M%S' -f "%s" "${TS}")
+  local NOW=$(date -u +%s)
   local timestamp=$(date -u +%FT%TZ)
 
   # create JSON

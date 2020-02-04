@@ -24,7 +24,9 @@ on_camera_lost()
   local MN="${6}"
   local SC="${7}"
   local TS="${YR}${MO}${DY}${HR}${MN}${SC}"
-  local NOW=$(motion.util.dateconv -i '%Y%m%d%H%M%S' -f "%s" "$TS")
+  local timezone=$(cat /etc/timezone)
+  #local NOW=$(motion.util.dateconv --from-zone ${timezone:-UTC} -i '%Y%m%d%H%M%S' -f "%s" "${TS}")
+  local NOW=$(date -u +%s)
   local timestamp=$(date -u +%FT%TZ)
   local topic="$(motion.config.group)/$(motion.config.device)/${CN}/status/lost"
   local message='{"device":"'$(motion.config.device)'","camera":"'"${CN}"'","date":'"${NOW}"',"timestamp":"'${timestamp:-none}'","status":"lost"}'

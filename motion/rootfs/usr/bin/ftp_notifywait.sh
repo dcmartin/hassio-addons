@@ -36,8 +36,8 @@ ftp_notifywait()
       do_ftp_notifywait.sh "${input%.*}" "${input}" &
 
       # manually "find" camera
-      motion.log.debug "running on_camera_found.sh ${name} $($dateconv -f '%Y %m %d %H %M %S' -i '%s' $(date '+%s'))"
-      on_camera_found.sh ${name} $($dateconv -f '%Y %m %d %H %M %S' -i "%s" $(date '+%s'))
+      motion.log.debug "running on_camera_found.sh ${name} $($dateconv -f '%Y %m %d %H %M %S' -i '%s' $(date -u +%s))"
+      on_camera_found.sh ${name} $($dateconv -f '%Y %m %d %H %M %S' -i "%s" $(date -u '+%s'))
     fi
   done
 }

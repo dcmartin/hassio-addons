@@ -231,7 +231,7 @@ process_config_system()
 
   local timestamp=$(date -u +%FT%TZ)
   local hostname=$(hostname)
-  local json='{"ipaddr":"'$(hostname -i)'","hostname":"'${hostname}'","arch":"'$(arch)'","date":'$(/bin/date +%s)',"timestamp":"'${timestamp}'"}'
+  local json='{"ipaddr":"'$(hostname -i)'","hostname":"'${hostname}'","arch":"'$(arch)'","date":'$(date -u +%s)',"timestamp":"'${timestamp}'"}'
 
   echo "${json:-null}"
 }
@@ -269,7 +269,7 @@ start_motion()
 ###
 
 ## build internal configuration
-JSON='{"config_path":"'"${CONFIG_PATH}"'","ipaddr":"'$(hostname -i)'","hostname":"'"$(hostname)"'","arch":"'$(arch)'","date":'$(/bin/date +%s)
+JSON='{"config_path":"'"${CONFIG_PATH}"'","ipaddr":"'$(hostname -i)'","hostname":"'"$(hostname)"'","arch":"'$(arch)'","date":'$(date -u +%s)
 
 # device name
 VALUE=$(jq -r ".device" "${CONFIG_PATH}")
