@@ -295,9 +295,18 @@ MOTION_CLIENT="${VALUE}"
 ## time zone
 VALUE=$(jq -r ".timezone" "${CONFIG_PATH}")
 # Set the correct timezone
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="GMT"; fi
-motion.log.debug "setting TIMEZONE ${VALUE}"
-cp /usr/share/zoneinfo/${VALUE} /etc/localtime
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then 
+  VALUE="GMT"
+  motion.log.warn "no timezone set; defaulting to ${VALUE}"
+else
+  motion.log.debug "setting TIMEZONE ${VALUE}"
+fi
+if [ -s "/usr/share/zoneinfo/${VALUE}" ]; then
+  cp /usr/share/zoneinfo/${VALUE} /etc/localtime
+  echo "${VALUE}" > /etc/timezone
+else
+  motion.log.error "invalid timezone: ${VALUE}"
+fi
 JSON="${JSON}"',"timezone":"'"${VALUE}"'"'
 
 # set unit_system for events
