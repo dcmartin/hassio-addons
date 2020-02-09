@@ -273,23 +273,32 @@ JSON='{"config_path":"'"${CONFIG_PATH}"'","ipaddr":"'$(hostname -i)'","hostname"
 
 # device name
 VALUE=$(jq -r ".device" "${CONFIG_PATH}")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="${HOSTNAME}"; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then 
+  VALUE="${HOSTNAME}"
+  motion.log.warn "device unspecifieid; setting device: ${VALUE}"
+fi
 JSON="${JSON}"',"device":"'"${VALUE}"'"'
-motion.log.debug "setting device ${VALUE}"
+motion.log.info "MOTION_DEVICE: ${VALUE}"
 MOTION_DEVICE="${VALUE}"
 
 # device group
 VALUE=$(jq -r ".group" "${CONFIG_PATH}")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="motion"; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then 
+  VALUE="motion"
+  motion.log.warn "group unspecifieid; setting group: ${VALUE}"
+fi
 JSON="${JSON}"',"group":"'"${VALUE}"'"'
-motion.log.debug "setting group ${VALUE}"
+motion.log.info "MOTION_GROUP: ${VALUE}"
 MOTION_GROUP="${VALUE}"
 
 # client
 VALUE=$(jq -r ".client" "${CONFIG_PATH}")
-if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then VALUE="${MOTION_DEVICE}"; fi
+if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then 
+  VALUE="${MOTION_DEVICE}"
+  motion.log.warn "client unspecifieid; setting client: ${VALUE}"
+fi
 JSON="${JSON}"',"client":"'"${VALUE}"'"'
-motion.log.debug "setting client ${VALUE}"
+motion.log.info "MOTION_CLIENT: ${VALUE}"
 MOTION_CLIENT="${VALUE}"
 
 ## time zone
@@ -297,40 +306,40 @@ VALUE=$(jq -r ".timezone" "${CONFIG_PATH}")
 # Set the correct timezone
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then 
   VALUE="GMT"
-  motion.log.warn "no timezone set; defaulting to ${VALUE}"
+  motion.log.warn "timezone unspecified; defaulting to ${VALUE}"
 else
-  motion.log.debug "setting TIMEZONE ${VALUE}"
+  motion.log.info "TIMEZONE: ${VALUE}"
 fi
 if [ -s "/usr/share/zoneinfo/${VALUE}" ]; then
   cp /usr/share/zoneinfo/${VALUE} /etc/localtime
   echo "${VALUE}" > /etc/timezone
 else
-  motion.log.error "invalid timezone: ${VALUE}"
+  motion.log.error "No known timezone: ${VALUE}"
 fi
 JSON="${JSON}"',"timezone":"'"${VALUE}"'"'
 
 # set unit_system for events
 VALUE=$(jq -r '.unit_system' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="imperial"; fi
-motion.log.debug "Set unit_system to ${VALUE}"
+motion.log.info "Set unit_system to ${VALUE}"
 JSON="${JSON}"',"unit_system":"'"${VALUE}"'"'
 
 # set latitude for events
 VALUE=$(jq -r '.latitude' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0.0; fi
-motion.log.debug "Set latitude to ${VALUE}"
+motion.log.info "Set latitude to ${VALUE}"
 JSON="${JSON}"',"latitude":'"${VALUE}"
 
 # set longitude for events
 VALUE=$(jq -r '.longitude' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0.0; fi
-motion.log.debug "Set longitude to ${VALUE}"
+motion.log.info "Set longitude to ${VALUE}"
 JSON="${JSON}"',"longitude":'"${VALUE}"
 
 # set elevation for events
 VALUE=$(jq -r '.elevation' "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
-motion.log.debug "Set elevation to ${VALUE}"
+motion.log.info "Set elevation to ${VALUE}"
 JSON="${JSON}"',"elevation":'"${VALUE}"
 
 ##
@@ -340,22 +349,22 @@ JSON="${JSON}"',"elevation":'"${VALUE}"
 # local MQTT server (hassio addon)
 VALUE=$(jq -r ".mqtt.host" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="mqtt"; fi
-motion.log.debug "Using MQTT at ${VALUE}"
+motion.log.info "Using MQTT at ${VALUE}"
 MQTT='{"host":"'"${VALUE}"'"'
 # username
 VALUE=$(jq -r ".mqtt.username" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=""; fi
-motion.log.debug "Using MQTT username: ${VALUE}"
+motion.log.info "Using MQTT username: ${VALUE}"
 MQTT="${MQTT}"',"username":"'"${VALUE}"'"'
 # password
 VALUE=$(jq -r ".mqtt.password" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=""; fi
-motion.log.debug "Using MQTT password: ${VALUE}"
+motion.log.info "Using MQTT password: ${VALUE}"
 MQTT="${MQTT}"',"password":"'"${VALUE}"'"'
 # port
 VALUE=$(jq -r ".mqtt.port" "${CONFIG_PATH}")
 if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1883; fi
-motion.log.debug "Using MQTT port: ${VALUE}"
+motion.log.info "Using MQTT port: ${VALUE}"
 MQTT="${MQTT}"',"port":'"${VALUE}"'}'
 
 ## finish
@@ -491,20 +500,43 @@ MOTION="${MOTION}"',"picture_output":"'"${VALUE}"'"'
 motion.log.debug "Set picture_output to ${VALUE}"
 PICTURE_OUTPUT=${VALUE}
 
-# set movie_output (on, off, first, best, center)
+# set movie_output (on, off)
 if [ "${PICTURE_OUTPUT:-}" == 'best' ]; then
-  motion.log.info "Picture output: ${PICTURE_OUTPUT}; defaulting movie_output to on"
+  motion.log.notice "Picture output: ${PICTURE_OUTPUT}; defaulting movie_output to on"
   VALUE="on"
 else
   VALUE=$(jq -r ".default.movie_output" "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then 
-    motion.log.warn "Picture output: ${PICTURE_OUTPUT}; defaulting movie_output to off"
+    motion.log.debug "movie_output unspecified; defaulting: off"
     VALUE="off"
+  else
+    case "${VALUE}" in
+    3gp)
+      motion.log.error "movie_output: video type ${VALUE}; ensure camera type: ftpd"
+      VALUE="off"
+    ;;
+    mp4)
+      motion.log.debug "movie_output: supported codec: ${VALUE}; - MPEG-4 Part 14 H264 encoding"
+      VALUE="on"
+    ;;
+    mpeg4|swf|flv|ffv1|mov|mkv|hevc)
+      motion.log.warn "movie_output: unsupported option: ${VALUE}"
+      VALUE="on"
+    ;;
+    off)
+     motion.log.debug "movie_output: off defined"
+     VALUE="off"
+    ;;
+    *)
+     motion.log.warn "movie_output: unknown option for movie_output: ${VALUE}"
+     VALUE="off"
+    ;;
+    esac
   fi
 fi
 sed -i "s/.*movie_output .*/movie_output ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"movie_output":"'"${VALUE}"'"'
-motion.log.debug "Set movie_output to ${VALUE}"
+motion.log.info "Set movie_output to ${VALUE}"
 
 # set picture_type (jpeg, ppm)
 VALUE=$(jq -r ".default.picture_type" "${CONFIG_PATH}")
@@ -566,7 +598,7 @@ motion.log.debug "Set fov to ${VALUE}"
 
 # set minimum_motion_frames
 VALUE=$(jq -r ".default.minimum_motion_frames" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=10; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1; fi
 sed -i "s/.*minimum_motion_frames\s[0-9]\+/minimum_motion_frames ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"minimum_motion_frames":'"${VALUE}"
 motion.log.debug "Set minimum_motion_frames to ${VALUE}"
@@ -777,7 +809,7 @@ MOTION="${MOTION}"'}'
 ## append to configuration JSON
 JSON="${JSON}"',"motion":'"${MOTION}"
 
-motion.log.info "MOTION: $(echo "${MOTION}" | jq -c '.')"
+motion.log.debug "MOTION: $(echo "${MOTION}" | jq -c '.')"
 
 ###
 ### process cameras 
@@ -1090,7 +1122,7 @@ else
   CAMERAS='null'
 fi
 
-motion.log.info "CAMERAS: $(echo "${CAMERAS}" | jq -c '.')"
+motion.log.debug "CAMERAS: $(echo "${CAMERAS}" | jq -c '.')"
 
 ###
 ## append camera, finish JSON configuration, and validate
@@ -1102,13 +1134,13 @@ if [ ! -s "$(motion.config.file)" ]; then
   motion.log.error "INVALID CONFIGURATION; metadata: ${JSON}"
   exit 1
 fi
-motion.log.info "CONFIGURATION; file: $(motion.config.file); metadata: $(jq -c '.' $(motion.config.file))"
+motion.log.debug "CONFIGURATION; file: $(motion.config.file); metadata: $(jq -c '.' $(motion.config.file))"
 
 ###
 ## configure inotify() for any 'ftpd' cameras
 ###
 
-motion.log.info "Settting up notifywait for FTPD cameras"
+motion.log.debug "Settting up notifywait for FTPD cameras"
 ftp_notifywait.sh "$(motion.config.file)"
 
 ###
@@ -1123,7 +1155,7 @@ for (( i = 1; i <= MOTION_COUNT;  i++)); do
      motion.log.fatal "missing configuration for daemon ${i} with ${CONF}"
      exit 1
   fi
-  motion.log.info "Starting motion configuration ${i}: ${CONF}"
+  motion.log.debug "Starting motion configuration ${i}: ${CONF}"
   motion -b -c "${CONF}"
 
   # get next configuration
@@ -1131,7 +1163,7 @@ for (( i = 1; i <= MOTION_COUNT;  i++)); do
 done
 
 ## publish MQTT start
-motion.log.info "PUBLISHING CONFIGURATION; topic: $(motion.config.group)/$(motion.config.device)/start"
+motion.log.notice "PUBLISHING CONFIGURATION; topic: $(motion.config.group)/$(motion.config.device)/start"
 motion.mqtt.pub -r -q 2 -t "$(motion.config.group)/$(motion.config.device)/start" -f "$(motion.config.file)"
 
 ## run apache forever

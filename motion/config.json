@@ -45,64 +45,75 @@
     "log_level": "info",
     "log_motion_level": "info",
     "log_motion_type": "ALL",
-    "group": "motion",
     "default": {
-      "post_pictures": "best",
-      "interval": 30,
-      "despeckle": "EedDl",
-      "changes": "off",
-      "text_scale": 1,
-      "framerate": 5,
       "brightness": 100,
+      "changes": "on",
       "contrast": 50,
+      "despeckle": "EedDl",
       "event_gap": 10,
-      "fov": 62,
+      "framerate": 1,
       "framerate": 5,
-      "hue": 50,
-      "lightswitch": 0,
-      "palette": 15,
-      "picture_quality": 100,
-      "stream_quality": 100,
-      "threshold_percent": 10,
-      "saturation": 0,
-      "netcam_userpass": "username:password",
-      "username": "username",
-      "password": "password",
       "height": 480,
-      "width": 640,
-      "movie_output": "off",
+      "hue": 50,
+      "interval": 60,
+      "lightswitch": 0,
+      "minimum_motion_frames": 1,
       "movie_max": 60,
-      "movie_quality": 80
+      "movie_output": "off",
+      "movie_quality": 80,
+      "netcam_userpass": "username:password",
+      "palette": 15,
+      "password": "password",
+      "picture_quality": 80,
+      "post_pictures": "best",
+      "saturation": 0,
+      "stream_quality": 50,
+      "text_scale": 2,
+      "threshold_percent": 1,
+      "username": "username",
+      "width": 640
     },
-    "cameras": [
-      {
-        "name": "wyzecam",
-        "type": "netcam",
-        "netcam_url": "rtsp://192.168.1.223/live",
-        "netcam_userpass": "wyzeuser:wyzepass",
-        "framerate": 10,
-        "threshold_percent": 20
-      },
-      {
-        "name": "webcam",
-        "type": "ftpd",
-        "netcam_url": "http://192.168.1.174/img/video.mjpeg",
-        "netcam_userpass": "webcamuser:webcampass",
-        "framerate": 5
-      },
-      {
-        "name": "rpi",
-        "type": "mqtt",
-        "netcam_url": "http://192.168.1.175:8090/1",
-        "netcam_userpass": "rpiuser:rpipass"
-      }
-    ],
     "mqtt": {
       "host": "core-mosquitto",
       "port": "1883",
       "username": "username",
       "password": "password"
-    }
+    },
+    "group": "motion",
+    "device": "motion-local",
+    "client": "motion-local",
+    "timezone": "GMT",
+    "cameras": [
+      {
+        "name": "wyzecam",
+        "type": "netcam",
+        "icon": "camera",
+        "width": 1920,
+        "height": 1080,
+        "netcam_url": "rtsp://192.168.1.223/live",
+        "netcam_userpass": "wyzecamuser:wyzecampass",
+        "framerate": 2,
+        "threshold_percent": 2
+      },
+      {
+        "name": "wcv80n",
+        "type": "ftpd",
+        "icon": "webcam",
+        "netcam_url": "http://192.168.1.174/img/video.mjpeg",
+        "netcam_userpass": "wcv80nuser:wcv80npass",
+        "movie_max": 5,
+        "framerate": 5
+      },
+      {
+        "name": "rpi-v4l2",
+        "type": "mqtt",
+        "icon": "raspberry-pi",
+        "width": 1280,
+        "height": 720,
+        "netcam_url": "http://192.168.1.93:8090/1",
+        "netcam_userpass": "username:password"
+      }
+    ]
   },
   "schema": {
     "log_level": "str",
@@ -132,8 +143,9 @@
       "hue": "int?",
       "interval": "int(1,120)?",
       "lightswitch": "int?",
-      "movie_max": "int(1,60)?",
-      "movie_output": "list(off|mp4|mpeg4|3gp)?",
+      "minimum_motion_frames": "int(1,300)?",
+      "movie_max": "int(1,300)?",
+      "movie_output": "list(off|mp4|3gp|mpeg4|swf|flv|ffv1|mov|mkv|hevc)?",
       "movie_quality": "int(1,100)?",
       "netcam_userpass": "str?",
       "palette": "int?",
