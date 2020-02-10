@@ -230,7 +230,7 @@ process_config_system()
   motion.log.debug "${FUNCNAME[0]}" "${*}"
 
   local timestamp=$(date -u +%FT%TZ)
-  local hostname=$(hostname)
+  local hostname="$(hostname)"
   local json='{"ipaddr":"'$(hostname -i)'","hostname":"'${hostname}'","arch":"'$(arch)'","date":'$(date -u +%s)',"timestamp":"'${timestamp}'"}'
 
   echo "${json:-null}"
@@ -526,44 +526,45 @@ motion.log.info "Set picture_output to ${VALUE}"
 PICTURE_OUTPUT=${VALUE}
 
 # set movie_output (on, off)
-if [ "${PICTURE_OUTPUT:-}" = 'best' ] || "${PICTURE_OUTPUT:-}" = 'first' ]; then
+if [ "${PICTURE_OUTPUT:-}" = 'best' ] || [ "${PICTURE_OUTPUT:-}" = 'first' ]; then
   motion.log.notice "Picture output: ${PICTURE_OUTPUT}; setting movie_output: on"
-  VALUE="on"
+  VALUE='on'
 else
-  VALUE=$(jq -r ".default.movie_output" "${CONFIG_PATH}")
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then 
+  VALUE=$(jq -r '.default.movie_output' "${CONFIG_PATH}")
+  if [ "${VALUE:-null}" = 'null' ]; then 
     motion.log.debug "movie_output unspecified; defaulting: off"
     VALUE="off"
   else
-    case "${VALUE}" in
-    3gp)
-      motion.log.notice "movie_output: video type ${VALUE}; ensure camera type: ftpd"
-      MOTION_VIDEO_CODEC="${VALUE}"
-      VALUE="off"
-    ;;
-    mp4)
-      motion.log.debug "movie_output: supported codec: ${VALUE}; - MPEG-4 Part 14 H264 encoding"
-      MOTION_VIDEO_CODEC="${VALUE}"
-      VALUE="on"
-    ;;
-    mpeg4|swf|flv|ffv1|mov|mkv|hevc)
-      motion.log.warn "movie_output: unsupported option: ${VALUE}"
-      MOTION_VIDEO_CODEC="${VALUE}"
-      VALUE="on"
-    ;;
-    off)
-      motion.log.debug "movie_output: off defined"
-      MOTION_VIDEO_CODEC=""
-      VALUE="off"
-    ;;
-    *)
-      motion.log.error "movie_output: unknown option for movie_output: ${VALUE}"
-      MOTION_VIDEO_CODEC=""
-      VALUE="off"
-    ;;
+    case ${VALUE} in
+      '3gp')
+        motion.log.notice "movie_output: video type ${VALUE}; ensure camera type: ftpd"
+        MOTION_VIDEO_CODEC="${VALUE}"
+        VALUE='off'
+      ;;
+      'on'|'mp4')
+        motion.log.debug "movie_output: supported codec: ${VALUE}; - MPEG-4 Part 14 H264 encoding"
+        MOTION_VIDEO_CODEC="${VALUE}"
+        VALUE='on'
+      ;;
+      'mpeg4'|'swf'|'flv'|'ffv1'|'mov'|'mkv'|'hevc')
+        motion.log.warn "movie_output: unsupported option: ${VALUE}"
+        MOTION_VIDEO_CODEC="${VALUE}"
+        VALUE='on'
+      ;;
+      'off')
+        motion.log.debug "movie_output: off defined"
+        MOTION_VIDEO_CODEC=
+        VALUE='off'
+      ;;
+      '*')
+        motion.log.error "movie_output: unknown option for movie_output: ${VALUE}"
+        MOTION_VIDEO_CODEC=
+        VALUE='off'
+      ;;
     esac
   fi
 fi
+
 sed -i "s/.*movie_output .*/movie_output ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"movie_output":"'"${VALUE}"'"'
 motion.log.info "Set movie_output to ${VALUE}"
