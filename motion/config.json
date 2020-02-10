@@ -130,7 +130,7 @@
     "timezone": "str?",
     "default": {
       "post_pictures": "list(first|last|best|most|center)",
-      "picture_output": "list(on|first|best)?",
+      "picture_output": "list(off|on|first|best)?",
       "brightness": "int?",
       "changes": "list(on|off)?",
       "contrast": "int?",

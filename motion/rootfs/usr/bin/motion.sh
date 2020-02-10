@@ -492,17 +492,42 @@ motion.log.debug "Set post_pictures to ${VALUE}"
 MOTION="${MOTION}"',"post_pictures":"'"${VALUE}"'"'
 export MOTION_POST_PICTURES="${VALUE}"
 
-# set picture_output (on, off, first, best, center)
+# set picture_output (on, off, first, best)
+case "${MOTION_POST_PICTURES}" in
+  on|center|most)
+    SPEC="on"
+    motion.log.debug "process all images; picture_output: ${SPEC}"
+  ;;
+  best|first)
+    SPEC="on"
+    motion.log.debug "process one image; picture_output: ${SPEC}"
+  ;;
+  off)
+    SPEC="off"
+    motion.log.debug "process no image; picture_output: ${SPEC}"
+  ;;
+esac
+
+# check specified for over-ride
 VALUE=$(jq -r ".default.picture_output" "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="best"; fi
+if [ "${VALUE:-}" != 'null' ] && [ ! -z "${VALUE:-}" ]; then
+  if [ "${VALUE}" != "${SPEC}" ]; then
+    motion.log.notice "picture_output; specified ${VALUE} does not match expected: ${SPEC}"
+  else
+    motion.log.debug "picture_output; specified ${VALUE} matches expected: ${SPEC}"
+  fi
+else
+  VALUE="${SPEC}"
+  motion.log.debug "picture_output; unspecified; using: ${VALUE}"
+fi
 sed -i "s/.*picture_output.*/picture_output ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"picture_output":"'"${VALUE}"'"'
-motion.log.debug "Set picture_output to ${VALUE}"
+motion.log.info "Set picture_output to ${VALUE}"
 PICTURE_OUTPUT=${VALUE}
 
 # set movie_output (on, off)
-if [ "${PICTURE_OUTPUT:-}" == 'best' ]; then
-  motion.log.notice "Picture output: ${PICTURE_OUTPUT}; defaulting movie_output to on"
+if [ "${PICTURE_OUTPUT:-}" = 'best' ] || "${PICTURE_OUTPUT:-}" = 'first' ]; then
+  motion.log.notice "Picture output: ${PICTURE_OUTPUT}; setting movie_output: on"
   VALUE="on"
 else
   VALUE=$(jq -r ".default.movie_output" "${CONFIG_PATH}")
@@ -512,24 +537,29 @@ else
   else
     case "${VALUE}" in
     3gp)
-      motion.log.error "movie_output: video type ${VALUE}; ensure camera type: ftpd"
+      motion.log.notice "movie_output: video type ${VALUE}; ensure camera type: ftpd"
+      MOTION_VIDEO_CODEC="${VALUE}"
       VALUE="off"
     ;;
     mp4)
       motion.log.debug "movie_output: supported codec: ${VALUE}; - MPEG-4 Part 14 H264 encoding"
+      MOTION_VIDEO_CODEC="${VALUE}"
       VALUE="on"
     ;;
     mpeg4|swf|flv|ffv1|mov|mkv|hevc)
       motion.log.warn "movie_output: unsupported option: ${VALUE}"
+      MOTION_VIDEO_CODEC="${VALUE}"
       VALUE="on"
     ;;
     off)
-     motion.log.debug "movie_output: off defined"
-     VALUE="off"
+      motion.log.debug "movie_output: off defined"
+      MOTION_VIDEO_CODEC=""
+      VALUE="off"
     ;;
     *)
-     motion.log.warn "movie_output: unknown option for movie_output: ${VALUE}"
-     VALUE="off"
+      motion.log.error "movie_output: unknown option for movie_output: ${VALUE}"
+      MOTION_VIDEO_CODEC=""
+      VALUE="off"
     ;;
     esac
   fi
