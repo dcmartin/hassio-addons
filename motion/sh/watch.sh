@@ -6,11 +6,11 @@ if [ ${#PIDS[@]} -gt 0 ]; then
    for pid in ${PIDS[@]}; do kill -9 ${pid}; done
 fi
 
-if [ -s "MOTION_CLIENT" ]; then MOTION_CLIENT=$(cat "MOTION_CLIENT"); else MOTION_CLIENT=$(hostname); fi
-if [ -s "MQTT_HOST" ]; then MQTT_HOST=$(cat "MQTT_HOST"); else MQTT_HOST='core-mosquitto'; fi
-if [ -s "MQTT_PORT" ]; then MQTT_PORT=$(cat "MQTT_PORT"); else MQTT_PORT='1883'; fi
-if [ -s "MQTT_USERNAME" ]; then MQTT_USERNAME=$(cat "MQTT_USERNAME"); else MQTT_USERNAME='username'; fi
-if [ -s "MQTT_PASSWORD" ]; then MQTT_PASSWORD=$(cat "MQTT_PASSWORD"); else MQTT_PASSWORD='password'; fi
+if [ -s "MOTION_CLIENT" ]; then MOTION_CLIENT=$(cat "MOTION_CLIENT"); else MOTION_CLIENT=${MOTION_CLIENT:-$(hostname)}; fi
+if [ -s "MQTT_HOST" ]; then MQTT_HOST=$(cat "MQTT_HOST"); else MQTT_HOST=${MQTT_HOST:-core-mosquitto}; fi
+if [ -s "MQTT_PORT" ]; then MQTT_PORT=$(cat "MQTT_PORT"); else MQTT_PORT=${MQTT_PORT:-1883}; fi
+if [ -s "MQTT_USERNAME" ]; then MQTT_USERNAME=$(cat "MQTT_USERNAME"); else MQTT_USERNAME=${MQTT_USERNAME:-username}; fi
+if [ -s "MQTT_PASSWORD" ]; then MQTT_PASSWORD=$(cat "MQTT_PASSWORD"); else MQTT_PASSWORD=${MQTT_PASSWORD:-password}; fi
 
 mosquitto_sub -h ${MQTT_HOST} -p ${MQTT_PORT} -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD} -t "+/${MOTION_CLIENT}/start" | jq -c '{"DEVICE":.}' &
 mosquitto_sub -h ${MQTT_HOST} -p ${MQTT_PORT} -u ${MQTT_USERNAME} -P ${MQTT_PASSWORD} -t "+/${MOTION_CLIENT}/+/event/start" | jq -c '{"START":.}' &
