@@ -169,7 +169,9 @@ set timestamp = `date -u +%FT%TZ`
 set images = `echo "$frames" | sed 's/ /,/g' | sed 's/\([^,]*\)\([,]*\)/"\1"\2/g'`
 set images = '['"$images"']'
 
-jq -c '.elapsed='"$elapsed"'|.end='${date}'|.timestamp.publish="'$timestamp'"|.date='"$date"'|.images='"$images" "$event_json_file" > "$event_json_file.$$"
+jq -c '.elapsed='"$elapsed"'|.end='${date}'|.timestamp.publish="'$timestamp'"|.date='"$date" "$event_json_file" > "$event_json_file.$$"
+#jq -c '.elapsed='"$elapsed"'|.end='${date}'|.timestamp.publish="'$timestamp'"|.date='"$date"'|.images='"$images" "$event_json_file" > "$event_json_file.$$"
+
 # test
 if ( ! -s "$event_json_file.$$" ) then
   echo "$0:t $$ -- Event JSON update failed; JSON: $event_json_file" >> /tmp/motion.log
