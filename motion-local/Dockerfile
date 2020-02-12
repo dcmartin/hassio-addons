@@ -1,4 +1,4 @@
-ARG BUILD_FROM=hassioaddons/base-aarch64:5.0.1
+ARG BUILD_FROM=dcmartin/amd64-addon-motion
 
 FROM $BUILD_FROM
 
