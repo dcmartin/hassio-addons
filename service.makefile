@@ -134,6 +134,17 @@ service-push:
 	  $(MAKE) TAG=$(TAG) HZN_ORG_ID=$(HZN_ORG_ID) DOCKER_REPOSITORY=$(DOCKER_REPOSITORY) BUILD_ARCH="$${arch}" push-service; \
 	done
 
+## latest
+
+latest-service: 
+	@$(MAKE) TAG=$(TAG) HZN_ORG_ID=$(HZN_ORG_ID) DOCKER_REPOSITORY=$(DOCKER_REPOSITORY) BUILD_ARCH=$(BUILD_ARCH) latest
+
+service-latest: 
+	@echo "${MC}>>> MAKE --" $$(date +%T) "-- latest service: ${SERVICE_NAME}; architectures: ${SERVICE_ARCH_SUPPORT}""${NC}" > /dev/stderr
+	@for arch in $(SERVICE_ARCH_SUPPORT); do \
+	  $(MAKE) TAG=$(TAG) HZN_ORG_ID=$(HZN_ORG_ID) DOCKER_REPOSITORY=$(DOCKER_REPOSITORY) BUILD_ARCH="$${arch}" latest-service; \
+	done
+
 ## start & stop
 
 service-start: start-service
