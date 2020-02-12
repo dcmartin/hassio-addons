@@ -181,7 +181,7 @@
     "cameras": [
       {
         "name": "str",
-        "type": "list(netcam|ftpd|mqtt)",
+        "type": "list(local|netcam|ftpd|mqtt)",
         "brightness": "int?",
         "changes": "list(on|off)?",
         "contrast": "int?",
