@@ -494,15 +494,15 @@ export MOTION_POST_PICTURES="${VALUE}"
 
 # set picture_output (on, off, first, best)
 case "${MOTION_POST_PICTURES}" in
-  on|center|most)
+  'on'|'center'|'most')
     SPEC="on"
     motion.log.debug "process all images; picture_output: ${SPEC}"
   ;;
-  best|first)
-    SPEC="on"
+  'best'|'first')
+    SPEC="${MOTION_POST_PICTURES}"
     motion.log.debug "process one image; picture_output: ${SPEC}"
   ;;
-  off)
+  'off')
     SPEC="off"
     motion.log.debug "process no image; picture_output: ${SPEC}"
   ;;
