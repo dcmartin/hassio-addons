@@ -5,6 +5,12 @@ This add-on is for the [Motion package][motionpkg]
 It provides for the specification of almost all the configuration [options][motiondoc] for Motion,
 including the specification of up to ten cameras.
 
+[<a href="https://hub.docker.com/repository/docker/dcmartin/aarch64-addon-motion"><img src="https://img.shields.io/badge/aarch64-yes-green.svg"></a>]() [![](https://images.microbadger.com/badges/version/dcmartin/aarch64-addon-motion.svg)](https://microbadger.com/images/dcmartin/aarch64-addon-motion)
+
+[<a href="https://hub.docker.com/repository/docker/dcmartin/armv7-addon-motion"><img src="https://img.shields.io/badge/armv7-yes-green.svg"></a>]()[![](https://images.microbadger.com/badges/version/dcmartin/armv7-addon-motion.svg)](https://microbadger.com/images/dcmartin/armv7-addon-motion)
+
+[<a href="https://hub.docker.com/repository/docker/dcmartin/amd64-addon-motion"><img src="https://img.shields.io/badge/amd64-yes-green.svg"></a>]()[![](https://images.microbadger.com/badges/version/dcmartin/amd64-addon-motion.svg)](https://microbadger.com/images/dcmartin/amd64-addon-motion)
+
 ## Installation
 
 The installation of this add-on is pretty straightforward and not different in
