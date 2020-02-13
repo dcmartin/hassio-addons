@@ -1,5 +1,27 @@
 # [Home Assistant][homeassistantio] Add-ons
 
+# 1. [Status](STATUS.md)
+
+![](https://img.shields.io/github/license/dcmartin/hassio-addons.svg?style=flat)
+![](https://img.shields.io/github/release/dcmartin/hassio-addons.svg?style=flat)
+[![Build Status](https://travis-ci.org/dcmartin/hassio-addons.svg?branch=master)](https://travis-ci.org/dcmartin/hassio-addons)
+[![Coverage Status](https://coveralls.io/repos/github/dcmartin/hassio-addons/badge.svg?branch=master)](https://coveralls.io/github/dcmartin/hassio-addons?branch=master)
+
+![](https://img.shields.io/github/repo-size/dcmartin/hassio-addons.svg?style=flat)
+![](https://img.shields.io/github/last-commit/dcmartin/hassio-addons.svg?style=flat)
+![](https://img.shields.io/github/commit-activity/w/dcmartin/hassio-addons.svg?style=flat)
+![](https://img.shields.io/github/contributors/dcmartin/hassio-addons.svg?style=flat)
+![](https://img.shields.io/github/issues/dcmartin/hassio-addons.svg?style=flat)
+![](https://img.shields.io/github/tag/dcmartin/hassio-addons.svg?style=flat)
+
+![Supports amd64 Architecture][amd64-shield]
+![Supports aarch64 Architecture][arm64-shield]
+![Supports armhf Architecture][arm-shield]
+
+[arm64-shield]: https://img.shields.io/badge/aarch64-yes-green.svg
+[amd64-shield]: https://img.shields.io/badge/amd64-yes-green.svg
+[arm-shield]: https://img.shields.io/badge/armhf-yes-green.svg
+
 ## About
 
 This is a repository of add-ons for Home Assistant. You can install Home Assistant on anything (Mac, LINUX, RaspberryPi, ..).

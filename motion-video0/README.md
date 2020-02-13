@@ -1,6 +1,6 @@
-# `motion` - detect and classify network video feeds
+# `motion-video0` - detect and classify USB camera
 
-This add-on is for the [Motion package][motionpkg] which provides an extensive set of capabilities to capture video feeds from a variety of sources, including real-time streaming protcol (`RSTP`),  web cameras (`HTTP`), and locally attached USB cameras (`V4L2`; local device access requires specialized version; see [`motion-local`](../motion-local/README.md) for more information.
+This add-on is for the [Motion package][motionpkg] which provides an extensive set of capabilities to capture video feeds from a variety of sources; the parent [`motion`](http://github.com/dcmartin/hassio-addons/tree/master/motion/README.md). This _version_ requires an attached camera (**`/dev/video0`**), but will also support `RTSP` and `HTTP` cameras.
 
 ## Docker containers
 
@@ -97,77 +97,48 @@ Options which can be specified on a per camera basis are:
 
 ```
 log_level: info
-log_motion_level: error
+log_motion_level: info
 log_motion_type: ALL
 default:
-  post_pictures: best
-  interval: 30
-  despeckle: EedDl
-  changes: 'off'
-  text_scale: 1
-  framerate: 5
   brightness: 100
+  changes: 'on'
   contrast: 50
+  despeckle: EedDl
   event_gap: 10
-  fov: 62
-  hue: 50
-  lightswitch: 0
-  palette: 15
-  picture_quality: 100
-  stream_quality: 100
-  threshold_percent: 10
-  saturation: 0
-  netcam_userpass: 'username:password'
-  username: username
-  password: password
+  framerate: 5
   height: 480
-  width: 640
+  hue: 50
+  interval: 60
+  lightswitch: 0
+  minimum_motion_frames: 1
+  movie_max: 60
   movie_output: 'off'
-  movie_max: 15
-  movie_quality: 60
+  movie_quality: 80
+  netcam_userpass: 'username:password'
+  palette: 15
+  password: password
+  picture_quality: 80
+  post_pictures: best
+  saturation: 0
+  stream_quality: 50
+  text_scale: 2
+  threshold_percent: 1
+  username: username
+  width: 640
 mqtt:
-  host: mqtt.dcmartin.com
+  host: 192.168.1.40
   port: '1883'
   username: username
   password: password
 group: motion
-device: netcams
-client: motion-local
+device: p40
+client: p40
 timezone: America/Los_Angeles
 cameras:
-  - name: poolcam
-    netcam_url: 'http://192.168.1.162/nphMotionJpeg?Resolution=640x480&Quality=Clarity'
-    type: netcam
-    icon: water
-    netcam_userpass: 'poolcamuser:poolcampass'
-  - name: interiorgate
-    netcam_url: 'http://192.168.1.38:8081/img/video.mjpeg'
-    type: netcam
-    icon: gate
-    netcam_userpass: 'interiorgateuser:interiorgatepass'
-  - name: road
-    netcam_url: 'http://192.168.1.36:8081/img/video.mjpeg'
-    type: netcam
-    icon: road
-    post_pictures: center
-    netcam_userpass: 'davekeli:4halian'
-  - name: dogpond
-    type: netcam
-    icon: car
-    netcam_url: 'rtsp://192.168.1.224/live'
-    framerate: 2
-    threshold_percent: 2
-  - name: pondview
-    type: netcam
-    icon: waves
-    netcam_url: 'rtsp://192.168.1.225/live'
-    framerate: 2
-    threshold_percent: 5
-  - name: shed
-    type: netcam
-    icon: window-shutter-open
-    netcam_url: 'rtsp://192.168.1.223/live'
-    framerate: 2
+  - name: window
+    type: local
+    icon: xbox
+    device: /dev/video0
     threshold_percent: 1
 ```
 

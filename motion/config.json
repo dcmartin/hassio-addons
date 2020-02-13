@@ -1,6 +1,6 @@
 {
   "name": "Motion Server",
-  "version": "0.8.67",
+  "version": "0.8.70",
   "slug": "motion",
   "description": "Motion server for network cameras only; no device support.",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/motion/README.md",
@@ -211,5 +211,6 @@
   },
   "environment": {
     "LOG_FORMAT": "{LEVEL}: {MESSAGE}"
-  }
+  },
+  "image": "dcmartin/{arch}-addon-motion"
 }
