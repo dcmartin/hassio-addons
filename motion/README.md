@@ -150,7 +150,7 @@ cameras:
     type: netcam
     icon: road
     post_pictures: center
-    netcam_userpass: 'davekeli:4halian'
+    netcam_userpass: 'roaduser:roadpass'
   - name: dogpond
     type: netcam
     icon: car
