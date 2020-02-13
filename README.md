@@ -1,6 +1,4 @@
-# [Home Assistant][homeassistantio] Add-ons
-
-# 1. [Status](STATUS.md)
+# `hassio-addons` -  by _[**dcmartin**](http://www.dcmartin.com)_
 
 ![](https://img.shields.io/github/license/dcmartin/hassio-addons.svg?style=flat)
 ![](https://img.shields.io/github/release/dcmartin/hassio-addons.svg?style=flat)
@@ -16,35 +14,17 @@
 
 ![Supports amd64 Architecture][amd64-shield]
 ![Supports aarch64 Architecture][arm64-shield]
-![Supports armhf Architecture][arm-shield]
+![Supports armv7 Architecture][armv7-shield]
+![Supports armhf Architecture][armhf-shield]
 
 [arm64-shield]: https://img.shields.io/badge/aarch64-yes-green.svg
 [amd64-shield]: https://img.shields.io/badge/amd64-yes-green.svg
-[arm-shield]: https://img.shields.io/badge/armhf-yes-green.svg
+[armhf-shield]: https://img.shields.io/badge/armhf-yes-green.svg
+[armv7-shield]: https://img.shields.io/badge/armv7-yes-green.svg
 
-## About
+## [About](STATUS.md)
 
-This is a repository of add-ons for Home Assistant. You can install Home Assistant on anything (Mac, LINUX, RaspberryPi, ..).
-You can read detailed Installation [instructions][hassio-install] or try the following command in a LINUX virtual machine.
-```
-wget -qO - ibm.biz/hassio-setup | sudo bash
-```
-
-### [Open Horizon][openhorizon-git] Examples
-
-These addons are demonstrations of the IBM Edge Fabric, a distributed, decentralized, zero ops, edge fabric, currently in alpha, which is based on Open Horizon.
-
-1. [`cpu2msghub`][cpu-addon] - Shared CPU addon to run [CPU2MSGHUB][cpu-pattern]
-1. [`sdr2msghub`][sdr-addon] - Shared SDR (software defined radio) addon to run the [SDR2MSGHUB][sdr-pattern]
-1. [`horizon`][horizon-addon] - Horizon control addon for fleets of devices.
-
-### Home Hacking
-
-1. `motion` - Packaging of the popular [Motion][motion-url] software for attached cameras (and network too)
-1. `ageathome` - an [eldercare][ageathome] monitoring to analyze daily activities
-1. `intu` - a cognitive platform using IBM Watson and the OSS [Intu][intu-url] software
-1. `horizon` - an [OSS] [openhorizon-git] decentralized, zero-ops, computing platform (base)
-1. `tfod` - TensorFlow On-Demand
+This is a repository of add-ons for [Home Assistant](http://home-assistant.io)  by [**dcmartin**](http://www.dcmartin.com)
 
 ## Installation
 
@@ -58,74 +38,19 @@ comparison to installing an "app" on your smartphone.
 1. Check the logs of the add-on to information
 1. Click on the `WebUI` link to access the addon UX (iff exists)
 
-**NOTE**: Please see the README for each add-on
+## &#128249; [`motion`](motion/README.md) _addon_
+The `motion` addon provides capabilities of the [Motion Project](https://motion-project.github.io/ ) for `RTSP`, `HTTP` network cameras as well as`FTP` connected cameras.
 
-## Changelog & Releases
-
-Releases are based on [Semantic Versioning][semver], and use the format
-of ``MAJOR.MINOR.PATCH``. In a nutshell, the version will be incremented
-based on the following:
-
-- ``MAJOR``: Incompatible or major changes.
-- ``MINOR``: Backwards-compatible new features and enhancements.
-- ``PATCH``: Backwards-compatible bugfixes and package updates.
-
-## Support
-
-Got questions?  Check for dcmartin on Discord (see below)
-
-- The Home Assistant [Community Forum][forum], we have a
-  [dedicated topic][forum] on that forum regarding this repository.
-- The Home Assistant [Discord Chat Server][discord] for general Home Assistant
-  discussions and questions.
-- Join the [Reddit subreddit][reddit] in [/r/homeassistant][reddit]
-
-## Contributing
-
-This is an active open-source project. We are always open to people who want to
-use the code or contribute to it.
-
-Thank you for being involved! :heart_eyes:
+&#9995; An attached camera (e.g. USB, Pi2, ..) may be utilized with `V4L2` (video for LINUX version 2); however, the [`motion-video0`](motion-video0/README.md) version must be utilized (n.b. it supports all other features of this _addon_).
 
 ## Authors & contributors
 
 David C Martin (github@dcmartin.com)
 
-The original setup of this repository is by [Franck Nijhof][frenck].
-
-## License
-
-MIT License
-
 Copyright (c) 2017 David C Martin
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
 [open-horizon]: https://github.com/open-horizon
-[sdr-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/sdr2msghub
-[cpu-pattern]: https://github.com/open-horizon/examples/tree/master/edge/msghub/cpu2msghub
-[cpu-addon]: https://github.com/dcmartin/hassio-addons/tree/master/cpu2msghub
-[sdr-addon]: https://github.com/dcmartin/hassio-addons/tree/master/sdr2msghub
-[horizon-addon]: https://github.com/dcmartin/hassio-addons/tree/master/horizon
 
-[buymeacoffee-shield]: https://www.buymeacoffee.com/assets/img/guidelines/download-assets-sm-2.svg
-[buymeacoffee]: https://www.buymeacoffee.com/dcmartin
 [commits-shield]: https://img.shields.io/github/commit-activity/y/hassio-addons/addon-motion.svg
 [commits]: https://github.com/dcmartin/hassio-addons/addon-motion/commits/master
 [contributors]: https://github.com/dcmartin/hassio-addons/addon-motion/graphs/contributors
@@ -147,7 +72,6 @@ SOFTWARE.
 [homeassistantio]: https://www.home-assistant.io/
 [hassio-install]: https://www.home-assistant.io/hassio/installation/
 [openhorizon-git]: https://github.com/open-horizon/
-[ageathome]: http://age-at-home.mybluemix.net
 [motion-url]: https://motion-project.github.io/ 
 [intu-url]: https://github.com/watson-intu
 [thisrepo]: https://github.com/dcmartin/hassio-addons

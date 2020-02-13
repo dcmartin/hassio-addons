@@ -147,9 +147,9 @@ cameras:
 The Motion package has extensive [documentation][motiondoc] on available parameters.  Almost all parameters are avsailable.
 The JSON configuration options are provided using the same name as in the Motion documentation.
 
-# Sample output
+## Sample output
 
-![motion sample](motion-sample.png?raw=true "MOTION")
+![motion sample](motion-video0-sample.png?raw=true "SAMPLE")
 
 ## Changelog & Releases
 
