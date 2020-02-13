@@ -54,7 +54,6 @@
       "contrast": 50,
       "despeckle": "EedDl",
       "event_gap": 10,
-      "framerate": 1,
       "framerate": 5,
       "height": 480,
       "hue": 50,
@@ -153,7 +152,6 @@
       "despeckle": "str?",
       "event_gap": "int?",
       "fov": "int?",
-      "framerate": "int?",
       "framerate": "int(2,100)?",
       "height": "int?",
       "hue": "int?",
@@ -227,5 +225,6 @@
   },
   "environment": {
     "LOG_FORMAT": "{LEVEL}: {MESSAGE}"
-  }
+  },
+  "image": "dcmartin/{arch}-addon-motion-video0"
 }
