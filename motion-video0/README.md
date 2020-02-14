@@ -30,106 +30,11 @@ This add-on is for the [Motion package][motionpkg] which provides an extensive s
 [amd64-shield]: https://img.shields.io/badge/amd64-yes-green.svg
 [armv7-shield]: https://img.shields.io/badge/armv7-yes-green.svg
 
-## Installation
+## Example
 
-The installation of this add-on is pretty straightforward and not different in
-comparison to installing any other Hass.io add-on.
-
-1. [Add our Hass.io add-ons repository][repository] to your Hass.io instance.
-1. Install the "Motion" add-on
-1. Configure the "Motion" add-on
-1. Start the "Motion" add-on
-1. Check the logs of the "Motion" add-on for failures :-(
-1. Select the "Open WebUI" button to see the cameras output
-
-**Note**: _Remember to SAVE and then restart the add-on when the configuration is changed._
-
-## MQTT
-
-Specify the host and port for sending MQTT messages.  All topics begin with the `devicedb` specified, which defaults to "motion".
-
-+ `<devicedb>/{name}/{camera}` -- JSON payload of motion detected
-+ `<devicedb>/{name}/{camera}/lost` -- JSON payload of motion detected
-+  `<devicedb>/{name}/{camera}/event/start` -- JSON payload of motion detected
-+ `<devicedb>/{name}/{camera}/event/end` -- JSON payload of motion detected
-+ `<devicedb>/{name}/{camera}/image` -- JPEG payload of image (**see** `post_pictures`)
-+ `<devicedb>/{name}/{camera}/image-average` -- JPEG payload of average event 
-+ `<devicedb>/{name}/{camera}/image-blend` -- JPEG payload of blended event (50%)
-+ `<devicedb>/{name}/{camera}/image-composite` --  JPEG payload of composite event
-+ `<devicedb>/{name}/{camera}/image-animated` -- GIF payload of event
-+ `<devicedb>/{name}/{camera}/image-animated-mask` -- GIF payload of event (as B/W mask)
-
-## CONFIGURATION
-
-This addon supports multiple installations across mutliple devices (e.g. RaspberryPi3 w/ USB PS3 Eye camera and LINUX PC w/ Wifi network cameras.  The options include `devicedb` specifying a shared group of devices; it is also used as MQTT discovery prefix.  The `name` identifies the logical host of the camera(s), and `www` identifies the primary web server for the group; typically this is the same as the `name` with domain appended (e.g. `.local`).  For example:
-
-### Option: `post_pictures`
-
-This specifies if pictures should be posted to MQTT as they are captured (i.e. "on") _or_ if a single picture should be posted for each event.
-The value may be "on" to post every picture; "off" to post no pictures; or one of the following:
-
-1. "best" - the picture with movement closest to the center
-1. "center" - the center picture (half-way between start and end of event)
-1. "first" - the first picture 
-1. "last" - the last picture
-1. "most" - the picture with the most pixels changed from previous frame
-
-### Option: `camera`
-
-Options which can be specified on a per camera basis are:
-
-1. name (string, non-optional)
-1. url (string, optional; ignored if device is specified)
-1. userpass (string, optional; only applicable with url; format "user:pass"; defaults to netcam_userpass)
-1. keepalive (string, optional; only applicable with url; valid {"1.1","1.0","force"}; defaults to netcam_keepalive)
-1. port (streaming output port, optional; will be calculated from stream_port)
-1. quality \[of captured JPEG image\] (int, optional; valid \[0,100); default 80)
-1. type (string, optional; valid { wcv80n, ps3eye, kinect, c920 }; default wcv80n)
-1. fps (int, optional; valid \[0,100); defaults to framerate, default 5)
-1. fov (int, optional; valid \[0,360); defaults from camera type iff specified)
-1. width (int, optional; default 640; defaults from camera type iff specified)
-1. height (int, optional; default 480; defaults from camera type iff specified)
-1. rotate (int, optional; valid (0,360); default 0)
-1. threshold \[of pixels changed to detect motion\] (int, optional; valid (0,10000); default 5000)
-1. models \[for visual recognition\] (string, optional; format "\[wvr|digits\]:modelname,<model2>,..")
-
-### Example
 
 ```
-log_level: info
-log_motion_level: info
-log_motion_type: ALL
-default:
-  brightness: 100
-  changes: 'on'
-  contrast: 50
-  despeckle: EedDl
-  event_gap: 10
-  framerate: 5
-  height: 480
-  hue: 50
-  interval: 60
-  lightswitch: 0
-  minimum_motion_frames: 1
-  movie_max: 60
-  movie_output: 'off'
-  movie_quality: 80
-  netcam_userpass: 'username:password'
-  palette: 15
-  password: password
-  picture_quality: 80
-  post_pictures: best
-  saturation: 0
-  stream_quality: 50
-  text_scale: 2
-  threshold_percent: 1
-  username: username
-  width: 640
-mqtt:
-  host: 192.168.1.40
-  port: '1883'
-  username: username
-  password: password
+...
 group: motion
 device: p40
 client: p40
@@ -141,11 +46,6 @@ cameras:
     device: /dev/video0
     threshold_percent: 1
 ```
-
-### Additional Options: Motion
-
-The Motion package has extensive [documentation][motiondoc] on available parameters.  Almost all parameters are avsailable.
-The JSON configuration options are provided using the same name as in the Motion documentation.
 
 ## Sample output
 
