@@ -32,8 +32,6 @@ based on the following:
 
 David C Martin (github@dcmartin.com)
 
-The original setup of this repository is by [Franck Nijhof][frenck].
-
 [commits]: https://github.com/dcmartin/hassio-addons/motion/commits/master
 [contributors]: https://github.com/dcmartin/hassio-addons/motion/graphs/contributors
 [dcmartin]: https://github.com/dcmartin
