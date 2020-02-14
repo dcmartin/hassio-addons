@@ -1,20 +1,13 @@
-# `motion-video0` - [`motion`](../motion/README.md) for `/dev/video0`
+# `motion-video0` - `motion` for `/dev/video0`
 
-This add-on is a specialized from the [`motion`](http://github.com/dcmartin/hassio-addons/tree/master/motion/README.md) addon, **requiring** a camera at `/dev/video0`; it supports all [configuration](../motion/CONFIGURATION.md) options.
+This _addon_ is specialized from the [`motion`](http://github.com/dcmartin/hassio-addons/tree/master/motion/README.md) addon, to include access to `/dev/vide0`; this change **requires** an attached camera on that device, but supports all [configuration](http://github.com/dcmartin/hassio-addons/tree/master/motion/CONFIGURATION.md) options.
 
-## Support architectures
+## Supported architectures
 
 ![Supports amd64 Architecture][amd64-shield]
 ![Supports armv7 Architecture][armv7-shield]
 ![Supports armhf Architecture][armhf-shield]
 ![Supports aarch64 Architecture][aarch64-shield]
-
-[docker-motion-amd64]: https://hub.docker.com/r/dcmartin/amd64-addon-motion
-[pulls-motion-amd64]: https://img.shields.io/docker/pulls/dcmartin/amd64-addon-motion.svg
-[docker-motion-armv7]: https://hub.docker.com/r/dcmartin/armv7-addon-motion
-[pulls-motion-armv7]: https://img.shields.io/docker/pulls/dcmartin/armv7-addon-motion.svg
-[docker-motion-aarch64]: https://hub.docker.com/r/dcmartin/aarch64-addon-motion
-[pulls-motion-aarch64]: https://img.shields.io/docker/pulls/dcmartin/aarch64-addon-motion.svg
 
 [aarch64-shield]: https://img.shields.io/badge/aarch64-yes-green.svg
 [amd64-shield]: https://img.shields.io/badge/amd64-yes-green.svg
@@ -39,7 +32,7 @@ cameras:
 
 ## Sample UX
 
-![motion sample](motion-video0-sample.png?raw=true "SAMPLE")
+[![motion sample](motion-video0-sample.png?raw=true "SAMPLE")](http://github.com/dcmartin/hassio-addons/tree/master/motion-video0/motion-video0-sample.png)
 
 ## Changelog & Releases
 
