@@ -34,7 +34,7 @@ on_camera_lost()
   motion.log.notice "Camera lost: ${CN}; $(echo "${message:-null}" | jq -c '.')"
 
   # `status/lost`
-  motion.mqtt.pub -q 2 -r -t "${topic}" -m "${message}"
+  motion.mqtt.pub -q 2 -t "${topic}" -m "${message}"
 }
 
 camera_mqtt_lost_reset()

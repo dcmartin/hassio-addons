@@ -33,7 +33,7 @@ on_camera_found()
   motion.log.notice "Camera found: ${CN}; $(echo "${message:-null}" | jq -c '.')"
 
   # `status/found`
-  motion.mqtt.pub -q 2 -r -t "${topic}" -m "${message}"
+  motion.mqtt.pub -q 2 -t "${topic}" -m "${message}"
 }
 
 camera_mqtt_found_reset()

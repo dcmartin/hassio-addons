@@ -43,7 +43,7 @@ on_event_start()
 
   if [ -s "${EJ:-}" ]; then
     # send MQTT
-    motion.mqtt.pub -r -q 2 -t "$(motion.config.group)/$(motion.config.device)/${CN}/event/start" -f "$EJ"
+    motion.mqtt.pub -q 2 -t "$(motion.config.group)/$(motion.config.device)/${CN}/event/start" -f "$EJ"
   else
     motion.log.error "${FUNCNAME[0]} Failure processing START event: ${*}"
   fi

@@ -346,7 +346,7 @@ motion_publish_event()
   jq -c '.date='$(date -u +%s)'|.timestamp.publish="'${timestamp}'"' ${jsonfile} > ${jsonfile}.$$ && mv -f ${jsonfile}.$$ ${jsonfile}
   if [ -s "${jsonfile}" ]; then
     # publish JSON to MQTT
-    motion.mqtt.pub -r -q 2 -t "$(motion.config.group)/${device}/${camera}/event/end" -f "${jsonfile}" && rm -f ${temp} || result=false
+    motion.mqtt.pub -q 2 -t "$(motion.config.group)/${device}/${camera}/event/end" -f "${jsonfile}" && rm -f ${temp} || result=false
     result='true'
   else
     motion.log.error "${FUNCNAME[0]} failed to flatten and timestamp; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
@@ -366,7 +366,7 @@ motion_publish_average()
 
   if [ -s "${avgfile}" ]; then
     result="${avgfile}"
-    motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/${device}/${camera}/image-animated" -f "${avgfile}" || result=false
+    motion.mqtt.pub -q 2 -t "$(motion.config.group)/${device}/${camera}/image-animated" -f "${avgfile}" || result=false
   else
     motion.log.error "${FUNCNAME[0]} failed to calculate average image; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
   fi
@@ -382,7 +382,7 @@ motion_publish_animated()
   local giffile=$(motion_event_animated ${jsonfile})
 
   if [ -s "${giffile}" ]; then
-    motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/${device}/${camera}/image-animated" -f "${giffile}" || result=false
+    motion.mqtt.pub -q 2 -t "$(motion.config.group)/${device}/${camera}/image-animated" -f "${giffile}" || result=false
     rm -f "${giffile}"
     result='true'
   else
@@ -401,7 +401,7 @@ motion_publish_annotated()
   local annfile=$(motion_event_annotated ${jsonfile} ${jpgfile})
 
   if [ -s "${annfile}" ]; then
-    motion.mqtt.pub -q 2 -r -t "$(motion.config.group)/${device}/${camera}/event/end/" -f "${annfile}" || result=false
+    motion.mqtt.pub -q 2 -t "$(motion.config.group)/${device}/${camera}/event/end/" -f "${annfile}" || result=false
     result="${annfile}"
   else
     motion.log.error "${FUNCNAME[0]} failed annotated image; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
