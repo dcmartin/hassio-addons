@@ -1,4 +1,4 @@
-# `motion` - detect and classify detected motion
+# `motion`
 
 This add-on is for the [Motion package][motionpkg] which provides an extensive set of capabilities to capture video feeds from a variety of sources, including `RSTP`,`HTTP`, and `MJPEG` network cameras.  Please refer to [configuration information](http://github.com/dcmartin/hassio-addons/tree/master/motion/CONFIGURATION.md)
 
