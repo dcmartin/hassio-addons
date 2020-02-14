@@ -1,23 +1,13 @@
-# `motion-video0` - detect and classify USB camera
+# `motion-video0` - [`motion`](../motion/README.md) for `/dev/video0`
 
-This add-on is for the [Motion package][motionpkg] which provides an extensive set of capabilities to capture video feeds from a variety of sources; the parent [`motion`](http://github.com/dcmartin/hassio-addons/tree/master/motion/README.md). This _version_ requires an attached camera (**`/dev/video0`**), but will also support `RTSP` and `HTTP` cameras.
+This add-on is a specialized from the [`motion`](http://github.com/dcmartin/hassio-addons/tree/master/motion/README.md) addon, **requiring** a camera at `/dev/video0`; it supports all [configuration](../motion/CONFIGURATION.md) options.
 
-## Docker containers
+## Support architectures
 
 ![Supports amd64 Architecture][amd64-shield]
-[![](https://images.microbadger.com/badges/image/dcmartin/amd64-addon-motion.svg)](https://microbadger.com/images/dcmartin/amd64-addon-motion "Get your own image badge on microbadger.com")
-[![](https://images.microbadger.com/badges/version/dcmartin/amd64-addon-motion.svg)](https://microbadger.com/images/dcmartin/amd64-addon-motion "Get your own version badge on microbadger.com")
-[![Docker Pulls][pulls-motion-amd64]][docker-motion-amd64]
-
 ![Supports armv7 Architecture][armv7-shield]
-[![](https://images.microbadger.com/badges/image/dcmartin/armv7-addon-motion.svg)](https://microbadger.com/images/dcmartin/armv7-addon-motion "Get your own image badge on microbadger.com")
-[![](https://images.microbadger.com/badges/version/dcmartin/armv7-addon-motion.svg)](https://microbadger.com/images/dcmartin/armv7-addon-motion "Get your own version badge on microbadger.com")
-[![Docker Pulls][pulls-motion-armv7]][docker-motion-armv7]
-
+![Supports armhf Architecture][armhf-shield]
 ![Supports aarch64 Architecture][aarch64-shield]
-[![](https://images.microbadger.com/badges/image/dcmartin/aarch64-addon-motion.svg)](https://microbadger.com/images/dcmartin/aarch64-addon-motion "Get your own image badge on microbadger.com")
-[![](https://images.microbadger.com/badges/version/dcmartin/aarch64-addon-motion.svg)](https://microbadger.com/images/dcmartin/aarch64-addon-motion "Get your own version badge on microbadger.com")
-[![Docker Pulls][pulls-motion-aarch64]][docker-motion-aarch64]
 
 [docker-motion-amd64]: https://hub.docker.com/r/dcmartin/amd64-addon-motion
 [pulls-motion-amd64]: https://img.shields.io/docker/pulls/dcmartin/amd64-addon-motion.svg
@@ -29,9 +19,9 @@ This add-on is for the [Motion package][motionpkg] which provides an extensive s
 [aarch64-shield]: https://img.shields.io/badge/aarch64-yes-green.svg
 [amd64-shield]: https://img.shields.io/badge/amd64-yes-green.svg
 [armv7-shield]: https://img.shields.io/badge/armv7-yes-green.svg
+[armhf-shield]: https://img.shields.io/badge/armhf-yes-green.svg
 
-## Example
-
+## Example YAML
 
 ```
 ...
@@ -47,7 +37,7 @@ cameras:
     threshold_percent: 1
 ```
 
-## Sample output
+## Sample UX
 
 ![motion sample](motion-video0-sample.png?raw=true "SAMPLE")
 
@@ -65,8 +55,6 @@ based on the following:
 
 David C Martin (github@dcmartin.com)
 
-The original setup of this repository is by [Franck Nijhof][frenck].
-
 [commits]: https://github.com/dcmartin/hassio-addons/motion/commits/master
 [contributors]: https://github.com/dcmartin/hassio-addons/motion/graphs/contributors
 [dcmartin]: https://github.com/dcmartin
@@ -74,8 +62,4 @@ The original setup of this repository is by [Franck Nijhof][frenck].
 [keepchangelog]: http://keepachangelog.com/en/1.0.0/
 [releases]: https://github.com/dcmartin/hassio-addons/motion/releases
 [repository]: https://github.com/dcmartin/hassio-addons
-[motionpkg]: https://motion-project.github.io]
-[motiondoc]: https://motion-project.github.io/motion_config.html
-[watsonvr]: https://www.ibm.com/watson/services/visual-recognition
-[digitsgit]: https://github.com/nvidia/digits
-[digits]: https://developer.nvidia.com/digits
+
