@@ -1,6 +1,6 @@
-# `motion-video0` - `motion` for `/dev/video0`
+# Home Assistant add-on: `motion-video0`
 
-This _addon_ is specialized from the [`motion`](http://github.com/dcmartin/hassio-addons/tree/master/motion/README.md) addon, to include access to `/dev/vide0`; this change **requires** an attached camera on that device, but supports all [configuration](http://github.com/dcmartin/hassio-addons/tree/master/motion/CONFIGURATION.md) options.
+This [Home Assistant](http://home-assistant.io) _add-on_ is specialized from the [`motion`](http://github.com/dcmartin/hassio-addons/tree/master/motion/README.md) add-on, to include access to `/dev/vide0`; this change **requires** an attached camera on that device, but supports all [configuration](http://github.com/dcmartin/hassio-addons/tree/master/motion/CONFIGURATION.md) options.
 
 ## Supported architectures
 
