@@ -327,15 +327,6 @@ jq -c -s add "${event_json_file}" "${base64_encoded_file}" > ${event_json_file}.
 rm -f ${base64_encoded_file}
 
 ##
-## PUBLISH EVENT
-##
-
-set topic = "${mqtt_topic}/event/end"
-set file = "$event_json_file" 
-mosquitto_pub -q 2 -i "${MOTION_DEVICE}" -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "$topic" -f "$file" 
-if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> /tmp/motion.log
-
-##
 ## PUBLISH EVENT IMAGE
 ##
 
@@ -344,6 +335,15 @@ set file = "$IF"
 mosquitto_pub -q 2 -i "${MOTION_DEVICE}" -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "$topic" -f "$file" 
 if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> /tmp/motion.log
 
+
+##
+## PUBLISH EVENT
+##
+
+set topic = "${mqtt_topic}/event/end"
+set file = "$event_json_file" 
+mosquitto_pub -q 2 -i "${MOTION_DEVICE}" -u ${MOTION_MQTT_USERNAME} -P ${MOTION_MQTT_PASSWORD} -h "${MOTION_MQTT_HOST}" -p "${MOTION_MQTT_PORT}" -t "$topic" -f "$file" 
+if ($?DEBUG) echo "$0:t $$ -- PUBLISH: topic: $topic; file: $file" >> /tmp/motion.log
 
 ##
 ## BLEND
