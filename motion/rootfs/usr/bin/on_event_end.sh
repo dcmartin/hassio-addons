@@ -472,45 +472,50 @@ motion_event_end()
   local hr="${6}"
   local mn="${7}"
   local sc="${8}"
-  local ts="${yr}${mo}${dy}${hr}${mn}${sc}"
-  local jsonfile=$(motion_event_json "${cn}" "${ts}" "${en}")
 
-  if [ "${jsonfile:-null}" != 'null' ]; then
-    local njpeg=$(motion_event_images ${jsonfile})
+  if [ "${cn:-null}" != 'null' ]; then
+    local ts="${yr}${mo}${dy}${hr}${mn}${sc}"
+    local jsonfile=$(motion_event_json "${cn}" "${ts}" "${en}")
 
-    if [ ${njpeg:-0} -eq 1 ]; then
-      # process single image event
-      if [ $(motion_event_process ${jsonfile}) != 'false' ]; then
-        motion.log.info "${FUNCNAME[0]} success: event: ${en}; camera: ${cn}; metadata: $(jq '.image=(.image!=null)' ${jsonfile})"
-        result='true'
+    if [ "${jsonfile:-null}" != 'null' ]; then
+      local njpeg=$(motion_event_images ${jsonfile})
+
+      if [ ${njpeg:-0} -eq 1 ]; then
+        # process single image event
+        if [ $(motion_event_process ${jsonfile}) != 'false' ]; then
+          motion.log.info "${FUNCNAME[0]} success: event: ${en}; camera: ${cn}; metadata: $(jq '.image=(.image!=null)' ${jsonfile})"
+          result='true'
+        else
+          motion.log.error "${FUNCNAME[0]} failed: event: ${en}; camera: ${cn}; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
+          result='false'
+        fi
+      elif [ ${njpeg:-0} > 0 ]; then
+        motion.log.debug "${FUNCNAME[0]} legacy processing: event: ${en}; camera: ${cn}; count: ${njpeg}"
+  
+        # process multi-image event with legacy code
+        export \
+          MOTION_GROUP=$(motion.config.group) \
+          MOTION_DEVICE=$(motion.config.device) \
+          MOTION_JSON_FILE=$(motion.config.file) \
+          MOTION_TARGET_DIR=$(motion.config.target_dir) \
+          MOTION_MQTT_HOST=$(echo $(motion.config.mqtt) | jq -r '.host') \
+          MOTION_MQTT_PORT=$(echo $(motion.config.mqtt) | jq -r '.port') \
+          MOTION_MQTT_USERNAME=$(echo $(motion.config.mqtt) | jq -r '.username') \
+          MOTION_MQTT_PASSWORD=$(echo $(motion.config.mqtt) | jq -r '.password') \
+          MOTION_LOG_LEVEL=${MOTION_LOG_LEVEL} \
+          MOTION_LOGTO=${MOTION_LOGTO} \
+          MOTION_FRAME_SELECT='key' \
+          && \
+          /usr/bin/on_event_end.tcsh ${*}
+        result='legacy'
       else
-        motion.log.error "${FUNCNAME[0]} failed: event: ${en}; camera: ${cn}; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
-        result='false'
+        motion.log.error "${FUNCNAME[0]} FAILURE: no images; event: ${en}; camera: ${cn}; metadata: $(jq -c '.' ${jsonfile})"
       fi
-    elif [ ${njpeg:-0} > 0 ]; then
-      motion.log.debug "${FUNCNAME[0]} legacy processing: event: ${en}; camera: ${cn}; count: ${njpeg}"
-
-      # process multi-image event with legacy code
-      export \
-        MOTION_GROUP=$(motion.config.group) \
-        MOTION_DEVICE=$(motion.config.device) \
-        MOTION_JSON_FILE=$(motion.config.file) \
-        MOTION_TARGET_DIR=$(motion.config.target_dir) \
-        MOTION_MQTT_HOST=$(echo $(motion.config.mqtt) | jq -r '.host') \
-        MOTION_MQTT_PORT=$(echo $(motion.config.mqtt) | jq -r '.port') \
-        MOTION_MQTT_USERNAME=$(echo $(motion.config.mqtt) | jq -r '.username') \
-        MOTION_MQTT_PASSWORD=$(echo $(motion.config.mqtt) | jq -r '.password') \
-        MOTION_LOG_LEVEL=${MOTION_LOG_LEVEL} \
-        MOTION_LOGTO=${MOTION_LOGTO} \
-        MOTION_FRAME_SELECT='key' \
-        && \
-        /usr/bin/on_event_end.tcsh ${*}
-      result='legacy'
     else
-      motion.log.error "${FUNCNAME[0]} FAILURE: no images; event: ${en}; camera: ${cn}; metadata: $(jq -c '.' ${jsonfile})"
+      motion.log.error "${FUNCNAME[0]} FAILURE: no metadata; event: ${en}; camera: ${cn}; metadata: $(jq -c '.' ${jsonfile})"
     fi
   else
-    motion.log.error "${FUNCNAME[0]} FAILURE: no metadata; event: ${en}; camera: ${cn}; metadata: $(jq -c '.' ${jsonfile})"
+    motion.log.error "${FUNCNAME[0]} FAILURE: invalid arguments: ${*}"
   fi
   echo "${result:-null}"
 }
