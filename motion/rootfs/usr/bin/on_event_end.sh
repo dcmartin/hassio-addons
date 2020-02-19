@@ -431,7 +431,7 @@ motion_event_process()
     local device=$(jq -r '.device' ${jsonfile})
 
     # publish JPEG to MQTT
-    motion.mqtt.pub -r -q 2 -t "$(motion.config.group)/${device}/${camera}/image/end" -f "${jpgfile}" || result=false
+    motion.mqtt.pub -q 2 -t "$(motion.config.group)/${device}/${camera}/image/end" -f "${jpgfile}" || result=false
   else
     motion.log.error "${FUNCNAME[0]} failed to append picture; metadata: $(jq -c '.' ${jsonfile})"
     result='false'
