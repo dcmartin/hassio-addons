@@ -10,6 +10,7 @@ RUN apk add --no-cache \
   curl \
   dateutils \
   findutils \
+  gettext \
   gawk \
   jq \
   git
