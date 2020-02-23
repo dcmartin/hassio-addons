@@ -1,6 +1,6 @@
 {
   "name": "Motion Server",
-  "version": "0.8.70",
+  "version": "0.9.0",
   "slug": "motion",
   "description": "Motion server for network cameras only; no device support.",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/motion/README.md",
@@ -57,7 +57,7 @@
       "hue": 50,
       "interval": 60,
       "lightswitch": 0,
-      "minimum_motion_frames": 1,
+      "minimum_motion_frames": 10,
       "movie_max": 60,
       "movie_output": "off",
       "movie_quality": 80,
@@ -91,27 +91,44 @@
         "width": 1920,
         "height": 1080,
         "netcam_url": "rtsp://192.168.1.223/live",
-        "netcam_userpass": "wyzecamuser:wyzecampass",
+        "netcam_userpass": "username:password",
         "framerate": 2,
         "threshold_percent": 2
+      },
+      {
+        "name": "panasonic-poolcam",
+        "type": "netcam",
+        "icon": "water",
+        "netcam_url": "http://192.168.1.162/nphMotionJpeg?Resolution=640x480&Quality=Clarity",
+        "netcam_userpass": "!secret netcam-userpass",
+        "framerate": 5,
+        "threshold": 5000
+      },
+      {
+        "name": "rpi3-gatecam",
+        "type": "netcam",
+        "icon": "gate",
+        "netcam_url": "http://192.168.1.38/img/video.mjpeg",
+        "netcam_userpass": "!secret netcam-userpass",
+        "framerate": 5
       },
       {
         "name": "wcv80n",
         "type": "ftpd",
         "icon": "webcam",
-        "netcam_url": "http://192.168.1.174/img/video.mjpeg",
-        "netcam_userpass": "wcv80nuser:wcv80npass",
-        "movie_max": 5,
+        "netcam_url": "http://wcv80n.local/img/video.mjpeg",
+        "netcam_userpass": "!secret wcv80n-userpass",
         "framerate": 5
       },
       {
-        "name": "rpi-v4l2",
+        "name": "remotehost-local",
         "type": "mqtt",
         "icon": "raspberry-pi",
-        "width": 1280,
-        "height": 720,
-        "netcam_url": "http://192.168.1.93:8090/1",
-        "netcam_userpass": "username:password"
+        "width": 640,
+        "height": 480,
+        "framerate": 3,
+        "netcam_url": "http://remotehost:8090/1",
+        "netcam_userpass": "!secret motioncam-userpass"
       }
     ]
   },

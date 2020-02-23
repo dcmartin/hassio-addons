@@ -1,7 +1,7 @@
 {
   "name": "Motion Video0",
   "version": "0.1.2",
-  "slug": "motion-video0",
+  "slug": "motion-vi",
   "description": "Motion addon with support for /dev/video0 access",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/motion/README.md",
   "webui": "http://[HOST]:[PORT:7999]/",
@@ -55,17 +55,15 @@
       "despeckle": "EedDl",
       "event_gap": 10,
       "framerate": 5,
-      "height": 480,
       "hue": 50,
       "interval": 60,
       "lightswitch": 0,
-      "minimum_motion_frames": 1,
+      "minimum_motion_frames": 10,
       "movie_max": 60,
       "movie_output": "off",
       "movie_quality": 80,
       "netcam_userpass": "username:password",
       "palette": 15,
-      "password": "password",
       "picture_quality": 80,
       "post_pictures": "center",
       "saturation": 0,
@@ -73,7 +71,9 @@
       "text_scale": 2,
       "threshold_percent": 1,
       "username": "username",
-      "width": 640
+      "password": "password",
+      "width": 640,
+      "height": 480
     },
     "mqtt": {
       "host": "core-mosquitto",
@@ -82,51 +82,20 @@
       "password": "password"
     },
     "group": "motion",
-    "device": "motion-local",
-    "client": "motion-local",
-    "timezone": "GMT",
+    "device": "hostname",
+    "client": "hostname",
+    "timezone": "America/Los_Angeles",
     "cameras": [
       {
-        "name": "ps3eye",
+        "name": "hostname_local",
         "type": "local",
-        "device": "/dev/video0",
-        "framerate": 5,
-        "fov": 75,
         "width": 640,
         "height": 480,
         "rotate": 0,
         "picture_quality": 100,
         "stream_quality": 80,
+        "framerate": 3,
         "threshold_percent": 5
-      },
-      {
-        "name": "wyzecam",
-        "type": "netcam",
-        "icon": "camera",
-        "width": 1920,
-        "height": 1080,
-        "netcam_url": "rtsp://192.168.1.223/live",
-        "netcam_userpass": "wyzecamuser:wyzecampass",
-        "framerate": 2,
-        "threshold_percent": 2
-      },
-      {
-        "name": "wcv80n",
-        "type": "ftpd",
-        "icon": "webcam",
-        "netcam_url": "http://192.168.1.174/img/video.mjpeg",
-        "netcam_userpass": "wcv80nuser:wcv80npass",
-        "movie_max": 5,
-        "framerate": 5
-      },
-      {
-        "name": "rpi-v4l2",
-        "type": "mqtt",
-        "icon": "raspberry-pi",
-        "width": 1280,
-        "height": 720,
-        "netcam_url": "http://192.168.1.93:8090/1",
-        "netcam_userpass": "username:password"
       }
     ]
   },
@@ -226,5 +195,5 @@
   "environment": {
     "LOG_FORMAT": "{LEVEL}: {MESSAGE}"
   },
-  "image":"dcmartin/{arch}-addon-motion-video0"
+  "image":"dcmartin/{arch}-addon-motion-vi"
 }

@@ -1,4 +1,4 @@
-# Home Assistant add-on: `motion-video0`
+# Home Assistant add-on: `motion-vi`
 
 This [Home Assistant](http://home-assistant.io) _add-on_ is specialized from the [`motion`](http://github.com/dcmartin/hassio-addons/tree/master/motion/README.md) add-on, to include access to `/dev/vide0`; this change **requires** an attached camera on that device, but supports all [configuration](http://github.com/dcmartin/hassio-addons/tree/master/motion/CONFIGURATION.md) options.
 
@@ -26,7 +26,7 @@ cameras:
   - name: window
     type: local
     icon: xbox
-    device: /dev/video0
+    framerate: 3
     threshold_percent: 1
 ```
 
