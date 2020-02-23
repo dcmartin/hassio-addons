@@ -1,7 +1,7 @@
 {
   "name": "Motion Video0",
   "version": "0.1.2",
-  "slug": "motion-vi",
+  "slug": "motion-video0",
   "description": "Motion addon with support for /dev/video0 access",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/motion/README.md",
   "webui": "http://[HOST]:[PORT:7999]/",
@@ -195,5 +195,5 @@
   "environment": {
     "LOG_FORMAT": "{LEVEL}: {MESSAGE}"
   },
-  "image":"dcmartin/{arch}-addon-motion-vi"
+  "image":"dcmartin/{arch}-addon-motion-video0"
 }
