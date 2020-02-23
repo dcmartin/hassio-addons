@@ -67,7 +67,7 @@
       "palette": 15,
       "password": "password",
       "picture_quality": 80,
-      "post_pictures": "best",
+      "post_pictures": "center",
       "saturation": 0,
       "stream_quality": 50,
       "text_scale": 2,
