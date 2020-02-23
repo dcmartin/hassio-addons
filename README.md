@@ -41,7 +41,7 @@ comparison to installing an "app" on your smartphone.
 ## &#128249; [`motion`](motion/README.md) _addon_
 The `motion` addon provides capabilities of the [Motion Project](https://motion-project.github.io/ ) for `RTSP`, `HTTP` network cameras as well as`FTP` connected cameras.
 
-&#9995; An attached camera (e.g. USB, Pi2, ..) may be utilized with `V4L2` (video for LINUX version 2); however, the [`motion-video0`](motion-video0/README.md) version must be utilized (n.b. it supports all other features of this _addon_).
+&#9995; An attached camera (e.g. USB, Pi2, ..) may be utilized with `V4L2` (video for LINUX version 2); however, the [`motion-vi`](motion-vi/README.md) version must be utilized (n.b. it supports all other features of this _addon_).
 
 ## Authors & contributors
 
