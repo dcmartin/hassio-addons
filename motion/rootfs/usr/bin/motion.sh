@@ -1183,7 +1183,7 @@ CONF="${MOTION_CONF%%.*}.${MOTION_CONF##*.}"
 for (( i = 1; i <= MOTION_COUNT;  i++)); do
   # test for configuration file
   if [ ! -s "${CONF}" ]; then
-     motion.log.fatal "missing configuration for daemon ${i} with ${CONF}"
+     motion.log.error "missing configuration for daemon ${i} with ${CONF}"
      exit 1
   fi
   motion.log.debug "Starting motion configuration ${i}: ${CONF}"
