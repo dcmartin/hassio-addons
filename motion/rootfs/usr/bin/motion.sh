@@ -1126,9 +1126,13 @@ for (( i=0; i < ncamera; i++)); do
   elif [ "${TYPE}" == 'local' ]; then
     # local camera
     VALUE=$(jq -r '.cameras['${i}'].device' "${CONFIG_PATH}")
-    if [ "${VALUE:-null}" != 'null' ] && [[ "${VALUE}" != /dev/video* ]]; then
-      motion.log.error "Camera: ${i}; name: ${CNAME}; invalid videodevice ${VALUE}; exiting"
-      exit 1
+    if [ "${VALUE:-null}" != 'null' ] ; then
+      if [[ "${VALUE}" != /dev/video* ]]; then
+        motion.log.error "Camera: ${i}; name: ${CNAME}; invalid videodevice ${VALUE}; exiting"
+        exit 1
+      fi
+    else
+      VALUE="/dev/video0"
     fi
     echo "videodevice ${VALUE}" >> "${CAMERA_CONF}"
     motion.log.debug "Set videodevice to ${VALUE}"
