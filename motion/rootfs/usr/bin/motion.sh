@@ -1052,11 +1052,6 @@ for (( i=0; i < ncamera; i++)); do
   echo "framerate ${FRAMERATE}" >> "${CAMERA_CONF}"
   echo "event_gap ${EVENT_GAP}" >> "${CAMERA_CONF}"
 
-  # local device
-  if [ "${TYPE:-null}" = 'local' ]; then
-    echo "videodevice /dev/video0" >> "${CAMERA_CONF}"
-  fi
-
   # rotate 
   VALUE=$(jq -r '.cameras['${i}'].rotate' "${CONFIG_PATH}")
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.rotate'); fi
@@ -1131,7 +1126,7 @@ for (( i=0; i < ncamera; i++)); do
   elif [ "${TYPE}" == 'local' ]; then
     # local camera
     VALUE=$(jq -r '.cameras['${i}'].device' "${CONFIG_PATH}")
-    if [[ "${VALUE}" != /dev/video* ]]; then
+    if [ "${VALUE:-null}" != 'null' ] && [[ "${VALUE}" != /dev/video* ]]; then
       motion.log.error "Camera: ${i}; name: ${CNAME}; invalid videodevice ${VALUE}; exiting"
       exit 1
     fi
