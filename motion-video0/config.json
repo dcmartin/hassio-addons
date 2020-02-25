@@ -3,7 +3,7 @@
   "version": "0.1.2",
   "slug": "motion-video0",
   "description": "Motion addon with support for /dev/video0 access",
-  "url": "https://github.com/dcmartin/hassio-addons/tree/master/motion/README.md",
+  "url": "https://github.com/dcmartin/hassio-addons/tree/master/motion-video0/README.md",
   "webui": "http://[HOST]:[PORT:7999]/",
   "startup": "application",
   "boot": "auto",
