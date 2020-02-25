@@ -12,7 +12,7 @@ This [Home Assistant](http://home-assistant.io) _add-on_ is specialized from the
 
 ![](https://img.shields.io/badge/armhf-yes-green.svg)[![](https://images.microbadger.com/badges/image/dcmartin/armhf-addon-motion-video0.svg)](https://microbadger.com/images/dcmartin/armhf-addon-motion-video0)[![](https://images.microbadger.com/badges/version/dcmartin/armhf-addon-motion-video0.svg)](https://microbadger.com/images/dcmartin/armhf-addon-motion-video0)[![](https://img.shields.io/docker/pulls/dcmartin/armhf-addon-motion-video0.svg)](https://hub.docker.com/r/dcmartin/armhf-addon-motion-video0)
 
-## Example YAML for _add-on_
+## Example YAML for [_add-on_](http://github.com/dcmartin/hassio-addons/tree/master/motion/CONFIGURATION.md)
 
 + `mqtt.host` - if using a single MQTT broker on a LAN, utilize the TCP/IPv4 addresss, e.g. `192.168.1.40`.
 + `device` - identifier for the computer, excluding reserved characters and `+`,`#`,`-`
@@ -39,7 +39,7 @@ cameras:
     threshold_percent: 1
 ```
 
-## Example JSON for `webcams.json`
+## Example JSON for [`webcams.json`](http://github.com/dcmartin/motion/tree/master/motion/webcams.json.tmpl)
 
 
 + `name` - identifier for the camera, excluding reserved characters and `+`,`#`,`-`
