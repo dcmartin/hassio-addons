@@ -12,20 +12,50 @@ This [Home Assistant](http://home-assistant.io) _add-on_ is specialized from the
 
 ![](https://img.shields.io/badge/armhf-yes-green.svg)[![](https://images.microbadger.com/badges/image/dcmartin/armhf-addon-motion-video0.svg)](https://microbadger.com/images/dcmartin/armhf-addon-motion-video0)[![](https://images.microbadger.com/badges/version/dcmartin/armhf-addon-motion-video0.svg)](https://microbadger.com/images/dcmartin/armhf-addon-motion-video0)[![](https://img.shields.io/docker/pulls/dcmartin/armhf-addon-motion-video0.svg)](https://hub.docker.com/r/dcmartin/armhf-addon-motion-video0)
 
-## Example YAML
+## Example YAML for _add-on_
+
++ `mqtt.host` - if using a single MQTT broker on a LAN, utilize the TCP/IPv4 addresss, e.g. `192.168.1.40`.
++ `device` - identifier for the computer, excluding reserved characters and `+`,`#`,`-`
++ `client` - limits topic subscriptions to one or all (n.b. `+`) devices
++ `cameras[].name` - identifier for the camera; must be unique for device; should be unique for group
++ `cameras[].type` - may be `local` in addition to `netcam`, `ftp`, `mqtt`
++ `cameras[].framerate` - number of frames per second to capture/attempt
++ `cameras[].threshold_percent` - pecentage of pixels changed; over-ride count with `threshold`
 
 ```
-...
+mqtt:
+  host: core-mosquitto
+  port: '1883'
+  username: username
+  password: password
 group: motion
-device: p40
-client: p40
+device: window
+client: window
 timezone: America/Los_Angeles
 cameras:
   - name: window
     type: local
-    icon: xbox
     framerate: 3
     threshold_percent: 1
+```
+
+## Example JSON for `webcams.json`
+
+
++ `name` - identifier for the camera, excluding reserved characters and `+`,`#`,`-`
++ `icon` - select from [Material Design Icons](http://materialdesignicons.com/)
++ `mjpeg_url` - address of live MJPEG stream; local access only by default
+
+```
+[
+  {
+    "name": "window",
+    "icon": "xbox",
+    "mjpeg_url": "http://127.0.0.1:8090/1",
+    "username": "!secret motioncam-username",
+    "password": "!secret motioncam-password"
+  }
+]
 ```
 
 ## Sample UX
