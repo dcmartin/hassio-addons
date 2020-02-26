@@ -520,7 +520,7 @@ else
   VALUE="${SPEC}"
   motion.log.debug "picture_output; unspecified; using: ${VALUE}"
 fi
-sed -i "s/.*picture_output.*/picture_output ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^picture_output .*/picture_output ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"picture_output":"'"${VALUE}"'"'
 motion.log.info "Set picture_output to ${VALUE}"
 PICTURE_OUTPUT=${VALUE}
@@ -564,10 +564,14 @@ else
     esac
   fi
 fi
-
-sed -i "s/.*movie_output .*/movie_output ${VALUE}/" "${MOTION_CONF}"
+sed -i "s/^movie_output .*/movie_output ${VALUE}/" "${MOTION_CONF}"
 MOTION="${MOTION}"',"movie_output":"'"${VALUE}"'"'
 motion.log.info "Set movie_output to ${VALUE}"
+if [ "${VALUE:-null}" != 'null' ]; then
+  sed -i "s/^movie_output_motion .*/movie_output_motion ${VALUE}/" "${MOTION_CONF}"
+  MOTION="${MOTION}"',"movie_output_motion":"'"${VALUE}"'"'
+  motion.log.info "Set movie_output_motion to ${VALUE}"
+fi
 
 # set picture_type (jpeg, ppm)
 VALUE=$(jq -r ".default.picture_type" "${CONFIG_PATH}")
@@ -814,7 +818,7 @@ if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="rtsp"; fi
 motion.log.debug "Set type to ${VALUE}"
 MOTION="${MOTION}"',"type":"'"${VALUE}"'"'
 
-## process collectively
+## ALL CAMERAS SHARE THE SAME USERNAME:PASSWORD CREDENTIALS
 
 # set username and password
 USERNAME=$(jq -r ".default.username" "${CONFIG_PATH}")
@@ -833,6 +837,10 @@ else
   sed -i "s/.*stream_localhost .*/stream_localhost on/" "${MOTION_CONF}"
   sed -i "s/.*webcontrol_localhost .*/webcontrol_localhost on/" "${MOTION_CONF}"
 fi
+
+# add username and password to configuration
+MOTION="${MOTION}"',"username":"'"${USERNAME}"'"'
+MOTION="${MOTION}"',"password":"'"${PASSWORD}"'"'
 
 ## end motion structure; cameras section depends on well-formed JSON for $MOTION
 MOTION="${MOTION}"'}'
