@@ -51,9 +51,7 @@
       "contrast": 50,
       "despeckle": "EedDl",
       "event_gap": 10,
-      "framerate": 1,
-      "framerate": 5,
-      "height": 480,
+      "framerate": 2,
       "hue": 50,
       "interval": 60,
       "lightswitch": 0,
@@ -61,17 +59,18 @@
       "movie_max": 60,
       "movie_output": "off",
       "movie_quality": 80,
-      "netcam_userpass": "username:password",
+      "netcam_userpass": "!secret netcam-userpass",
       "palette": 15,
-      "password": "password",
       "picture_quality": 80,
       "post_pictures": "center",
       "saturation": 0,
       "stream_quality": 50,
       "text_scale": 2,
       "threshold_percent": 1,
-      "username": "username",
-      "width": 640
+      "username": "!secret motioncam-username",
+      "password": "!secret motioncam-password",
+      "width": 640,
+      "height": 480
     },
     "mqtt": {
       "host": "core-mosquitto",
@@ -100,7 +99,6 @@
         "type": "netcam",
         "icon": "water",
         "netcam_url": "http://192.168.1.162/nphMotionJpeg?Resolution=640x480&Quality=Clarity",
-        "netcam_userpass": "!secret netcam-userpass",
         "framerate": 5,
         "threshold": 5000
       },
@@ -108,15 +106,14 @@
         "name": "rpi3-gatecam",
         "type": "netcam",
         "icon": "gate",
-        "netcam_url": "http://192.168.1.38/img/video.mjpeg",
-        "netcam_userpass": "!secret netcam-userpass",
+        "netcam_url": "mjpeg://192.168.1.38/img/video.mjpeg",
         "framerate": 5
       },
       {
         "name": "wcv80n",
         "type": "ftpd",
         "icon": "webcam",
-        "netcam_url": "http://wcv80n.local/img/video.mjpeg",
+        "netcam_url": "rtsp://wcv80n.local/img/video.sav",
         "netcam_userpass": "!secret wcv80n-userpass",
         "framerate": 5
       },
@@ -124,8 +121,6 @@
         "name": "remotehost-local",
         "type": "mqtt",
         "icon": "raspberry-pi",
-        "width": 640,
-        "height": 480,
         "framerate": 3,
         "netcam_url": "http://remotehost:8090/1",
         "netcam_userpass": "!secret motioncam-userpass"
