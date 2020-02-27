@@ -274,7 +274,7 @@ JSON='{"config_path":"'"${CONFIG_PATH}"'","ipaddr":"'$(hostname -i)'","hostname"
 # device name
 VALUE=$(jq -r ".device" "${CONFIG_PATH}")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then 
-  VALUE="${HOSTNAME}"
+  VALUE="$(hostname -s)"
   motion.log.warn "device unspecifieid; setting device: ${VALUE}"
 fi
 JSON="${JSON}"',"device":"'"${VALUE}"'"'
@@ -294,7 +294,7 @@ MOTION_GROUP="${VALUE}"
 # client
 VALUE=$(jq -r ".client" "${CONFIG_PATH}")
 if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then 
-  VALUE="${MOTION_DEVICE}"
+  VALUE="+"
   motion.log.warn "client unspecifieid; setting client: ${VALUE}"
 fi
 JSON="${JSON}"',"client":"'"${VALUE}"'"'
