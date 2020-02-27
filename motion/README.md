@@ -7,7 +7,7 @@ This add-on interacts with additional services:
 1. [`motion`](http://github.com/dcmartin/motion/tree/master/README.md) - Home Assistant configuration (see sample below)
 1. [`yolo4motion`](http://github.com/dcmartin/open-horizon/tree/master/yolo4motion/README.md)  An [Open Horizon](http://github.com/dcmartin/open-horizon) service; use [`sh/yolo4motion.sh`](http://github.com/dcmartin/motion/tree/master/sh/yolo4motion.sh) in [`motion`](http://github.com/dcmartin/motion) 
 1. `MQTT`	Messaging service; use  [`mosquitto`](https://github.com/home-assistant/hassio-addons/tree/master/mosquitto) or [HiveMQ](https://github.com/hassio-addons/addon-mqtt) add-on
-1. `FTP` (_optional_) FTP daemon to receive videos from webcams (e.g. Linksys WCV80n); use [`addon-ftp`](https://github.com/hassio-addons/addon-ftp) add-on
+1. `FTP` (_optional_) FTP daemon to receive webcam videos; use [`addon-ftp`](https://github.com/hassio-addons/addon-ftp) add-on
 
 ## Containers
 
