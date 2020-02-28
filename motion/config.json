@@ -62,7 +62,7 @@
       "netcam_userpass": "!secret netcam-userpass",
       "palette": 15,
       "picture_quality": 80,
-      "post_pictures": "center",
+      "post_pictures": "best",
       "saturation": 0,
       "stream_quality": 50,
       "text_scale": 2,
