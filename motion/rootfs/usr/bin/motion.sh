@@ -1172,7 +1172,7 @@ motion.log.debug "CAMERAS: $(echo "${CAMERAS}" | jq -c '.')"
 ###
 
 JSON="${JSON}"',"cameras":'"${CAMERAS}"'}'
-echo "${JSON}" | jq '.' > "$(motion.config.file)"
+echo "${JSON}" | jq -c '.' > "$(motion.config.file)"
 if [ ! -s "$(motion.config.file)" ]; then
   motion.log.error "INVALID CONFIGURATION; metadata: ${JSON}"
   exit 1
