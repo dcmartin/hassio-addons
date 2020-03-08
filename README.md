@@ -75,3 +75,8 @@ Copyright (c) 2017 David C Martin
 [motion-url]: https://motion-project.github.io/ 
 [intu-url]: https://github.com/watson-intu
 [thisrepo]: https://github.com/dcmartin/hassio-addons
+
+
+## Stargazers
+[![Stargazers over time](https://starchart.cc/dcmartin/hassio-addons.svg)](https://starchart.cc/dcmartin/hassio-addons)
+
