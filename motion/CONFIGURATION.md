@@ -53,9 +53,11 @@ Specify the host and port for sending MQTT messages.  All topics begin with the 
 + `<devicedb>/{name}/{camera}/image-animated-mask` -- GIF payload of event (as B/W mask)
 
 ## CONFIGURATION
-
 This addon supports multiple installations across mutliple devices (e.g. RaspberryPi3 w/ USB PS3 Eye camera and LINUX PC w/ Wifi network cameras.  The options include `devicedb` specifying a shared group of devices; it is also used as MQTT discovery prefix.  The `name` identifies the logical host of the camera(s), and `www` identifies the primary web server for the group; typically this is the same as the `name` with domain appended (e.g. `.local`).  For example:
 
+
+#### &#9995; Naming
+A `group`, `device`, or `camera` _name_ **CANNOT** include _any_ upper-case letter (`A-Z`) nor  _space_, _hyphen_ (`-`), _asterisk_ (`*`), _hash_ (`#`), slash (`/`), or _plus_ (`+`) characters.
 ### Option: `post_pictures`
 
 This specifies if pictures should be posted to MQTT as they are captured (i.e. "on") _or_ if a single picture should be posted for each event.
