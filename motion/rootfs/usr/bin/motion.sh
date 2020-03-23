@@ -10,10 +10,13 @@ source ${USRBIN:-/usr/bin}/motion-tools.sh
 
 ## motion command
 MOTION_CMD=$(command -v motion)
-if [ ! -s "${MOTION_CMD}" ] || [ ! -s "${MOTION_CONF}" ]; then
-  motion.log.error "Motion not installed; command: ${MOTION_CMD}; OR configuration does not exist; file: ${MOTION_CONF}"
+if [ ! -s "${MOTION_CMD}" ]; then
+  motion.log.error "Motion not installed; command: ${MOTION_CMD}"
   exit 1
 fi
+
+motion.log.notice "Reseting configuration to default: ${MOTION_CONF}"
+cp ${MOTION_CONF%%.*}.default ${MOTION_CONF}
 
 ## defaults
 if [ -z "${MOTION_CONTROL_PORT:-}" ]; then MOTION_CONTROL_PORT=8080; fi
