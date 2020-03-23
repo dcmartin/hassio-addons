@@ -1,13 +1,13 @@
 {
   "name": "Motion Video0",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "slug": "motion-video0",
   "description": "Motion addon with support for /dev/video0 access",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/motion-video0/README.md",
   "webui": "http://[HOST]:[PORT:7999]/",
   "startup": "application",
   "boot": "auto",
-  "homeassistant": "0.92.0b2",
+  "homeassistant": "0.106.0",
   "arch": [
     "aarch64",
     "amd64",

@@ -16,7 +16,7 @@ if [ ! -s "${MOTION_CMD}" ]; then
 fi
 
 motion.log.notice "Reseting configuration to default: ${MOTION_CONF}"
-cp ${MOTION_CONF%%.*}.default ${MOTION_CONF}
+cp -f ${MOTION_CONF%%.*}.default ${MOTION_CONF}
 
 ## defaults
 if [ -z "${MOTION_CONTROL_PORT:-}" ]; then MOTION_CONTROL_PORT=8080; fi
