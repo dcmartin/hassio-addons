@@ -80,3 +80,21 @@ Copyright (c) 2017 David C Martin
 ## Stargazers
 [![Stargazers over time](https://starchart.cc/dcmartin/hassio-addons.svg)](https://starchart.cc/dcmartin/hassio-addons)
 
+## `CLOC`
+
+Language|files|blank|comment|code
+:-------|-------:|-------:|-------:|-------:
+YAML|21|189|230|6980
+Bourne Shell|34|672|782|3589
+JSON|19|0|0|2088
+C Shell|15|306|305|1870
+Markdown|13|343|0|1191
+HTML|6|310|573|1184
+Dockerfile|14|192|98|584
+Bourne Again Shell|4|54|48|288
+make|1|76|52|228
+CSS|1|23|7|96
+--------|--------|--------|--------|--------
+SUM:|128|2165|2095|18098
+
+<img width="1" src="http://clustrmaps.com/map_v2.png?cl=ffffff&w=a&t=n&d=MGNTPfdkYUaSdwXJj5HFmzg3KsAw_tCLGy3a0Hk9E-Q"/>

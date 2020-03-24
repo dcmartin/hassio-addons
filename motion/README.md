@@ -117,3 +117,5 @@ David C Martin (github@dcmartin.com)
 [watsonvr]: https://www.ibm.com/watson/services/visual-recognition
 [digitsgit]: https://github.com/nvidia/digits
 [digits]: https://developer.nvidia.com/digits
+
+<img width="1" src="http://clustrmaps.com/map_v2.png?cl=ffffff&w=a&t=n&d=xnRKGfiPo38Qx9Qh6xEuzt53jlOosT0wz-h-B5bRcH8"/>
