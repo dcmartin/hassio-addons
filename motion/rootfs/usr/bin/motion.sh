@@ -88,7 +88,7 @@ start_apache()
   # start HTTP daemon
   motion.log.info "Starting Apache: ${conf} ${host} ${port}"
 
-  MOTION_JSON_FILE=$(motion.config.file) httpd -E /tmp/motion.log -e debug -f "${MOTION_APACHE_CONF}" -DFOREGROUND
+  MOTION_JSON_FILE=$(motion.config.file) httpd -E /tmp/motion.log -e debug -f "${MOTION_APACHE_CONF}" # -DFOREGROUND
 }
 
 process_config_camera_ftpd()
@@ -1193,6 +1193,7 @@ ftp_notifywait.sh "$(motion.config.file)"
 ## start all motion daemons
 ###
 
+PID_FILES=()
 CONF="${MOTION_CONF%%.*}.${MOTION_CONF##*.}"
 # process all motion configurations
 for (( i = 1; i <= MOTION_COUNT;  i++)); do
@@ -1202,15 +1203,56 @@ for (( i = 1; i <= MOTION_COUNT;  i++)); do
      exit 1
   fi
   motion.log.debug "Starting motion configuration ${i}: ${CONF}"
-  motion -b -c "${CONF}"
+  PID_FILE="${MOTION_CONF%%.*}.${i}.pid"
+  motion -b -c "${CONF}" -p ${PID_FILE}
+  PID_FILES=(${PID_FILES[@]} ${PID_FILE})
 
   # get next configuration
   CONF="${MOTION_CONF%%.*}.${i}.${MOTION_CONF##*.}"
 done
+if [ ${#PID_FILES[@]} -le 0 ]; then
+  motion.log.error "No motion daemons started"
+  exit 1
+fi
 
 ## publish MQTT start
 motion.log.notice "PUBLISHING CONFIGURATION; topic: $(motion.config.group)/$(motion.config.device)/start"
 motion.mqtt.pub -r -q 2 -t "$(motion.config.group)/$(motion.config.device)/start" -f "$(motion.config.file)"
 
 ## run apache forever
+motion.log.notice "STARTING APACHE; ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}"
 start_apache ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}
+
+## monitor motion daemons
+motion.log.notice "MOTION WATCHDOG; ${PID_FILES}"
+
+while true; do
+  i=0
+  for PID_FILE in ${PID_FILES[@]}; do
+    if [ ! -z "${PID_FILE:-}" ] && [ -s "${PID_FILE}" ]; then
+      pid=$(cat ${PID_FILE})
+      if [ "${pid:-null}" != 'null' ]; then
+        found=$(ps alxwww | grep 'motion -b' | awk '{ print $1 }' | egrep ${pid})
+
+        if [ -z "${found:-}" ]; then
+          motion.log.notice "Daemon with PID: ${pid} is not found; restarting"
+          if [ ${i} -gt 0 ]; then
+            CONF="${MOTION_CONF%%.*}.${i}.${MOTION_CONF##*.}"
+          else
+            CONF="${MOTION_CONF%%.*}.${MOTION_CONF##*.}"
+          fi
+          motion -b -c "${CONF}" -p ${PID_FILE}
+        else
+          motion.log.info "motion daemon running with PID: ${pid}"
+        fi
+      else
+        motion.log.error "PID file contents invalid: ${PID_FILE}"
+      fi
+    else
+      motion.log.error "No motion daemon PID file: ${PID_FILE}"
+    fi
+    i=$((i+1))
+  done
+  motion.log.info "watchdog sleeping..."
+  sleep 30
+done
