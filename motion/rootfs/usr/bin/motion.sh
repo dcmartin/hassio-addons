@@ -1117,7 +1117,7 @@ for (( i=0; i < ncamera; i++)); do
       echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
       motion.log.debug "Set netcam_url to ${VALUE}"
       # test netcam_url
-      alive=$(curl -sL -w '%{http_code}' --connect-timeout 2 --retry-connrefused --retry 10 --retry-max-time 2 --max-time 15 ${VALUE})
+      alive=$(curl -sL -w '%{http_code}' --connect-timeout 2 --retry-connrefused --retry 10 --retry-max-time 2 --max-time 15 ${VALUE} -o /dev/null)
       if [ "${alive:-000}" != '200' ]; then
         motion.log.notice "Network camera at ${VALUE}; bad response: ${alive}"
       else
