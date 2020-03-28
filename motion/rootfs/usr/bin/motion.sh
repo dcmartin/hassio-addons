@@ -817,7 +817,7 @@ export MOTION_EVENT_INTERVAL="${VALUE}"
 
 # set type
 VALUE=$(jq -r '.default.type' "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="rtsp"; fi
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="netcam"; fi
 motion.log.debug "Set type to ${VALUE}"
 MOTION="${MOTION}"',"type":"'"${VALUE}"'"'
 
@@ -1116,6 +1116,13 @@ for (( i=0; i < ncamera; i++)); do
       CAMERAS="${CAMERAS}"',"netcam_url":"'"${VALUE}"'"'
       echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
       motion.log.debug "Set netcam_url to ${VALUE}"
+      # test netcam_url
+      alive=$(curl -sL -w '%{http_code}' --connect-timeout 2 --retry-connrefused --retry 10 --retry-max-time 2 --max-time 15 ${VALUE})
+      if [ "${alive:-000}" != '200' ]; then
+        motion.log.notice "Network camera at ${VALUE}; bad response: ${alive}"
+      else
+        motion.log.info "Network camera at ${VALUE}; good response: ${alive}"
+      fi
       # userpass 
       VALUE=$(jq -r '.cameras['${i}'].netcam_userpass' "${CONFIG_PATH}")
       if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_userpass'); fi
@@ -1153,6 +1160,8 @@ for (( i=0; i < ncamera; i++)); do
     CAMERAS="${CAMERAS}"',"palette":'"${VALUE}"
     echo "v4l2_palette ${VALUE}" >> "${CAMERA_CONF}"
     motion.log.debug "Set palette to ${VALUE}"
+  else
+    motion.log.error "Invalid camera type: ${TYPE}"
   fi
 
   # close CAMERAS structure
