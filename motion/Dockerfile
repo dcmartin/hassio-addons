@@ -85,6 +85,16 @@ COPY rootfs /
 
 ## APACHE
 
+#ARG APACHE_CONF=/etc/apache2/httpd.conf
+#ARG APACHE_HTDOCS=/var/www/localhost/htdocs
+#ARG APACHE_CGIBIN=/var/www/localhost/cgi-bin
+#ARG APACHE_HOST=localhost
+#ARG APACHE_PORT=8888
+#ARG APACHE_ADMIN=root@localhost.local
+#ARG APACHE_PID_FILE=/var/run/apache2/apache2.pid
+#ARG APACHE_LOG_DIR=/var/www/logs
+#ARG APACHE_LOG_LEVEL=info
+
 ARG MOTION_APACHE_CONF=/etc/apache2/httpd.conf
 ARG MOTION_APACHE_HTDOCS=/var/www/localhost/htdocs
 ARG MOTION_APACHE_CGIBIN=/var/www/localhost/cgi-bin
@@ -102,7 +112,7 @@ ENV MOTION_APACHE_ADMIN "${MOTION_APACHE_ADMIN}"
 # Ports for motion (control and stream)
 EXPOSE ${MOTION_APACHE_PORT}
 
-EXPOSE 7999 8080 8090
+EXPOSE 8080 8090
 
 CMD [ "/usr/bin/run.sh" ]
 

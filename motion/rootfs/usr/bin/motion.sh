@@ -1111,24 +1111,29 @@ for (( i=0; i < ncamera; i++)); do
   if [ "${TYPE}" == 'netcam' ]; then
     # network camera
     VALUE=$(jq -r '.cameras['${i}'].netcam_url' "${CONFIG_PATH}")
-    if [ ! -z "${VALUE:-}" ] && [ "${VALUE:-}" != 'null' ]; then
+    if [ ! -z "${VALUE:-}" ] && [ "${VALUE:-null}" != 'null' ]; then
       # network camera
       CAMERAS="${CAMERAS}"',"netcam_url":"'"${VALUE}"'"'
       echo "netcam_url ${VALUE}" >> "${CAMERA_CONF}"
       motion.log.debug "Set netcam_url to ${VALUE}"
-      # test netcam_url
-      alive=$(curl -sL -w '%{http_code}' --connect-timeout 2 --retry-connrefused --retry 10 --retry-max-time 2 --max-time 15 ${VALUE} -o /dev/null)
-      if [ "${alive:-000}" != '200' ]; then
-        motion.log.notice "Network camera at ${VALUE}; bad response: ${alive}"
-      else
-        motion.log.info "Network camera at ${VALUE}; good response: ${alive}"
-      fi
+      netcam_url=$(echo "${VALUE}" | sed 's/mjpeg:/http:/')
+
       # userpass 
       VALUE=$(jq -r '.cameras['${i}'].netcam_userpass' "${CONFIG_PATH}")
       if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_userpass'); fi
       echo "netcam_userpass ${VALUE}" >> "${CAMERA_CONF}"
       CAMERAS="${CAMERAS}"',"netcam_userpass":"'"${VALUE}"'"'
       motion.log.debug "Set netcam_userpass to ${VALUE}"
+      netcam_userpass=${VALUE}
+
+      # test netcam_url
+      alive=$(curl -sL -w '%{http_code}' --connect-timeout 2 --retry-connrefused --retry 10 --retry-max-time 2 --max-time 15 -u ${netcam_userpass} ${netcam_url} -o /dev/null)
+      if [ "${alive:-000}" != '200' ]; then
+        motion.log.notice "Network camera at ${netcam_userpass}@${netcam_url}; bad response: ${alive}"
+      else
+        motion.log.info "Network camera at ${netcam_userpass}@${netcam_url}; good response: ${alive}"
+      fi
+
       # keepalive 
       VALUE=$(jq -r '.cameras['${i}'].keepalive' "${CONFIG_PATH}")
       if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=$(echo "${MOTION}" | jq -r '.netcam_keepalive'); fi
@@ -1136,7 +1141,7 @@ for (( i=0; i < ncamera; i++)); do
       CAMERAS="${CAMERAS}"',"keepalive":"'"${VALUE}"'"'
       motion.log.debug "Set netcam_keepalive to ${VALUE}"
     else
-      motion.log.error "No netcam_url specified; skipping"
+      motion.log.error "No netcam_url specified: ${VALUE}; skipping"
       # close CAMERAS structure
       CAMERAS="${CAMERAS}"'}'
       continue;
