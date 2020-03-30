@@ -222,5 +222,6 @@
   },
   "environment": {
     "LOG_FORMAT": "{LEVEL}: {MESSAGE}"
-  }
+  },
+  "image": "dcmartin/{arch}-addon-motion"
 }
