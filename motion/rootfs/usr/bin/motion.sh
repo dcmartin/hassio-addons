@@ -47,9 +47,21 @@ fi
 ###
 
 ## start the apache server in FOREGROUND (does not exit)
+start_apache_foreground()
+{
+  start_apache true ${*}
+}
+
+start_apache_background()
+{
+  start_apache false ${*}
+}
+
 start_apache()
 {
   motion.log.debug "${FUNCNAME[0]}" "${*}"
+
+  local foreground=${1}; shift
 
   local conf=${1}
   local host=${2}
@@ -88,7 +100,11 @@ start_apache()
   # start HTTP daemon
   motion.log.info "Starting Apache: ${conf} ${host} ${port}"
 
-  MOTION_JSON_FILE=$(motion.config.file) httpd -E /tmp/motion.log -e debug -f "${MOTION_APACHE_CONF}" # -DFOREGROUND
+  if [ "${foreground:-false}" = 'true' ]; then
+    MOTION_JSON_FILE=$(motion.config.file) httpd -E /tmp/motion.log -e debug -f "${MOTION_APACHE_CONF}" -DFOREGROUND
+  else
+    MOTION_JSON_FILE=$(motion.config.file) httpd -E /tmp/motion.log -e debug -f "${MOTION_APACHE_CONF}"
+  fi
 }
 
 process_config_camera_ftpd()
@@ -1224,49 +1240,50 @@ for (( i = 1; i <= MOTION_COUNT;  i++)); do
   # get next configuration
   CONF="${MOTION_CONF%%.*}.${i}.${MOTION_CONF##*.}"
 done
-if [ ${#PID_FILES[@]} -le 0 ]; then
-  motion.log.error "No motion daemons started"
-  exit 1
-fi
 
 ## publish MQTT start
 motion.log.notice "PUBLISHING CONFIGURATION; topic: $(motion.config.group)/$(motion.config.device)/start"
 motion.mqtt.pub -r -q 2 -t "$(motion.config.group)/$(motion.config.device)/start" -f "$(motion.config.file)"
 
-## run apache forever
-motion.log.notice "STARTING APACHE; ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}"
-start_apache ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}
+if [ ${#PID_FILES[@]} -le 0 ]; then
+  motion.log.info "ZERO motion daemons"
+  motion.log.info "STARTING APACHE (foreground); ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}"
+  start_apache_foreground ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}
+else 
+  motion.log.info "${#PID_FILES[@]} motion daemons"
+  motion.log.info "STARTING APACHE (background); ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}"
+  start_apache_background ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}
 
-## monitor motion daemons
-motion.log.notice "MOTION WATCHDOG; ${PID_FILES}"
-
-while true; do
-  i=0
-  for PID_FILE in ${PID_FILES[@]}; do
-    if [ ! -z "${PID_FILE:-}" ] && [ -s "${PID_FILE}" ]; then
-      pid=$(cat ${PID_FILE})
-      if [ "${pid:-null}" != 'null' ]; then
-        found=$(ps alxwww | grep 'motion -b' | awk '{ print $1 }' | egrep ${pid})
-
-        if [ -z "${found:-}" ]; then
-          motion.log.notice "Daemon with PID: ${pid} is not found; restarting"
-          if [ ${i} -gt 0 ]; then
-            CONF="${MOTION_CONF%%.*}.${i}.${MOTION_CONF##*.}"
+  ## monitor motion daemons
+  motion.log.info "STARTING MOTION WATCHDOG; ${PID_FILES}"
+  ## forever
+  while true; do
+    i=0
+    for PID_FILE in ${PID_FILES[@]}; do
+      if [ ! -z "${PID_FILE:-}" ] && [ -s "${PID_FILE}" ]; then
+        pid=$(cat ${PID_FILE})
+        if [ "${pid:-null}" != 'null' ]; then
+          found=$(ps alxwww | grep 'motion -b' | awk '{ print $1 }' | egrep ${pid})
+          if [ -z "${found:-}" ]; then
+            motion.log.notice "Daemon with PID: ${pid} is not found; restarting"
+            if [ ${i} -gt 0 ]; then
+              CONF="${MOTION_CONF%%.*}.${i}.${MOTION_CONF##*.}"
+            else
+              CONF="${MOTION_CONF%%.*}.${MOTION_CONF##*.}"
+            fi
+            motion -b -c "${CONF}" -p ${PID_FILE}
           else
-            CONF="${MOTION_CONF%%.*}.${MOTION_CONF##*.}"
+            motion.log.info "motion daemon running with PID: ${pid}"
           fi
-          motion -b -c "${CONF}" -p ${PID_FILE}
         else
-          motion.log.info "motion daemon running with PID: ${pid}"
+          motion.log.error "PID file contents invalid: ${PID_FILE}"
         fi
       else
-        motion.log.error "PID file contents invalid: ${PID_FILE}"
+        motion.log.error "No motion daemon PID file: ${PID_FILE}"
       fi
-    else
-      motion.log.error "No motion daemon PID file: ${PID_FILE}"
-    fi
-    i=$((i+1))
+      i=$((i+1))
+    done
+    motion.log.info "watchdog sleeping..."
+    sleep 30
   done
-  motion.log.info "watchdog sleeping..."
-  sleep 30
-done
+fi
