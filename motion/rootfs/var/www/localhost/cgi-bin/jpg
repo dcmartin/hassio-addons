@@ -1,0 +1,38 @@
+#!/bin/bash
+
+if [ ! -z "${QUERY_STRING:-}" ]; then
+  event=$(echo "$QUERY_STRING" | sed 's/.*event=\([^&]*\).*/\1/')
+  if [ "${event}" = "${QUERY_STRING}" ]; then event=; fi
+fi
+
+if [ ! -z "${QUERY_STRING:-}" ]; then
+  client=$(echo "$QUERY_STRING" | sed 's/.*client=\([^&]*\).*/\1/')
+  if [ "${client}" = "${QUERY_STRING}" ]; then client=; fi
+fi
+
+file=
+
+if [ ! -z "${event:-}" ]; then
+  file=$(mktemp)
+  ./bin/jpg.sh ${event} ${client:-} > ${file}
+
+  if [ -s "${file}" ]; then
+    echo "Content-Type: image/jpeg"
+    echo "Access-Control-Allow-Origin: *"
+    echo "Cache-Control: no-cache"
+    echo "Cache-Control: max-age=30"
+    echo ""
+    cat ${file}
+  fi
+fi
+
+if [ -z "${file:-}" ] || [ ! -s "${file}" ]; then
+  echo "Content-Type: application/json; charset=utf-8"
+  echo "Access-Control-Allow-Origin: *"
+  echo "Cache-Control: no-cache"
+  echo "Cache-Control: max-age=30"
+  echo ""
+  echo '{"event":"'${event:-}'","client":"'${client:-}'","error":"not found"}'
+fi
+
+if [ ! -z "${file:-}" ]; then rm -f "${file}"; fi
