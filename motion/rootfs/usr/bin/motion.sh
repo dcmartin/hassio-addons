@@ -1147,7 +1147,7 @@ for (( i=0; i < ncamera; i++)); do
       if [ "${alive:-000}" != '200' ]; then
         motion.log.notice "Network camera at ${netcam_userpass}@${netcam_url}; bad response: ${alive}"
       else
-        motion.log.info "Network camera at ${netcam_userpass}@${netcam_url}; good response: ${alive}"
+        motion.log.info "Network camera at ${netcam_url}; userpass: ${netcam_userpass}; good response: ${alive}"
       fi
 
       # keepalive 
