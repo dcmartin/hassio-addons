@@ -1,6 +1,6 @@
 {
   "name": "Motion Video0",
-  "version": "0.9.11",
+  "version": "0.9.12",
   "slug": "motion-video0",
   "description": "Motion addon with support for /dev/video0 access",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/motion-video0/README.md",

@@ -1,6 +1,6 @@
 {
   "name": "Motion Server",
-  "version": "0.9.11",
+  "version": "0.9.12",
   "slug": "motion",
   "description": "Motion server for network cameras only; no device support.",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/motion/README.md",
@@ -152,7 +152,7 @@
       "framerate": "int(2,100)?",
       "height": "int?",
       "hue": "int?",
-      "interval": "int(1,120)?",
+      "interval": "int(60,86400)?",
       "lightswitch": "int?",
       "minimum_motion_frames": "int(1,300)?",
       "movie_max": "int(1,300)?",
