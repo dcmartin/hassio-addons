@@ -1146,7 +1146,7 @@ for (( i=0; i < ncamera; i++)); do
       # test netcam_url
       alive=$(curl -sL -w '%{http_code}' --connect-timeout 2 --retry-connrefused --retry 10 --retry-max-time 2 --max-time 15 -u ${netcam_userpass} ${netcam_url} -o /dev/null)
       if [ "${alive:-000}" != '200' ]; then
-        motion.log.notice "Network camera at ${netcam_userpass}@${netcam_url}; bad response: ${alive}"
+        motion.log.notice "Network camera at ${netcam_url}; userpass: ${netcam_userpass}; bad response: ${alive}"
       else
         motion.log.info "Network camera at ${netcam_url}; userpass: ${netcam_userpass}; good response: ${alive}"
       fi
