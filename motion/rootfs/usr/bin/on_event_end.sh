@@ -437,6 +437,14 @@ motion_event_process()
     result='false'
   fi
 
+  # create animated GIF and publish
+  if [ "${result:-}" != 'false' ] && [ $(motion_publish_animated "${jsonfile}") = 'true' ]; then
+      result='true'
+  else
+    motion.log.error "${FUNCNAME[0]} no GIF returned; from: motion_publish_animated ${jsonfile}"
+    result='false'
+  fi
+
   # add picture to event JSON and publish
   if [ "${result:-}" != 'false' ] && [ $(motion_event_append_picture ${jsonfile} ${jpgfile}) = 'true' ]; then
     if [ $(motion_publish_event ${jsonfile}) = 'true' ]; then
@@ -447,14 +455,6 @@ motion_event_process()
     fi
   else
     motion.log.error "${FUNCNAME[0]} failed append picture; metadata: $(jq -c '.' ${jsonfile})"
-  fi
-
-  # create animated GIF and publish
-  if [ "${result:-}" != 'false' ] && [ $(motion_publish_animated "${jsonfile}") = 'true' ]; then
-      result='true'
-  else
-    motion.log.error "${FUNCNAME[0]} no GIF returned; from: motion_publish_animated ${jsonfile}"
-    result='false'
   fi
   echo "${result:-false}"
 }

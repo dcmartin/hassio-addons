@@ -1,10 +1,10 @@
 {
     "squash": false,
     "build_from": {
-        "armv7": "dcmartin/armv7-addon-motion:0.9.12",
-        "amd64": "dcmartin/amd64-addon-motion:0.9.12",
-        "aarch64": "dcmartin/aarch64-addon-motion:0.9.12",
-        "armhf": "dcmartin/armhf-addon-motion:0.9.12"
+        "armv7": "dcmartin/armv7-addon-motion:0.9.13",
+        "amd64": "dcmartin/amd64-addon-motion:0.9.13",
+        "aarch64": "dcmartin/aarch64-addon-motion:0.9.13",
+        "armhf": "dcmartin/armhf-addon-motion:0.9.13"
     },
     "args": {}
 }
