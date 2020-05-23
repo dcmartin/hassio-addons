@@ -48,27 +48,13 @@
     "log_motion_level": "info",
     "log_motion_type": "ALL",
     "default": {
-      "brightness": 100,
       "changes": "on",
-      "contrast": 50,
-      "despeckle": "EedDl",
-      "event_gap": 10,
-      "framerate": 3,
-      "hue": 50,
-      "interval": 3600,
-      "lightswitch": 0,
-      "minimum_motion_frames": 10,
-      "movie_max": 60,
-      "movie_output": "off",
-      "movie_quality": 80,
-      "netcam_userpass": "!secret netcam-userpass",
-      "palette": 15,
-      "picture_quality": 80,
+      "event_gap": 30,
+      "framerate": 15,
+      "minimum_motion_frames": 75,
       "post_pictures": "best",
-      "saturation": 0,
-      "stream_quality": 50,
       "text_scale": 2,
-      "threshold_percent": 1,
+      "threshold_percent": 2,
       "username": "!secret motioncam-username",
       "password": "!secret motioncam-password",
       "width": 640,
@@ -76,7 +62,7 @@
     },
     "mqtt": {
       "host": "core-mosquitto",
-      "port": "1883",
+      "port": 1883,
       "username": "username",
       "password": "password"
     },
@@ -86,10 +72,8 @@
     "timezone": "America/Los_Angeles",
     "cameras": [
       {
-        "name": "hostname_local",
-        "type": "local",
-        "framerate": 5,
-        "threshold_percent": 1
+        "name": "camera1",
+        "type": "local"
       }
     ]
   },

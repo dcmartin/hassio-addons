@@ -45,27 +45,13 @@
     "log_motion_level": "info",
     "log_motion_type": "ALL",
     "default": {
-      "brightness": 100,
       "changes": "on",
-      "contrast": 50,
-      "despeckle": "EedDl",
-      "event_gap": 10,
-      "framerate": 2,
-      "hue": 50,
-      "interval": 3600,
-      "lightswitch": 0,
-      "minimum_motion_frames": 10,
-      "movie_max": 60,
-      "movie_output": "off",
-      "movie_quality": 80,
-      "netcam_userpass": "!secret netcam-userpass",
-      "palette": 15,
-      "picture_quality": 80,
+      "event_gap": 30,
+      "framerate": 15,
+      "minimum_motion_frames": 75,
       "post_pictures": "best",
-      "saturation": 0,
-      "stream_quality": 50,
       "text_scale": 2,
-      "threshold_percent": 1,
+      "threshold_percent": 2,
       "username": "!secret motioncam-username",
       "password": "!secret motioncam-password",
       "width": 640,
@@ -73,55 +59,21 @@
     },
     "mqtt": {
       "host": "core-mosquitto",
-      "port": "1883",
+      "port": 1883,
       "username": "username",
       "password": "password"
     },
     "group": "motion",
-    "device": "",
-    "client": "",
+    "device": "hostname",
+    "client": "hostname",
     "timezone": "America/Los_Angeles",
     "cameras": [
       {
-        "name": "wyzecam",
+        "name": "camera1",
         "type": "netcam",
-        "icon": "camera",
-        "width": 1920,
-        "height": 1080,
+        "width": 640,
+        "height": 360,
         "netcam_url": "rtsp://192.168.1.223/live",
-        "netcam_userpass": "myusername:mypassword",
-        "framerate": 2,
-        "threshold_percent": 2
-      },
-      {
-        "name": "panasonic-poolcam",
-        "type": "netcam",
-        "icon": "water",
-        "netcam_url": "http://192.168.1.162/nphMotionJpeg?Resolution=640x480&Quality=Clarity",
-        "framerate": 5,
-        "threshold": 5000
-      },
-      {
-        "name": "rpi3-gatecam",
-        "type": "netcam",
-        "icon": "gate",
-        "netcam_url": "mjpeg://192.168.1.38/img/video.mjpeg",
-        "framerate": 5
-      },
-      {
-        "name": "wcv80n",
-        "type": "ftpd",
-        "icon": "webcam",
-        "netcam_url": "rtsp://wcv80n.local/img/video.sav",
-        "netcam_userpass": "!secret wcv80n-userpass",
-        "framerate": 5
-      },
-      {
-        "name": "remotehost-local",
-        "type": "mqtt",
-        "icon": "raspberry-pi",
-        "framerate": 3,
-        "netcam_url": "http://remotehost:8090/1",
         "netcam_userpass": "!secret motioncam-userpass"
       }
     ]
