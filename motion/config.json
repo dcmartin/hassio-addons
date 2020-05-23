@@ -100,7 +100,6 @@
       "despeckle": "str?",
       "event_gap": "int?",
       "fov": "int?",
-      "framerate": "int?",
       "framerate": "int(2,100)?",
       "height": "int?",
       "hue": "int?",
