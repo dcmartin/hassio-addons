@@ -134,7 +134,7 @@
         "device": "str?",
         "event_gap": "int?",
         "fov": "int?",
-        "framerate": "int?",
+        "framerate": "int(2,100)?",
         "height": "int?",
         "hue": "int?",
         "icon": "str?",
@@ -174,5 +174,4 @@
     "LOG_FORMAT": "{LEVEL}: {MESSAGE}"
   },
   "image": "dcmartin/{arch}-addon-motion-video0"
-
 }
