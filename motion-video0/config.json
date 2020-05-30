@@ -61,10 +61,10 @@
       "height": 480
     },
     "mqtt": {
-      "host": "core-mosquitto",
-      "port": 1883,
-      "username": "username",
-      "password": "password"
+      "host": "!secret mqtt-broker",
+      "port": !secret mqtt-port,
+      "username": "!secret mqtt-username",
+      "password": "!secret mqtt-password"
     },
     "group": "motion",
     "device": "hostname",
@@ -72,7 +72,7 @@
     "timezone": "America/Los_Angeles",
     "cameras": [
       {
-        "name": "camera1",
+        "name": "ps3eye",
         "type": "local"
       }
     ]
