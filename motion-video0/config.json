@@ -62,7 +62,7 @@
     },
     "mqtt": {
       "host": "!secret mqtt-broker",
-      "port": !secret mqtt-port,
+      "port": "!secret mqtt-port",
       "username": "!secret mqtt-username",
       "password": "!secret mqtt-password"
     },
