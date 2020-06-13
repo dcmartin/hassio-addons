@@ -34,15 +34,21 @@ main()
 
   bashio::log.debug "CONFIGURATION:" $(echo "${JSON}" | jq -c '.')
 
+  if [ -d /data/pharoscontrol ]; then
+    rm -fr /opt/pharoscontrol
+  else
+    mv /opt/pharoscontrol /data
+  fi
+  ln -s /data/pharoscontrol /opt/pharoscontrol
+
   # start pharos
   /etc/init.d/pharoscontrol start
 
   # run forever
   while true; do
-    # start pharos
-    /etc/init.d/pharoscontrol status
     bashio::log.debug "Sleeping ..."
-    sleep 30
+    sleep 120
+    /etc/init.d/pharoscontrol status
   done
 }
 

@@ -4,7 +4,7 @@
   "slug": "pharos",
   "description": "Pharos server for TP-LINK CPE WiFi Access points",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/pharos/README.md",
-  "webui": "http://[HOST]:[PORT:9231]/",
+  "webui": "http://[HOST]:[PORT:9231]/#/device",
   "startup": "application",
   "boot": "auto",
   "arch": [
