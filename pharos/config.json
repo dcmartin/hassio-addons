@@ -1,0 +1,44 @@
+{
+  "name": "Pharos Server",
+  "version": "0.0.1",
+  "slug": "pharos",
+  "description": "Pharos server for TP-LINK CPE WiFi Access points",
+  "url": "https://github.com/dcmartin/hassio-addons/tree/master/pharos/README.md",
+  "webui": "http://[HOST]:[PORT:9231]/#/device",
+  "startup": "application",
+  "boot": "auto",
+  "arch": [
+    "armhf",
+    "aarch64",
+    "amd64"
+  ],
+  "ingress": true,
+  "ingress_port": 9231,
+  "devices": [],
+  "hassio_api": false,
+  "hassio_role": "default",
+  "host_network": true,
+  "homeassistant_api": true,
+  "privileged": [
+    "SYS_ADMIN"
+  ],
+  "timeout": 90,
+  "tmpfs": "size=256m,uid=0,rw",
+  "map": [],
+  "panel_icon": "mdi:router-wireless",
+  "ports": {
+    "9231/tcp": 9231
+  },
+  "ports_description": {
+    "9231/tcp": "Web interface"
+  },
+  "options": {
+    "log_level": "info"
+  },
+  "schema": {
+    "log_level": "str"
+  },
+  "environment": {
+    "LOG_FORMAT": "{LEVEL}: {MESSAGE}"
+  }
+}
