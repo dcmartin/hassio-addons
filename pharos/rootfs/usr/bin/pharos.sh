@@ -1,4 +1,4 @@
-#!/usr/bin/with-contenv bashio
+#!/usr/bin/with-contenv /usr/bin/bashio
 
 # ==============================================================================
 set -o nounset  # Exit script on use of an undefined variable
