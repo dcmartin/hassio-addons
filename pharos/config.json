@@ -8,24 +8,25 @@
   "startup": "application",
   "boot": "auto",
   "arch": [
+    "armv7",
     "armhf",
     "aarch64",
     "amd64"
   ],
-  "ingress": true,
+  "ingress": false,
   "ingress_port": 9321,
+  "panel_admin": true,
+  "panel_icon": "mdi:router-wireless",
+  "stage": "experimental",
   "devices": [],
   "hassio_api": true,
   "hassio_role": "default",
   "host_network": true,
   "homeassistant_api": true,
-  "privileged": [
-    "SYS_ADMIN"
-  ],
+  "privileged": [],
   "timeout": 90,
   "tmpfs": "size=256m,uid=0,rw",
   "map": [],
-  "panel_icon": "mdi:router-wireless",
   "ports": {
     "9321/tcp": 9321
   },
@@ -33,10 +34,12 @@
     "9321/tcp": "Web interface"
   },
   "options": {
-    "log_level": "info"
+    "log_level": "info",
+    "timezone": "America/Los_Angeles"
   },
   "schema": {
-    "log_level": "str"
+    "log_level": "str",
+    "timezone": "str?"
   },
   "environment": {
     "LOG_FORMAT": "{LEVEL}: {MESSAGE}"

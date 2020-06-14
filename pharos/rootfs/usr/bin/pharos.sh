@@ -34,6 +34,11 @@ main()
 
   bashio::log.debug "CONFIGURATION:" $(echo "${JSON}" | jq -c '.')
 
+  # stop pharos
+  if [ -e /var/run/pharoscontrol ]; then
+    /etc/init.d/pharoscontrol stop
+  fi
+
   if [ -d /data/pharoscontrol ]; then
     rm -fr /opt/pharoscontrol
   else
