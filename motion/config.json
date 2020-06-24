@@ -1,6 +1,6 @@
 {
   "name": "Motion Server",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "slug": "motion",
   "description": "Motion server for network cameras only; no device support.",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/motion/README.md",
@@ -53,6 +53,7 @@
       "threshold_percent": 2,
       "username": "!secret motioncam-username",
       "password": "!secret motioncam-password",
+      "netcam_userpass": "!secret netcam-userpass",
       "width": 640,
       "height": 480
     },
