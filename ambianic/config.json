@@ -1,0 +1,100 @@
+{
+  "name": "Ambianic Edge",
+  "version": "0.0.1",
+  "slug": "ambianic",
+  "description": "Ambiance edge",
+  "url": "https://github.com/ambianic/ambianic-edge/README.md",
+  "startup": "application",
+  "boot": "auto",
+  "arch": [
+    "aarch64",
+    "amd64",
+    "armv7"
+  ],
+  "ingress": false,
+  "ingress_port": null,
+  "devices": [],
+  "hassio_api": false,
+  "hassio_role": "default",
+  "host_network": true,
+  "homeassistant_api": false,
+  "privileged": [
+    "SYS_ADMIN"
+  ],
+  "timeout": 90,
+  "tmpfs": "size=128m,uid=0,rw",
+  "map": [
+    "share:rw",
+    "config:rw"
+  ],
+  "panel_icon": "mdi:cctv",
+  "panel_title": "Ambianic Edge",
+  "panel_admin": true,
+  "ports": {
+    "8778/tcp": 8778
+  },
+  "ports_description": {
+    "8778/tcp": "API"
+  },
+  "options": {
+    "log_level": "info",
+    "cameras": []
+  },
+  "schema": {
+    "log_level": "str",
+    "log_type": "str?",
+    "device": "str?",
+    "client": "str?",
+    "username": "str?",
+    "password": "str?",
+    "timezone": "str?",
+    "cameras": [
+      {
+        "name": "str",
+        "type": "list(netcam|ftpd|mqtt)",
+        "brightness": "int?",
+        "changes": "list(on|off)?",
+        "contrast": "int?",
+        "despeckle": "str?",
+        "device": "str?",
+        "event_gap": "int?",
+        "fov": "int?",
+        "framerate": "int(2,100)?",
+        "height": "int?",
+        "hue": "int?",
+        "icon": "str?",
+        "lightswitch": "int?",
+        "mac": "str?",
+        "mjpeg_url": "str?",
+        "movie_max": "int(1,60)?",
+        "movie_output": "list(off|mp4|mpeg4|3gp)?",
+        "movie_quality": "int(1,100)?",
+        "netcam_url": "str?",
+        "netcam_userpass": "str?",
+        "palette": "int?",
+        "password": "str?",
+        "picture_quality": "int?",
+        "port": "port?",
+        "rotate": "int?",
+        "saturation": "int?",
+        "still_image_url": "str?",
+        "stream_quality": "int?",
+        "text_scale": "int(1,10)?",
+        "threshold": "int?",
+        "threshold_percent": "int(0,100)?",
+        "username": "str?",
+        "userpass": "str?",
+        "width": "int?"
+      }
+    ],
+    "mqtt": {
+      "host": "str?",
+      "port": "port?",
+      "username": "str?",
+      "password": "str?"
+    }
+  },
+  "environment": {
+    "LOG_FORMAT": "{LEVEL}: {MESSAGE}"
+  }
+}
