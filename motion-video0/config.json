@@ -1,6 +1,6 @@
 {
   "name": "Motion Video0",
-  "version": "0.1.8",
+  "version": "0.10.1",
   "slug": "motion-video0",
   "description": "Motion addon with support for /dev/video0 access",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/motion-video0/README.md",
@@ -10,7 +10,6 @@
   "arch": [
     "aarch64",
     "amd64",
-    "armhf",
     "armv7"
   ],
   "ingress": true,
@@ -18,7 +17,7 @@
   "devices": [
     "/dev/video0:/dev/video0:rwm"
   ],
-  "audio": true,
+  "audio": false,
   "hassio_api": true,
   "hassio_role": "default",
   "host_network": true,
@@ -33,6 +32,8 @@
     "config:rw"
   ],
   "panel_icon": "mdi:motion-sensor",
+  "panel_title": "Motion-AI",
+  "panel_admin": true,
   "ports": {
     "7999/tcp": 7999,
     "8080/tcp": 8080,
@@ -48,37 +49,24 @@
     "log_motion_level": "info",
     "log_motion_type": "ALL",
     "default": {
-      "brightness": 100,
       "changes": "on",
-      "contrast": 50,
-      "despeckle": "EedDl",
-      "event_gap": 10,
-      "framerate": 3,
-      "hue": 50,
-      "interval": 60,
-      "lightswitch": 0,
-      "minimum_motion_frames": 10,
-      "movie_max": 60,
-      "movie_output": "off",
-      "movie_quality": 80,
-      "netcam_userpass": "!secret netcam-userpass",
-      "palette": 15,
-      "picture_quality": 80,
+      "event_gap": 30,
+      "framerate": 5,
+      "minimum_motion_frames": 25,
       "post_pictures": "best",
-      "saturation": 0,
-      "stream_quality": 50,
       "text_scale": 2,
-      "threshold_percent": 1,
+      "threshold_percent": 2,
       "username": "!secret motioncam-username",
       "password": "!secret motioncam-password",
+      "netcam_userpass": "!secret netcam_userpass",
       "width": 640,
       "height": 480
     },
     "mqtt": {
-      "host": "core-mosquitto",
-      "port": "1883",
-      "username": "username",
-      "password": "password"
+      "host": "!secret mqtt-broker",
+      "port": "!secret mqtt-port",
+      "username": "!secret mqtt-username",
+      "password": "!secret mqtt-password"
     },
     "group": "motion",
     "device": "hostname",
@@ -86,10 +74,8 @@
     "timezone": "America/Los_Angeles",
     "cameras": [
       {
-        "name": "hostname_local",
-        "type": "local",
-        "framerate": 5,
-        "threshold_percent": 1
+        "name": "ps3eye",
+        "type": "local"
       }
     ]
   },
@@ -118,7 +104,7 @@
       "framerate": "int(2,100)?",
       "height": "int?",
       "hue": "int?",
-      "interval": "int(1,120)?",
+      "interval": "int(60,86400)?",
       "lightswitch": "int?",
       "minimum_motion_frames": "int(1,300)?",
       "movie_max": "int(1,300)?",
@@ -150,7 +136,7 @@
         "device": "str?",
         "event_gap": "int?",
         "fov": "int?",
-        "framerate": "int?",
+        "framerate": "int(2,100)?",
         "height": "int?",
         "hue": "int?",
         "icon": "str?",
@@ -190,5 +176,4 @@
     "LOG_FORMAT": "{LEVEL}: {MESSAGE}"
   },
   "image": "dcmartin/{arch}-addon-motion-video0"
-
 }

@@ -13,6 +13,7 @@ RUN apk add --no-cache \
   gettext \
   gawk \
   jq \
+  openssl-dev \
   git
 
 RUN apk add --no-cache \
@@ -50,7 +51,7 @@ RUN \
 RUN \
     cd /tmp \
     && \
-    git clone https://github.com/rgaufman/live555.git \
+    git clone https://github.com/dcmartin/live555.git \
     && \
     cd live555 \
     && \

@@ -366,7 +366,7 @@ motion_publish_average()
 
   if [ -s "${avgfile}" ]; then
     result="${avgfile}"
-    motion.mqtt.pub -q 2 -t "$(motion.config.group)/${device}/${camera}/image-animated" -f "${avgfile}" || result=false
+    motion.mqtt.pub -q 2 -t "$(motion.config.group)/${device}/${camera}/image-average" -f "${avgfile}" || result=false
   else
     motion.log.error "${FUNCNAME[0]} failed to calculate average image; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
   fi
@@ -433,28 +433,31 @@ motion_event_process()
     # publish JPEG to MQTT
     motion.mqtt.pub -q 2 -t "$(motion.config.group)/${device}/${camera}/image/end" -f "${jpgfile}" || result=false
   else
-    motion.log.error "${FUNCNAME[0]} failed to append picture; metadata: $(jq -c '.' ${jsonfile})"
+    motion.log.error "${FUNCNAME[0]} NO KEY FRAME: $(jq -c '.' ${jsonfile})"
     result='false'
   fi
 
-  # add picture to event JSON and publish
+  # add picture to event JSON
   if [ "${result:-}" != 'false' ] && [ $(motion_event_append_picture ${jsonfile} ${jpgfile}) = 'true' ]; then
-    if [ $(motion_publish_event ${jsonfile}) = 'true' ]; then
-      motion.log.debug "${FUNCNAME[0]} published to MQTT; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
-      result=true
-    else
-      motion.log.error "${FUNCNAME[0]} failed to publish; metadata: $(jq -c '.' ${jsonfile})"
-    fi
+    motion.log.debug "${FUNCNAME[0]} picture appended; from: motion_append_picture ${jsonfile}"
   else
     motion.log.error "${FUNCNAME[0]} failed append picture; metadata: $(jq -c '.' ${jsonfile})"
+    result=false
   fi
 
-  # create animated GIF and publish
+  # add animated GIF to event JSON
   if [ "${result:-}" != 'false' ] && [ $(motion_publish_animated "${jsonfile}") = 'true' ]; then
-      result='true'
+    motion.log.debug "${FUNCNAME[0]} GIF returned; from: motion_publish_animated ${jsonfile}"
   else
     motion.log.error "${FUNCNAME[0]} no GIF returned; from: motion_publish_animated ${jsonfile}"
-    result='false'
+  fi
+
+  # publish event JSON 
+  if [ "${result:-}" != 'false' ] && [ $(motion_publish_event ${jsonfile}) = 'true' ]; then
+    motion.log.debug "${FUNCNAME[0]} published to MQTT; metadata: $(jq -c '.image=(.image!=null)' ${jsonfile})"
+    result=true
+  else
+    motion.log.error "${FUNCNAME[0]} event failed to publish; metadata: $(jq -c '.' ${jsonfile})"
   fi
   echo "${result:-false}"
 }

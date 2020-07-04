@@ -1,6 +1,6 @@
 {
   "name": "Motion Server",
-  "version": "0.9.8",
+  "version": "0.10.1",
   "slug": "motion",
   "description": "Motion server for network cameras only; no device support.",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/motion/README.md",
@@ -10,7 +10,6 @@
   "arch": [
     "aarch64",
     "amd64",
-    "armhf",
     "armv7"
   ],
   "ingress": true,
@@ -30,6 +29,8 @@
     "config:rw"
   ],
   "panel_icon": "mdi:motion-sensor",
+  "panel_title": "Motion-AI",
+  "panel_admin": true,
   "ports": {
     "7999/tcp": 7999,
     "8080/tcp": 8080,
@@ -45,83 +46,36 @@
     "log_motion_level": "info",
     "log_motion_type": "ALL",
     "default": {
-      "brightness": 100,
       "changes": "on",
-      "contrast": 50,
-      "despeckle": "EedDl",
-      "event_gap": 10,
-      "framerate": 2,
-      "hue": 50,
-      "interval": 60,
-      "lightswitch": 0,
-      "minimum_motion_frames": 10,
-      "movie_max": 60,
-      "movie_output": "off",
-      "movie_quality": 80,
-      "netcam_userpass": "!secret netcam-userpass",
-      "palette": 15,
-      "picture_quality": 80,
+      "event_gap": 30,
+      "framerate": 5,
+      "minimum_motion_frames": 25,
       "post_pictures": "best",
-      "saturation": 0,
-      "stream_quality": 50,
       "text_scale": 2,
-      "threshold_percent": 1,
+      "threshold_percent": 2,
       "username": "!secret motioncam-username",
       "password": "!secret motioncam-password",
+      "netcam_userpass": "!secret netcam-userpass",
       "width": 640,
       "height": 480
     },
     "mqtt": {
-      "host": "core-mosquitto",
-      "port": "1883",
-      "username": "username",
-      "password": "password"
+      "host": "!secret mqtt-broker",
+      "port": "!secret mqtt-port",
+      "username": "!secret mqtt-username",
+      "password": "!secret mqtt-password"
     },
     "group": "motion",
-    "device": "",
-    "client": "",
+    "device": "hostname",
+    "client": "hostname",
     "timezone": "America/Los_Angeles",
     "cameras": [
       {
         "name": "wyzecam",
         "type": "netcam",
-        "icon": "camera",
-        "width": 1920,
-        "height": 1080,
+        "width": 640,
+        "height": 360,
         "netcam_url": "rtsp://192.168.1.223/live",
-        "netcam_userpass": "myusername:mypassword",
-        "framerate": 2,
-        "threshold_percent": 2
-      },
-      {
-        "name": "panasonic-poolcam",
-        "type": "netcam",
-        "icon": "water",
-        "netcam_url": "http://192.168.1.162/nphMotionJpeg?Resolution=640x480&Quality=Clarity",
-        "framerate": 5,
-        "threshold": 5000
-      },
-      {
-        "name": "rpi3-gatecam",
-        "type": "netcam",
-        "icon": "gate",
-        "netcam_url": "mjpeg://192.168.1.38/img/video.mjpeg",
-        "framerate": 5
-      },
-      {
-        "name": "wcv80n",
-        "type": "ftpd",
-        "icon": "webcam",
-        "netcam_url": "rtsp://wcv80n.local/img/video.sav",
-        "netcam_userpass": "!secret wcv80n-userpass",
-        "framerate": 5
-      },
-      {
-        "name": "remotehost-local",
-        "type": "mqtt",
-        "icon": "raspberry-pi",
-        "framerate": 3,
-        "netcam_url": "http://remotehost:8090/1",
         "netcam_userpass": "!secret motioncam-userpass"
       }
     ]
@@ -148,11 +102,10 @@
       "despeckle": "str?",
       "event_gap": "int?",
       "fov": "int?",
-      "framerate": "int?",
       "framerate": "int(2,100)?",
       "height": "int?",
       "hue": "int?",
-      "interval": "int(1,120)?",
+      "interval": "int(60,86400)?",
       "lightswitch": "int?",
       "minimum_motion_frames": "int(1,300)?",
       "movie_max": "int(1,300)?",
@@ -184,7 +137,7 @@
         "device": "str?",
         "event_gap": "int?",
         "fov": "int?",
-        "framerate": "int?",
+        "framerate": "int(2,100)?",
         "height": "int?",
         "hue": "int?",
         "icon": "str?",

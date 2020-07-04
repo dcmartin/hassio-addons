@@ -826,10 +826,11 @@ MOTION="${MOTION}"',"lightswitch":'"${VALUE}"
 
 # set interval for events
 VALUE=$(jq -r '.default.interval' "${CONFIG_PATH}")
-if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=30; fi
-motion.log.debug "Set interval to ${VALUE}"
-MOTION="${MOTION}"',"interval":'"${VALUE}"
-export MOTION_EVENT_INTERVAL="${VALUE}"
+if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=3600; fi
+motion.log.debug "Set watchdog interval to ${VALUE}"
+MOTION="${MOTION}"',"interval":'${VALUE}
+# used in MAIN
+MOTION_WATCHDOG_INTERVAL=${VALUE}
 
 # set type
 VALUE=$(jq -r '.default.type' "${CONFIG_PATH}")
@@ -1145,9 +1146,9 @@ for (( i=0; i < ncamera; i++)); do
       # test netcam_url
       alive=$(curl -sL -w '%{http_code}' --connect-timeout 2 --retry-connrefused --retry 10 --retry-max-time 2 --max-time 15 -u ${netcam_userpass} ${netcam_url} -o /dev/null)
       if [ "${alive:-000}" != '200' ]; then
-        motion.log.notice "Network camera at ${netcam_userpass}@${netcam_url}; bad response: ${alive}"
+        motion.log.notice "Network camera at ${netcam_url}; userpass: ${netcam_userpass}; bad response: ${alive}"
       else
-        motion.log.info "Network camera at ${netcam_userpass}@${netcam_url}; good response: ${alive}"
+        motion.log.info "Network camera at ${netcam_url}; userpass: ${netcam_userpass}; good response: ${alive}"
       fi
 
       # keepalive 
@@ -1241,10 +1242,6 @@ for (( i = 1; i <= MOTION_COUNT;  i++)); do
   CONF="${MOTION_CONF%%.*}.${i}.${MOTION_CONF##*.}"
 done
 
-## publish MQTT start
-motion.log.notice "PUBLISHING CONFIGURATION; topic: $(motion.config.group)/$(motion.config.device)/start"
-motion.mqtt.pub -r -q 2 -t "$(motion.config.group)/$(motion.config.device)/start" -f "$(motion.config.file)"
-
 if [ ${#PID_FILES[@]} -le 0 ]; then
   motion.log.info "ZERO motion daemons"
   motion.log.info "STARTING APACHE (foreground); ${MOTION_APACHE_CONF} ${MOTION_APACHE_HOST} ${MOTION_APACHE_PORT}"
@@ -1258,6 +1255,10 @@ else
   motion.log.info "STARTING MOTION WATCHDOG; ${PID_FILES}"
   ## forever
   while true; do
+    ## publish configuration
+    motion.log.notice "PUBLISHING CONFIGURATION; topic: $(motion.config.group)/$(motion.config.device)/start"
+    motion.mqtt.pub -r -q 2 -t "$(motion.config.group)/$(motion.config.device)/start" -f "$(motion.config.file)"
+
     i=0
     for PID_FILE in ${PID_FILES[@]}; do
       if [ ! -z "${PID_FILE:-}" ] && [ -s "${PID_FILE}" ]; then
@@ -1284,6 +1285,6 @@ else
       i=$((i+1))
     done
     motion.log.info "watchdog sleeping..."
-    sleep 30
+    sleep ${MOTION_WATCHDOG_INTERVAL:-3600}
   done
 fi

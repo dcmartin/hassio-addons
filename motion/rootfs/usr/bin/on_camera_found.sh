@@ -28,7 +28,7 @@ on_camera_found()
   local NOW=$(date -u +%s)
   local timestamp=$(date -u +%FT%TZ)
   local topic="$(motion.config.group)/$(motion.config.device)/${CN}/status/found"
-  local message='{"device":"'$(motion.config.device)'","camera":"'"${CN}"'","date":'"${NOW}"',"timestamp":"'${timestamp:-none}'","status":"found"}'
+  local message='{"group":"'$(motion.config.group)'","device":"'$(motion.config.device)'","camera":"'"${CN}"'","date":'"${NOW}"',"timestamp":"'${timestamp:-none}'","status":"found"}'
 
   motion.log.notice "Camera found: ${CN}; $(echo "${message:-null}" | jq -c '.')"
 

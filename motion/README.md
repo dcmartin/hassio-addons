@@ -1,15 +1,21 @@
 # &#127916; - `motion` _add-on_
 
-This [Home Assistant](http://home-assistant.io) add-on utilizes the [motion project](https://motion-project.github.io/), and [YOLO](https://pjreddie.com/darknet/yolo/) to detect and classify entity(s) in images.  The _motion project_ software provides an extensive set of capabilities to capture video feeds from a variety of sources, including `RSTP`,`HTTP`, and `MJPEG` network cameras.  Locally attached USB camera requires specialized version; see [`motion-video0`](http://github.com/dcmartin/hassio-addons/tree/master/motion-video0/README.md).
+This [Home Assistant](http://home-assistant.io) add-on utilizes the [motion project](https://motion-project.github.io/), [YOLO](https://pjreddie.com/darknet/yolo/), and other AI's to detect and classify entity(s) in images.  The _motion project_ software provides an extensive set of capabilities to capture video feeds from a variety of sources, including `RSTP`,`HTTP`, and `MJPEG` network cameras.  Locally attached USB camera requires specialized version; see [`motion-video0`](http://github.com/dcmartin/hassio-addons/tree/master/motion-video0/README.md).
 
-This add-on interacts with additional services:
+This add-on interacts with additional components and services:
 
-1. [`motion`](http://github.com/dcmartin/motion/tree/master/README.md) - Home Assistant configuration (see sample below)
-1. [`yolo4motion`](http://github.com/dcmartin/open-horizon/tree/master/yolo4motion/README.md)  An [Open Horizon](http://github.com/dcmartin/open-horizon) service; use [`sh/yolo4motion.sh`](http://github.com/dcmartin/motion/tree/master/sh/yolo4motion.sh) in [`motion`](http://github.com/dcmartin/motion) 
+1. [`motion-ai`](http://github.com/dcmartin/motion-ai/tree/master/README.md) - Automated Home Assistant configurator for use with `motion` _addon_ (see below).
 1. `MQTT`	Messaging service; use  [`mosquitto`](https://github.com/home-assistant/hassio-addons/tree/master/mosquitto) or [HiveMQ](https://github.com/hassio-addons/addon-mqtt) add-on
 1. `FTP` (_optional_) FTP daemon to receive webcam videos; use [`addon-ftp`](https://github.com/hassio-addons/addon-ftp) add-on
 
-## Containers
+In addition, there are three AI services which may be used to identify entities, faces, and license plates.
+
+1. [`yolo4motion`](http://github.com/dcmartin/open-horizon/tree/master/yolo4motion/README.md)  An [Open Horizon](http://github.com/dcmartin/open-horizon) service; use [`sh/yolo4motion.sh`](http://github.com/dcmartin/motion/tree/master/sh/yolo4motion.sh) in [`motion`](http://github.com/dcmartin/motion) 
+1. [`face4motion`](http://github.com/dcmartin/open-horizon/tree/master/face4motion/README.md)  An [Open Horizon](http://github.com/dcmartin/open-horizon) service; use [`sh/face4motion.sh`](http://github.com/dcmartin/motion/tree/master/sh/face4motion.sh) in [`motion`](http://github.com/dcmartin/motion) 
+1. [`alpr4motion`](http://github.com/dcmartin/open-horizon/tree/master/alpr4motion/README.md)  An [Open Horizon](http://github.com/dcmartin/open-horizon) service; use [`sh/alpr4motion.sh`](http://github.com/dcmartin/motion/tree/master/sh/alpr4motion.sh) in [`motion`](http://github.com/dcmartin/motion) 
+
+### Containers
+This _addon_ is built for the following architectures and available in Docker Hub, e.g. [`amd64`](https://hub.docker.com/repository/docker/dcmartin/amd64-addon-motion) version.
 
 ![](https://img.shields.io/badge/amd64-yes-green.svg)[![](https://images.microbadger.com/badges/image/dcmartin/amd64-addon-motion.svg)](https://microbadger.com/images/dcmartin/amd64-addon-motion)[![](https://images.microbadger.com/badges/version/dcmartin/amd64-addon-motion.svg)](https://microbadger.com/images/dcmartin/amd64-addon-motion)[![](https://img.shields.io/docker/pulls/dcmartin/amd64-addon-motion.svg)](https://hub.docker.com/r/dcmartin/amd64-addon-motion)
 
@@ -19,81 +25,73 @@ This add-on interacts with additional services:
 
 ![](https://img.shields.io/badge/armhf-yes-green.svg)[![](https://images.microbadger.com/badges/image/dcmartin/armhf-addon-motion.svg)](https://microbadger.com/images/dcmartin/armhf-addon-motion)[![](https://images.microbadger.com/badges/version/dcmartin/armhf-addon-motion.svg)](https://microbadger.com/images/dcmartin/armhf-addon-motion)[![](https://img.shields.io/docker/pulls/dcmartin/armhf-addon-motion.svg)](https://hub.docker.com/r/dcmartin/armhf-addon-motion)
 
+## `motion-ai`
+The [`motion-ai`](http://github.com/dcmartin/motion-ai) repository provides automated mechanisms to download, install, and configure [Home Assistant](http://home-assistant.io).   The [`webcams.json`](http://github.com/dcmartin/motion/tree/master/motion/webcams.json.tmpl) file defines cameras known to the system; file contents of `[]` indicate none and only discovered will appear.  After modifying and/or creating this file, Home Assistant should be reconfigured.  Run `make restart` in the top-level **HA** directory --  typically `/usr/share/hassio` when using the `motion-ai`installation [instructions](http://github.com/dcmartin/motion-ai/tree/master/docs/INSTALL.md).
+
+There are three attributes required to integrate a camera into **HA**:
+
++ `name` - identifier for the camera as defined by the _addon_ (n.b. MQTT topic **reserved** characters)
++ `mjpeg_url` - address of live MJPEG stream; local access only by default
++ `username` - authentication for access to MJPEG stream
++ `password` - authentication for access to MJPEG stream
+
+In addition, there are two additional attributes which are optional:
+
++ `icon` - select from [Material Design Icons](http://materialdesignicons.com/)
++ `w3w` - location of camera as identified by [What3Words](http://what3words.com)
+
+```
+[
+  {
+    "name": "kelispond",
+    "mjpeg_url": "http://127.0.0.1:8090/1",
+    "username": "!secret motioncam-username",
+    "password": "!secret motioncam-password",
+    "icon": "xbox",
+    "w3w": ["varieties","usage","racks"]
+  }
+]
+```
+
+
 ## `MQTT`
+Specify the host and port for sending MQTT messages. 
 
-This add-on produces the following topics; all topics begin with the `group` specified, which defaults to "motion".
-
-+ `{group}/{device}/start` - device start-up
-+ `{group}/{device}/{camera}/lost` - device lost
-+ `{group}/{device}/{camera}/found` - device found
-+ `{group}/{device}/{camera}/event/start` - start of event
-+ `{group}/{device}/{camera}/event/end` - end of event
-+ `{group}/{device}/{camera}/image` - JPEG; each image
-+ `{group}/{device}/{camera}/image/end` - JPEG; selected event image (**see** `post_pictures`)
-+ `{group}/{device}/{camera}/image-average` - JPEG; average image
-+ `{group}/{device}/{camera}/image-blend` - JPEG; blended image (50%)
-+ `{group}/{device}/{camera}/image-composite` - JPEG; composite image 
-+ `{group}/{device}/{camera}/image-animated` - GIF; animation
-+ `{group}/{device}/{camera}/image-animated-mask` - GIF; animation mask
-
-Topics may be processed using `MQTT` _sensors_ in Home Assistant;  a configuration [example](http://github.com/dcmartin/motion-config-monitor) and automated [builder](http://github.com/dcmartin/motion)  is provided in other repositories.
-
-## Configuration
-Please refer to [configuration information](http://github.com/dcmartin/hassio-addons/tree/master/motion/CONFIGURATION.md)
-
-### Camera specification (examples)
-
-#### `MJPEG`
 ```
-  - name: shedcam
-    type: netcam
-    icon: window-shutter-open
-    width: 640
-    height: 480
-    netcam_url: 'mjpeg://192.168.1.92:8090/1'
-    netcam_userpass: 'username:password'
-    threshold_percent: 1
+logins:
+  - username: username
+    password: password
+anonymous: false
+customize:
+  active: false
+  folder: mosquitto
+certfile: fullchain.pem
+keyfile: privkey.pem
+require_certificate: false
 ```
 
-#### `RTSP`
-```
-  - name: testcam
-    type: netcam
-    icon: webcam
-    framerate: 3
-    netcam_url: 'rtsp://192.168.93.3/live'
-    threshold_percent: 1
-    netcam_userpass: 'username:password'
-    width: 1920
-    height: 1080
-```
+All topics begin with the `devicedb` specified, which defaults to "motion".
 
-#### `HTTP`
-```
-  - name: road
-    netcam_url: 'http://192.168.1.36:8081/img/video.mjpeg'
-    type: netcam
-    icon: road
-    netcam_userpass: 'username:password'
-    width: 640
-    height: 480
-```
-
-#### `FTPD`
-```
-  - name: backyard
-    type: ftpd
-    netcam_url: 'http://192.168.1.183/img/video.mjpeg'
-    icon: texture-box
-    netcam_userpass: '!secret netcam-userpass'
-```
++ `<devicedb>/{name}/{camera}` -- JSON payload of motion detected
++ `<devicedb>/{name}/{camera}/lost` -- JSON payload of motion detected
++  `<devicedb>/{name}/{camera}/event/start` -- JSON payload of motion detected
++ `<devicedb>/{name}/{camera}/event/end` -- JSON payload of motion detected
++ `<devicedb>/{name}/{camera}/image` -- JPEG payload of image (**see** `post_pictures`)
++ `<devicedb>/{name}/{camera}/image-average` -- JPEG payload of average event 
++ `<devicedb>/{name}/{camera}/image-blend` -- JPEG payload of blended event (50%)
++ `<devicedb>/{name}/{camera}/image-composite` --  JPEG payload of composite event
++ `<devicedb>/{name}/{camera}/image-animated` -- GIF payload of event
++ `<devicedb>/{name}/{camera}/image-animated-mask` -- GIF payload of event (as B/W mask)
 
 ## Sample output
 
-[![motion sample](motion-sample.png?raw=true "SAMPLE")](http://github.com/dcmartin/hassio-addons/tree/master/motion/motion-sample.png)
+[![motion sample](samples/motion-sample.png?raw=true "SAMPLE")](samples/motion-sample.png)
+
+# Additional information
+The Motion package has extensive [documentation][motiondoc] on available parameters.  Almost all parameters are avsailable.
+The JSON configuration options are provided using the same name as in the Motion documentation.
 
 ## Changelog & Releases
-
 Releases are based on Semantic Versioning, and use the format
 of ``MAJOR.MINOR.PATCH``. In a nutshell, the version will be incremented
 based on the following:
@@ -103,7 +101,6 @@ based on the following:
 - ``PATCH``: Backwards-compatible bugfixes and package updates.
 
 ## Authors & contributors
-
 David C Martin (github@dcmartin.com)
 
 [commits]: https://github.com/dcmartin/hassio-addons/motion/commits/master
@@ -113,7 +110,8 @@ David C Martin (github@dcmartin.com)
 [keepchangelog]: http://keepachangelog.com/en/1.0.0/
 [releases]: https://github.com/dcmartin/hassio-addons/motion/releases
 [repository]: https://github.com/dcmartin/hassio-addons
-
+[motionpkg]: https://motion-project.github.io]
+[motiondoc]: https://motion-project.github.io/motion_config.html
 [watsonvr]: https://www.ibm.com/watson/services/visual-recognition
 [digitsgit]: https://github.com/nvidia/digits
 [digits]: https://developer.nvidia.com/digits
