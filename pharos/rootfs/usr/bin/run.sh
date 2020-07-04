@@ -1,4 +1,4 @@
-#!/usr/bin/with-contenv bashio
+#!/usr/bin/with-contenv /usr/bin/bashio
 
 ###
 ### run.sh

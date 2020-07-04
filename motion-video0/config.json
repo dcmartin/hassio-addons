@@ -1,6 +1,6 @@
 {
   "name": "Motion Video0",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "slug": "motion-video0",
   "description": "Motion addon with support for /dev/video0 access",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/motion-video0/README.md",
@@ -10,7 +10,6 @@
   "arch": [
     "aarch64",
     "amd64",
-    "armhf",
     "armv7"
   ],
   "ingress": true,
@@ -18,7 +17,7 @@
   "devices": [
     "/dev/video0:/dev/video0:rwm"
   ],
-  "audio": true,
+  "audio": false,
   "hassio_api": true,
   "hassio_role": "default",
   "host_network": true,
@@ -33,6 +32,8 @@
     "config:rw"
   ],
   "panel_icon": "mdi:motion-sensor",
+  "panel_title": "Motion-AI",
+  "panel_admin": true,
   "ports": {
     "7999/tcp": 7999,
     "8080/tcp": 8080,
@@ -57,6 +58,7 @@
       "threshold_percent": 2,
       "username": "!secret motioncam-username",
       "password": "!secret motioncam-password",
+      "netcam_userpass": "!secret netcam_userpass",
       "width": 640,
       "height": 480
     },

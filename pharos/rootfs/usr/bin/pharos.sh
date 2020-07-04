@@ -1,4 +1,4 @@
-#!/usr/bin/with-contenv bashio
+#!/usr/bin/with-contenv /usr/bin/bashio
 
 # ==============================================================================
 set -o nounset  # Exit script on use of an undefined variable
@@ -33,6 +33,11 @@ main()
   JSON="${JSON}"'}'
 
   bashio::log.debug "CONFIGURATION:" $(echo "${JSON}" | jq -c '.')
+
+  # stop pharos
+  if [ -e /var/run/pharoscontrol ]; then
+    /etc/init.d/pharoscontrol stop
+  fi
 
   if [ -d /data/pharoscontrol ]; then
     rm -fr /opt/pharoscontrol

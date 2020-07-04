@@ -34,7 +34,7 @@ RUN apk add --no-cache \
   tcsh@edge
 
 RUN apk add --no-cache \
-  ffmpeg@edge \
+  ffmpeg \
   motion@edge
 
 ## LIVE555
