@@ -38,10 +38,12 @@
   },
   "options": {
     "log_level": "info",
+    "workspace": "/data/ambianic",
     "cameras": []
   },
   "schema": {
     "log_level": "str",
+    "workspace": "str",
     "log_type": "str?",
     "device": "str?",
     "client": "str?",
