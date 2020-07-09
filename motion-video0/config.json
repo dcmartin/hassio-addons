@@ -58,7 +58,7 @@
       "threshold_percent": 2,
       "username": "!secret motioncam-username",
       "password": "!secret motioncam-password",
-      "netcam_userpass": "!secret netcam_userpass",
+      "netcam_userpass": "!secret netcam-userpass",
       "width": 640,
       "height": 480
     },
