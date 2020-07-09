@@ -234,31 +234,27 @@ ambianic::config.sources()
 
     i=0; j=0; while ${i} -lt ${nsource}; do
       local source=$(echo "${sources}" | jq -c '.['${i}']')
+      local type=$(echo "${source}" | jq -r '.type')
+      local src
 
-      if [ "${source:-null}" != 'null' ]; then
-        local type=$(echo "${source}" | jq -r '.type')
-        local src
-
-        case ${type:-null} in
-          video)
-            src=$(ambianic::config.sources.video "${source}")
-            ;;
-          audio)
-            src=$(ambianic::config.sources.audio "${source}")
-            ;;
-          *)
-            bashio::log.warn "Invalid source type: ${type}"
-            ;;
-        esac
-        if [ "${src:-null}" = 'null' ]; then
-          bashio::log.warn "FAILED to source ${type} ${i}: ${source}"
-        else
-          bashio::log.debug "Sourced ${type} ${i}: ${src}"
-          if [ ${j} -gt 0 ]; then srcs="${srcs},"; fi
-            srcs="${srcs}${src}"
-          fi
-          j=$((j+1))
-        fi
+      case ${type:-null} in
+        video)
+          src=$(ambianic::config.sources.video "${source}")
+          ;;
+        audio)
+          src=$(ambianic::config.sources.audio "${source}")
+          ;;
+        *)
+          bashio::log.warn "Invalid source type: ${type}"
+          ;;
+      esac
+      if [ "${src:-null}" = 'null' ]; then
+        bashio::log.warn "FAILED to source ${type} ${i}: ${source}"
+      else
+        bashio::log.debug "Sourced ${type} ${i}: ${src}"
+        if [ ${j} -gt 0 ]; then srcs="${srcs},"; fi
+        srcs="${srcs}${src}"
+        j=$((j+1))
       fi
       i=$((i+1))
     done
@@ -310,7 +306,7 @@ ambianic::update.ai_models.video()
   local tflite=$(echo "${model:-null}" | jq -r '.tflite')
   local edgetpu=$(echo "${model:-null}" | jq -r '.edgetpu')
 
-  case ${entity} in:
+  case ${entity} in
     object)
       echo '  image_detection: &'${name}
       echo '    labels: '${labels} | envsubst
@@ -399,6 +395,11 @@ ambianic::update.ai_models()
 #  }
 #]
 
+ambianic::config.ai_models.audio()
+{
+  bashio::log.warn "NOT IMPLEMENTED" "${FUNCNAME[0]}" "${*}"
+}
+
 ambianc::config.ai_models.video()
 {
   bashio::log.trace "${FUNCNAME[0]}" "${*}"
@@ -441,11 +442,6 @@ ambianc::config.ai_models.video()
   echo ${result:-null}
 }
 
-ambianic::config.ai_models.audio()
-{
-  bashio::log.warn "NOT IMPLEMENTED" "${FUNCNAME[0]}" "${*}"
-}
-
 ambianic::config.ai_models()
 {
   bashio::log.trace "${FUNCNAME[0]}" "${*}"
@@ -460,31 +456,27 @@ ambianic::config.ai_models()
 
     i=0; j=0; while ${i} -lt ${nmodel}; do
       local model=$(echo "${ai_models}" | jq -c '.['${i}']')
+      local type=$(echo "${model}" | jq -r '.type')
+      local model
 
-      if [ "${model:-null}" != 'null' ]; then
-        local type=$(echo "${model}" | jq -r '.type')
-        local model
-
-        case ${type:-null} in
-          video)
-            model=$(ambianic::config.ai_models.video "${model}")
-            ;;
-          audio)
-            model=$(ambianic::config.ai_models.audio "${model}")
-            ;;
-          *)
-            bashio::log.warn "Invalid ai_model type: ${type}"
-            ;;
-        esac
-        if [ "${model:-null}" = 'null' ]; then
-          bashio::log.warn "FAILED to configure ai_model ${i}: ${video}"
-        else
-          bashio::log.debug "Configured ai_model ${i}: ${model}"
-          if [ ${j} -gt 0 ]; then models="${models},"; fi
-            models="${models}${model}"
-          fi
-          j=$((j+1))
-        fi
+      case ${type:-null} in
+        video)
+          model=$(ambianic::config.ai_models.video "${model}")
+          ;;
+        audio)
+          model=$(ambianic::config.ai_models.audio "${model}")
+          ;;
+        *)
+          bashio::log.warn "Invalid ai_model type: ${type}"
+          ;;
+      esac
+      if [ "${model:-null}" = 'null' ]; then
+        bashio::log.warn "FAILED to configure ai_model ${i}: ${video}"
+      else
+        bashio::log.debug "Configured ai_model ${i}: ${model}"
+        if [ ${j} -gt 0 ]; then models="${models},"; fi
+        models="${models}${model}"
+        j=$((j+1))
       fi
       i=$((i+1))
     done
@@ -532,7 +524,7 @@ ambianic::update.pipelines.video.detect()
   local entity=$(echo "${act:-null}" | jq -r '.entity')
   local confidence=$(echo "${act:-null}" | jq -r '.confidence')
 
-  case ${entity} in:
+  case ${entity} in
     object)
       echo '    - detect_objects:'
       echo '      <<: *'${ai_model}
@@ -756,31 +748,27 @@ ambianic::config.pipelines()
 
     i=0; j=0; while ${i} -lt ${nppl}; do
       local ppl=$(echo "${pipelines}" | jq -c '.['${i}']')
+      local type=$(echo "${ppl}" | jq -r '.type')
+      local ppl
 
-      if [ "${ppl:-null}" != 'null' ]; then
-        local type=$(echo "${ppl}" | jq -r '.type')
-        local ppl
-
-        case ${type:-null} in
-          video)
-            ppl=$(ambianic::config.pipelines.video "${ppl}")
-            ;;
-          audio)
-            ppl=$(ambianic::config.pipelines.audio "${ppl}")
-            ;;
-          *)
-            bashio::log.warn "Invalid pipeline type: ${type}"
-            ;;
-        esac
-        if [ "${ppl:-null}" = 'null' ]; then
-          bashio::log.warn "FAILED to configure pipeline ${i}: ${video}"
-        else
-          bashio::log.debug "Configured pipeline ${i}: ${ppl}"
-          if [ ${j} -gt 0 ]; then ppls="${ppls},"; fi
-            ppls="${ppls}${ppl}"
-          fi
-          j=$((j+1))
-        fi
+      case ${type:-null} in
+        video)
+          ppl=$(ambianic::config.pipelines.video "${ppl}")
+          ;;
+        audio)
+          ppl=$(ambianic::config.pipelines.audio "${ppl}")
+          ;;
+        *)
+          bashio::log.warn "Invalid pipeline type: ${type}"
+          ;;
+      esac
+      if [ "${ppl:-null}" = 'null' ]; then
+        bashio::log.warn "FAILED to configure pipeline ${i}: ${video}"
+      else
+        bashio::log.debug "Configured pipeline ${i}: ${ppl}"
+        if [ ${j} -gt 0 ]; then ppls="${ppls},"; fi
+        ppls="${ppls}${ppl}"
+        j=$((j+1))
       fi
       i=$((i+1))
     done
@@ -967,6 +955,11 @@ ambianic::start()
 ###
 ## PRE-FLIGHT
 ###
+
+if [ -z "${AMBIANIC_PATH:-}" ]; then
+  bashio::log.error "AMBIANIC_PATH is undefined"
+  exit 1
+fi
 
 if [ ! -d "${AMBIANIC_PATH}" ]; then
   bashio::log.error "Ambianic not installed; path: ${AMBIANIC_PATH}"
