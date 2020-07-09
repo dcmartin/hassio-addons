@@ -44,29 +44,30 @@
         "name": "entity_detection",
         "type": "video",
         "top_k": 10,
-        "labels": "/opt/ambianic-edge/ai_models/coco_labels.txt",
-        "tflite": "/opt/ambianic-edge/ai_models/mobilenet_ssd_v2_coco_quant_postprocess.tflite",
-        "edgetpu": "/opt/ambianic-edge/ai_models/mobilenet_ssd_v2_coco_quant_postprocess_edgetpu.tflite"
+        "labels": "${AMBIANIC_PATH}/ai_models/coco_labels.txt",
+        "tflite": "${AMBIANIC_PATH}/ai_models/mobilenet_ssd_v2_coco_quant_postprocess.tflite",
+        "edgetpu": "${AMBIANIC_PATH}/ai_models/mobilenet_ssd_v2_coco_quant_postprocess_edgetpu.tflite"
       },
       {
         "name": "face_detection",
         "type": "video",
         "top_k": 2,
-        "labels": "/opt/ambianic-edge/ai_models/coco_labels.txt",
-        "tflite": "/opt/ambianic-edge/ai_models/mobilenet_ssd_v2_face_quant_postprocess.tflite",
-        "edgetpu": "/opt/ambianic-edge/ai_models/mobilenet_ssd_v2_face_quant_postprocess_edgetpu.tflite"
+        "labels": "${AMBIANIC_PATH}/ai_models/coco_labels.txt",
+        "tflite": "${AMBIANIC_PATH}/ai_models/mobilenet_ssd_v2_face_quant_postprocess.tflite",
+        "edgetpu": "${AMBIANIC_PATH}/ai_models/mobilenet_ssd_v2_face_quant_postprocess_edgetpu.tflite"
       }
     ],
     "pipelines": [
       {
         "name": "camera1_entity_face",
         "source": "camera1",
+        "type": "video",
         "steps": [
-          { "detect": { "ai_model": "entity_detection", "confidence": 0.6 },
+          { "detect": { "entity": "object", "ai_model": "entity_detection", "confidence": 0.6 },
             "save": { "interval": 2, "idle": 6000 }
           },
           {
-            "detect": { "ai_model": "face_detection", "confidence": 0.6 },
+            "detect": { "entity": "face", "ai_model": "face_detection", "confidence": 0.6 },
             "save": { "interval": 2, "idle": 600 }
           }
         ]
@@ -74,13 +75,14 @@
       {
         "name": "camera2_entity_face",
         "source": "camera2",
+        "type": "video",
         "steps": [
           {
-            "detect": { "ai_model": "entity_detection", "confidence": 0.6 },
-            "save": { "interval": 2, "idle": 6000 }
+            "detect": { "entity": "object", "ai_model": "entity_detection", "confidence": 0.6 },
+            "save": { "interval": 2, "idle": 600 }
           },
           {
-            "detect": { "ai_model": "face_detection", "confidence": 0.6 },
+            "detect": { "entity": "face", "ai_model": "face_detection", "confidence": 0.6 },
             "save": { "interval": 2, "idle": 600 }
           }
         ]
@@ -129,6 +131,7 @@
           {
             "detect": {
               "ai_model": "str",
+              "entity": "list(object|face)",
               "confidence": "float(0.0,1.0)"
             },
             "save": {
