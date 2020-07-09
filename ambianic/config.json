@@ -11,8 +11,6 @@
     "amd64",
     "armv7"
   ],
-  "ingress": false,
-  "ingress_port": null,
   "devices": [],
   "hassio_api": false,
   "hassio_role": "default",
@@ -63,27 +61,56 @@
         "source": "camera1",
         "type": "video",
         "steps": [
-          { "detect": { "entity": "object", "ai_model": "entity_detection", "confidence": 0.6 },
-            "save": { "interval": 2, "idle": 6000 }
+          {
+            "detect": {
+              "entity": "object",
+              "ai_model": "entity_detection",
+              "confidence": 0.6
+            },
+            "save": {
+              "interval": 2,
+              "idle": 6000
+            }
           },
           {
-            "detect": { "entity": "face", "ai_model": "face_detection", "confidence": 0.6 },
-            "save": { "interval": 2, "idle": 600 }
+            "detect": {
+              "entity": "face",
+              "ai_model": "face_detection",
+              "confidence": 0.6
+            },
+            "save": {
+              "interval": 2,
+              "idle": 6000
+            }
           }
         ]
       },
       {
         "name": "camera2_entity_face",
-        "source": "camera2",
+        "source": "camera1",
         "type": "video",
         "steps": [
           {
-            "detect": { "entity": "object", "ai_model": "entity_detection", "confidence": 0.6 },
-            "save": { "interval": 2, "idle": 600 }
+            "detect": {
+              "entity": "object",
+              "ai_model": "entity_detection",
+              "confidence": 0.6
+            },
+            "save": {
+              "interval": 2,
+              "idle": 6000
+            }
           },
           {
-            "detect": { "entity": "face", "ai_model": "face_detection", "confidence": 0.6 },
-            "save": { "interval": 2, "idle": 600 }
+            "detect": {
+              "entity": "face",
+              "ai_model": "face_detection",
+              "confidence": 0.6
+            },
+            "save": {
+              "interval": 2,
+              "idle": 6000
+            }
           }
         ]
       }
@@ -125,22 +152,8 @@
     "pipelines": [
       {
         "name": "str",
-        "type": "list(video|audio)",
         "source": "str",
-        "steps": [
-          {
-            "detect": {
-              "ai_model": "str",
-              "entity": "list(object|face)",
-              "confidence": "float(0.0,1.0)"
-            },
-            "save": {
-              "name": "str?",
-              "interval": "int(0,360)?",
-              "idle": "int(0,86400)?"
-            }
-          }
-        ]
+        "type": "list(video|audio)"
       }
     ],
     "sources": [
@@ -167,5 +180,6 @@
   },
   "environment": {
     "LOG_FORMAT": "{LEVEL}: {MESSAGE}"
-  }
+  },
+  "image": "dcmartin/{arch}-addon-ambianic"
 }

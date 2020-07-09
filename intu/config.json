@@ -1,5 +1,6 @@
 {
   "name": "Intu",
+  "arch": [ "aarch64", "amd64", "armhf", "i386" ],
   "version": "0.0.1",
   "slug": "intu",
   "description": "Intu as add-on to HASSIO",
