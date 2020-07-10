@@ -35,7 +35,7 @@ RUN \
   && \
   curl -sSL https://www.python.org/ftp/python/3.7.7/Python-3.7.7.tgz -o python.tgz \
   && \
-  tar xzvf python.tgz \
+  tar xzf python.tgz \
   && \
   cd Python-3.7.7 \
   && \
@@ -113,7 +113,7 @@ RUN  curl -sSL https://dl.google.com/coral/edgetpu_api/edgetpu_api_latest.tar.gz
   && \
   cd /tmp \
   && \
-  tar xzvf edgetpu_api.tar.gz
+  tar xzf edgetpu_api.tar.gz
 
 RUN \
   ARCH=$(uname -m) \
