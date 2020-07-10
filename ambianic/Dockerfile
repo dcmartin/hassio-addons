@@ -88,8 +88,11 @@ RUN apt clean -qq -y && apt autoremove -qq -y && \
 
 FROM build as prereqs
 
+# dependency?
+RUN apt update -qq -y && apt install -qq -y libhdf5-dev
+
 # peerjs
-RUN pip3 install https://files.pythonhosted.org/packages/90/d5/1c4d2d79c1457f9aaf78e098331cb86533643680eeda0fcd6d63bd7e5ff8/peerjs-1.2.5-py3-none-any.whl 
+RUN pip3 install peerjs
 
 # specialization
 RUN if [ $(uname -m) = 'armv7l' ]; \
