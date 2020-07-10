@@ -2,7 +2,7 @@
   "name": "Ambianic Edge",
   "version": "0.0.1",
   "slug": "ambianic",
-  "description": "Ambiance edge",
+  "description": "Ambianic Edge AI",
   "url": "https://github.com/dcmartin/hassio-addons/ambianic/README.md",
   "startup": "application",
   "boot": "auto",
