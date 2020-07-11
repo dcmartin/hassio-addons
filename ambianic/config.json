@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "slug": "ambianic",
   "description": "Ambianic Edge AI",
-  "url": "https://github.com/dcmartin/hassio-addons/ambianic/README.md",
+  "url": "https://github.com/dcmartin/hassio-addons/blob/master/ambianic/README.md",
   "startup": "application",
   "boot": "auto",
   "arch": [
