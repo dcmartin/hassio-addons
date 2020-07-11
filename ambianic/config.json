@@ -43,76 +43,68 @@
         "type": "video",
         "top_k": 10,
         "labels": "${AMBIANIC_PATH}/ai_models/coco_labels.txt",
-        "tflite": "${AMBIANIC_PATH}/ai_models/mobilenet_ssd_v2_coco_quant_postprocess.tflite",
-        "edgetpu": "${AMBIANIC_PATH}/ai_models/mobilenet_ssd_v2_coco_quant_postprocess_edgetpu.tflite"
+        "tflite": "${AMBIANIC_PATH}/ai_models/mobilenet_ssd_v2_coco_quant_postprocess.tflite"
       },
       {
         "name": "face_detection",
         "type": "video",
         "top_k": 2,
         "labels": "${AMBIANIC_PATH}/ai_models/coco_labels.txt",
-        "tflite": "${AMBIANIC_PATH}/ai_models/mobilenet_ssd_v2_face_quant_postprocess.tflite",
-        "edgetpu": "${AMBIANIC_PATH}/ai_models/mobilenet_ssd_v2_face_quant_postprocess_edgetpu.tflite"
+        "tflite": "${AMBIANIC_PATH}/ai_models/mobilenet_ssd_v2_face_quant_postprocess.tflite"
       }
     ],
     "pipelines": [
       {
-        "name": "camera1_entity_face",
         "source": "camera1",
         "type": "video",
-        "steps": [
-          {
-            "detect": {
-              "entity": "object",
-              "ai_model": "entity_detection",
-              "confidence": 0.6
-            },
-            "save": {
-              "interval": 2,
-              "idle": 6000
-            }
-          },
-          {
-            "detect": {
-              "entity": "face",
-              "ai_model": "face_detection",
-              "confidence": 0.6
-            },
-            "save": {
-              "interval": 2,
-              "idle": 6000
-            }
-          }
-        ]
+        "action": "detect_object_action"
       },
       {
-        "name": "camera2_entity_face",
-        "source": "camera1",
+        "source": "detect_object_action",
         "type": "video",
-        "steps": [
-          {
-            "detect": {
-              "entity": "object",
-              "ai_model": "entity_detection",
-              "confidence": 0.6
-            },
-            "save": {
-              "interval": 2,
-              "idle": 6000
-            }
-          },
-          {
-            "detect": {
-              "entity": "face",
-              "ai_model": "face_detection",
-              "confidence": 0.6
-            },
-            "save": {
-              "interval": 2,
-              "idle": 6000
-            }
-          }
-        ]
+        "action": "save_object_action"
+      },
+      {
+        "source": "camera2",
+        "type": "video",
+        "action": "detect_face_action"
+      },
+      {
+        "source": "detect_face_action",
+        "type": "video",
+        "action": "save_face_action"
+      }
+    ],
+    "actions": [
+      {
+        "name": "detect_object_action",
+        "act": "detect",
+        "type": "video",
+        "entity": "object",
+        "ai_model": "entity_detection",
+        "confidence": 0.6
+      },
+      {
+        "name": "save_object_action",
+        "act": "save",
+        "type": "video",
+        "interval": 2,
+        "idle": 600
+      },
+      {
+        "name": "detect_face_action",
+        "act": "detect",
+        "type": "video",
+        "entity": "face",
+        "ai_model": "face_detection",
+        "confidence": 0.6
+      },
+      {
+        "name": "save_face_action",
+        "act": "save",
+        "type": "video",
+        "interval": 2,
+        "idle": 600
       }
     ],
     "sources": [
@@ -145,16 +137,27 @@
         "type": "list(video|audio)",
         "top_k": "int(1,100)?",
         "labels": "str",
-        "tflite": "str?",
-        "edgetpu": "str?"
+        "tflite": "str"
       }
     ],
     "pipelines": [
       {
-        "name": "str",
+        "name": "str?",
         "source": "str",
         "type": "list(video|audio)",
-        "steps": "false"
+        "action": "str?"
+      }
+    ],
+    "actions": [
+      {
+        "name": "str",
+        "act": "list(detect|save)",
+        "type": "list(video|audio)?",
+        "entity": "list(object|face)?",
+        "ai_model": "str?",
+        "confidence": "float?",
+        "interval": "int?",
+        "idle": "int?"
       }
     ],
     "sources": [
@@ -171,13 +174,7 @@
         "height": "int?",
         "width": "int?"
       }
-    ],
-    "mqtt": {
-      "host": "str?",
-      "port": "port?",
-      "username": "str?",
-      "password": "str?"
-    }
+    ]
   },
   "environment": {
     "LOG_FORMAT": "{LEVEL}: {MESSAGE}"

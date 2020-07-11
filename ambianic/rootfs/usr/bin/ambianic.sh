@@ -10,10 +10,10 @@ config()
   bashio::log.debug "${FUNCNAME[0]}" "${*}"
 
   local VALUE
-  local JSON='{"config_path":"'"${CONFIG_PATH}"'","ipaddr":"'$(hostname -i)'","hostname":"'"$(hostname)"'","arch":"'$(arch)'","date":'$(date -u +%s)
+  local JSON='{"ipaddr":"'$(hostname -i)'","hostname":"'"$(hostname)"'","arch":"'$(arch)'","date":'$(date -u +%s)
 
   ## time zone
-  VALUE=$(jq -r ".timezone" "${CONFIG_PATH}")
+  VALUE=$(bashio::config 'timezone')
   if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then 
     VALUE="GMT"
     bashio::log.warn "timezone unspecified; defaulting to ${VALUE}"
@@ -27,44 +27,44 @@ config()
   fi
   JSON="${JSON}"',"timezone":"'"${VALUE}"'"'
   # unit_system
-  VALUE=$(jq -r '.unit_system' "${CONFIG_PATH}")
+  VALUE=$(bashio::config 'unit_system')
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="imperial"; fi
   bashio::log.info "Set unit_system to ${VALUE}"
   JSON="${JSON}"',"unit_system":"'"${VALUE}"'"'
   # latitude
-  VALUE=$(jq -r '.latitude' "${CONFIG_PATH}")
+  VALUE=$(bashio::config 'latitude')
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0.0; fi
   bashio::log.info "Set latitude to ${VALUE}"
   JSON="${JSON}"',"latitude":'"${VALUE}"
   # longitude
-  VALUE=$(jq -r '.longitude' "${CONFIG_PATH}")
+  VALUE=$(bashio::config 'longitude')
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0.0; fi
   bashio::log.info "Set longitude to ${VALUE}"
   JSON="${JSON}"',"longitude":'"${VALUE}"
   # elevation
-  VALUE=$(jq -r '.elevation' "${CONFIG_PATH}")
+  VALUE=$(bashio::config 'elevation')
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
   bashio::log.info "Set elevation to ${VALUE}"
   JSON="${JSON}"',"elevation":'"${VALUE}"
   
   ## MQTT
   # host
-  VALUE=$(jq -r ".mqtt.host" "${CONFIG_PATH}")
+  VALUE=$(bashio::config 'mqtt.host')
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="mqtt"; fi
   bashio::log.info "Using MQTT at ${VALUE}"
   MQTT='{"host":"'"${VALUE}"'"'
   # username
-  VALUE=$(jq -r ".mqtt.username" "${CONFIG_PATH}")
+  VALUE=$(bashio::config 'mqtt.username')
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=""; fi
   bashio::log.info "Using MQTT username: ${VALUE}"
   MQTT="${MQTT}"',"username":"'"${VALUE}"'"'
   # password
-  VALUE=$(jq -r ".mqtt.password" "${CONFIG_PATH}")
+  VALUE=$(bashio::config 'mqtt.password')
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=""; fi
   bashio::log.info "Using MQTT password: ${VALUE}"
   MQTT="${MQTT}"',"password":"'"${VALUE}"'"'
   # port
-  VALUE=$(jq -r ".mqtt.port" "${CONFIG_PATH}")
+  VALUE=$(bashio::config 'mqtt.port')
   if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1883; fi
   bashio::log.info "Using MQTT port: ${VALUE}"
   MQTT="${MQTT}"',"port":'"${VALUE}"'}'
@@ -224,8 +224,7 @@ ambianic::config.sources()
 {
   bashio::log.trace "${FUNCNAME[0]}" "${*}"
   
-  local cpath=${1:-${CONFIG_PATH}}
-  local sources=$(jq '.sources' ${cpath})
+  local sources=$(bashio::config 'sources')
   local result
   local srcs='['
 
@@ -262,7 +261,7 @@ ambianic::config.sources()
     bashio::log.debug "Sources: ${srcs}"
     result=${srcs}
   else
-    bashio::log.notice "No sources defined; configuration: ${cpath}"
+    bashio::log.notice "No sources defined"
   fi
   echo ${result:-null}
 }
@@ -446,8 +445,7 @@ ambianic::config.ai_models()
 {
   bashio::log.trace "${FUNCNAME[0]}" "${*}"
 
-  local cpath=${1:-${CONFIG_PATH}}
-  local ai_models=$(jq '.ai_models' ${cpath})
+  local ai_models=$(bashio::config 'ai_models')
   local result
   local models='['
 
@@ -484,7 +482,7 @@ ambianic::config.ai_models()
     bashio::log.debug "AI Models: ${models}"
     result=${models}
   else
-    bashio::log.notice "No ai_models defined; configuration: ${cpath}"
+    bashio::log.notice "No ai_models defined"
   fi
   echo ${result:-null}
 }
@@ -738,8 +736,7 @@ ambianic::config.pipelines()
 {
   bashio::log.trace "${FUNCNAME[0]}" "${*}"
 
-  local cpath=${1:-${CONFIG_PATH}}
-  local pipelines=$(jq '.pipelines' ${cpath})
+  local pipelines=$(bashio::config 'pipelines')
   local result
   local ppls='['
 
@@ -776,7 +773,7 @@ ambianic::config.pipelines()
     bashio::log.debug "Pipelines: ${ppls}"
     result=${ppls}
   else
-    bashio::log.notice "No pipelines defined; configuration: ${cpath}"
+    bashio::log.notice "No pipelines defined"
   fi
   echo ${result:-null}
 }
@@ -789,8 +786,7 @@ ambianic::config()
 {
   bashio::log.debug "${FUNCNAME[0]}" "${*}"
 
-  local cpath=${1:-${CONFIG_PATH}}
-  local workspace=$(jq -r '.workspace' ${cpath})
+  local workspace=$(bashio::config 'workspace')
   local result
   
   if [ "${workspace:-null}" != 'null' ]; then
@@ -804,21 +800,21 @@ ambianic::config()
       bashio::log.info "Workspace: ${workspace}"
 
       # configure ai_models
-      ok=$(ambianic::config.ai_models "${cpath}")
+      ok=$(ambianic::config.ai_models)
       if [ "${ok:-null}" != 'null' ]; then
         bashio::log.debug "AI Models configured:" $(echo "${ok}" | jq -c '.') 
         # record in configuration
         config=$(echo "${config:-null}" | jq '.ai_models='"${ok}")
 
         # configure sources
-        ok=$(ambianic::config.sources "${cpath}")
+        ok=$(ambianic::config.sources)
         if [ "${ok:-null}"  != 'null' ]; then
           bashio::log.debug "Sources configured:" $(echo "${ok}" | jq -c '.') 
           # record in configuration
           config=$(echo "${config:-null}" | jq '.sources='"${ok}")
 
           # configure pipelines
-          ok=$(ambianic::config.pipelines "${cpath}")
+          ok=$(ambianic::config.pipelines)
           if [ "${ok:-null}" != 'null' ]; then
             bashio::log.debug "Pipelines configured:" $(echo "${ok}" | jq -c '.') 
             # record in configuration
@@ -828,13 +824,13 @@ ambianic::config()
             result="${config}"
             bashio::log.info "Ambianic configured:" $(echo "${result}" | jq -c '.')
           else
-            bashio::log.error "Failed to configure pipelines; config: ${cpath}"
+            bashio::log.error "Failed to configure pipelines"
           fi
         else
-          bashio::log.error "Failed to configure sources; config: ${cpath}"
+          bashio::log.error "Failed to configure sources"
         fi
       else
-        bashio::log.error "Failed to configure ai_models; config: ${cpath}"
+        bashio::log.error "Failed to configure ai_models"
       fi
     else
       bashio::log.error "Failed to create workspace directory: ${workspace}"
@@ -923,8 +919,7 @@ ambianic::start()
   bashio::log.debug "${FUNCNAME[0]}" "${*}"
 
   local result
-  local cpath="${1:-${CONFIG_PATH}}"
-  local config=$(ambianic::config ${cpath})
+  local config=$(ambianic::config)
 
   if [ "${config:-null}" != 'null' ]; then
     # start proxy
@@ -947,7 +942,7 @@ ambianic::start()
       bashio::log.error "Proxy failed to start"
     fi
   else 
-    bashio::log.error "Configuration failed; ${cpath}:" $(jq -c '.' ${cpath})
+    bashio::log.error "Configuration failed"
   fi
   echo ${result:-null}
 }
