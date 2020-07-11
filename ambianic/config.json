@@ -153,7 +153,8 @@
       {
         "name": "str",
         "source": "str",
-        "type": "list(video|audio)"
+        "type": "list(video|audio)",
+        "steps": "false"
       }
     ],
     "sources": [
