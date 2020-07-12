@@ -151,8 +151,9 @@
     "actions": [
       {
         "name": "str",
-        "act": "list(detect|save)",
+        "act": "list(detect|save|send|publish)",
         "type": "list(video|audio)?",
+        "payload": "list(mp4|jpeg|wav|json)?",
         "entity": "list(object|face)?",
         "ai_model": "str?",
         "confidence": "float?",
