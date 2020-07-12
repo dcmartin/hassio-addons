@@ -6,12 +6,6 @@
 
 bashio::log.notice $(date) "$0 $*"
 
-## have to have configuration file
-if [ ! -s "${CONFIG_PATH}" ]; then
-  bashio::log.error "cannot find options ${CONFIG_PATH}; exiting"
-  exit
-fi
-
 ###
 ### start
 ###
