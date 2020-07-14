@@ -12,7 +12,7 @@
     "armv7"
   ],
   "devices": [],
-  "hassio_api": false,
+  "hassio_api": true,
   "hassio_role": "default",
   "host_network": true,
   "homeassistant_api": false,
@@ -42,34 +42,38 @@
         "name": "entity_detection",
         "type": "video",
         "top_k": 10,
-        "labels": "${AMBIANIC_PATH}/ai_models/coco_labels.txt",
-        "tflite": "${AMBIANIC_PATH}/ai_models/mobilenet_ssd_v2_coco_quant_postprocess.tflite"
+        "labels": "${AMBIANIC_EDGE}/ai_models/coco_labels.txt",
+        "tflite": "${AMBIANIC_EDGE}/ai_models/mobilenet_ssd_v2_coco_quant_postprocess.tflite"
       },
       {
         "name": "face_detection",
         "type": "video",
         "top_k": 2,
-        "labels": "${AMBIANIC_PATH}/ai_models/coco_labels.txt",
-        "tflite": "${AMBIANIC_PATH}/ai_models/mobilenet_ssd_v2_face_quant_postprocess.tflite"
+        "labels": "${AMBIANIC_EDGE}/ai_models/coco_labels.txt",
+        "tflite": "${AMBIANIC_EDGE}/ai_models/mobilenet_ssd_v2_face_quant_postprocess.tflite"
       }
     ],
     "pipelines": [
       {
+        "name": "camera1-pipeline",
         "source": "camera1",
         "type": "video",
         "action": "detect_object_action"
       },
       {
+        "name": "camera1-pipeline",
         "source": "detect_object_action",
         "type": "video",
         "action": "save_object_action"
       },
       {
+        "name": "camera2-pipeline",
         "source": "camera2",
         "type": "video",
         "action": "detect_face_action"
       },
       {
+        "name": "camera2-pipeline",
         "source": "detect_face_action",
         "type": "video",
         "action": "save_face_action"

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/with-contenv bashio
 
 ###
 ## FUNCTIONS
@@ -7,7 +7,7 @@
 ## configuration
 config()
 {
-  bashio::log.debug "${FUNCNAME[0]}" "${*}"
+  bashio::log.debug ${FUNCNAME[0]} ${*}
 
   local VALUE
   local JSON='{"ipaddr":"'$(hostname -i)'","hostname":"'"$(hostname)"'","arch":"'$(arch)'","date":'$(date -u +%s)
@@ -280,13 +280,11 @@ ambianic::config.sources()
 #^    labels: /opt/ambianic-edge/ai_models/coco_labels.txt
 #^    model:
 #^      tflite: /opt/ambianic-edge/ai_models/mobilenet_ssd_v2_coco_quant_postprocess.tflite
-#^      edgetpu: /opt/ambianic-edge/ai_models/mobilenet_ssd_v2_coco_quant_postprocess_edgetpu.tflite
 #^  face_detection: &tfm_face_detection
 #^    labels: /opt/ambianic-edge/ai_models/coco_labels.txt
 #^    top_k: 2
 #^    model:
 #^      tflite: /opt/ambianic-edge/ai_models/mobilenet_ssd_v2_face_quant_postprocess.tflite
-#^      edgetpu: /opt/ambianic-edge/ai_models/mobilenet_ssd_v2_face_quant_postprocess_edgetpu.tflite
 
 ambianic::update.ai_models.audio()
 {
@@ -303,7 +301,6 @@ ambianic::update.ai_models.video()
   local entity=$(echo "${model:-null}" | jq -r '.entity')
   local top_k=$(echo "${model:-null}" | jq -r '.top_k')
   local tflite=$(echo "${model:-null}" | jq -r '.tflite')
-  local edgetpu=$(echo "${model:-null}" | jq -r '.edgetpu')
 
   case ${entity} in
     object)
@@ -312,7 +309,6 @@ ambianic::update.ai_models.video()
       echo '    top_k: '${top_k}
       echo '    model:'
       echo '      tflite: '${tflite} | envsubst
-      echo '      edgetpu: '${edgetpu} | envsubst
       ;;
     face)
       echo '  face_detection: &'${name}
@@ -320,7 +316,6 @@ ambianic::update.ai_models.video()
       echo '    top_k: '${top_k}
       echo '    model:'
       echo '      tflite: '${tflite} | envsubst
-      echo '      edgetpu: '${edgetpu} | envsubst
       ;;
     *)
       bashio::log.error "Invalid entity: ${entity}"
@@ -381,16 +376,14 @@ ambianic::update.ai_models()
 #    "type": "video",
 #    "top_k": 10,
 #    "labels": "${AMBIABIC_PATH}/ai_models/coco_labels.txt",
-#    "tflite": "${AMBIABIC_PATH}/ai_models/mobilenet_ssd_v2_coco_quant_postprocess.tflite",
-#    "edgetpu": "${AMBIANIC_PATH}/ai_models/mobilenet_ssd_v2_coco_quant_postprocess_edgetpu.tflite"
+#    "tflite": "${AMBIABIC_PATH}/ai_models/mobilenet_ssd_v2_coco_quant_postprocess.tflite"
 #  },
 #  {
 #    "name": "face_detection",
 #    "type": "video",
 #    "top_k": 2,
-#    "labels": "${AMBIANIC_PATH}/ai_models/coco_labels.txt",
-#    "tflite": "${AMBIANIC_PATH}/ai_models/mobilenet_ssd_v2_face_quant_postprocess.tflite",
-#    "edgetpu": "${AMBIANIC_PATH}/ai_models/mobilenet_ssd_v2_face_quant_postprocess_edgetpu.tflite"
+#    "labels": "${AMBIANIC_EDGE}/ai_models/coco_labels.txt",
+#    "tflite": "${AMBIANIC_EDGE}/ai_models/mobilenet_ssd_v2_face_quant_postprocess.tflite"
 #  }
 #]
 
@@ -419,11 +412,7 @@ ambianc::config.ai_models.video()
         if [ "${tflite:-null}" != 'null' ]; then
           bashio::log.debug "TFlite: ${tflite}"
 
-          # edgetpu is optional
-          local edgetpu=$(echo "${model:-null}" | jq -r '.edgetpu')
-          bashio::log.debug "EdgeTPU: ${edgetpu}"
-
-          result='{"name":"'${name}'","labels":"'${labels}'","top_k":"'${top_k}'","tflite":'${tflite}',"edgetpu":"'${edgetpu}'"}'
+          result='{"name":"'${name}'","labels":"'${labels}'","top_k":"'${top_k}'","tflite":'${tflite}'}'
 
           bashio::log.info "${FUNCNAME[0]}: ai_model: ${result}"
         else
@@ -564,12 +553,11 @@ ambianic::update.pipelines.video()
   local pipeline="${*}"
   local name=$(echo "${pipeline:-null}" | jq -r '.name')
   local source=$(echo "${pipeline:-null}" | jq -r '.source')
-  local steps=$(echo "${pipeline:-null}" | jq -r '.steps')
+  local action=$(echo "${pipeline:-null}" | jq -r '.action')
 
-  if [ ! -z "${name:-}" ] && [ ! -z "${source:-}" ] && [ "${steps:-null}" != 'null' ]; then
-    local nstep=$(echo "${steps}" | jq '.|length')
+  if [ ! -z "${name:-}" ] && [ ! -z "${source:-}" ] && [ "${action:-null}" != 'null' ]; then
+    bashio::log.debug "Pipeline: ${name}; source: ${source}; action: ${action}"
 
-    bashio::log.debug "Pipeline: ${name}; source: ${source}; steps: ${nstep}"
 
     # start output
     echo '  '${name}':'
@@ -657,42 +645,72 @@ ambianic::update.pipelines()
 ##
 
 # EXAMPLE:
-#[
-#  {
-#    "name": "camera1_entity_face",
-#    "source": "camera1",
-#    "type": "video",
-#    "steps": [
-#      { 
-#        "detect": { "entity": "object", "ai_model": "entity_detection", "confidence": 0.6 },
-#        "save": { "interval": 2, "idle": 6000 }
+#    "pipelines": [
+#      {
+#        "name": "camera1-pipeline",
+#        "source": "camera1",
+#        "type": "video",
+#        "action": "detect_object_action"
 #      },
 #      {
-#        "detect": { "entity": "face", "ai_model": "face_detection", "confidence": 0.6 },
-#        "save": { "interval": 2, "idle": 600 }
+#        "name": "camera1-pipeline",
+#        "source": "detect_object_action",
+#        "type": "video",
+#        "action": "save_object_action"
+#      },
+#      {
+#        "name": "camera2-pipeline",
+#        "source": "camera2",
+#        "type": "video",
+#        "action": "detect_face_action"
+#      },
+#      {
+#        "name": "camera2-pipeline",
+#        "source": "detect_face_action",
+#        "type": "video",
+#        "action": "save_face_action"
 #      }
 #    ]
-#  },
-#  {
-#    "name": "camera2_entity_face",
-#    "source": "camera2",
-#    "type": "video",
-#    "steps": [
-#      {
-#        "detect": { "entity": "object", "ai_model": "entity_detection", "confidence": 0.6 },
-#        "save": { "interval": 2, "idle": 600 } },
-#      {
-#        "detect": { "entity": "face", "ai_model": "face_detection", "confidence": 0.6 },
-#        "save": { "interval": 2, "idle": 600 }
-#      }
-#    ]
-#  }
-#]
 
 ambianc::config.pipelines.audio()
 {
   bashio::log.warn "NOT IMPLEMENTED" "${FUNCNAME[0]}" "${*}"
 }
+
+# EXAMPLE:
+#    "actions": [
+#      {
+#        "name": "detect_object_action",
+#        "act": "detect",
+#        "type": "video",
+#        "entity": "object",
+#        "ai_model": "entity_detection",
+#        "confidence": 0.6
+#      },
+#      {
+#        "name": "save_object_action",
+#        "act": "save",
+#        "type": "video",
+#        "interval": 2,
+#        "idle": 600
+#      },
+#      {
+#        "name": "detect_face_action",
+#        "act": "detect",
+#        "type": "video",
+#        "entity": "face",
+#        "ai_model": "face_detection",
+#        "confidence": 0.6
+#      },
+#      {
+#        "name": "save_face_action",
+#        "act": "save",
+#        "type": "video",
+#        "interval": 2,
+#        "idle": 600
+#      }
+#    ]
+
 
 ambianc::config.pipelines.video()
 {
@@ -700,34 +718,25 @@ ambianc::config.pipelines.video()
 
   local pipeline="${*}"
   local result
-  local name=$(echo "${pipeline:-null}" | jq -r '.name')
+  local action=$(echo "${pipeline:-null}" | jq -r '.action')
+  if [ "${action:-null}" != 'null' ]; then
+    bashio::log.debug "Action: ${action}"
 
-  if [ "${name:-null}" != 'null' ]; then
-    bashio::log.debug "Name: ${name}"
-    local source=$(echo "${pipeline:-null}" | jq -r '.source')
-    if [ "${source:-null}" != 'null' ]; then
-      bashio::log.debug "URI: ${source}"
-      local type=$(echo "${pipeline:-null}" | jq -r '.type')
-      if [ "${type:-null}" != 'null' ]; then
-        bashio::log.debug "Type: ${type}"
-        local steps=$(echo "${pipeline:-null}" | jq '.steps')
-        if [ $(echo "${steps:-null}" | jq '.|length') -gt 0 ]; then
-          bashio::log.debug "Steps: ${steps}"
-
-          result='{"name":"'${name}'","source":"'${source}'","type":"'${type}'","steps":'"${steps}"'}'
-
-          bashio::log.info "${FUNCNAME[0]}: pipeline: ${result}"
-        else
-          bashio::log.error "Steps unspecified: ${pipeline}"
-        fi
+    local actions=$(bashio::config 'actions')
+    if [ "${actions:-null}" != 'null' ]; then
+      local act=$(echo "${actions:-null}" | jq '.|select(.name=="'${action}'")')
+  
+      if [ "${act:-null}" != 'null' ]; then
+        result="${act}"
+        bashio::log.info "${FUNCNAME[0]}: pipeline: ${result}"
       else
-        bashio::log.error  "Type unspecified: ${pipeline}"
+        bashio::log.error "Action not found: ${action}; actions: ${actions}"
       fi
     else
-      bashio::log.error  "Source unspecified: ${pipeline}"
+      bashio::log.error "No actions"
     fi
   else
-    bashio::log.error  "Name unspecified: ${pipeline}"
+    bashio::log.error "Action unspecified: ${pipeline}"
   fi
   echo ${result:-null}
 }
@@ -736,46 +745,87 @@ ambianic::config.pipelines()
 {
   bashio::log.trace "${FUNCNAME[0]}" "${*}"
 
-  local pipelines=$(bashio::config 'pipelines')
+  local pipeline=$(bashio::config 'pipelines')
   local result
   local ppls='['
 
  if [ "${pipelines:-null}" != 'null' ]; then
-    local nppl=$(echo "${pipelines}" | jq '.|length')
+    local pplnames=$(echo "${pipelines}" | jq -r '.name' | sort | uniq)
+    local ppls='['
+    local k=0
 
-    i=0; j=0; while ${i} -lt ${nppl}; do
-      local ppl=$(echo "${pipelines}" | jq -c '.['${i}']')
-      local type=$(echo "${ppl}" | jq -r '.type')
-      local ppl
+    for pplname in "${pplnames:-}"; do
+      local actions=$(echo "${pipelines}" | jq '.|select(.name=="'${pplname}'")')
+      local naction=$(echo "${actions:-null}" | jq '.|length')
+      local acts='['
+      local i=0,j=0
 
-      case ${type:-null} in
-        video)
-          ppl=$(ambianic::config.pipelines.video "${ppl}")
-          ;;
-        audio)
-          ppl=$(ambianic::config.pipelines.audio "${ppl}")
-          ;;
-        *)
-          bashio::log.warn "Invalid pipeline type: ${type}"
-          ;;
-      esac
-      if [ "${ppl:-null}" = 'null' ]; then
-        bashio::log.warn "FAILED to configure pipeline ${i}: ${video}"
-      else
-        bashio::log.debug "Configured pipeline ${i}: ${ppl}"
-        if [ ${j} -gt 0 ]; then ppls="${ppls},"; fi
-        ppls="${ppls}${ppl}"
-        j=$((j+1))
-      fi
-      i=$((i+1))
+      bashio::log.debug "Pipeline: ${pplname}"
+
+      while ${i} -lt ${naction}; do
+        local action=$(echo "${actions}" | jq -c '.['${i}']')
+        local type=$(echo "${action}" | jq -r '.type')
+        local act
+
+        case ${type:-null} in
+          video)
+            act=$(ambianic::config.pipelines.video "${action}")
+            ;;
+          audio)
+            act=$(ambianic::config.pipelines.audio "${action}")
+            ;;
+          *)
+            bashio::log.warn "Invalid pipeline type: ${type}"
+            ;;
+        esac
+        if [ "${act:-null}" = 'null' ]; then
+          bashio::log.warn "FAILED to configure pipeline ${pplname}; action ${i}; act: ${j}: ${pipelines}"
+        else
+          bashio::log.debug "Configured action ${i}: ${act}"
+          if [ ${j} -gt 0 ]; then acts="${acts},"; fi
+          acts="${acts}${act}"
+          j=$((j+1))
+        fi
+        i=$((i+1))
+      done
+
+      local ppl='{"name":"'${pplname}'","type":"'${type}'","actions":'"${acts}]"'}'
+      bashio::log.debug "Configured pipline: ${ppl}"
+
+      if [ ${k} -gt 0 ]; then ppls="${ppls},"; fi
+      ppls="${ppls}${ppl}"
+      k=$((k+1))
     done
     ppls="${ppls}]"
     bashio::log.debug "Pipelines: ${ppls}"
-    result=${ppls}
+    result="${ppls}"
   else
     bashio::log.notice "No pipelines defined"
   fi
-  echo ${result:-null}
+  echo "${result:-null}"
+}
+
+###
+# ACTIONS
+###
+
+##
+## configure
+##
+
+ambianc::config.actions.audio()
+{
+  bashio::log.warn "NOT IMPLEMENTED" "${FUNCNAME[0]}" "${*}"
+}
+
+ambianc::config.actions.video()
+{
+  bashio::log.warn "NOT IMPLEMENTED" "${FUNCNAME[0]}" "${*}"
+}
+
+ambianc::config.actions()
+{
+  bashio::log.warn "NOT IMPLEMENTED" "${FUNCNAME[0]}" "${*}"
 }
 
 ###
@@ -951,13 +1001,13 @@ ambianic::start()
 ## PRE-FLIGHT
 ###
 
-if [ -z "${AMBIANIC_PATH:-}" ]; then
-  bashio::log.error "AMBIANIC_PATH is undefined"
+if [ -z "${AMBIANIC_EDGE:-}" ]; then
+  bashio::log.error "AMBIANIC_EDGE is undefined"
   exit 1
 fi
 
-if [ ! -d "${AMBIANIC_PATH}" ]; then
-  bashio::log.error "Ambianic not installed; path: ${AMBIANIC_PATH}"
+if [ ! -d "${AMBIANIC_EDGE}" ]; then
+  bashio::log.error "Ambianic not installed; path: ${AMBIANIC_EDGE}"
   exit 1
 fi
 
@@ -965,6 +1015,6 @@ fi
 ## MAIN
 ###
 
-bashio::log.notice "STARTING AMBIANIC: $(CONFIG_PATH}"
+bashio::log.notice "STARTING AMBIANIC"
 
-ambianic::start ${CONFIG_PATH}
+ambianic::start ${*}

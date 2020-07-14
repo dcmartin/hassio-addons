@@ -177,9 +177,6 @@ FROM prereqs
 ARG AMBIANIC_EDGE=/opt/ambianic-edge
 ENV AMBIANIC_EDGE ${AMBIANIC_EDGE}
 
-# Copy root filesystem
-COPY rootfs /
-
 # the meat
 RUN \
     mkdir -p ${AMBIANIC_EDGE} \
@@ -191,6 +188,9 @@ RUN \
     pip3 install -r build/requirements.txt \
     && \
     pip3 install -e src
+
+# Copy root filesystem
+COPY rootfs /
 
 CMD ["/usr/bin/run.sh"]
 
