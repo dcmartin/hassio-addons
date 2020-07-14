@@ -35,7 +35,7 @@
     "8778/tcp": "API"
   },
   "options": {
-    "log_level": "info",
+    "log_level": "debug",
     "workspace": "/data/ambianic",
     "ai_models": [
       {
