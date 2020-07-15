@@ -237,7 +237,7 @@ ambianic::update.sources()
 
   if [ "${sources:-null}" != 'null' ]; then
     local nsource=$(echo "${sources}" | jq '.|length')
-    locai i=0
+    local i=0
 
     # START OUTPUT
     echo 'sources:'
@@ -374,9 +374,9 @@ ambianic::update()
 
   rm -f ${ambianic}
 
-  ambianic::update.ai_models $(echo "${config}" | jq '.ai_models')) >> ${ambianic}
-  ambianic::update.sources $(echo "${config}" | jq '.sources')) >> ${ambianic}
-  ambianic::update.pipelines $(echo "${config}" | jq '.pipelines')) >> ${ambianic}
+  ambianic::update.ai_models $(echo "${config}" | jq '.ai_models') >> ${ambianic}
+  ambianic::update.sources $(echo "${config}" | jq '.sources') >> ${ambianic}
+  ambianic::update.pipelines $(echo "${config}" | jq '.pipelines') >> ${ambianic}
 
   echo "${ambianic}"
 }
@@ -969,6 +969,20 @@ ambianic::start()
 }
 
 ###
+# main
+###
+
+main()
+{
+  local config=$(ambianic::start ${*})
+
+  if [ "${config:-null}" != 'null' ]; then
+  else
+    basi
+  fi
+}
+
+###
 ## PRE-FLIGHT
 ###
 
@@ -988,4 +1002,3 @@ fi
 
 bashio::log.notice "STARTING AMBIANIC"
 
-ambianic::start ${*}
