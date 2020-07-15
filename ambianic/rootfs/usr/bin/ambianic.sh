@@ -977,8 +977,29 @@ main()
   local config=$(ambianic::start ${*})
 
   if [ "${config:-null}" != 'null' ]; then
+    while true; do
+      local pid=$(echo "${config}" | jq -r '.ambianic.pid')
+
+      if [ "${pid:-null}" != 'null' ]; then
+        local this=$(ps --pid ${pid} | tail +2 | awk '{ print $1 }')
+  
+        if [ "${local:-null}" != 'null' ]; then
+          sleep 300
+        else
+          # start ambianic
+          local ok=$(ambianic::start.ambianic "${config}")
+          if [ "${ok:-null}" != 'null' ]; then
+            config=$(echo "${config:-null}" | jq '.ambianic='"${ok}")
+            bashio::log.notice "Ambianic re-started:" $(echo "${config}" | jq '.') 
+          else
+            bashio::log.error "Failed to re-start Ambianic"
+	    break
+          fi
+        fi
+      fi
+    done
   else
-    basi
+    bashio::log.error "Ambianic failed to start"
   fi
 }
 
@@ -1002,3 +1023,4 @@ fi
 
 bashio::log.notice "STARTING AMBIANIC"
 
+main ${*}
