@@ -1,4 +1,4 @@
-ARG BUILD_FROM=hassioaddons/ubuntu-base:5.0.2
+ARG BUILD_FROM=${BUILD_FROM}
 
 FROM $BUILD_FROM as build
 
