@@ -54,30 +54,14 @@
       }
     ],
     "pipelines": [
-      {
-        "name": "camera1-pipeline",
-        "source": "camera1",
-        "type": "video",
-        "action": "detect_object_action"
-      },
-      {
-        "name": "camera1-pipeline",
-        "source": "detect_object_action",
-        "type": "video",
-        "action": "save_object_action"
-      },
-      {
-        "name": "camera2-pipeline",
-        "source": "camera2",
-        "type": "video",
-        "action": "detect_face_action"
-      },
-      {
-        "name": "camera2-pipeline",
-        "source": "detect_face_action",
-        "type": "video",
-        "action": "save_face_action"
-      }
+      { "name": "camera1-pipeline", "source": "camera1", "type": "video", "action": "detect_object_action" },
+      { "name": "camera1-pipeline", "source": "detect_object_action", "type": "video", "action": "save_object_action" },
+      { "name": "camera1-pipeline", "source": "camera1", "type": "video", "action": "detect_face_action" },
+      { "name": "camera1-pipeline", "source": "detect_face_action", "type": "video", "action": "save_face_action" },
+      { "name": "camera2-pipeline", "source": "camera2", "type": "video", "action": "detect_object_action" },
+      { "name": "camera2-pipeline", "source": "detect_object_action", "type": "video", "action": "save_object_action" },
+      { "name": "camera2-pipeline", "source": "camera2", "type": "video", "action": "detect_face_action" },
+      { "name": "camera2-pipeline", "source": "detect_face_action", "type": "video", "action": "save_face_action" }
     ],
     "actions": [
       {
