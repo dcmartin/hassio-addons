@@ -1,4 +1,4 @@
-ARG BUILD_FROM=hassioaddons/ubuntu-base:5.0.2
+ARG BUILD_FROM=${BUILD_FROM}
 
 FROM $BUILD_FROM as build
 
@@ -49,7 +49,7 @@ RUN \
 RUN python3 --version
 
 # maximum
-RUN apt install -qq -y \
+RUN apt update -qq -y && apt install -qq -y \
   libgstreamer1.0-0 \
   gstreamer1.0-plugins-base \
   gstreamer1.0-plugins-good \
@@ -73,7 +73,7 @@ RUN apt install -qq -y \
   libsrtp2-dev \
   procps
 
-RUN apt install -qq -y \
+RUN apt update -qq -y && apt install -qq -y \
   python3-pip
 
 # pip
