@@ -97,8 +97,28 @@ RUN pip3 install --upgrade pip
 # wheel
 RUN pip3 install --upgrade wheel
 
-# av
+# virtualenv
+RUN pip3 install --upgrade virtualenv
+
+RUN apt update -qq -y && apt install -qq -y libx264-dev libavdevice-dev libavfilter-dev libopus-dev libvpx-dev pkg-config  libsrtp2-dev
+
+## av
+
 RUN pip3 install --upgrade av
+
+#RUN apt update -qq -y && apt install -qq -y wget
+
+#RUN mkdir -p /tmp/PyAV \
+#    && \
+#    cd /tmp/PyAV \
+#    && \
+#    git clone https://github.com/PyAV-Org/PyAV . \
+#    && \
+#    source scripts/activate.sh \
+#    && \
+#    ./scripts/build-deps \
+#    && \
+#    make
 
 # peerjs
 RUN pip3 install peerjs
@@ -180,7 +200,7 @@ RUN \
     && \
     cd ${AMBIANIC_EDGE} \
     && \
-    git clone https://github.com/ambianic/ambianic-edge.git . \
+    git clone http://github.com/ambianic/ambianic-edge.git . \
     && \
     pip3 install -r build/requirements.txt \
     && \
