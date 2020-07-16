@@ -39,58 +39,62 @@
     "workspace": "/data/ambianic",
     "ai_models": [
       {
-        "name": "entity_detection",
+        "name": "object_detector",
         "type": "video",
+        "entity": "object",
         "top_k": 10,
         "labels": "${AMBIANIC_EDGE}/ai_models/coco_labels.txt",
         "tflite": "${AMBIANIC_EDGE}/ai_models/mobilenet_ssd_v2_coco_quant_postprocess.tflite"
       },
       {
-        "name": "face_detection",
+        "name": "face_detector",
         "type": "video",
+        "entity": "face",
         "top_k": 2,
         "labels": "${AMBIANIC_EDGE}/ai_models/coco_labels.txt",
-        "tflite": "${AMBIANIC_EDGE}/ai_models/mobilenet_ssd_v2_face_quant_postprocess.tflite"
+        "tflite": "${AMBIANIC_EDGE}/ai_models/mobilenet_ssd_v2-face-quant_postprocess.tflite"
       }
     ],
     "pipelines": [
-      { "name": "camera1-pipeline", "source": "camera1", "type": "video", "action": "detect_object_action" },
-      { "name": "camera1-pipeline", "source": "detect_object_action", "type": "video", "action": "save_object_action" },
-      { "name": "camera1-pipeline", "source": "camera1", "type": "video", "action": "detect_face_action" },
-      { "name": "camera1-pipeline", "source": "detect_face_action", "type": "video", "action": "save_face_action" },
-      { "name": "camera2-pipeline", "source": "camera2", "type": "video", "action": "detect_object_action" },
-      { "name": "camera2-pipeline", "source": "detect_object_action", "type": "video", "action": "save_object_action" },
-      { "name": "camera2-pipeline", "source": "camera2", "type": "video", "action": "detect_face_action" },
-      { "name": "camera2-pipeline", "source": "detect_face_action", "type": "video", "action": "save_face_action" }
+      { "name": "camera1-pipeline", "source": "camera1", "type": "video", "action": "detect-object-action" },
+      { "name": "camera1-pipeline", "type": "video", "action": "save-object-action" },
+      { "name": "camera1-pipeline", "source": "camera1", "type": "video", "action": "detect-face-action" },
+      { "name": "camera1-pipeline", "type": "video", "action": "save-face-action" },
+      { "name": "camera2-pipeline", "source": "camera2", "type": "video", "action": "detect-object-action" },
+      { "name": "camera2-pipeline", "type": "video", "action": "save-object-action" },
+      { "name": "camera2-pipeline", "source": "camera2", "type": "video", "action": "detect-face-action" },
+      { "name": "camera2-pipeline", "type": "video", "action": "save-face-action" }
     ],
     "actions": [
       {
-        "name": "detect_object_action",
+        "name": "detect-object-action",
         "act": "detect",
         "type": "video",
         "entity": "object",
-        "ai_model": "entity_detection",
+        "ai_model": "object_detector",
         "confidence": 0.6
       },
       {
-        "name": "save_object_action",
+        "name": "save-object-action",
         "act": "save",
         "type": "video",
+        "entity": "object",
         "interval": 2,
         "idle": 600
       },
       {
-        "name": "detect_face_action",
+        "name": "detect-face-action",
         "act": "detect",
         "type": "video",
         "entity": "face",
-        "ai_model": "face_detection",
+        "ai_model": "face_detector",
         "confidence": 0.6
       },
       {
-        "name": "save_face_action",
+        "name": "save-face-action",
         "act": "save",
         "type": "video",
+        "entity": "face",
         "interval": 2,
         "idle": 600
       }
@@ -124,6 +128,7 @@
         "name": "str",
         "type": "list(video|audio)",
         "top_k": "int(1,100)?",
+        "entity": "str",
         "labels": "str",
         "tflite": "str"
       }
@@ -131,7 +136,7 @@
     "pipelines": [
       {
         "name": "str?",
-        "source": "str",
+        "source": "str?",
         "type": "list(video|audio)",
         "action": "str?"
       }
@@ -142,7 +147,7 @@
         "act": "list(detect|save|send|publish)",
         "type": "list(video|audio)?",
         "payload": "list(mp4|jpeg|wav|json)?",
-        "entity": "list(object|face)?",
+        "entity": "list(object|face)",
         "ai_model": "str?",
         "confidence": "float?",
         "interval": "int?",

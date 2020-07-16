@@ -7,7 +7,7 @@
 ## configuration
 config()
 {
-  bashio::log.debug "FUNCTION: ${FUNCNAME[0]} ${*}"
+  bashio::log.trace "TRACE: ${FUNCNAME[0]} ${*}"
 
   local VALUE
   local JSON='{"ipaddr":"'$(hostname -i)'","hostname":"'"$(hostname)"'","arch":"'$(arch)'","date":'$(date -u +%s)
@@ -78,25 +78,10 @@ config()
 ###
 ## SOURCES
 ###
+
 ##
 ## configure (read JSON)
 ##
-
-# EXAMPLE:
-#[
-#  {
-#    "name": "camera1",
-#    "uri": "rtsp://username:password@192.168.1.221/live",
-#    "type": "video",
-#    "live": true
-#  },
-#  {
-#    "name": "camera2",
-#    "uri": "rtsp://username:password@192.168.1.222/live",
-#    "type": "video",
-#    "live": true
-#  }
-#]
 
 ambianic::config.sources.audio()
 {
@@ -105,7 +90,7 @@ ambianic::config.sources.audio()
 
 ambianic::config.sources.video()
 {
-  bashio::log.debug "FUNCTION: ${FUNCNAME[0]}" "${*}"
+  bashio::log.trace "TRACE: ${FUNCNAME[0]}" "${*}"
 
   local source="${*}"
   local result
@@ -125,7 +110,7 @@ ambianic::config.sources.video()
 
           result='{"name":"'${name}'","uri":"'${uri}'","type":"'${type}'","live":'${live}'}'
 
-          bashio::log.info "${FUNCNAME[0]}: source: ${result}"
+          bashio::log.debug "source: ${result}"
         else
           bashio::log.error "Live unspecified: ${source}"
         fi
@@ -143,7 +128,7 @@ ambianic::config.sources.video()
 
 ambianic::config.sources()
 {
-  bashio::log.debug "FUNCTION: ${FUNCNAME[0]}" "${*}"
+  bashio::log.trace "TRACE: ${FUNCNAME[0]} ${*}"
   
   local sources=$(jq '.sources' ${__BASHIO_DEFAULT_ADDON_CONFIG})
   local result
@@ -171,9 +156,9 @@ ambianic::config.sources()
           ;;
       esac
       if [ "${src:-null}" = 'null' ]; then
-        bashio::log.warning "FAILED to source ${type} ${i}: ${source}"
+        bashio::log.warning "Source ${i}; type: ${type}; no source"
       else
-        bashio::log.debug "Sourced ${type} ${i}: ${src}"
+        bashio::log.debug "Source ${i}; type: ${type}; source: ${src}"
         if [ ${j} -gt 0 ]; then srcs="${srcs},"; fi
         srcs="${srcs}${src}"
         j=$((j+1))
@@ -193,10 +178,6 @@ ambianic::config.sources()
 ## UPDATE (write YAML)
 ###
 
-##
-## SOURCES
-##
-
 # EXAMPLE:
 #^sources:
 #^  front_door_cam_feed: &src_recorded_cam_feed
@@ -210,7 +191,7 @@ ambianic::config.sources()
 
 ambianic::update.sources.video()
 {
-  bashio::log.debug "FUNCTION: ${FUNCNAME[0]}" "${*}"
+  bashio::log.trace "TRACE: ${FUNCNAME[0]}" "${*}"
 
   local video="${*}"
   local name=$(echo "${video:-null}" | jq -r '.name')
@@ -231,7 +212,7 @@ ambianic::update.sources.audio()
 
 ambianic::update.sources()
 {
-  bashio::log.debug "FUNCTION: ${FUNCNAME[0]}"
+  bashio::log.trace "TRACE: ${FUNCNAME[0]} ${*}"
 
   local sources="${*}"
 
@@ -250,15 +231,17 @@ ambianic::update.sources()
         local type=$(echo "${source}" | jq -r '.type')
 
         bashio::log.debug "Source: ${source}"
-        case ${type:-null} in
-          video)
+        case "${type:-null}" in
+          'video')
+            bashio::log.debug "Source: ${i}; type: ${type}"
             ambianic::update.sources.video "${source}"
             ;;
-          audio)
+          'audio')
+            bashio::log.debug "Source: ${i}; type: ${type}"
             ambianic::update.sources.audio "${source}"
             ;;
           *)
-            bashio::log.warning "Invalid source type: ${type}"
+            bashio::log.warning "Source: ${i}; invalid source type: ${type}"
             ;;
         esac
       fi
@@ -292,7 +275,7 @@ ambianic::update.ai_models.audio()
 
 ambianic::update.ai_models.video()
 {
-  bashio::log.debug "FUNCTION: ${FUNCNAME[0]}"
+  bashio::log.trace "TRACE: ${FUNCNAME[0]}"
 
   local model="${*}"
   local name=$(echo "${model:-null}" | jq -r '.name')
@@ -301,15 +284,15 @@ ambianic::update.ai_models.video()
   local top_k=$(echo "${model:-null}" | jq -r '.top_k')
   local tflite=$(echo "${model:-null}" | jq -r '.tflite')
 
-  case ${entity} in
-    object)
+  case "${entity:-null}" in
+    'object')
       echo '  image_detection: &'${name}
       echo '    labels: '${labels} | envsubst
       echo '    top_k: '${top_k}
       echo '    model:'
       echo '      tflite: '${tflite} | envsubst
       ;;
-    face)
+    'face')
       echo '  face_detection: &'${name}
       echo '    labels: '${labels} | envsubst
       echo '    top_k: '${top_k}
@@ -324,7 +307,7 @@ ambianic::update.ai_models.video()
 
 ambianic::update.ai_models()
 {
-  bashio::log.debug "FUNCTION: ${FUNCNAME[0]}"
+  bashio::log.trace "TRACE: ${FUNCNAME[0]} ${*}"
 
   local ai_models="${*}"
 
@@ -338,6 +321,8 @@ ambianic::update.ai_models()
     while [ ${i} -lt ${nai_model} ]; do
       local ai_model=$(echo "${ai_models}" | jq -c '.['${i}']')
 
+      bashio::log.debug "ai_model: ${i}" $(echo "${ai_model:-null}" | jq -c '.')
+
       if [ "${ai_model:-null}" != 'null' ]; then
         local type=$(echo "${ai_model}" | jq -r '.type')
         local src='null'
@@ -350,7 +335,7 @@ ambianic::update.ai_models()
             ambianic::update.ai_models.audio "${ai_model}"
             ;;
           *)
-            bashio::log.warning "Invalid source type: ${type}"
+            bashio::log.warning "Invalid ai_model type: ${type}"
             ;;
         esac
       fi
@@ -361,13 +346,10 @@ ambianic::update.ai_models()
   fi
 }
 
-##
 ## ALL
-##
-
 ambianic::update()
 {
-  bashio::log.debug "FUNCTION: ${FUNCNAME[0]}"
+  bashio::log.debug "TRACE: ${FUNCNAME[0]} ${*}"
 
   local config="${*}"
   local ambianic=$(echo "${config}" | jq -r '.workspace')/config.yaml
@@ -385,28 +367,6 @@ ambianic::update()
 ## configure (read JSON)
 ###
 
-##
-## AI MODELS
-##
-
-#EXAMPLE:
-#[
-#  {
-#    "name": "entity_detection",
-#    "type": "video",
-#    "top_k": 10,
-#    "labels": "${AMBIABIC_PATH}/ai_models/coco_labels.txt",
-#    "tflite": "${AMBIABIC_PATH}/ai_models/mobilenet_ssd_v2_coco_quant_postprocess.tflite"
-#  },
-#  {
-#    "name": "face_detection",
-#    "type": "video",
-#    "top_k": 2,
-#    "labels": "${AMBIANIC_EDGE}/ai_models/coco_labels.txt",
-#    "tflite": "${AMBIANIC_EDGE}/ai_models/mobilenet_ssd_v2_face_quant_postprocess.tflite"
-#  }
-#]
-
 ambianic::config.ai_models.audio()
 {
   bashio::log.warning "NOT IMPLEMENTED" "${FUNCNAME[0]}" "${*}"
@@ -414,13 +374,14 @@ ambianic::config.ai_models.audio()
 
 ambianic::config.ai_models.video()
 {
-  bashio::log.debug "FUNCTION: ${FUNCNAME[0]}" "${*}"
+  bashio::log.trace "TRACE: ${FUNCNAME[0]} ${*}"
 
   local model="${*}"
   local result
   local name=$(echo "${model:-null}" | jq -r '.name')
+  local entity=$(echo "${model:-null}" | jq -r '.entity')
 
-  if [ "${name:-null}" != 'null' ]; then
+  if [ "${name:-null}" != 'null' ] && [ "${entity:-null}" != 'null' ]; then
     bashio::log.debug "Name: ${name}"
     local labels=$(echo "${model:-null}" | jq -r '.labels')
     if [ "${labels:-null}" != 'null' ]; then
@@ -432,9 +393,9 @@ ambianic::config.ai_models.video()
         if [ "${tflite:-null}" != 'null' ]; then
           bashio::log.debug "TFlite: ${tflite}"
 
-          result='{"name":"'${name}'","labels":"'${labels}'","top_k":"'${top_k}'","tflite":"'${tflite}'"}'
+          result='{"type":"video","entity":"'${entity}'","name":"'${name}'","labels":"'${labels}'","top_k":"'${top_k}'","tflite":"'${tflite}'"}'
 
-          bashio::log.info "${FUNCNAME[0]}: ai_model: ${result}"
+          bashio::log.debug "ai_model: ${result}"
         else
           bashio::log.error "TFlite unspecified: ${model}"
         fi
@@ -445,20 +406,18 @@ ambianic::config.ai_models.video()
       bashio::log.error  "Labels unspecified: ${model}"
     fi
   else
-    bashio::log.error  "Name unspecified: ${model}"
+    bashio::log.error  "Name or entity unspecified: ${model}"
   fi
   echo ${result:-null}
 }
 
 ambianic::config.ai_models()
 {
-  bashio::log.debug "FUNCTION: ${FUNCNAME[0]}" "${*}"
+  bashio::log.trace "TRACE: ${FUNCNAME[0]}" "${*}"
 
   local ai_models=$(jq '.ai_models' ${__BASHIO_DEFAULT_ADDON_CONFIG})
   local result
   local models='['
-
-  bashio::log.debug "AI MODELS: ${ai_models}"
 
   if [ "${ai_models:-null}" != 'null' ]; then
     local nmodel=$(echo "${ai_models}" | jq '.|length')
@@ -470,15 +429,17 @@ ambianic::config.ai_models()
       local type=$(echo "${model}" | jq -r '.type')
       local model
 
-      case ${type:-null} in
-        video)
+      case "${type:-null}" in
+        'video')
+          bashio::log.debug "ai_model ${i}; type: ${type}"
           model=$(ambianic::config.ai_models.video "${model}")
           ;;
-        audio)
+        'audio')
+          bashio::log.debug "ai_model ${i}; type: ${type}"
           model=$(ambianic::config.ai_models.audio "${model}")
           ;;
         *)
-          bashio::log.warning "Invalid ai_model type: ${type}"
+          bashio::log.warning "ai_model ${i}; invalid type: ${type}"
           ;;
       esac
       if [ "${model:-null}" = 'null' ]; then
@@ -504,57 +465,37 @@ ambianic::config.ai_models()
 ## PIPELINES
 ##
 
-##
-## update
-##
-
-# EXAMPLE:
-#^pipelines:
-#^  # sequence of piped operations for use in daytime front door watch
-#^  front_door_watch:
-#^    - source: *src_recorded_cam_feed
-#^    - detect_objects: # run ai inference on the input data
-#^       <<: *tfm_image_detection
-#^       confidence_threshold: 0.6
-#^    - save_detections: # save samples from the inference results
-#^       positive_interval: 2 # how often (in seconds) to save samples with ANY results above the confidence threshold
-#^       idle_interval: 6000 # how often (in seconds) to save samples with NO results above the confidence threshold
-#^    - detect_faces: # run ai inference on the samples from the previous element output
-#^       <<: *tfm_face_detection
-#^       confidence_threshold: 0.6
-#^    - save_detections: # save samples from the inference results
-#^       positive_interval: 2
-#^       idle_interval: 600
-
 ambianic::update.pipelines.video.detect()
 {
-  bashio::log.debug "FUNCTION: ${FUNCNAME[0]}" "${*}"
+  bashio::log.debug "TRACE: ${FUNCNAME[0]} ${*}"
 
   local act="${*}"
   local ai_model=$(echo "${act:-null}" | jq -r '.ai_model')
   local entity=$(echo "${act:-null}" | jq -r '.entity')
   local confidence=$(echo "${act:-null}" | jq -r '.confidence')
 
-  case ${entity} in
-    object)
+  case "${entity:-null}" in
+    'object')
+      bashio::log.debug "ai_model: ${ai_model}; entity: ${entity}; confidence: ${confidence}"
       echo '    - detect_objects:'
       echo '      <<: *'${ai_model}
       echo '      confidence_threshold: '${confidence}
       ;;
-    face)
+    'face')
+      bashio::log.debug "ai_model: ${ai_model}; entity: ${entity}; confidence: ${confidence}"
       echo '    - detect_faces:'
       echo '      <<: *'${ai_model}
       echo '      confidence_threshold: '${confidence}
       ;;
     *)
-      bashio::log.warning "Invalid entity: ${entity}"
+      bashio::log.warning "Action: ${name}; invalid entity: ${entity}"
       ;;
   esac
 }
 
 ambianic::update.pipelines.video.save()
 {
-  bashio::log.warning "${FUNCNAME[0]}" "${*}"
+  bashio::log.debug "${FUNCNAME[0]} ${*}"
 
   local act="${*}"
   local interval=$(echo "${act:-null}" | jq -r '.interval')
@@ -572,17 +513,18 @@ ambianic::update.pipelines.video.send()
 
 ambianic::update.pipelines.video()
 {
-  bashio::log.debug "FUNCTION: ${FUNCNAME[0]}" "${*}"
+  bashio::log.debug "TRACE: ${FUNCNAME[0]} ${*}"
 
   local pipeline="${*}"
   local name=$(echo "${pipeline:-null}" | jq -r '.name')
-  local source=$(echo "${pipeline:-null}" | jq -r '.source')
   local actions=$(echo "${pipeline:-null}" | jq '.actions')
+  local source=$(echo "${pipeline:-null}" | jq -r '.source')
   local naction=$(echo "${actions:-null}" | jq '.|length')
 
   if [ ! -z "${name:-}" ] && [ ! -z "${source:-}" ] && [ "${actions:-null}" != 'null' ]; then
-    bashio::log.debug "Pipeline: ${name}; source: ${source}; actions: ${naction}"
     local i=0
+
+    bashio::log.debug "Pipeline: ${name}; source: ${source}; actions: ${naction}"
 
     # start output
     echo '  '${name}':'
@@ -592,22 +534,28 @@ ambianic::update.pipelines.video()
       local action=$(echo "${actions}" | jq -c '.['${i}']')
 
       if [ "${action:-null}" != 'null' ]; then
-        local act=$(echo "${action}" | jq '.act')
+        local source=$(echo "${action:-null}" | jq -r '.source')
+        local act=$(echo "${action}" | jq -r '.act')
 
-          case ${a} in
-            detect)
-              ambianic::update.pipelines.video.detect "${act}"
-              ;;
-            save)
-              ambianic::update.pipelines.video.save "${act}"
-              ;;
-            send)
-              ambianic::update.pipelines.video.send "${act}"
-              ;;
-            *)
-              bashio::log.warning "Invalid act: ${a}"
-              ;;
-          esac
+        bashio::log.debug "Pipeline: ${name}; source: ${source}; action ${i}; act: ${act}"
+
+        case "${act:-null}" in
+          'detect')
+            bashio::log.debug "Action: ${i}; act: ${action}"
+            ambianic::update.pipelines.video.detect "${action}"
+            ;;
+          'save')
+            bashio::log.debug "Action: ${i}; act: ${action}"
+            ambianic::update.pipelines.video.save "${action}"
+            ;;
+          'send')
+            bashio::log.debug "Action: ${i}; act: ${act}"
+            ambianic::update.pipelines.video.send "${action}"
+            ;;
+          *)
+            bashio::log.warning "Action: ${i}; invalid act: ${act}"
+            ;;
+        esac
       else
         bashio::log.error "Invalid action: ${action}"
       fi
@@ -620,7 +568,7 @@ ambianic::update.pipelines.video()
 
 ambianic::update.pipelines()
 {
-  bashio::log.debug "FUNCTION: ${FUNCNAME[0]}" "${*}"
+  bashio::log.debug "TRACE: ${FUNCNAME[0]} ${*}"
 
   local pipelines="${*}"
 
@@ -637,15 +585,17 @@ ambianic::update.pipelines()
       if [ "${pipeline:-null}" != 'null' ]; then
         local type=$(echo "${pipeline}" | jq -r '.type')
 
-        case ${type:-null} in
-          image)
+        case "${type:-null}" in
+          'video')
+            bashio::log.debug "Pipeline: ${i}; type: ${type}"
             ambianic::update.pipelines.video "${pipeline}"
             ;;
-          audio)
+          'audio')
+            bashio::log.debug "Pipeline: ${i}; type: ${type}"
             ambianic::update.pipelines.audio "${pipeline}"
             ;;
           *)
-            bashio::log.warning "Invalid source type: ${type}"
+            bashio::log.warning "Pipeline: ${i}; invalid pipline type: ${type}"
             ;;
         esac
       fi
@@ -660,67 +610,6 @@ ambianic::update.pipelines()
 ## configure
 ##
 
-# EXAMPLE:
-#    "pipelines": [
-#      {
-#        "name": "camera1-pipeline",
-#        "source": "camera1",
-#        "type": "video",
-#        "action": "detect_object_action"
-#      },
-#      {
-#        "name": "camera1-pipeline",
-#        "source": "detect_object_action",
-#        "type": "video",
-#        "action": "save_object_action"
-#      },
-#      {
-#        "name": "camera2-pipeline",
-#        "source": "camera2",
-#        "type": "video",
-#        "action": "detect_face_action"
-#      },
-#      {
-#        "name": "camera2-pipeline",
-#        "source": "detect_face_action",
-#        "type": "video",
-#        "action": "save_face_action"
-#      }
-#    ]
-#
-#    "actions": [
-#      {
-#        "name": "detect_object_action",
-#        "act": "detect",
-#        "type": "video",
-#        "entity": "object",
-#        "ai_model": "entity_detection",
-#        "confidence": 0.6
-#      },
-#      {
-#        "name": "save_object_action",
-#        "act": "save",
-#        "type": "video",
-#        "interval": 2,
-#        "idle": 600
-#      },
-#      {
-#        "name": "detect_face_action",
-#        "act": "detect",
-#        "type": "video",
-#        "entity": "face",
-#        "ai_model": "face_detection",
-#        "confidence": 0.6
-#      },
-#      {
-#        "name": "save_face_action",
-#        "act": "save",
-#        "type": "video",
-#        "interval": 2,
-#        "idle": 600
-#      }
-#    ]
-
 ambianic::config.pipelines.audio()
 {
   bashio::log.warning "NOT IMPLEMENTED" "${FUNCNAME[0]}" "${*}"
@@ -728,26 +617,38 @@ ambianic::config.pipelines.audio()
 
 ambianic::config.pipelines.video()
 {
-  bashio::log.debug "FUNCTION: ${FUNCNAME[0]}" "${*}"
+  bashio::log.trace "TRACE: ${FUNCNAME[0]}" "${*}"
 
   local action="${*}"
+  local name=$(echo "${action:-null}" | jq -r '.name')
+  local act=$(echo "${action:-null}" | jq -r '.act')
   local result
 
-  if [ "${action:-null}" != 'null' ]; then
-    result="${action}"
-  else
-    bashio::log.error "Null action"
-  fi
+  case "${act:-null}" in
+    'detect')
+      # test for all detect attributes
+      bashio::log.debug "Action: ${name}; act: ${act}"
+      result=$(echo "${action}" | jq '{"act":.act,"type":.type,"entity":.entity,"ai_model":.ai_model,"confidence":.confidence}')
+      ;;
+    'save')
+      # test for all save attributes
+      bashio::log.debug "Action: ${name}; act: ${act}"
+      result=$(echo "${action}" | jq '{"act":.act,"type":.type,"entity":.entity,"interval":.interval,"idle":.idle}')
+      ;;
+    *)
+      bashio::log.warning "Action: ${name}; invalid act: ${act}"
+      ;;
+  esac
   echo ${result:-null}
 }
 
 ambianic::config.pipelines()
 {
-  bashio::log.debug "FUNCTION: ${FUNCNAME[0]}" "${*}"
+  bashio::log.trace "TRACE: ${FUNCNAME[0]} ${*}"
 
   local pipelines=$(jq '.pipelines' ${__BASHIO_DEFAULT_ADDON_CONFIG})
 
-  bashio::log.debug "Pipelines:" $(echo "${pipelines:-null}" | jq '.')
+  bashio::log.trace "TRACE: pipelines:" $(echo "${pipelines:-null}" | jq '.')
 
   local result
   local ppls='['
@@ -762,24 +663,32 @@ ambianic::config.pipelines()
 
     for pplname in ${pplnames:-}; do
       bashio::log.debug "Pipeline: ${pplname}"
-      local action_names=$(jq -r '.pipelines[]|select(.name=="'${pplname}'").action' ${__BASHIO_DEFAULT_ADDON_CONFIG})
-      local acts='['
+      local steps=$(echo "${pipelines}" | jq '[.[]|select(.name=="'${pplname}'")]')
+      local acts=''
+      local i=0
       local j=0
+      local source
+
+      # should be unique
+      local action_names=$(echo "${steps:-null}" | jq -r '.[].action')
+      local all_actions=$(jq '.actions' ${__BASHIO_DEFAULT_ADDON_CONFIG})
 
       bashio::log.debug "Pipeline: ${pplname}; actions: ${action_names}"
 
       for an in ${action_names}; do
-        local action=$(jq '.actions[]|select(.name=="'${an}'")' ${__BASHIO_DEFAULT_ADDON_CONFIG})
-
-        bashio::log.debug "Pipeline: ${pplname}; action_name: ${an}; action:" $(echo "${action}" | jq -c '.')
+        local action=$(echo "${all_actions}" | jq '.[]|select(.name=="'${an}'")')
+	local src=$(echo "${steps:-null}" | jq -r '.['${i}'].source')
+	local act='null'
 
         type=$(echo "${action}" | jq -r '.type')
 
-        case ${type:-null} in
-          video)
-            act=$(ambianic::config.pipelines.video "${action}")
+        case "${type:-null}" in
+          'video')
+	    act=$(ambianic::config.pipelines.video "${action}")
+            bashio::log.debug "Pipeline ${k}: ${pplname}; action: ${an}; type: ${type}"
             ;;
-          audio)
+          'audio')
+            bashio::log.debug "Pipeline ${k}: ${pplname}; action: ${an}; type: ${type}"
             act=$(ambianic::config.pipelines.audio "${action}")
             ;;
           *)
@@ -787,24 +696,38 @@ ambianic::config.pipelines()
             ;;
         esac
         if [ "${act:-null}" = 'null' ]; then
-          bashio::log.warning "FAILED to configure pipeline ${pplname}; action ${i}; act: ${j}: ${pipelines}"
+          bashio::log.warning "FAILED: Pipeline ${k}: ${pplname}; action ${i}: ${an}"
         else
-          bashio::log.debug "Configured action ${j}: ${act}"
-          if [ ${j} -gt 0 ]; then acts="${acts},"; fi
+	  if [ "${src:-null}" != 'null' ]; then
+            bashio::log.debug "Pipeline ${k}: ${pplname}; action ${i}: ${an}; source: ${src}"
+	    source="${src}"
+#            act=$(echo "${act:-null}" | jq '.source="'${source}'"')
+	  else
+            bashio::log.debug "Pipeline ${k}: ${pplname}; action ${i}: ${an}; no source"
+	  fi 
+          bashio::log.debug "Pipeline ${k}: ${pplname}; action ${i}: ${an}; adding ${j}:" $(echo "${act}" | jq -c '.')
+          if [ ${j} -gt 0 ]; then acts="${acts},"; else acts='['; fi
           acts="${acts}${act}"
           j=$((j+1))
         fi
+        i=$((i+1))
       done
+      if [ ${j} -gt 0 ]; then 
+        acts="${acts}]"
+      else
+        bashio::log.warning "Pipeline ${k}: ${pplname}; no actions"
+        acts='null'
+      fi
 
-      local ppl='{"name":"'${pplname}'","type":"'${type:-null}'","actions":'"${acts:-null}]"'}'
-      bashio::log.debug "Configured pipeline: ${ppl}"
+      local ppl='{"name":"'${pplname}'","type":"'${type:-null}'","source":"'${source}'","actions":'"${acts:-null}"'}'
+
+      bashio::log.debug "Configured pipeline:" $(echo "${ppl}" | jq -c '.')
 
       if [ ${k} -gt 0 ]; then ppls="${ppls},"; fi
       ppls="${ppls}${ppl}"
       k=$((k+1))
     done
     ppls="${ppls}]"
-    bashio::log.debug "Pipelines: ${ppls}"
     result="${ppls}"
   else
     bashio::log.notice "No pipelines defined"
@@ -818,7 +741,7 @@ ambianic::config.pipelines()
 
 ambianic::config()
 {
-  bashio::log.debug "FUNCTION: ${FUNCNAME[0]}" "${*}"
+  bashio::log.trace "TRACE: ${FUNCNAME[0]}" "${*}"
 
   local workspace=$(bashio::config 'workspace')
   local result
@@ -849,10 +772,8 @@ ambianic::config()
           # configure pipelines
           ok=$(ambianic::config.pipelines)
           if [ "${ok:-null}" != 'null' ]; then
-            bashio::log.debug "Pipelines configured:" $(echo "${ok}" | jq -c '.') 
             # record in configuration
             config=$(echo "${config:-null}" | jq '.pipelines='"${ok}")
-            bashio::log.debug "Ambianic configured:" $(echo "${config}" | jq -c '.')
             # success
             result="${config}"
           else
@@ -880,7 +801,7 @@ ambianic::config()
 ## start.proxy
 ambianic::start.proxy()
 {
-  bashio::log.debug "FUNCTION: ${FUNCNAME[0]}" "${*}"
+  bashio::log.trace "TRACE: ${FUNCNAME[0]}" "${*}"
 
   local result
   local ok
@@ -901,7 +822,7 @@ ambianic::start.proxy()
 ## start.ambianic
 ambianic::start.ambianic()
 {
-  bashio::log.debug "FUNCTION: ${FUNCNAME[0]}"
+  bashio::log.trace "TRACE: ${FUNCNAME[0]}"
 
   local config="${config:-null}"
   local result
@@ -914,18 +835,20 @@ ambianic::start.ambianic()
     # update YAML
     ambianic=$(ambianic::update "${config}")
 
-    if [ ! -z "${ambianic:-}" ]; then
+    if [ ! -z "${ambianic:-}" ] && [ -e "${ambianic}" ]; then
+      bashio::log.notice "Ambianic updated; configuration: ${ambianic}" $(cat ${ambianic})
+
       # start python3
       python3 -m ${ambianic} &> ${t} &
       ok=$!; if [ ${ok:-0} -gt 0 ]; then
         bashio::log.debug "Ambianic started; pid: ${ok}"
-        result='{"ambianic":"'${ambianic}'","pid":'${ok}',"out":"'${t}'"}'
+        result='{"config":"'${ambianic}'","pid":'${ok}',"out":"'${t}'"}'
       else
         bashio::log.error "Ambianic failed to start"
         rm -f ${t}
       fi
     else
-      bashio::log.error "Ambianic configuration update failed"
+      bashio::log.error "Ambianic update failed"
     fi
   else
     bashio::log.error "No configuration provided"
@@ -937,24 +860,27 @@ ambianic::start.ambianic()
 ## start all
 ambianic::start()
 {
-  bashio::log.debug "FUNCTION: ${FUNCNAME[0]}"
+  bashio::log.trace "TRACE: ${FUNCNAME[0]}"
 
+  local config
   local result
-  local config=$(ambianic::config)
+
+  bashio::log.info "Configuring..."
+  config=$(ambianic::config)
 
   if [ "${config:-null}" != 'null' ]; then
-    bashio::log.info "Configuration successful:" $(echo "${config}" | jq -c '.')
+    bashio::log.info "Ambianic configured:" $(echo "${config}" | jq -c '.')
 
     # start ambianic
     local ok=$(ambianic::start.ambianic "${config}")
     if [ "${ok:-null}" != 'null' ]; then
       config=$(echo "${config:-null}" | jq '.ambianic='"${ok}")
-      bashio::log.notice "Ambianic started:" $(echo "${config}" | jq '.') 
+      bashio::log.info "Ambianic started:" $(echo "${config}" | jq '.') 
       # start proxy
       ok=$(ambianic::start.proxy)
       if [ "${ok:-null}" != 'null' ]; then
         config=$(echo "${config:-null}" | jq '.proxy='"${ok}")
-        bashio::log.debug "Proxy started:" $(echo "${config}" | jq '.') 
+        bashio::log.info "Proxy started:" $(echo "${config}" | jq '.') 
         result=${config}
       else 
         bashio::log.error "Proxy failed to start"
@@ -984,10 +910,12 @@ main()
         local this=$(ps --pid ${pid} | tail +2 | awk '{ print $1 }')
   
         if [ "${local:-null}" != 'null' ]; then
+          bashio::log.notice "Ambianic running:" $(echo "${config}" | jq '.') 
           sleep 300
         else
           # start ambianic
           local ok=$(ambianic::start.ambianic "${config}")
+
           if [ "${ok:-null}" != 'null' ]; then
             config=$(echo "${config:-null}" | jq '.ambianic='"${ok}")
             bashio::log.notice "Ambianic re-started:" $(echo "${config}" | jq '.') 
