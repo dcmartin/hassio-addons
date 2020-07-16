@@ -71,13 +71,16 @@ RUN apt update -qq -y && apt install -qq -y \
   libopus-dev \
   libvpx-dev \
   libsrtp2-dev \
-  procps
-
-RUN apt update -qq -y && apt install -qq -y \
+  procps \
+  udev \
+  ffmpeg \
+  libusb-1.0-0 \
+  libc++1 \
+  libc++abi1 \
+  libunwind8 \
+  libgcc1 \
+  git \
   python3-pip
-
-# pip
-RUN pip3 install --upgrade pip
 
 # cleanup
 RUN apt clean -qq -y && apt autoremove -qq -y && \
@@ -88,8 +91,11 @@ RUN apt clean -qq -y && apt autoremove -qq -y && \
 
 FROM build as prereqs
 
-# dependency?
-RUN apt update -qq -y && apt install -qq -y libhdf5-dev
+# pip
+RUN pip3 install --upgrade pip
+
+# peerjs
+RUN pip3 install --upgrade av
 
 # peerjs
 RUN pip3 install peerjs
@@ -139,18 +145,6 @@ RUN \
   cp "${LIBEDGETPU_SRC}" "${LIBEDGETPU_DST}" \
   && \
   ldconfig
-
-RUN \
-    apt update -qq -y \
-    && \
-    apt install -qq -y \
-     udev \
-     libusb-1.0-0 \
-     libc++1 \
-     libc++abi1 \
-     libunwind8 \
-     libgcc1 \
-     git
 
 RUN \
     mkdir -p /etc/udev/rules.d \
