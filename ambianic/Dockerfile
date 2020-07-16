@@ -82,6 +82,15 @@ RUN apt update -qq -y && apt install -qq -y \
   git \
   python3-pip
 
+RUN apt update -qq -y && apt install -qq -y \
+  libx264-dev \
+  libavdevice-dev \
+  libavfilter-dev \
+  libopus-dev \
+  libvpx-dev \
+  pkg-config  \
+  libsrtp2-dev
+
 # cleanup
 RUN apt clean -qq -y && apt autoremove -qq -y && \
       rm -fr \
@@ -97,28 +106,8 @@ RUN pip3 install --upgrade pip
 # wheel
 RUN pip3 install --upgrade wheel
 
-# virtualenv
-RUN pip3 install --upgrade virtualenv
-
-RUN apt update -qq -y && apt install -qq -y libx264-dev libavdevice-dev libavfilter-dev libopus-dev libvpx-dev pkg-config  libsrtp2-dev
-
-## av
-
-RUN pip3 install --upgrade av
-
-#RUN apt update -qq -y && apt install -qq -y wget
-
-#RUN mkdir -p /tmp/PyAV \
-#    && \
-#    cd /tmp/PyAV \
-#    && \
-#    git clone https://github.com/PyAV-Org/PyAV . \
-#    && \
-#    source scripts/activate.sh \
-#    && \
-#    ./scripts/build-deps \
-#    && \
-#    make
+# aiortc
+RUN pip3 install --upgrade aiortc
 
 # peerjs
 RUN pip3 install peerjs
