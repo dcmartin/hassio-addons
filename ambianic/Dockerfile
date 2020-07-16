@@ -94,7 +94,10 @@ FROM build as prereqs
 # pip
 RUN pip3 install --upgrade pip
 
-# peerjs
+# wheel
+RUN pip3 install --upgrade wheel
+
+# av
 RUN pip3 install --upgrade av
 
 # peerjs
