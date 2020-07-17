@@ -73,23 +73,26 @@ RUN apt update -qq -y && apt install -qq -y \
   libsrtp2-dev \
   procps \
   udev \
-  ffmpeg \
   libusb-1.0-0 \
   libc++1 \
   libc++abi1 \
   libunwind8 \
   libgcc1 \
   git \
-  python3-pip
-
-RUN apt update -qq -y && apt install -qq -y \
+  python3-pip \
   libx264-dev \
-  libavdevice-dev \
-  libavfilter-dev \
-  libopus-dev \
-  libvpx-dev \
-  pkg-config  \
-  libsrtp2-dev
+  libhdf5-dev \
+  software-properties-common
+
+## FFMPEG v4
+
+RUN add-apt-repository ppa:jonathonf/ffmpeg-4
+
+RUN apt update -qq -y \
+  && \
+  apt install -qq -y ffmpeg \
+  && \
+  apt upgrade -qq -y
 
 # cleanup
 RUN apt clean -qq -y && apt autoremove -qq -y && \
@@ -106,11 +109,20 @@ RUN pip3 install --upgrade pip
 # wheel
 RUN pip3 install --upgrade wheel
 
+# virtualenv
+RUN pip3 install --upgrade virtualenv
+
+# cython
+RUN pip3 install --upgrade cython
+
+# h5py
+RUN pip3 install --upgrade h5py
+
 # aiortc
 RUN pip3 install --upgrade aiortc
 
 # peerjs
-RUN pip3 install peerjs
+RUN pip3 install --upgrade peerjs
 
 # specialization
 RUN if [ $(uname -m) = 'armv7l' ]; \
