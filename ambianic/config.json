@@ -39,7 +39,7 @@
     "workspace": "/data/ambianic",
     "ai_models": [
       {
-        "name": "object_detector",
+        "name": "object-detector",
         "type": "video",
         "entity": "object",
         "top_k": 10,
@@ -47,7 +47,7 @@
         "tflite": "${AMBIANIC_EDGE}/ai_models/mobilenet_ssd_v2_coco_quant_postprocess.tflite"
       },
       {
-        "name": "face_detector",
+        "name": "face-detector",
         "type": "video",
         "entity": "face",
         "top_k": 2,
@@ -71,7 +71,7 @@
         "act": "detect",
         "type": "video",
         "entity": "object",
-        "ai_model": "object_detector",
+        "ai_model": "object-detector",
         "confidence": 0.6
       },
       {
@@ -87,7 +87,7 @@
         "act": "detect",
         "type": "video",
         "entity": "face",
-        "ai_model": "face_detector",
+        "ai_model": "face-detector",
         "confidence": 0.6
       },
       {
