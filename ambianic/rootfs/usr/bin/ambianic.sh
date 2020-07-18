@@ -140,7 +140,7 @@ ambianic::config.sources()
     local j=0
 
     while [ ${i} -lt ${nsource} ]; do
-      local source=$(echo "${sources}" | jq -c '.['${i}']')
+      local source=$(echo "${sources}" | jq '.['${i}']')
       local type=$(echo "${source}" | jq -r '.type')
       local src
 
@@ -224,7 +224,7 @@ ambianic::update.sources()
     echo 'sources:'
 
     while [ ${i} -lt ${nsource} ]; do
-      local source=$(echo "${sources}" | jq -c '.['${i}']')
+      local source=$(echo "${sources}" | jq '.['${i}']')
 
 
       if [ "${source:-null}" != 'null' ]; then
@@ -248,7 +248,7 @@ ambianic::update.sources()
       i=$((i+1))
     done
   else
-    bashio::log.error "No sources defined; configuration:" $(echo "${config:-null}" | jq -c '.')
+    bashio::log.error "No sources defined; configuration:" $(echo "${config:-null}" | jq '.')
   fi
 }
 
@@ -319,9 +319,9 @@ ambianic::update.ai_models()
     echo 'ai_models:'
 
     while [ ${i} -lt ${nai_model} ]; do
-      local ai_model=$(echo "${ai_models}" | jq -c '.['${i}']')
+      local ai_model=$(echo "${ai_models}" | jq '.['${i}']')
 
-      bashio::log.debug "ai_model: ${i}" $(echo "${ai_model:-null}" | jq -c '.')
+      bashio::log.debug "ai_model: ${i}" $(echo "${ai_model:-null}" | jq '.')
 
       if [ "${ai_model:-null}" != 'null' ]; then
         local type=$(echo "${ai_model}" | jq -r '.type')
@@ -342,7 +342,7 @@ ambianic::update.ai_models()
       i=$((i+1))
     done
   else
-    bashio::log.error "No ai_models defined; configuration:" $(echo "${config:-null}" | jq -c '.')
+    bashio::log.error "No ai_models defined; configuration:" $(echo "${config:-null}" | jq '.')
   fi
 }
 
@@ -402,7 +402,7 @@ ambianic::config.ai_models()
     local j=0
 
     while [ ${i:-0} -lt ${nmodel:-0} ]; do
-      local model=$(echo "${ai_models}" | jq -c '.['${i}']')
+      local model=$(echo "${ai_models}" | jq '.['${i}']')
       local type=$(echo "${model}" | jq -r '.type')
       local model
 
@@ -508,7 +508,7 @@ ambianic::update.pipelines.video()
     echo '    - source: *'${source}
 
     while [ ${i} -lt ${naction} ]; do
-      local action=$(echo "${actions}" | jq -c '.['${i}']')
+      local action=$(echo "${actions}" | jq '.['${i}']')
 
       if [ "${action:-null}" != 'null' ]; then
         local act=$(echo "${action}" | jq -r '.act')
@@ -556,7 +556,7 @@ ambianic::update.pipelines()
     echo 'pipelines:'
 
     while [ ${i} -lt ${npipeline} ]; do
-      local pipeline=$(echo "${pipelines}" | jq -c '.['${i}']')
+      local pipeline=$(echo "${pipelines}" | jq '.['${i}']')
 
       if [ "${pipeline:-null}" != 'null' ]; then
         local type=$(echo "${pipeline}" | jq -r '.type')
@@ -578,7 +578,7 @@ ambianic::update.pipelines()
       i=$((i+1))
     done
   else
-    bashio::log.notice "No pipelines defined; configuration:" $(echo "${config:-null}" | jq -c '.')
+    bashio::log.notice "No pipelines defined; configuration:" $(echo "${config:-null}" | jq '.')
   fi
 }
 
@@ -653,14 +653,14 @@ ambianic::config.pipelines()
 
       for an in ${action_names}; do
         local action=$(echo "${all_actions}" | jq '.[]|select(.name=="'${an}'")')
-	local src=$(echo "${steps:-null}" | jq -r '.['${i}'].source')
-	local act='null'
+        local src=$(echo "${steps:-null}" | jq -r '.['${i}'].source')
+        local act='null'
 
         type=$(echo "${action}" | jq -r '.type')
 
         case "${type:-null}" in
           'video')
-	    act=$(ambianic::config.pipelines.video "${action}")
+            act=$(ambianic::config.pipelines.video "${action}")
             bashio::log.debug "Pipeline ${k}: ${pplname}; action: ${an}; type: ${type}"
             ;;
           'audio')
@@ -674,14 +674,14 @@ ambianic::config.pipelines()
         if [ "${act:-null}" = 'null' ]; then
           bashio::log.warning "FAILED: Pipeline ${k}: ${pplname}; action ${i}: ${an}"
         else
-	  if [ "${src:-null}" != 'null' ]; then
+          if [ "${src:-null}" != 'null' ]; then
             bashio::log.debug "Pipeline ${k}: ${pplname}; action ${i}: ${an}; source: ${src}"
-	    source="${src}"
+            source="${src}"
 #            act=$(echo "${act:-null}" | jq '.source="'${source}'"')
-	  else
+          else
             bashio::log.debug "Pipeline ${k}: ${pplname}; action ${i}: ${an}; no source"
-	  fi 
-          bashio::log.debug "Pipeline ${k}: ${pplname}; action ${i}: ${an}; adding ${j}:" $(echo "${act}" | jq -c '.')
+          fi 
+          bashio::log.debug "Pipeline ${k}: ${pplname}; action ${i}: ${an}; adding ${j}:" $(echo "${act}" | jq '.')
           if [ ${j} -gt 0 ]; then acts="${acts},"; else acts='['; fi
           acts="${acts}${act}"
           j=$((j+1))
@@ -697,7 +697,7 @@ ambianic::config.pipelines()
 
       local ppl='{"name":"'${pplname}'","type":"'${type:-null}'","source":"'${source}'","actions":'"${acts:-null}"'}'
 
-      bashio::log.debug "Configured pipeline:" $(echo "${ppl}" | jq -c '.')
+      bashio::log.debug "Configured pipeline:" $(echo "${ppl}" | jq '.')
 
       if [ ${k} -gt 0 ]; then ppls="${ppls},"; fi
       ppls="${ppls}${ppl}"
@@ -734,14 +734,14 @@ ambianic::config()
       # configure ai_models
       ok=$(ambianic::config.ai_models)
       if [ "${ok:-null}" != 'null' ]; then
-        bashio::log.debug "AI Models configured:" $(echo "${ok}" | jq -c '.') 
+        bashio::log.debug "AI Models configured:" $(echo "${ok}" | jq '.') 
         # record in configuration
         config=$(echo "${config:-null}" | jq '.ai_models='"${ok}")
 
         # configure sources
         ok=$(ambianic::config.sources)
         if [ "${ok:-null}"  != 'null' ]; then
-          bashio::log.debug "Sources configured:" $(echo "${ok}" | jq -c '.') 
+          bashio::log.debug "Sources configured:" $(echo "${ok}" | jq '.') 
           # record in configuration
           config=$(echo "${config:-null}" | jq '.sources='"${ok}")
 
@@ -827,7 +827,7 @@ ambianic::update()
 ## start.ambianic
 ambianic::start.ambianic()
 {
-  bashio::log.trace "${FUNCNAME[0]}"
+  bashio::log.trace "${FUNCNAME[0]} ${*}"
 
   local config="${config:-null}"
   local t=$(mktemp)
@@ -841,55 +841,68 @@ ambianic::start.ambianic()
     ambianic=$(ambianic::update "${config}")
 
     if [ ! -z "${ambianic:-}" ] && [ -e "${ambianic}" ]; then
-      bashio::log.notice "Ambianic configuration YAML: ${ambianic}"
+      bashio::log.notice "${FUNCNAME[0]}: configuration YAML: ${ambianic}"
+      local workspace=$(echo "${config}" | jq -r '.workspace')
 
-      # start python3
-      python3 -m ambianic &> ${t} &
-      ok=$!; if [ ${ok:-0} -gt 0 ]; then
-        bashio::log.debug "Ambianic started; pid: ${ok}"
-        result='{"config":"'${ambianic}'","pid":'${ok}',"out":"'${t}'"}'
+      if [ -d "${workspace:-null}" ]; then
+        bashio::log.debug "${FUNCNAME[0]}: workspace: ${workspace}"
+
+        # change to working directory
+        pushd ${workspace} &> /dev/null
+        # start python3
+        python3 -m ambianic &> ${t} &
+        # test
+        ok=$!; if [ ${ok:-0} -gt 0 ]; then
+          bashio::log.debug "${FUNCNAME[0]}: started; pid: ${ok}"
+          result='{"config":"'${ambianic}'","pid":'${ok}',"out":"'${t}'"}'
+        else
+          bashio::log.error "${FUNCNAME[0]}: failed to start"
+          rm -f ${t}
+        fi
+        # return
+        popd &> /dev/null
       else
-        bashio::log.error "Ambianic failed to start"
-        rm -f ${t}
+        bashio::log.error "${FUNCNAME[0]}: no workspace directory: ${workspace:-null}"
       fi
     else
-      bashio::log.error "Ambianic update failed"
+      bashio::log.error "${FUNCNAME[0]}: update failed"
     fi
   else
-    bashio::log.error "No configuration provided"
+    bashio::log.error "${FUNCNAME[0]}: no configuration"
   fi
-
-  echo ${result:-null}
+  echo "${result:-null}"
 }
 
 ## start all
 ambianic::start()
 {
-  bashio::log.trace "${FUNCNAME[0]}"
+  bashio::log.trace "${FUNCNAME[0]} ${*}"
 
   local config="${*}"
   local result
 
   if [ "${config:-null}" != 'null' ]; then
+    local ok
     # start ambianic
-    local ok=$(ambianic::start.ambianic "${config}")
+    ok=$(ambianic::start.ambianic "${config}")
     if [ "${ok:-null}" != 'null' ]; then
+      bashio::log.info "${FUNCNAME[0]}: ambianic started:" $(echo "${ok}" | jq '.') 
+      # update config
       config=$(echo "${config:-null}" | jq '.ambianic='"${ok}")
-      bashio::log.info "Ambianic started:" $(echo "${config}" | jq '.') 
       # start proxy
       ok=$(ambianic::start.proxy)
       if [ "${ok:-null}" != 'null' ]; then
-        config=$(echo "${config:-null}" | jq '.proxy='"${ok}")
-        bashio::log.info "Proxy started:" $(echo "${config}" | jq '.') 
-        result=${config}
+        bashio::log.info "${FUNCNAME[0]}: Proxy started:" $(echo "${ok}" | jq '.') 
+        # update config
+        result=$(echo "${config:-null}" | jq '.proxy='"${ok}")
       else 
-        bashio::log.error "Proxy failed to start"
+        bashio::log.error "${FUNCNAME[0]}: Proxy failed to start"
       fi
     else 
-      bashio::log.error "Ambianic failed to start"
+      bashio::log.error "${FUNCNAME[0]}: Ambianic failed to start: ${ok}"
     fi
   else 
-    bashio::log.error "No configuration"
+    bashio::log.error "${FUNCNAME[0]}: No configuration"
   fi
   echo ${result:-null}
 }
@@ -907,46 +920,61 @@ main()
   config=$(ambianic::config)
 
   if [ "${config:-null}" != 'null' ]; then
-    bashio::log.notice "Ambianic configured:" $(echo "${config}" | jq -c '.')
+    bashio::log.notice "${FUNCNAME[0]}: Ambianic configured:" $(echo "${config}" | jq '.')
+
+    local result=$(ambianic::start ${config})
+    local out
+    local pid
+
+    bashio::log.debug "${FUNCNAME[0]}: ambianic::start result: ${result}"
+
+    pid=$(echo "${result:-null}" | jq -r '.ambianic.pid')
 
     while true; do
-      local result=$(ambianic::start ${config})
-
-      local pid=$(echo "${result}" | jq -r '.ambianic.pid')
-
+      pid=$(echo "${result:-null}" | jq -r '.ambianic.pid')
+ 
       if [ "${pid:-null}" != 'null' ]; then
         local this=$(ps --pid ${pid} | tail +2 | awk '{ print $1 }')
   
         if [ "${this:-null}" == "${pid}" ]; then
-          bashio::log.notice "Ambianic PID: ${this}; running"
-          sleep 300
-        else
-          bashio::log.warning "Ambianic PID: ${pid}; not running"
+          bashio::log.notice "${FUNCNAME[0]}: Ambianic PID: ${this}; running"
+          out=$(echo "${result}" | jq -r '.ambianic.out')
 
-          local out
+          if [ -s "${out:-null}" ]; then 
+	    cat "${out}" >&2
+          else 
+            bashio::log.info "${FUNCNAME[0]}: empty output: ${out}"
+          fi
+          bashio::log.info "${FUNCNAME[0]}: watchdog sleeping for ${AMBIANIC_WATCHDOG_SECONDS:-30} seconds..."
+          sleep ${AMBIANIC_WATCHDOG_SECONDS:-30}
+        else
+          bashio::log.warning "${FUNCNAME[0]}: Ambianic PID: ${pid}; not running"
 
           # configuration debugging
-	  out=$(echo "${result}" | jq -r '.ambianic.config')
+          out=$(echo "${result}" | jq -r '.ambianic.config')
           echo "Ambianic configuation YAML: ${out}" >&2
-	  if [ -e "${out}" ]; then cat "${out}" >&2; else echo "No file: ${out}" >&2; fi
-
-	  # cleanup ambianic
-	  out=$(echo "${result}" | jq -r '.ambianic.out')
+          if [ -e "${out}" ]; then cat "${out}" >&2; else echo "No file: ${out}" >&2; fi
+  
+          # cleanup ambianic
+          out=$(echo "${result}" | jq -r '.ambianic.out')
           echo "Ambianic log: ${out}" >&2
-	  if [ -e "${out}" ]; then cat "${out}" >&2; else echo "No file: ${out}" >&2; fi
-	  rm -f "${out}"
+          if [ -e "${out}" ]; then cat "${out}" >&2; else echo "No file: ${out}" >&2; fi
+          rm -f "${out}"
 
-	  # cleanup proxy
+          # cleanup proxy
           kill -9 $(echo "${result}" | jq -r '.proxy.pid')
           rm -f $(echo "${result}" | jq -r '.proxy.out')
+
+	  # restart ambianic
+          result=$(ambianic::start ${config})
         fi
       else
-        bashio::log.error "Ambianic failed to start"
-	break
+        bashio::log.error "${FUNCNAME[0]}: Ambianic failed to start"
+        break
       fi
     done
   else
-    bashio::log.error "Ambianic configuration failed"
+    bashio::log.error "${FUNCNAME[0]}: Ambianic configuration failed"
   fi
 }
 
