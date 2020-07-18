@@ -945,6 +945,14 @@ main()
           else 
             bashio::log.info "${FUNCNAME[0]}: empty output: ${out}"
           fi
+
+          out=$(echo "${result}" | jq -r '.workspace')/ambianic-log.txt
+          if [ -s "${out:-null}" ]; then 
+	    cat "${out}" >&2
+          else 
+            bashio::log.info "${FUNCNAME[0]}: empty output: ${out}"
+          fi
+
           bashio::log.info "${FUNCNAME[0]}: watchdog sleeping for ${AMBIANIC_WATCHDOG_SECONDS:-30} seconds..."
           sleep ${AMBIANIC_WATCHDOG_SECONDS:-30}
         else
