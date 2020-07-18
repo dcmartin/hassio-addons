@@ -126,13 +126,6 @@ RUN pip3 install --upgrade aiortc
 # peerjs
 RUN pip3 install --upgrade peerjs
 
-# specialization
-RUN if [ $(uname -m) = 'armv7l' ]; \
-  then \
-    apt install -qq -y python3-rpi.gpio; \
-    cp /opt/ambianic-edge/build/raspberrypi.pip.conf /etc/pip.conf; \
-  fi
-
 ### TPU
 
 # tflite
