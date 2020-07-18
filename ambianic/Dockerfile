@@ -109,8 +109,10 @@ RUN pip3 install --upgrade pip
 # wheel
 RUN pip3 install --upgrade wheel
 
-# virtualenv
-RUN pip3 install --upgrade virtualenv
+# gi
+RUN apt update -qq -y && apt install -qq -y libcairo2-dev libgirepository1.0-dev
+RUN pip3 install --upgrade pycairo
+RUN pip3 install --upgrade PyGObject
 
 # cython
 RUN pip3 install --upgrade cython

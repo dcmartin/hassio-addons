@@ -478,9 +478,9 @@ ambianic::update.pipelines.video.save()
   local interval=$(echo "${act:-null}" | jq -r '.interval')
   local idle=$(echo "${act:-null}" | jq -r '.idle')
 
-  echo '   - save_detections:'
-  echo '     positive_interval: '${interval}
-  echo '     idle_interval: '${idle}
+  echo '    - save_detections:'
+  echo '      positive_interval: '${interval}
+  echo '      idle_interval: '${idle}
 }
 
 ambianic::update.pipelines.video.send()
@@ -801,12 +801,24 @@ ambianic::update()
   bashio::log.trace "${FUNCNAME[0]} ${*}"
 
   local config="${*}"
-  local ambianic=$(echo "${config}" | jq -r '.workspace')/config.yaml
+  local workspace=$(echo "${config}" | jq -r '.workspace')
+  local ambianic="${workspace}/config.yaml"
 
-  rm -f ${ambianic}
-
+  echo "version: '1.2.4'" > ${ambianic}
+  echo '# path to the data directory' >> ${ambianic}
+  echo "data_dir: &data_dir ${workspace}" >> ${ambianic}
+  echo '# logging; level DEBUG, INFO, WARNING, ERROR' >> ${ambianic}
+  echo "logging:" >> ${ambianic}
+  echo "  file: ${workspace}/ambianic-log.txt" >> ${ambianic}
+  echo "  level: DEBUG" >> ${ambianic}
+  echo '# pipeline event timeline configuration' >> ${ambianic}
+  echo "timeline:" >> ${ambianic}
+  echo "  event_log: ${workspace}/timeline-event-log.yaml" >> ${ambianic}
+  echo '# AI MODELS' >> ${ambianic}
   ambianic::update.ai_models $(echo "${config}" | jq '.ai_models') >> ${ambianic}
+  echo '# SOURCES' >> ${ambianic}
   ambianic::update.sources $(echo "${config}" | jq '.sources') >> ${ambianic}
+  echo '# PIPELINES' >> ${ambianic}
   ambianic::update.pipelines $(echo "${config}" | jq '.pipelines') >> ${ambianic}
 
   echo "${ambianic}"
@@ -832,7 +844,7 @@ ambianic::start.ambianic()
       bashio::log.notice "Ambianic configuration YAML: ${ambianic}"
 
       # start python3
-      python3 -m ${ambianic} &> ${t} &
+      python3 -m ambianic &> ${t} &
       ok=$!; if [ ${ok:-0} -gt 0 ]; then
         bashio::log.debug "Ambianic started; pid: ${ok}"
         result='{"config":"'${ambianic}'","pid":'${ok}',"out":"'${t}'"}'
