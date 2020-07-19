@@ -126,6 +126,46 @@ RUN pip3 install --upgrade aiortc
 # peerjs
 RUN pip3 install --upgrade peerjs
 
+RUN pip3 install 'Click>=7.0'
+RUN pip3 install 'Flask>=1.0.2'
+RUN pip3 install 'Jinja2>=2.10.1'
+RUN pip3 install 'Pillow>=5.4.1'
+RUN pip3 install 'PyYAML>=5.1.2'
+RUN pip3 install 'Werkzeug>=0.15.3'
+RUN pip3 install 'absl-py>=0.7.1'
+RUN pip3 install 'appdirs>=1.4.3'
+RUN pip3 install 'asn1crypto>=0.24.0'
+RUN pip3 install 'astor>=0.8.0'
+RUN pip3 install 'asttokens>=1.1.13'
+RUN pip3 install 'beautifulsoup4>=4.7.1'
+RUN pip3 install 'blinker>=1.4'
+RUN pip3 install 'certifi>=2018.8.24'
+RUN pip3 install 'chardet>=3.0.4'
+RUN pip3 install 'cookies>=2.2.1'
+RUN pip3 install 'cryptography>=2.8'
+RUN pip3 install 'decorator>=4.3.0'
+RUN pip3 install 'entrypoints>=0.3'
+RUN pip3 install 'flask-cors'
+RUN pip3 install 'gast>=0.2.2'
+RUN pip3 install 'google-pasta>=0.1.7'
+RUN pip3 install 'h5py>=2.9.0'
+RUN pip3 install 'idna>=2.6'
+RUN pip3 install 'itsdangerous>=0.24'
+RUN pip3 install 'numpy>=1.16.2'
+RUN pip3 install 'oauthlib>=2.1.0'
+RUN pip3 install 'pyOpenSSL>=19.0.0'
+RUN pip3 install 'requests-oauthlib>=1.0.0'
+RUN pip3 install 'requests>=2.21.0'
+RUN pip3 install 'responses>=0.9.0'
+RUN pip3 install 'simplegeneric>=0.8.1'
+RUN pip3 install 'simplejson>=3.16.0'
+RUN pip3 install 'webencodings>=0.5.1'
+RUN pip3 install 'inotify-simple'
+RUN pip3 install 'portalocker>=1.4.0'
+RUN pip3 install 'concurrent-log-handler'
+
+FROM prereqs as tflite
+
 ### TPU
 
 # tflite
@@ -184,19 +224,26 @@ RUN apt clean -qq -y && apt autoremove -qq -y && \
       /var/{cache,log}/* \
       /var/lib/apt/lists/*
 
-FROM prereqs
+FROM tflite
 
 # define reality
 ARG AMBIANIC_EDGE=/opt/ambianic-edge
 ENV AMBIANIC_EDGE ${AMBIANIC_EDGE}
 
 # the meat
-RUN \
-    mkdir -p ${AMBIANIC_EDGE} \
-    && \
-    cd ${AMBIANIC_EDGE} \
-    && \
-    git clone http://github.com/ambianic/ambianic-edge.git . \
+RUN if [ ! -d ./"${AMBIANIC_EDGE}" ]; then \
+      mkdir -p ${AMBIANIC_EDGE} \
+      && \
+      cd ${AMBIANIC_EDGE} \
+      && \
+      git clone http://github.com/dcmartin/ambianic-edge.git .; \
+    else \
+      cd ./${AMBIANIC_EDGE} \
+      && \
+      tar cf - . | ( cd ${AMBIANIC_EDGE} && tar xf - ); \
+    fi
+
+RUN cd ${AMBIANIC_EDGE} \
     && \
     pip3 install -r build/requirements.txt \
     && \
@@ -204,6 +251,8 @@ RUN \
 
 # Copy root filesystem
 COPY rootfs /
+
+EXPOSE 8778
 
 CMD ["/usr/bin/run.sh"]
 

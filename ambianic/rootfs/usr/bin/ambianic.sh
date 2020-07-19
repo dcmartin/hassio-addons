@@ -850,7 +850,10 @@ ambianic::start.ambianic()
         # change to working directory
         pushd ${workspace} &> /dev/null
         # start python3
-        python3 -m ambianic &> ${t} &
+        export AMBIANIC_DIR=${workspace}
+        export DEFAULT_DATA_DIR=${workspace}/data
+	mkdir -p ${DEFAULT_DATA_DIR}
+	python3 -m ambianic &> ${t} &
         # test
         ok=$!; if [ ${ok:-0} -gt 0 ]; then
           bashio::log.debug "${FUNCNAME[0]}: started; pid: ${ok}"
@@ -938,19 +941,29 @@ main()
   
         if [ "${this:-null}" == "${pid}" ]; then
           bashio::log.notice "${FUNCNAME[0]}: Ambianic PID: ${this}; running"
-          out=$(echo "${result}" | jq -r '.ambianic.out')
 
+          out=$(echo "${result}" | jq -r '.ambianic.out')
           if [ -s "${out:-null}" ]; then 
+            bashio::log.green "${FUNCNAME[0]}: AMBIANIC OUTPUT"
+	    cat "${out}" >&2
+          else 
+            bashio::log.info "${FUNCNAME[0]}: ambianic output empty: ${out}"
+          fi
+
+          out=$(echo "${result}" | jq -r '.workspace')/ambianic-log.txt
+          if [ -s "${out:-null}" ]; then 
+            bashio::log.green "${FUNCNAME[0]}: AMBIANIC LOG"
 	    cat "${out}" >&2
           else 
             bashio::log.info "${FUNCNAME[0]}: empty output: ${out}"
           fi
 
-          out=$(echo "${result}" | jq -r '.workspace')/ambianic-log.txt
+          out=$(echo "${result}" | jq -r '.proxy.out')
           if [ -s "${out:-null}" ]; then 
+            bashio::log.green "${FUNCNAME[0]}: PERRJS OUTPUT"
 	    cat "${out}" >&2
           else 
-            bashio::log.info "${FUNCNAME[0]}: empty output: ${out}"
+            bashio::log.info "${FUNCNAME[0]}: proxy output empty: ${out}"
           fi
 
           bashio::log.info "${FUNCNAME[0]}: watchdog sleeping for ${AMBIANIC_WATCHDOG_SECONDS:-30} seconds..."
@@ -970,8 +983,11 @@ main()
           rm -f "${out}"
 
           # cleanup proxy
+          out=$(echo "${result}" | jq -r '.proxy.out')
+          echo "Proxy log: ${out}" >&2
+          if [ -e "${out}" ]; then cat "${out}" >&2; else echo "No file: ${out}" >&2; fi
           kill -9 $(echo "${result}" | jq -r '.proxy.pid')
-          rm -f $(echo "${result}" | jq -r '.proxy.out')
+          rm -f ${out}
 
 	  # restart ambianic
           result=$(ambianic::start ${config})
