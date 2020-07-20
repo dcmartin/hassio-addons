@@ -231,17 +231,11 @@ ARG AMBIANIC_EDGE=/opt/ambianic-edge
 ENV AMBIANIC_EDGE ${AMBIANIC_EDGE}
 
 # the meat
-RUN if [ ! -d ./"${AMBIANIC_EDGE}" ]; then \
-      mkdir -p ${AMBIANIC_EDGE} \
+RUN mkdir -p ${AMBIANIC_EDGE} \
       && \
       cd ${AMBIANIC_EDGE} \
       && \
-      git clone http://github.com/dcmartin/ambianic-edge.git .; \
-    else \
-      cd ./${AMBIANIC_EDGE} \
-      && \
-      tar cf - . | ( cd ${AMBIANIC_EDGE} && tar xf - ); \
-    fi
+      git clone http://github.com/dcmartin/ambianic-edge.git .
 
 RUN cd ${AMBIANIC_EDGE} \
     && \

@@ -287,17 +287,17 @@ ambianic::update.ai_models.video()
   case "${entity:-null}" in
     'object')
       echo '  image_detection: &'${name}
-      echo '    labels: '${labels} | envsubst
-      echo '    top_k: '${top_k}
       echo '    model:'
       echo '      tflite: '${tflite} | envsubst
+      echo '    labels: '${labels} | envsubst
+      echo '    top_k: '${top_k}
       ;;
     'face')
       echo '  face_detection: &'${name}
-      echo '    labels: '${labels} | envsubst
-      echo '    top_k: '${top_k}
       echo '    model:'
       echo '      tflite: '${tflite} | envsubst
+      echo '    labels: '${labels} | envsubst
+      echo '    top_k: '${top_k}
       ;;
     *)
       bashio::log.error "Invalid entity: ${entity}"
