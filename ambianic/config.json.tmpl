@@ -2,25 +2,24 @@
   "name": "Ambianic Edge",
   "version": "0.0.1",
   "slug": "ambianic",
-  "description": "Ambiance edge",
-  "url": "https://github.com/ambianic/ambianic-edge/README.md",
-  "startup": "application",
+  "description": "Ambianic Edge AI",
+  "url": "https://github.com/dcmartin/hassio-addons/blob/master/ambianic/README.md",
+  "startup": "services",
   "boot": "auto",
   "arch": [
     "aarch64",
     "amd64",
     "armv7"
   ],
-  "ingress": false,
-  "ingress_port": null,
   "devices": [],
-  "hassio_api": false,
-  "hassio_role": "default",
+  "hassio_api": true,
+  "hassio_role": "admin",
   "host_network": true,
+  "host_ipc": true,
+  "host_dbus": true,
   "homeassistant_api": false,
-  "privileged": [
-    "SYS_ADMIN"
-  ],
+  "full_access": false,
+  "udev": true,
   "timeout": 90,
   "tmpfs": "size=128m,uid=0,rw",
   "map": [
@@ -30,69 +29,201 @@
   "panel_icon": "mdi:cctv",
   "panel_title": "Ambianic Edge",
   "panel_admin": true,
+  "privileged": [
+    "NET_ADMIN",
+    "SYS_ADMIN",
+    "SYS_RAWIO",
+    "SYS_TIME",
+    "SYS_NICE",
+    "SYS_RESOURCE",
+    "SYS_PTRACE",
+    "SYS_MODULE",
+    "DAC_READ_SEARCH"
+  ],
   "ports": {
-    "8778/tcp": 8778
+    "3478/tcp": 3478,
+    "5004/tcp": 5004,
+    "8778/tcp": 8778,
+    "3478/udp": 3478,
+    "5004/udp": 5004,
+    "8778/udp": 8778
   },
   "ports_description": {
+    "3478/tcp": "TURN",
+    "5004/tcp": "RTP",
     "8778/tcp": "API"
   },
   "options": {
-    "log_level": "info",
-    "cameras": []
+    "log_level": "debug",
+    "workspace": "/data/ambianic",
+    "ai_models": [
+      {
+        "name": "object-detector",
+        "type": "video",
+        "entity": "object",
+        "top_k": 10,
+        "labels": "${AMBIANIC_EDGE}/ai_models/coco_labels.txt",
+        "tflite": "${AMBIANIC_EDGE}/ai_models/mobilenet_ssd_v2_coco_quant_postprocess.tflite"
+      },
+      {
+        "name": "face-detector",
+        "type": "video",
+        "entity": "face",
+        "top_k": 2,
+        "labels": "${AMBIANIC_EDGE}/ai_models/coco_labels.txt",
+        "tflite": "${AMBIANIC_EDGE}/ai_models/mobilenet_ssd_v2-face-quant_postprocess.tflite"
+      }
+    ],
+    "pipelines": [
+      {
+        "name": "camera1-pipeline",
+        "source": "camera1",
+        "type": "video",
+        "action": "detect-object-action"
+      },
+      {
+        "name": "camera1-pipeline",
+        "type": "video",
+        "action": "save-object-action"
+      },
+      {
+        "name": "camera1-pipeline",
+        "source": "camera1",
+        "type": "video",
+        "action": "detect-face-action"
+      },
+      {
+        "name": "camera1-pipeline",
+        "type": "video",
+        "action": "save-face-action"
+      },
+      {
+        "name": "camera2-pipeline",
+        "source": "camera2",
+        "type": "video",
+        "action": "detect-object-action"
+      },
+      {
+        "name": "camera2-pipeline",
+        "type": "video",
+        "action": "save-object-action"
+      },
+      {
+        "name": "camera2-pipeline",
+        "source": "camera2",
+        "type": "video",
+        "action": "detect-face-action"
+      },
+      {
+        "name": "camera2-pipeline",
+        "type": "video",
+        "action": "save-face-action"
+      }
+    ],
+    "actions": [
+      {
+        "name": "detect-object-action",
+        "act": "detect",
+        "type": "video",
+        "entity": "object",
+        "ai_model": "object-detector",
+        "confidence": 0.6
+      },
+      {
+        "name": "save-object-action",
+        "act": "save",
+        "type": "video",
+        "entity": "object",
+        "interval": 2,
+        "idle": 600
+      },
+      {
+        "name": "detect-face-action",
+        "act": "detect",
+        "type": "video",
+        "entity": "face",
+        "ai_model": "face-detector",
+        "confidence": 0.6
+      },
+      {
+        "name": "save-face-action",
+        "act": "save",
+        "type": "video",
+        "entity": "face",
+        "interval": 2,
+        "idle": 600
+      }
+    ],
+    "sources": [
+      {
+        "name": "camera1",
+        "uri": "rtsp://username:password@192.168.1.221/live",
+        "type": "video",
+        "live": true
+      },
+      {
+        "name": "camera2",
+        "uri": "rtsp://username:password@192.168.1.222/live",
+        "type": "video",
+        "live": true
+      }
+    ]
   },
   "schema": {
     "log_level": "str",
+    "workspace": "str",
     "log_type": "str?",
+    "group": "str?",
     "device": "str?",
-    "client": "str?",
     "username": "str?",
     "password": "str?",
     "timezone": "str?",
-    "cameras": [
+    "ai_models": [
       {
         "name": "str",
-        "type": "list(netcam|ftpd|mqtt)",
-        "brightness": "int?",
-        "changes": "list(on|off)?",
-        "contrast": "int?",
-        "despeckle": "str?",
-        "device": "str?",
-        "event_gap": "int?",
-        "fov": "int?",
-        "framerate": "int(2,100)?",
-        "height": "int?",
-        "hue": "int?",
-        "icon": "str?",
-        "lightswitch": "int?",
-        "mac": "str?",
-        "mjpeg_url": "str?",
-        "movie_max": "int(1,60)?",
-        "movie_output": "list(off|mp4|mpeg4|3gp)?",
-        "movie_quality": "int(1,100)?",
-        "netcam_url": "str?",
-        "netcam_userpass": "str?",
-        "palette": "int?",
-        "password": "str?",
-        "picture_quality": "int?",
-        "port": "port?",
-        "rotate": "int?",
-        "saturation": "int?",
-        "still_image_url": "str?",
-        "stream_quality": "int?",
-        "text_scale": "int(1,10)?",
-        "threshold": "int?",
-        "threshold_percent": "int(0,100)?",
-        "username": "str?",
-        "userpass": "str?",
-        "width": "int?"
+        "type": "list(video|audio)",
+        "top_k": "int(1,100)?",
+        "entity": "str",
+        "labels": "str",
+        "tflite": "str"
       }
     ],
-    "mqtt": {
-      "host": "str?",
-      "port": "port?",
-      "username": "str?",
-      "password": "str?"
-    }
+    "pipelines": [
+      {
+        "name": "str?",
+        "source": "str?",
+        "type": "list(video|audio)",
+        "action": "str?"
+      }
+    ],
+    "actions": [
+      {
+        "name": "str",
+        "act": "list(detect|save|send|publish)",
+        "type": "list(video|audio)?",
+        "payload": "list(mp4|jpeg|wav|json)?",
+        "entity": "list(object|face)",
+        "ai_model": "str?",
+        "confidence": "float?",
+        "interval": "int?",
+        "idle": "int?"
+      }
+    ],
+    "sources": [
+      {
+        "name": "str",
+        "type": "list(video|audio)",
+        "uri": "str?",
+        "live": "bool?",
+        "framerate": "int(2,30)?",
+        "duration": "int(1,60)?",
+        "output": "list(off|mp4)?",
+        "quality": "int(1,100)?",
+        "rotate": "int?",
+        "height": "int?",
+        "width": "int?"
+      }
+    ]
   },
   "environment": {
     "LOG_FORMAT": "{LEVEL}: {MESSAGE}"

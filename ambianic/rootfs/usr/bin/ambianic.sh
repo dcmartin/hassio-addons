@@ -288,15 +288,15 @@ ambianic::update.ai_models.video()
   case "${entity:-null}" in
     'object')
       echo '  image_detection: &'${name}
-      echo '    model:'
-      echo '      tflite: '${tflite} | envsubst
+      echo '    ai_model_id: '${name}
+      echo '    ai_model: '${tflite} | envsubst
       echo '    labels: '${labels} | envsubst
       echo '    top_k: '${top_k}
       ;;
     'face')
       echo '  face_detection: &'${name}
-      echo '    model:'
-      echo '      tflite: '${tflite} | envsubst
+      echo '    ai_model_id: '${name}
+      echo '    ai_model: '${tflite} | envsubst
       echo '    labels: '${labels} | envsubst
       echo '    top_k: '${top_k}
       ;;
