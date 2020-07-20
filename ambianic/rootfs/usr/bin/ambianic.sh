@@ -200,6 +200,7 @@ ambianic::update.sources.video()
   local live=$(echo "${video:-null}" | jq -r '.live')
 
   echo '  '${name}': &'${name}
+  echo '    source_id: '${name}
   echo '    uri: '${uri}
   echo '    type: '${type}
   echo '    live: '${live}
