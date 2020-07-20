@@ -231,11 +231,13 @@ ARG AMBIANIC_EDGE=/opt/ambianic-edge
 ENV AMBIANIC_EDGE ${AMBIANIC_EDGE}
 
 # the meat
-RUN mkdir -p ${AMBIANIC_EDGE} \
-      && \
-      cd ${AMBIANIC_EDGE} \
-      && \
-      git clone http://github.com/dcmartin/ambianic-edge.git .
+#RUN mkdir -p ${AMBIANIC_EDGE} \
+#      && \
+#      cd ${AMBIANIC_EDGE} \
+#      && \
+#      git clone http://github.com/dcmartin/ambianic-edge.git .
+
+copy ambianic-edge ${AMBIANIC_EDGE}
 
 RUN cd ${AMBIANIC_EDGE} \
     && \
