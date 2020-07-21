@@ -178,16 +178,7 @@ ambianic::config.sources()
 ## UPDATE (write YAML)
 ###
 
-# EXAMPLE:
-#^sources:
-#^  front_door_cam_feed: &src_recorded_cam_feed
-#^    uri: rtsp://admin:password@192.168.1.99/media/video1
-#^    type: video
-#^    live: true
-#^  entry_area_cam_feed: &src_recorded_cam_feed
-#^    uri: rtsp://admin:mike@192.168.1.99/media/video1
-#^    type: video
-#^    live: true
+## SOURCES
 
 ambianic::update.sources.video()
 {
@@ -199,8 +190,7 @@ ambianic::update.sources.video()
   local uri=$(echo "${video:-null}" | jq -r '.uri')
   local live=$(echo "${video:-null}" | jq -r '.live')
 
-  echo '  '${name}': &'${name}
-  echo '    source_id: '${name}
+  echo "  ${name}:"
   echo '    uri: '${uri}
   echo '    type: '${type}
   echo '    live: '${live}
@@ -253,21 +243,7 @@ ambianic::update.sources()
   fi
 }
 
-##
 ## AI_MODELS
-##
-
-# EXAMPLE:
-#^ai_models:
-#^  image_detection: &tfm_image_detection
-#^    labels: /opt/ambianic-edge/ai_models/coco_labels.txt
-#^    model:
-#^      tflite: /opt/ambianic-edge/ai_models/mobilenet_ssd_v2_coco_quant_postprocess.tflite
-#^  face_detection: &tfm_face_detection
-#^    labels: /opt/ambianic-edge/ai_models/coco_labels.txt
-#^    top_k: 2
-#^    model:
-#^      tflite: /opt/ambianic-edge/ai_models/mobilenet_ssd_v2_face_quant_postprocess.tflite
 
 ambianic::update.ai_models.audio()
 {
@@ -284,20 +260,22 @@ ambianic::update.ai_models.video()
   local entity=$(echo "${model:-null}" | jq -r '.entity')
   local top_k=$(echo "${model:-null}" | jq -r '.top_k')
   local tflite=$(echo "${model:-null}" | jq -r '.tflite')
+  local edgetpu=$(echo "${model:-null}" | jq -r '.edgetpu')
 
   case "${entity:-null}" in
     'object')
-      echo '  image_detection: &'${name}
-      echo '    ai_model_id: '${name}
-      echo '    ai_model: '${tflite} | envsubst
-      echo '    labels: '${labels} | envsubst
-      echo '    top_k: '${top_k}
+      echo "  ${name}:"
+      echo '    model:'
+      echo "      tflite: ai_models/${tflite}"
+      echo "      edgetpu: ai_models/${edgetpu}"
+      echo "    labels: ai_models/${labels}"
       ;;
     'face')
-      echo '  face_detection: &'${name}
-      echo '    ai_model_id: '${name}
-      echo '    ai_model: '${tflite} | envsubst
-      echo '    labels: '${labels} | envsubst
+      echo "  ${name}:"
+      echo '    model:'
+      echo "      tflite: ai_models/${tflite}"
+      echo "      edgetpu: ai_models/${edgetpu}"
+      echo "    labels: ai_models/${labels}"
       echo '    top_k: '${top_k}
       ;;
     *)
@@ -347,101 +325,17 @@ ambianic::update.ai_models()
   fi
 }
 
-###
-## configure (read JSON)
-###
+## PIPELINES
 
-ambianic::config.ai_models.audio()
+ambianic::update.pipelines.audio()
 {
   bashio::log.warning "NOT IMPLEMENTED" "${FUNCNAME[0]}" "${*}"
 }
 
-ambianic::config.ai_models.video()
+ambianic::update.pipelines.video.send()
 {
-  bashio::log.trace "${FUNCNAME[0]} ${*}"
-
-  local model="${*}"
-  local name=$(echo "${model:-null}" | jq -r '.name')
-  local entity=$(echo "${model:-null}" | jq -r '.entity')
-  local result
-
-  if [ "${name:-null}" != 'null' ] && [ "${entity:-null}" != 'null' ]; then
-    local labels=$(echo "${model:-null}" | jq -r '.labels')
-    if [ "${labels:-null}" != 'null' ]; then
-      local top_k=$(echo "${model:-null}" | jq -r '.top_k')
-      if [ "${top_k:-null}" != 'null' ]; then
-        local tflite=$(echo "${model:-null}" | jq -r '.tflite')
-        if [ "${tflite:-null}" != 'null' ]; then
-          result='{"type":"video","entity":"'${entity}'","name":"'${name}'","labels":"'${labels}'","top_k":"'${top_k}'","tflite":"'${tflite}'"}'
-          bashio::log.debug "ai_model: ${result}"
-        else
-          bashio::log.error "TFlite unspecified: ${model}"
-        fi
-      else
-        bashio::log.error  "TopK unspecified: ${model}"
-      fi
-    else
-      bashio::log.error  "Labels unspecified: ${model}"
-    fi
-  else
-    bashio::log.error  "Name and/or entity unspecified: ${model}"
-  fi
-  echo ${result:-null}
+  bashio::log.warning "NOT IMPLEMENTED" "${FUNCNAME[0]}" "${*}"
 }
-
-ambianic::config.ai_models()
-{
-  bashio::log.trace "${FUNCNAME[0]}" "${*}"
-
-  local ai_models=$(jq '.ai_models' ${__BASHIO_DEFAULT_ADDON_CONFIG})
-  local result
-  local models='['
-
-  if [ "${ai_models:-null}" != 'null' ]; then
-    local nmodel=$(echo "${ai_models}" | jq '.|length')
-    local i=0
-    local j=0
-
-    while [ ${i:-0} -lt ${nmodel:-0} ]; do
-      local model=$(echo "${ai_models}" | jq '.['${i}']')
-      local type=$(echo "${model}" | jq -r '.type')
-      local model
-
-      case "${type:-null}" in
-        'video')
-          bashio::log.debug "ai_model ${i}; type: ${type}"
-          model=$(ambianic::config.ai_models.video "${model}")
-          ;;
-        'audio')
-          bashio::log.debug "ai_model ${i}; type: ${type}"
-          model=$(ambianic::config.ai_models.audio "${model}")
-          ;;
-        *)
-          bashio::log.warning "ai_model ${i}; invalid type: ${type}"
-          ;;
-      esac
-      if [ "${model:-null}" = 'null' ]; then
-        bashio::log.warning "FAILED to configure ai_model ${i}: ${model}"
-      else
-        bashio::log.debug "Configured ai_model ${i}: ${model}"
-        if [ ${j} -gt 0 ]; then models="${models},"; fi
-        models="${models}${model}"
-        j=$((j+1))
-      fi
-      i=$((i+1))
-    done
-    models="${models}]"
-    bashio::log.debug "AI Models: ${models}"
-    result=${models}
-  else
-    bashio::log.notice "No ai_models defined"
-  fi
-  echo ${result:-null}
-}
-
-##
-## PIPELINES
-##
 
 ambianic::update.pipelines.video.detect()
 {
@@ -456,14 +350,14 @@ ambianic::update.pipelines.video.detect()
     'object')
       bashio::log.debug "ai_model: ${ai_model}; entity: ${entity}; confidence: ${confidence}"
       echo '    - detect_objects:'
-      echo '      <<: *'${ai_model}
-      echo '      confidence_threshold: '${confidence}
+      echo '        ai_model: '${ai_model}
+      echo '        confidence_threshold: '${confidence}
       ;;
     'face')
       bashio::log.debug "ai_model: ${ai_model}; entity: ${entity}; confidence: ${confidence}"
       echo '    - detect_faces:'
-      echo '      <<: *'${ai_model}
-      echo '      confidence_threshold: '${confidence}
+      echo '        ai_model: '${ai_model}
+      echo '        confidence_threshold: '${confidence}
       ;;
     *)
       bashio::log.warning "Action: ${name}; invalid entity: ${entity}"
@@ -480,13 +374,8 @@ ambianic::update.pipelines.video.save()
   local idle=$(echo "${act:-null}" | jq -r '.idle')
 
   echo '    - save_detections:'
-  echo '      positive_interval: '${interval}
-  echo '      idle_interval: '${idle}
-}
-
-ambianic::update.pipelines.video.send()
-{
-  bashio::log.warning "NOT IMPLEMENTED" "${FUNCNAME[0]}" "${*}"
+  echo '        positive_interval: '${interval}
+  echo '        idle_interval: '${idle}
 }
 
 ambianic::update.pipelines.video()
@@ -506,7 +395,7 @@ ambianic::update.pipelines.video()
 
     # start output
     echo '  '${name}':'
-    echo '    - source: *'${source}
+    echo '    - source: '${source}
 
     while [ ${i} -lt ${naction} ]; do
       local action=$(echo "${actions}" | jq '.['${i}']')
@@ -581,6 +470,100 @@ ambianic::update.pipelines()
   else
     bashio::log.notice "No pipelines defined; configuration:" $(echo "${config:-null}" | jq '.')
   fi
+}
+
+###
+## CONFIGURE (read JSON)
+###
+
+ambianic::config.ai_models.audio()
+{
+  bashio::log.warning "NOT IMPLEMENTED" "${FUNCNAME[0]}" "${*}"
+}
+
+ambianic::config.ai_models.video()
+{
+  bashio::log.trace "${FUNCNAME[0]} ${*}"
+
+  local model="${*}"
+  local name=$(echo "${model:-null}" | jq -r '.name')
+  local entity=$(echo "${model:-null}" | jq -r '.entity')
+  local result
+
+  if [ "${name:-null}" != 'null' ] && [ "${entity:-null}" != 'null' ]; then
+    local labels=$(echo "${model:-null}" | jq -r '.labels')
+    if [ "${labels:-null}" != 'null' ]; then
+      local top_k=$(echo "${model:-null}" | jq -r '.top_k')
+      if [ "${top_k:-null}" != 'null' ]; then
+        local tflite=$(echo "${model:-null}" | jq -r '.tflite')
+        local edgetpu=$(echo "${model:-null}" | jq -r '.edgetpu')
+
+        if [ "${tflite:-null}" != 'null' ] && [ "${edgetpu:-null}" != 'null' ]; then
+          result='{"type":"video","entity":"'${entity}'","name":"'${name}'","labels":"'${labels}'","top_k":"'${top_k}'","edgetpu":"'${edgetpu}'","tflite":"'${tflite}'"}'
+          bashio::log.debug "ai_model: ${result}"
+        else
+          bashio::log.error "EdgeTPU and/or TFlite model unspecified: ${model}"
+        fi
+      else
+        bashio::log.error  "TopK unspecified: ${model}"
+      fi
+    else
+      bashio::log.error  "Labels unspecified: ${model}"
+    fi
+  else
+    bashio::log.error  "Name and/or entity unspecified: ${model}"
+  fi
+  echo ${result:-null}
+}
+
+ambianic::config.ai_models()
+{
+  bashio::log.trace "${FUNCNAME[0]}" "${*}"
+
+  local ai_models=$(jq '.ai_models' ${__BASHIO_DEFAULT_ADDON_CONFIG})
+  local result
+  local models='['
+
+  if [ "${ai_models:-null}" != 'null' ]; then
+    local nmodel=$(echo "${ai_models}" | jq '.|length')
+    local i=0
+    local j=0
+
+    while [ ${i:-0} -lt ${nmodel:-0} ]; do
+      local model=$(echo "${ai_models}" | jq '.['${i}']')
+      local type=$(echo "${model}" | jq -r '.type')
+      local model
+
+      case "${type:-null}" in
+        'video')
+          bashio::log.debug "ai_model ${i}; type: ${type}"
+          model=$(ambianic::config.ai_models.video "${model}")
+          ;;
+        'audio')
+          bashio::log.debug "ai_model ${i}; type: ${type}"
+          model=$(ambianic::config.ai_models.audio "${model}")
+          ;;
+        *)
+          bashio::log.warning "ai_model ${i}; invalid type: ${type}"
+          ;;
+      esac
+      if [ "${model:-null}" = 'null' ]; then
+        bashio::log.warning "FAILED to configure ai_model ${i}: ${model}"
+      else
+        bashio::log.debug "Configured ai_model ${i}: ${model}"
+        if [ ${j} -gt 0 ]; then models="${models},"; fi
+        models="${models}${model}"
+        j=$((j+1))
+      fi
+      i=$((i+1))
+    done
+    models="${models}]"
+    bashio::log.debug "AI Models: ${models}"
+    result=${models}
+  else
+    bashio::log.notice "No ai_models defined"
+  fi
+  echo ${result:-null}
 }
 
 ##
@@ -805,21 +788,15 @@ ambianic::update()
   local workspace=$(echo "${config}" | jq -r '.workspace')
   local ambianic="${workspace}/config.yaml"
 
-  echo "version: '1.2.4'" > ${ambianic}
-  echo '# path to the data directory' >> ${ambianic}
+  echo "version: '1.3.29'" > ${ambianic}
   echo "data_dir: &data_dir ${workspace}" >> ${ambianic}
-  echo '# logging; level DEBUG, INFO, WARNING, ERROR' >> ${ambianic}
   echo "logging:" >> ${ambianic}
   echo "  file: ${workspace}/ambianic-log.txt" >> ${ambianic}
   echo "  level: DEBUG" >> ${ambianic}
-  echo '# pipeline event timeline configuration' >> ${ambianic}
   echo "timeline:" >> ${ambianic}
   echo "  event_log: ${workspace}/timeline-event-log.yaml" >> ${ambianic}
-  echo '# AI MODELS' >> ${ambianic}
   ambianic::update.ai_models $(echo "${config}" | jq '.ai_models') >> ${ambianic}
-  echo '# SOURCES' >> ${ambianic}
   ambianic::update.sources $(echo "${config}" | jq '.sources') >> ${ambianic}
-  echo '# PIPELINES' >> ${ambianic}
   ambianic::update.pipelines $(echo "${config}" | jq '.pipelines') >> ${ambianic}
 
   echo "${ambianic}"
