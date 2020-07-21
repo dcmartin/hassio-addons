@@ -58,7 +58,7 @@
     "workspace": "/data/ambianic",
     "ai_models": [
       {
-        "name": "object-detector",
+        "name": "mobilenet_v2_coco",
         "type": "video",
         "entity": "object",
         "top_k": 10,
@@ -67,7 +67,7 @@
         "edgetpu": "mobilenet_ssd_v2_coco_quant_postprocess_edgetpu.tflite"
       },
       {
-        "name": "face-detector",
+        "name": "mobilenet_v2_face",
         "type": "video",
         "entity": "face",
         "top_k": 2,
@@ -78,61 +78,61 @@
     ],
     "pipelines": [
       {
-        "name": "camera1-pipeline",
+        "name": "pipeline1",
         "source": "camera1",
         "type": "video",
-        "action": "detect-object-action"
+        "action": "detectObject"
       },
       {
-        "name": "camera1-pipeline",
+        "name": "pipeline1",
         "type": "video",
-        "action": "save-object-action"
+        "action": "saveObject"
       },
       {
-        "name": "camera1-pipeline",
+        "name": "pipeline1",
         "source": "camera1",
         "type": "video",
-        "action": "detect-face-action"
+        "action": "detectFace"
       },
       {
-        "name": "camera1-pipeline",
+        "name": "pipeline1",
         "type": "video",
-        "action": "save-face-action"
+        "action": "saveFace"
       },
       {
-        "name": "camera2-pipeline",
+        "name": "pipeline2",
         "source": "camera2",
         "type": "video",
-        "action": "detect-object-action"
+        "action": "detectObject"
       },
       {
-        "name": "camera2-pipeline",
+        "name": "pipeline2",
         "type": "video",
-        "action": "save-object-action"
+        "action": "saveObject"
       },
       {
-        "name": "camera2-pipeline",
+        "name": "pipeline2",
         "source": "camera2",
         "type": "video",
-        "action": "detect-face-action"
+        "action": "detectFace"
       },
       {
-        "name": "camera2-pipeline",
+        "name": "pipeline2",
         "type": "video",
-        "action": "save-face-action"
+        "action": "saveFace"
       }
     ],
     "actions": [
       {
-        "name": "detect-object-action",
+        "name": "detectObject",
         "act": "detect",
         "type": "video",
         "entity": "object",
-        "ai_model": "object-detector",
+        "ai_model": "mobilenet_v2_coco",
         "confidence": 0.6
       },
       {
-        "name": "save-object-action",
+        "name": "saveObject",
         "act": "save",
         "type": "video",
         "entity": "object",
@@ -140,15 +140,15 @@
         "idle": 600
       },
       {
-        "name": "detect-face-action",
+        "name": "detectFace",
         "act": "detect",
         "type": "video",
         "entity": "face",
-        "ai_model": "face-detector",
+        "ai_model": "mobilenet_v2_face",
         "confidence": 0.6
       },
       {
-        "name": "save-face-action",
+        "name": "saveFace",
         "act": "save",
         "type": "video",
         "entity": "face",
