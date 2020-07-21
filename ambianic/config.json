@@ -62,16 +62,18 @@
         "type": "video",
         "entity": "object",
         "top_k": 10,
-        "labels": "${AMBIANIC_EDGE}/ai_models/coco_labels.txt",
-        "tflite": "${AMBIANIC_EDGE}/ai_models/mobilenet_ssd_v2_coco_quant_postprocess.tflite"
+        "labels": "coco_labels.txt",
+        "tflite": "mobilenet_ssd_v2_coco_quant_postprocess.tflite",
+        "edgetpu": "mobilenet_ssd_v2_coco_quant_postprocess_edgetpu.tflite"
       },
       {
         "name": "face-detector",
         "type": "video",
         "entity": "face",
         "top_k": 2,
-        "labels": "${AMBIANIC_EDGE}/ai_models/coco_labels.txt",
-        "tflite": "${AMBIANIC_EDGE}/ai_models/mobilenet_ssd_v2-face-quant_postprocess.tflite"
+        "labels": "coco_labels.txt",
+        "tflite": "mobilenet_ssd_v2-face-quant_postprocess.tflite",
+        "edgetpu": "mobilenet_ssd_v2_face_quant_postprocess_edgetpu.tflite"
       }
     ],
     "pipelines": [
@@ -185,7 +187,8 @@
         "top_k": "int(1,100)?",
         "entity": "str",
         "labels": "str",
-        "tflite": "str"
+        "tflite": "str",
+        "edgetpu": "str"
       }
     ],
     "pipelines": [
@@ -229,4 +232,5 @@
     "LOG_FORMAT": "{LEVEL}: {MESSAGE}"
   },
   "image": "dcmartin/{arch}-addon-ambianic"
+
 }
