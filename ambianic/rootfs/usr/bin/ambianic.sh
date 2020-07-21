@@ -795,8 +795,8 @@ ambianic::update()
   echo "  level: DEBUG" >> ${ambianic}
   echo "timeline:" >> ${ambianic}
   echo "  event_log: ${workspace}/timeline-event-log.yaml" >> ${ambianic}
-  ambianic::update.ai_models $(echo "${config}" | jq '.ai_models') >> ${ambianic}
   ambianic::update.sources $(echo "${config}" | jq '.sources') >> ${ambianic}
+  ambianic::update.ai_models $(echo "${config}" | jq '.ai_models') >> ${ambianic}
   ambianic::update.pipelines $(echo "${config}" | jq '.pipelines') >> ${ambianic}
 
   echo "${ambianic}"
