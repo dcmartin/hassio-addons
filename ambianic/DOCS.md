@@ -1,9 +1,4 @@
-# &#127968; - `ambianic` _add-on_
-
-This [Home Assistant](http://home-assistant.io) add-on utilizes the [Ambianic project](https://ambianic.ai/) to detect and classify entity(s) in images.  
-
-## Configuration
-The Ambianic _addon_ has the following configuration options:
+# &#127968; - `ambianic` configuration
 
 ### `sources`
 Sources for sensors which can be consumed, e.g. an `RTSP` feed from a web camera.  Sources should be defined with the following attributes:
