@@ -18,15 +18,16 @@ Install using the Home Assistant addon store; add this repository `http://github
 The Ambianic _addon_ has the following configuration options (see [DOCS.md](DOCS.md) for more information:
 
 ### `sources`
-Sources for sensors which can be consumed, e.g. an `RTSP` feed from a web camera.  Sources should be defined with the following attributes:
+Sources for sensors which can be consumed, e.g. an `RTSP` feed from a web camera.
 
 ### `ai_models`
-TensorFlow Lite models which may be executed using `CPU` only or in conjunction with a Google Coral accelerator.  AI models should be defined with the following attributes:
+TensorFlow Lite models which may be executed using `CPU` only or in conjunction with a Google Coral accelerator.
 
 ### `pipelines`
-Pipelines define a sequential series of _actions_ which are grouped together; the _pipeline_ `name` distinguishes and should be unique for each set of _actions_.
+Pipelines define a sequential series of _actions_ which are grouped together.
 
 ### `actions`
+Actions are specific functions performed, e.g. `detect`
 
 ## Changelog & Releases
 Releases are based on Semantic Versioning, and use the format
