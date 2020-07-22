@@ -162,14 +162,14 @@
     "sources": [
       {
         "name": "camera1",
-        "uri": "rtsp://username:password@192.168.1.221/live",
-        "type": "video",
+        "uri": "http://192.168.1.163/img/snapshot.cgi",
+        "type": "image",
         "live": true
       },
       {
         "name": "camera2",
-        "uri": "rtsp://username:password@192.168.1.222/live",
-        "type": "video",
+        "uri": "http://192.168.1.163/img/snapshot.cgi",
+        "type": "image",
         "live": true
       }
     ]
@@ -218,16 +218,16 @@
     "sources": [
       {
         "name": "str",
-        "type": "list(video|audio)",
-        "uri": "str?",
-        "live": "bool?",
+        "type": "list(video|image|audio)",
+        "uri": "str",
+        "live": "bool",
         "framerate": "int(2,30)?",
+        "refresh": "int(1,120)?",
         "duration": "int(1,60)?",
-        "output": "list(off|mp4)?",
         "quality": "int(1,100)?",
-        "rotate": "int?",
-        "height": "int?",
-        "width": "int?"
+        "rotate": "list(90|180|270)?",
+        "width": "int?",
+        "height": "int?"
       }
     ]
   },
