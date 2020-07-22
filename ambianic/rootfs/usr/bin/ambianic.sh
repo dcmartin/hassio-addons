@@ -132,7 +132,7 @@ ambianic::config.sources()
   
   local sources=$(jq '.sources' ${__BASHIO_DEFAULT_ADDON_CONFIG})
   local result
-  local srcs='['
+  local srcs
 
   if [ "${sources:-null}" != 'null' ]; then
     local nsource=$(echo "${sources}" | jq '.|length')
@@ -144,11 +144,11 @@ ambianic::config.sources()
       local type=$(echo "${source}" | jq -r '.type')
       local src
 
-      case ${type:-null} in
-        video)
+      case "${type:-null}" in
+        'video'|'image')
           src=$(ambianic::config.sources.video "${source}")
           ;;
-        audio)
+        'audio')
           src=$(ambianic::config.sources.audio "${source}")
           ;;
         *)
@@ -159,13 +159,13 @@ ambianic::config.sources()
         bashio::log.warning "Source ${i}; type: ${type}; no source"
       else
         bashio::log.debug "Source ${i}; type: ${type}; source: ${src}"
-        if [ ${j} -gt 0 ]; then srcs="${srcs},"; fi
+        if [ ${j} -gt 0 ]; then srcs="${srcs},"; else srcs='['; fi
         srcs="${srcs}${src}"
         j=$((j+1))
       fi
       i=$((i+1))
     done
-    srcs="${srcs}]"
+    if [ ! -z "${srcs:-}" ]; then srcs="${srcs}]"; else srcs='null'; fi
     bashio::log.debug "Sources: ${srcs}"
     result=${srcs}
   else
@@ -223,7 +223,7 @@ ambianic::update.sources()
 
         bashio::log.debug "Source: ${source}"
         case "${type:-null}" in
-          'video')
+          'video'|'image')
             bashio::log.debug "Source: ${i}; type: ${type}"
             ambianic::update.sources.video "${source}"
             ;;
@@ -306,11 +306,11 @@ ambianic::update.ai_models()
         local type=$(echo "${ai_model}" | jq -r '.type')
         local src='null'
 
-        case ${type:-null} in
-          video)
+        case "${type:-null}" in
+          'video')
             ambianic::update.ai_models.video "${ai_model}"
             ;;
-          audio)
+          'audio')
             ambianic::update.ai_models.audio "${ai_model}"
             ;;
           *)
