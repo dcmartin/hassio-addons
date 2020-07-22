@@ -266,16 +266,16 @@ ambianic::update.ai_models.video()
     'object')
       echo "  ${name}:"
       echo '    model:'
-      echo "      tflite: ai_models/${tflite}"
-      echo "      edgetpu: ai_models/${edgetpu}"
-      echo "    labels: ai_models/${labels}"
+      echo "      tflite: ${AMBIANIC_EDGE}/ai_models/${tflite}"
+      echo "      edgetpu: ${AMBIANIC_EDGE}/ai_models/${edgetpu}"
+      echo "    labels: ${AMBIANIC_EDGE}/ai_models/${labels}"
       ;;
     'face')
       echo "  ${name}:"
       echo '    model:'
-      echo "      tflite: ai_models/${tflite}"
-      echo "      edgetpu: ai_models/${edgetpu}"
-      echo "    labels: ai_models/${labels}"
+      echo "      tflite: ${AMBIANIC_EDGE}/ai_models/${tflite}"
+      echo "      edgetpu: ${AMBIANIC_EDGE}/ai_models/${edgetpu}"
+      echo "    labels: ${AMBIANIC_EDGE}/ai_models/${labels}"
       echo '    top_k: '${top_k}
       ;;
     *)
@@ -787,14 +787,33 @@ ambianic::update()
   local config="${*}"
   local workspace=$(echo "${config}" | jq -r '.workspace')
   local ambianic="${workspace}/config.yaml"
+  local secrets="${workspace}/secrets.yaml"
+  local logging=${workspace}/ambianic-log.txt
+  local timeline=${workspace}/timeline-event-log.yaml
 
-  echo "version: '1.3.29'" > ${ambianic}
+  # clean logging
+  rm -f ${logging}
+  touch ${logging}
+
+  # clean timeline
+  rm -f ${timeline}
+  touch ${timeline}
+
+  # start secrets
+  rm -f ${secrets}
+  touch ${secrets}
+
+  # start config
+  rm -f ${ambianic}
+  touch ${ambianic}
+
+  echo "version: '1.3.29'" >> ${ambianic}
   echo "data_dir: &data_dir ${workspace}" >> ${ambianic}
   echo "logging:" >> ${ambianic}
-  echo "  file: ${workspace}/ambianic-log.txt" >> ${ambianic}
+  echo "  file: ${logging}" >> ${ambianic}
   echo "  level: DEBUG" >> ${ambianic}
   echo "timeline:" >> ${ambianic}
-  echo "  event_log: ${workspace}/timeline-event-log.yaml" >> ${ambianic}
+  echo "  event_log: ${timeline}" >> ${ambianic}
   ambianic::update.sources $(echo "${config}" | jq '.sources') >> ${ambianic}
   ambianic::update.ai_models $(echo "${config}" | jq '.ai_models') >> ${ambianic}
   ambianic::update.pipelines $(echo "${config}" | jq '.pipelines') >> ${ambianic}
@@ -939,7 +958,7 @@ main()
           out=$(echo "${result}" | jq -r '.proxy.out')
           if [ -s "${out:-null}" ]; then 
             bashio::log.green "${FUNCNAME[0]}: PERRJS OUTPUT"
-	    cat "${out}" >&2
+	    tail "${out}" >&2
           else 
             bashio::log.info "${FUNCNAME[0]}: proxy output empty: ${out}"
           fi
