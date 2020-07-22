@@ -790,6 +790,8 @@ ambianic::update()
   local secrets="${workspace}/secrets.yaml"
   local logging=${workspace}/ambianic-log.txt
   local timeline=${workspace}/timeline-event-log.yaml
+  local loglevel=${__BASHIO_LOG_LEVEL:-${__BASHIO_LOG_LEVEL_ALL:-9}}
+  local result
 
   # clean logging
   rm -f ${logging}
@@ -807,18 +809,44 @@ ambianic::update()
   rm -f ${ambianic}
   touch ${ambianic}
 
+  # version of ambianic-edge 
   echo "version: '1.3.29'" >> ${ambianic}
+
+  # data directory
   echo "data_dir: &data_dir ${workspace}" >> ${ambianic}
+
+  # logging
   echo "logging:" >> ${ambianic}
   echo "  file: ${logging}" >> ${ambianic}
-  echo "  level: DEBUG" >> ${ambianic}
+  # translate from
+  if [ ${loglevel} -le ${__BASHIO_LOG_LEVEL_ERROR} ]; then
+    loglevel='ERROR'
+  elif [ ${loglevel} -le ${__BASHIO_LOG_LEVEL_WARNING} ]; then
+    loglevel='WARNING'
+  elif [ ${loglevel} -le ${__BASHIO_LOG_LEVEL_INFO} ]; then
+    loglevel='INFO'
+  else 
+    # default DEBUG
+    loglevel='DEBUG'
+  fi
+  echo "  level: ${loglevel}" >> ${ambianic}
+
+  # timeline
   echo "timeline:" >> ${ambianic}
   echo "  event_log: ${timeline}" >> ${ambianic}
+
+  # sources
   ambianic::update.sources $(echo "${config}" | jq '.sources') >> ${ambianic}
+
+  # ai_models
   ambianic::update.ai_models $(echo "${config}" | jq '.ai_models') >> ${ambianic}
+
+  # pipelines
   ambianic::update.pipelines $(echo "${config}" | jq '.pipelines') >> ${ambianic}
 
-  echo "${ambianic}"
+  result='{"logging":"'${logging:-}'","loglevel":"'${loglevel:-}'","timeline":"'${timeline:-}'","path":"'${ambianic:-}'"}'
+
+  echo ${result:-null}
 }
 
 ## start.ambianic
@@ -827,42 +855,46 @@ ambianic::start.ambianic()
   bashio::log.trace "${FUNCNAME[0]} ${*}"
 
   local config="${config:-null}"
-  local t=$(mktemp)
+  local update 
   local result
 
   if [ "${config:-null}" != 'null' ]; then
-    local ok
-    local ambianic
-
     # update YAML
-    ambianic=$(ambianic::update "${config}")
+    update=$(ambianic::update "${config}")
+    if [ "${update:-null}" != 'null' ]; then 
+      local ambianic=$(echo "${update}" | jq -r '.path')
 
-    if [ ! -z "${ambianic:-}" ] && [ -e "${ambianic}" ]; then
-      bashio::log.notice "${FUNCNAME[0]}: configuration YAML: ${ambianic}"
-      local workspace=$(echo "${config}" | jq -r '.workspace')
+      if [ ! -z "${ambianic:-}" ] && [ -e "${ambianic}" ]; then
+        bashio::log.debug "${FUNCNAME[0]}: configuration YAML: ${ambianic}"
+        local workspace=$(echo "${config}" | jq -r '.workspace')
 
-      if [ -d "${workspace:-null}" ]; then
-        bashio::log.debug "${FUNCNAME[0]}: workspace: ${workspace}"
+        if [ -d "${workspace:-null}" ]; then
+          bashio::log.debug "${FUNCNAME[0]}: workspace: ${workspace}"
+          local t=$(mktemp)
+          local pid
 
-        # change to working directory
-        pushd ${workspace} &> /dev/null
-        # start python3
-        export AMBIANIC_DIR=${workspace}
-        export DEFAULT_DATA_DIR=${workspace}/data
-	mkdir -p ${DEFAULT_DATA_DIR}
-	python3 -m ambianic &> ${t} &
-        # test
-        ok=$!; if [ ${ok:-0} -gt 0 ]; then
-          bashio::log.debug "${FUNCNAME[0]}: started; pid: ${ok}"
-          result='{"config":"'${ambianic}'","pid":'${ok}',"out":"'${t}'"}'
+          # change to working directory
+          pushd ${workspace} &> /dev/null
+          # start python3
+          export AMBIANIC_DIR=${workspace}
+          export DEFAULT_DATA_DIR=${workspace}/data
+	  mkdir -p ${DEFAULT_DATA_DIR}
+	  python3 -m ambianic &> ${t} &
+          # test
+          pid=$!; if [ ${pid:-0} -gt 0 ]; then
+            bashio::log.debug "${FUNCNAME[0]}: started; pid: ${pid}"
+            result='{"config":'"${update}"',"pid":'${pid}',"out":"'${t}'"}'
+          else
+            bashio::log.error "${FUNCNAME[0]}: failed to start"
+            rm -f ${t}
+          fi
+          # return
+          popd &> /dev/null
         else
-          bashio::log.error "${FUNCNAME[0]}: failed to start"
-          rm -f ${t}
+          bashio::log.error "${FUNCNAME[0]}: no workspace directory: ${workspace:-}"
         fi
-        # return
-        popd &> /dev/null
       else
-        bashio::log.error "${FUNCNAME[0]}: no workspace directory: ${workspace:-null}"
+        bashio::log.error "${FUNCNAME[0]}: no configuration file: ${ambianic:-}"
       fi
     else
       bashio::log.error "${FUNCNAME[0]}: update failed"
@@ -914,6 +946,7 @@ ambianic::start()
 main()
 {
   bashio::log.trace "${FUNCNAME[0]} ${*}"
+  local tailen=${AMBIANIC_LOG_TAIL:-100}
   local config
 
   bashio::log.info "Configuring ambianic ..."
@@ -922,9 +955,12 @@ main()
   if [ "${config:-null}" != 'null' ]; then
     bashio::log.notice "${FUNCNAME[0]}: Ambianic configured:" $(echo "${config}" | jq '.')
 
-    local result=$(ambianic::start ${config})
     local out
     local pid
+    local result=$(ambianic::start ${config})
+
+    # record for posterity
+    echo "${result}" | jq '.' > "/var/run/ambianic.json"
 
     bashio::log.debug "${FUNCNAME[0]}: ambianic::start result: ${result}"
 
@@ -942,7 +978,7 @@ main()
           out=$(echo "${result}" | jq -r '.ambianic.out')
           if [ -s "${out:-null}" ]; then 
             bashio::log.green "${FUNCNAME[0]}: AMBIANIC OUTPUT"
-	    cat "${out}" >&2
+	    tail -${tailen}  "${out}" >&2
           else 
             bashio::log.info "${FUNCNAME[0]}: ambianic output empty: ${out}"
           fi
@@ -950,7 +986,7 @@ main()
           out=$(echo "${result}" | jq -r '.workspace')/ambianic-log.txt
           if [ -s "${out:-null}" ]; then 
             bashio::log.green "${FUNCNAME[0]}: AMBIANIC LOG"
-	    cat "${out}" >&2
+	    tail -${tailen} "${out}" >&2
           else 
             bashio::log.info "${FUNCNAME[0]}: empty output: ${out}"
           fi
@@ -958,7 +994,7 @@ main()
           out=$(echo "${result}" | jq -r '.proxy.out')
           if [ -s "${out:-null}" ]; then 
             bashio::log.green "${FUNCNAME[0]}: PERRJS OUTPUT"
-	    tail "${out}" >&2
+	    tail -${tailen} "${out}" >&2
           else 
             bashio::log.info "${FUNCNAME[0]}: proxy output empty: ${out}"
           fi
@@ -969,7 +1005,7 @@ main()
           bashio::log.warning "${FUNCNAME[0]}: Ambianic PID: ${pid}; not running"
 
           # configuration debugging
-          out=$(echo "${result}" | jq -r '.ambianic.config')
+          out=$(echo "${result}" | jq -r '.ambianic.config.path')
           echo "Ambianic configuation YAML: ${out}" >&2
           if [ -e "${out}" ]; then cat "${out}" >&2; else echo "No file: ${out}" >&2; fi
   
@@ -988,6 +1024,9 @@ main()
 
 	  # restart ambianic
           result=$(ambianic::start ${config})
+	  
+	  # record for posterity
+	  echo "${result}" | jq '.' > "/var/run/ambianic.json"
         fi
       else
         bashio::log.error "${FUNCNAME[0]}: Ambianic failed to start"
