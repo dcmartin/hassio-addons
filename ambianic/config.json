@@ -49,9 +49,12 @@
     "8778/udp": 8778
   },
   "ports_description": {
-    "3478/tcp": "TURN",
-    "5004/tcp": "RTP",
-    "8778/tcp": "API"
+    "3478/tcp": "I DONT KNOW",
+    "5004/tcp": "IF ANY PORTS",
+    "8778/tcp": "ARE NECESSARY",
+    "3478/udp": "BUT THEY ARE HERE",
+    "5004/udp": "JUST IN CASE",
+    "8778/udp": "THEY ARE NECESSARY"
   },
   "options": {
     "log_level": "debug",
