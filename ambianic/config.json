@@ -57,7 +57,7 @@
     "8778/udp": "THEY ARE NECESSARY"
   },
   "options": {
-    "log_level": "debug",
+    "log_level": "info",
     "workspace": "/data/ambianic",
     "ai_models": [
       {
