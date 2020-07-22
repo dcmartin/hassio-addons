@@ -2,9 +2,6 @@
 
 This [Home Assistant](http://home-assistant.io) add-on utilizes the [Ambianic project](https://ambianic.ai/) to detect and classify entity(s) in images.  
 
-## How to Use
-Install using the Home Assistant addon store; add this repository `http://github.com/dcmartin/hassio-addons` to your store and select the `ambianic` _addon_.
-
 ## Configuration
 The Ambianic _addon_ has the following configuration options:
 
