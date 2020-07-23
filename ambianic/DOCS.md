@@ -74,6 +74,7 @@ ai_models:
   - name: mobilenet_v2_face
     type: video
     entity: face
+    labels: coco
     top_k: 2
     tflite: mobilenet_ssd_v2_face_quant_postprocess
 pipelines:
