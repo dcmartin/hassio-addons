@@ -877,8 +877,7 @@ ambianic::start.ambianic()
           pushd ${workspace} &> /dev/null
           # start python3
           export AMBIANIC_DIR=${workspace}
-          export DEFAULT_DATA_DIR=${workspace}/data
-	  mkdir -p ${DEFAULT_DATA_DIR}
+          export DEFAULT_DATA_DIR=${workspace}
 	  python3 -m ambianic &> ${t} &
           # test
           pid=$!; if [ ${pid:-0} -gt 0 ]; then
@@ -977,7 +976,7 @@ main()
 
           out=$(echo "${result}" | jq -r '.ambianic.out')
           if [ -s "${out:-null}" ]; then 
-            bashio::log.green "${FUNCNAME[0]}: AMBIANIC OUTPUT"
+            bashio::log.green "${FUNCNAME[0]}: AMBIANIC OUTPUT: ${out}"
 	    tail -${tailen}  "${out}" >&2
           else 
             bashio::log.info "${FUNCNAME[0]}: ambianic output empty: ${out}"
@@ -985,7 +984,7 @@ main()
 
           out=$(echo "${result}" | jq -r '.workspace')/ambianic-log.txt
           if [ -s "${out:-null}" ]; then 
-            bashio::log.green "${FUNCNAME[0]}: AMBIANIC LOG"
+            bashio::log.green "${FUNCNAME[0]}: AMBIANIC LOG: ${out}"
 	    tail -${tailen} "${out}" >&2
           else 
             bashio::log.info "${FUNCNAME[0]}: empty output: ${out}"
@@ -993,7 +992,7 @@ main()
 
           out=$(echo "${result}" | jq -r '.proxy.out')
           if [ -s "${out:-null}" ]; then 
-            bashio::log.green "${FUNCNAME[0]}: PERRJS OUTPUT"
+            bashio::log.green "${FUNCNAME[0]}: PERRJS OUTPUT: ${out}"
 	    tail -${tailen} "${out}" >&2
           else 
             bashio::log.info "${FUNCNAME[0]}: proxy output empty: ${out}"
