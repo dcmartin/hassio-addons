@@ -17,31 +17,32 @@ TensorFlow Lite models which may be executed using `CPU` only or in conjunction 
 + `entity` - the entity to be detected; may be `object` or `face`
 + `tflite` - the model installed as part of the Ambianic run-time
 + `edgetpu` - the accelerated version of the `tflite` model
++ `top_k` - the maximum number of results to return; range: (1-20)
 
-### Current list of models
+### Available `ai_models`
 
-1. inception_v1_224_quant_edgetpu.tflite
-1. inception_v2_224_quant_edgetpu.tflite
-1. inception_v3_299_quant_edgetpu.tflite
-1. inception_v4_299_quant_edgetpu.tflite
-1. mobilenet_ssd_v1_coco_quant_postprocess_edgetpu.tflite
-1. mobilenet_ssd_v2_coco_quant_postprocess_edgetpu.tflite
-1. mobilenet_ssd_v2_face_quant_postprocess_edgetpu.tflite
-2. mobilenet_v1_1.0_224_quant_edgetpu.tflite
-2. mobilenet_v1_1.0_224_quant_embedding_extractor_edgetpu.tflite
-2. mobilenet_v2_1.0_224_inat_bird_quant_edgetpu.tflite
-2. mobilenet_v2_1.0_224_inat_insect_quant_edgetpu.tflite
-2. mobilenet_v2_1.0_224_inat_plant_quant_edgetpu.tflite
-2. mobilenet_v2_1.0_224_quant_edgetpu.tflite
+1. `inception_v1_224_quant`
+1. `inception_v2_224_quant`
+1. `inception_v3_299_quant`
+1. `inception_v4_299_quant`
+1. `mobilenet_ssd_v1_coco_quant_postprocess`
+1. `mobilenet_ssd_v2_coco_quant_postprocess`
+1. `mobilenet_ssd_v2_face_quant_postprocess`
+2. `mobilenet_v1_1.0_224_quant`
+2. `mobilenet_v1_1.0_224_quant_embedding_extractor`
+2. `mobilenet_v2_1.0_224_inat_bird_quant`
+2. `mobilenet_v2_1.0_224_inat_insect_quant`
+2. `mobilenet_v2_1.0_224_inat_plant_quant`
+2. `mobilenet_v2_1.0_224_quant`
 
-### Current list of `labels`
+### Available `labels`
 
-1. coco_labels.txt
-1. imagenet_labels.txt
-1. inat_bird_labels.txt
-1. inat_insect_labels.txt
-1. inat_plant_labels.txt
-1. pet_labels.txt
+1. `coco`
+1. `imagenet`
+1. `inat_bird`
+1. `inat_insect`
+1. `inat_plant`
+1. `pet`
 
 ## `pipelines`
 Pipelines define a sequential series of _actions_ which are grouped together; the _pipeline_ `name` distinguishes and should be unique for each set of _actions_.
@@ -58,7 +59,6 @@ Pipelines define a sequential series of _actions_ which are grouped together; th
 + `type` - the type of the model; may be `video` or `audio` (n.b. `audio` is currently unimplemented)
 + `ai_model` - the `name` of the _ai_model_ to utilize; must be defined in `ai_models`
 + `confidence` - the minimum level of confidence for success; range: [0,100)
-+ `top_k` - the maximum number of results to return; range: [0-20)
 
 ## Example configuration
 
