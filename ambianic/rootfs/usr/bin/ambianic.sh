@@ -263,34 +263,36 @@ ambianic::update.ai_models.video()
   local edgetpu="${AMBIANIC_EDGE}/ai_models/${tflite}_edgetpu.tflite"
 
   tflite="${AMBIANIC_EDGE}/ai_models/${tflite}.tflite"
-  labels="${AMBIANIC_EDGE}/ai_models/${labels}_labels.txt"
 
   if [ -s "${tflite}" ] && [ -s "${edgetpu}" ]; then
-    if [ "${labels:-null}" != 'null' ] && [ ! -s "${labels}" ]; then
-      bashio::log.error "${FUNCNAME[0]}: labels specified, but not found; path: ${labels}"
-    else
-      case "${entity:-null}" in
-        'object')
-          echo "  ${name}:"
-          echo '    model:'
-          echo "      tflite: ${tflite}"
-          echo "      edgetpu: ${edgetpu}"
-          echo "    labels: ${labels}"
-          echo '    top_k: '${top_k:-1}
-          ;;
-        'face')
-          echo "  ${name}:"
-          echo '    model:'
-          echo "      tflite: ${tflite}"
-          echo "      edgetpu: ${edgetpu}"
-          echo "    labels: ${labels}"
-          echo '    top_k: '${top_k:-1}
-          ;;
-        *)
-          bashio::log.error "Invalid entity: ${entity}"
-          ;;
-      esac
+    if [ "${labels:-null}" != 'null' ]; then
+      labels="${AMBIANIC_EDGE}/ai_models/${labels}_labels.txt"
+
+      if [ ! -s "${labels}" ]; then
+        bashio::log.error "${FUNCNAME[0]}: labels specified, but not found; path: ${labels}"
+      fi
     fi
+    case "${entity:-null}" in
+      'object')
+        echo "  ${name}:"
+        echo '    model:'
+        echo "      tflite: ${tflite}"
+        echo "      edgetpu: ${edgetpu}"
+        echo "    labels: ${labels:-}"
+        echo '    top_k: '${top_k:-1}
+        ;;
+      'face')
+        echo "  ${name}:"
+        echo '    model:'
+        echo "      tflite: ${tflite}"
+        echo "      edgetpu: ${edgetpu}"
+        echo "    labels: ${labels:-}"
+        echo '    top_k: '${top_k:-1}
+        ;;
+      *)
+        bashio::log.error "Invalid entity: ${entity}"
+        ;;
+    esac
   else
     bashio::log.error "${FUNCNAME[0]}: model specified, but not found; tflite: ${tflite:-}; edgetpu: ${edgetpu:-}"
   fi
@@ -503,22 +505,24 @@ ambianic::config.ai_models.video()
   local result
 
   if [ "${name:-null}" != 'null' ] && [ "${entity:-null}" != 'null' ]; then
-    local labels=$(echo "${model:-null}" | jq -r '.labels')
-    if [ "${labels:-null}" != 'null' ]; then
-      local top_k=$(echo "${model:-null}" | jq -r '.top_k')
-      if [ "${top_k:-null}" != 'null' ]; then
-        local tflite=$(echo "${model:-null}" | jq -r '.tflite')
-        if [ "${tflite:-null}" != 'null' ]; then
-          result='{"type":"video","entity":"'${entity}'","name":"'${name}'","labels":"'${labels}'","top_k":"'${top_k}'","tflite":"'${tflite}'"}'
-          bashio::log.debug "ai_model: ${result}"
-        else
-          bashio::log.error "EdgeTPU and/or TFlite model unspecified: ${model}"
-        fi
-      else
-        bashio::log.error  "TopK unspecified: ${model}"
-      fi
+    local tflite=$(echo "${model:-null}" | jq -r '.tflite')
+    if [ "${tflite:-null}" = 'null' ]; then
+      bashio::log.error "EdgeTPU and/or TFlite model unspecified: ${model}"
     else
-      bashio::log.error  "Labels unspecified: ${model}"
+      local labels=$(echo "${model:-null}" | jq -r '.labels')
+      if [ "${labels:-null}" = 'null' ]; then
+        bashio::log.debug "Labels unspecified: ${model}"
+        labels='"labels":null'
+      else 
+        labels='"labels":"'${labels}'"'
+      fi
+      local top_k=$(echo "${model:-null}" | jq -r '.top_k')
+      if [ "${top_k:-null}" = 'null' ]; then
+        bashio::log.debug "top_k unspecified: ${model}"
+        top_k='null'
+      fi
+      result='{"type":"video","entity":"'${entity}'","name":"'${name}'",'${labels:-}',"top_k":'${top_k}',"tflite":"'${tflite}'"}'
+      bashio::log.debug "ai_model: ${result}"
     fi
   else
     bashio::log.error  "Name and/or entity unspecified: ${model}"
