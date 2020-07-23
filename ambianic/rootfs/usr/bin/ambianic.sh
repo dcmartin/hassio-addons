@@ -267,7 +267,7 @@ ambianic::update.ai_models.video()
 
   if [ -s "${tflite}" ] && [ -s "${edgetpu}" ]; then
     if [ "${labels:-null}" != 'null' ] && [ ! -s "${labels}" ]; then
-      bashio::error "${FUNCNAME[0]}: labels specified, but not found; path: ${labels}"
+      bashio::log.error "${FUNCNAME[0]}: labels specified, but not found; path: ${labels}"
     else
       case "${entity:-null}" in
         'object')
@@ -292,7 +292,7 @@ ambianic::update.ai_models.video()
       esac
     fi
   else
-    bashio::error "${FUNCNAME[0]}: model specified, but not found; tflite: ${tflite:-}; edgetpu: ${edgetpu:-}"
+    bashio::log.error "${FUNCNAME[0]}: model specified, but not found; tflite: ${tflite:-}; edgetpu: ${edgetpu:-}"
   fi
 }
 
