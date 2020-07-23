@@ -260,28 +260,41 @@ ambianic::update.ai_models.video()
   local entity=$(echo "${model:-null}" | jq -r '.entity')
   local top_k=$(echo "${model:-null}" | jq -r '.top_k')
   local tflite=$(echo "${model:-null}" | jq -r '.tflite')
-  local edgetpu=$(echo "${model:-null}" | jq -r '.edgetpu')
+  local edgetpu
 
-  case "${entity:-null}" in
-    'object')
-      echo "  ${name}:"
-      echo '    model:'
-      echo "      tflite: ${AMBIANIC_EDGE}/ai_models/${tflite}"
-      echo "      edgetpu: ${AMBIANIC_EDGE}/ai_models/${edgetpu}"
-      echo "    labels: ${AMBIANIC_EDGE}/ai_models/${labels}"
-      ;;
-    'face')
-      echo "  ${name}:"
-      echo '    model:'
-      echo "      tflite: ${AMBIANIC_EDGE}/ai_models/${tflite}"
-      echo "      edgetpu: ${AMBIANIC_EDGE}/ai_models/${edgetpu}"
-      echo "    labels: ${AMBIANIC_EDGE}/ai_models/${labels}"
-      echo '    top_k: '${top_k}
-      ;;
-    *)
-      bashio::log.error "Invalid entity: ${entity}"
-      ;;
-  esac
+  tflite="${AMBIANIC_EDGE}/ai_models/${tflite}.tflite"
+  edgetpu="${AMBIANIC_EDGE}/ai_models/${tflite}_edgetpu.tflite"
+
+  if [ -s "${tflite}" ] && [ -s "${edgetpu}" ]; then
+    labels=${AMBIANIC_EDGE}/ai_models/${labels}.txt"
+    if [ "${labels:-null}" != 'null' ] && [ ! -s "${labels}" ]; then
+      bashio::error "${FUNCNAME[0]}: labels specified, but not found; path: ${labels}"
+    else
+      case "${entity:-null}" in
+        'object')
+          echo "  ${name}:"
+          echo '    model:'
+          echo "      tflite: ${tflite}"
+          echo "      edgetpu: ${edgetpu}"
+          echo "    labels: ${labels}"
+          echo '    top_k: '${top_k:-1}
+          ;;
+        'face')
+          echo "  ${name}:"
+          echo '    model:'
+          echo "      tflite: ${tflite}"
+          echo "      edgetpu: ${edgetpu}"
+          echo "    labels: ${labels}"
+          echo '    top_k: '${top_k:-1}
+          ;;
+        *)
+          bashio::log.error "Invalid entity: ${entity}"
+          ;;
+      esac
+    fi
+  else
+    bashio::error "${FUNCNAME[0]}: model specified, but not found; tflite: ${tflite:-}; edgetpu: ${edgetpu:-}"
+  fi
 }
 
 ambianic::update.ai_models()
@@ -496,10 +509,8 @@ ambianic::config.ai_models.video()
       local top_k=$(echo "${model:-null}" | jq -r '.top_k')
       if [ "${top_k:-null}" != 'null' ]; then
         local tflite=$(echo "${model:-null}" | jq -r '.tflite')
-        local edgetpu=$(echo "${model:-null}" | jq -r '.edgetpu')
-
-        if [ "${tflite:-null}" != 'null' ] && [ "${edgetpu:-null}" != 'null' ]; then
-          result='{"type":"video","entity":"'${entity}'","name":"'${name}'","labels":"'${labels}'","top_k":"'${top_k}'","edgetpu":"'${edgetpu}'","tflite":"'${tflite}'"}'
+        if [ "${tflite:-null}" != 'null' ]; then
+          result='{"type":"video","entity":"'${entity}'","name":"'${name}'","labels":"'${labels}'","top_k":"'${top_k}'","tflite":"'${tflite}'"}'
           bashio::log.debug "ai_model: ${result}"
         else
           bashio::log.error "EdgeTPU and/or TFlite model unspecified: ${model}"

@@ -65,18 +65,16 @@
         "type": "video",
         "entity": "object",
         "top_k": 10,
-        "labels": "coco_labels.txt",
-        "tflite": "mobilenet_ssd_v2_coco_quant_postprocess.tflite",
-        "edgetpu": "mobilenet_ssd_v2_coco_quant_postprocess_edgetpu.tflite"
+        "labels": "coco_labels",
+        "tflite": "mobilenet_ssd_v2_coco_quant_postprocess"
       },
       {
         "name": "mobilenet_v2_face",
         "type": "video",
         "entity": "face",
         "top_k": 2,
-        "labels": "coco_labels.txt",
-        "tflite": "mobilenet_ssd_v2_face_quant_postprocess.tflite",
-        "edgetpu": "mobilenet_ssd_v2_face_quant_postprocess_edgetpu.tflite"
+        "labels": "coco_labels",
+        "tflite": "mobilenet_ssd_v2_face_quant_postprocess"
       }
     ],
     "pipelines": [
@@ -190,8 +188,7 @@
         "top_k": "int(1,100)?",
         "entity": "str",
         "labels": "str",
-        "tflite": "str",
-        "edgetpu": "str"
+        "tflite": "str"
       }
     ],
     "pipelines": [
