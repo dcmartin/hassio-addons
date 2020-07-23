@@ -260,13 +260,12 @@ ambianic::update.ai_models.video()
   local entity=$(echo "${model:-null}" | jq -r '.entity')
   local top_k=$(echo "${model:-null}" | jq -r '.top_k')
   local tflite=$(echo "${model:-null}" | jq -r '.tflite')
-  local edgetpu
+  local edgetpu="${AMBIANIC_EDGE}/ai_models/${tflite}_edgetpu.tflite"
 
   tflite="${AMBIANIC_EDGE}/ai_models/${tflite}.tflite"
-  edgetpu="${AMBIANIC_EDGE}/ai_models/${tflite}_edgetpu.tflite"
+  labels=${AMBIANIC_EDGE}/ai_models/${labels}.txt"
 
   if [ -s "${tflite}" ] && [ -s "${edgetpu}" ]; then
-    labels=${AMBIANIC_EDGE}/ai_models/${labels}.txt"
     if [ "${labels:-null}" != 'null' ] && [ ! -s "${labels}" ]; then
       bashio::error "${FUNCNAME[0]}: labels specified, but not found; path: ${labels}"
     else
