@@ -65,7 +65,7 @@
         "type": "video",
         "entity": "object",
         "top_k": 10,
-        "labels": "coco_labels",
+        "labels": "coco",
         "tflite": "mobilenet_ssd_v2_coco_quant_postprocess"
       },
       {
@@ -73,7 +73,6 @@
         "type": "video",
         "entity": "face",
         "top_k": 2,
-        "labels": "coco_labels",
         "tflite": "mobilenet_ssd_v2_face_quant_postprocess"
       }
     ],
@@ -187,7 +186,7 @@
         "type": "list(video|audio)",
         "top_k": "int(1,100)?",
         "entity": "str",
-        "labels": "str",
+        "labels": "str?",
         "tflite": "str"
       }
     ],
