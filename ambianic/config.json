@@ -73,6 +73,7 @@
         "type": "video",
         "entity": "face",
         "top_k": 2,
+        "labels": "coco",
         "tflite": "mobilenet_ssd_v2_face_quant_postprocess"
       }
     ],
