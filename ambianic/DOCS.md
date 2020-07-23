@@ -1,4 +1,7 @@
-# &#127968; - `ambianic` configuration
+# &#127968; - `ambianic`
+
+## Description
+This _addon_ for Home Assistant utilizes artificial intelligence at the edge (i.e. on this device) to detect and classify entities of interest.  AI's using Google TensorFlow Lite run either CPU-only or using USB-attached **Coral TPU**.
 
 ## `sources`
 Sources for sensors which can be consumed, e.g. an `RTSP` feed from a web camera.  Sources should be defined with the following attributes:
