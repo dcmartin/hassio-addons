@@ -18,7 +18,7 @@ TensorFlow Lite models which may be executed using `CPU` only or in conjunction 
 + `tflite` - the model installed as part of the Ambianic run-time
 + `top_k` - the maximum number of results to return; range: (1-20)
 
-### Available `tflite` _ai___models_
+### `tflite`
 
 1. `inception_v1_224_quant`
 1. `inception_v2_224_quant`
@@ -34,7 +34,7 @@ TensorFlow Lite models which may be executed using `CPU` only or in conjunction 
 2. `mobilenet_v2_1.0_224_inat_plant_quant`
 2. `mobilenet_v2_1.0_224_quant`
 
-### Available `labels`
+### `labels`
 
 1. `coco`
 1. `imagenet`
