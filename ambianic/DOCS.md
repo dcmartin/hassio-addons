@@ -62,23 +62,20 @@ Pipelines define a sequential series of _actions_ which are grouped together; th
 ## Example configuration
 
 ```
-log_level: debug
+log_level: info
 workspace: /data/ambianic
 ai_models:
   - name: mobilenet_v2_coco
     type: video
     entity: object
     top_k: 10
-    labels: coco_labels.txt
-    tflite: mobilenet_ssd_v2_coco_quant_postprocess.tflite
-    edgetpu: mobilenet_ssd_v2_coco_quant_postprocess_edgetpu.tflite
+    labels: coco
+    tflite: mobilenet_ssd_v2_coco_quant_postprocess
   - name: mobilenet_v2_face
     type: video
     entity: face
     top_k: 2
-    labels: coco_labels.txt
-    tflite: mobilenet_ssd_v2_face_quant_postprocess.tflite
-    edgetpu: mobilenet_ssd_v2_face_quant_postprocess_edgetpu.tflite
+    tflite: mobilenet_ssd_v2_face_quant_postprocess
 pipelines:
   - name: pipeline1
     source: camera1
@@ -121,8 +118,8 @@ actions:
     idle: 600
 sources:
   - name: camera1
-    uri: 'rtsp://username:password@192.168.1.221/live'
-    type: video
+    uri: 'http://192.168.1.163/img/snapshot.cgi'
+    type: image
     live: true
 ```
 
