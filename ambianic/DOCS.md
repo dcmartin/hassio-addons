@@ -16,10 +16,9 @@ TensorFlow Lite models which may be executed using `CPU` only or in conjunction 
 + `labels` - the set of terms used to identify entities
 + `entity` - the entity to be detected; may be `object` or `face`
 + `tflite` - the model installed as part of the Ambianic run-time
-+ `edgetpu` - the accelerated version of the `tflite` model
 + `top_k` - the maximum number of results to return; range: (1-20)
 
-### Available `ai_models`
+### Available `tflite` _ai___models_
 
 1. `inception_v1_224_quant`
 1. `inception_v2_224_quant`
