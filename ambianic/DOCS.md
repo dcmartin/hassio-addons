@@ -1,4 +1,4 @@
-# &#127968; - `ambianic`
+# &#127968; - Ambianic Edge
 
 ## Description
 This _addon_ for Home Assistant utilizes artificial intelligence at the edge (i.e. on this device) to detect and classify entities of interest.  AI's using Google TensorFlow Lite run either CPU-only or using USB-attached **Coral TPU**.
