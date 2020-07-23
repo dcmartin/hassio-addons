@@ -263,7 +263,7 @@ ambianic::update.ai_models.video()
   local edgetpu="${AMBIANIC_EDGE}/ai_models/${tflite}_edgetpu.tflite"
 
   tflite="${AMBIANIC_EDGE}/ai_models/${tflite}.tflite"
-  labels=${AMBIANIC_EDGE}/ai_models/${labels}_labels.txt"
+  labels="${AMBIANIC_EDGE}/ai_models/${labels}_labels.txt"
 
   if [ -s "${tflite}" ] && [ -s "${edgetpu}" ]; then
     if [ "${labels:-null}" != 'null' ] && [ ! -s "${labels}" ]; then
