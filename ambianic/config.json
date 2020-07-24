@@ -1,5 +1,6 @@
 {
   "name": "Ambianic Edge",
+  "stage": "experimental",
   "version": "0.0.1",
   "slug": "ambianic",
   "description": "Ambianic Edge AI",
@@ -42,18 +43,18 @@
   ],
   "ports": {
     "3478/tcp": 3478,
-    "5004/tcp": 5004,
-    "8778/tcp": 8778,
     "3478/udp": 3478,
+    "5004/tcp": 5004,
     "5004/udp": 5004,
+    "8778/tcp": 8778,
     "8778/udp": 8778
   },
   "ports_description": {
     "3478/tcp": "I DONT KNOW",
-    "5004/tcp": "IF ANY PORTS",
-    "8778/tcp": "ARE NECESSARY",
-    "3478/udp": "BUT THEY ARE HERE",
-    "5004/udp": "JUST IN CASE",
+    "3478/udp": "IF ANY PORTS",
+    "5004/tcp": "ARE NECESSARY",
+    "5004/udp": "BUT THEY ARE HERE",
+    "8778/tcp": "JUST IN CASE",
     "8778/udp": "THEY ARE NECESSARY"
   },
   "options": {
