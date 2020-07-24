@@ -129,7 +129,7 @@
       },
       {
         "name": "camera2",
-        "uri": "http://192.168.1.163/img/snapshot.cgi",
+        "uri": "http://192.168.1.166/img/snapshot.cgi",
         "type": "image",
         "live": true
       }
