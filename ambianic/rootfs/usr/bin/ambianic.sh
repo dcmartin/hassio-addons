@@ -1,180 +1,6 @@
 #!/usr/bin/with-contenv bashio
 
 ###
-## FUNCTIONS
-###
-
-## configuration
-config()
-{
-  bashio::log.trace "${FUNCNAME[0]} ${*}"
-
-  local VALUE
-  local JSON='{"ipaddr":"'$(hostname -i)'","hostname":"'"$(hostname)"'","arch":"'$(arch)'","date":'$(date -u +%s)
-
-  ## time zone
-  VALUE=$(bashio::config 'timezone')
-  if [ -z "${VALUE}" ] || [ "${VALUE}" == "null" ]; then 
-    VALUE="GMT"
-    bashio::log.warning "timezone unspecified; defaulting to ${VALUE}"
-  fi
-  if [ -s "/usr/share/zoneinfo/${VALUE:-null}" ]; then
-    cp /usr/share/zoneinfo/${VALUE} /etc/localtime
-    echo "${VALUE}" > /etc/timezone
-    bashio::log.info "TIMEZONE: ${VALUE}"
-  else
-    bashio::log.error "No known timezone: ${VALUE}"
-  fi
-  JSON="${JSON}"',"timezone":"'"${VALUE}"'"'
-  # unit_system
-  VALUE=$(bashio::config 'unit_system')
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="imperial"; fi
-  bashio::log.info "Set unit_system to ${VALUE}"
-  JSON="${JSON}"',"unit_system":"'"${VALUE}"'"'
-  # latitude
-  VALUE=$(bashio::config 'latitude')
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0.0; fi
-  bashio::log.info "Set latitude to ${VALUE}"
-  JSON="${JSON}"',"latitude":'"${VALUE}"
-  # longitude
-  VALUE=$(bashio::config 'longitude')
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0.0; fi
-  bashio::log.info "Set longitude to ${VALUE}"
-  JSON="${JSON}"',"longitude":'"${VALUE}"
-  # elevation
-  VALUE=$(bashio::config 'elevation')
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=0; fi
-  bashio::log.info "Set elevation to ${VALUE}"
-  JSON="${JSON}"',"elevation":'"${VALUE}"
-  
-  ## MQTT
-  # host
-  VALUE=$(bashio::config 'mqtt.host')
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE="mqtt"; fi
-  bashio::log.info "Using MQTT at ${VALUE}"
-  MQTT='{"host":"'"${VALUE}"'"'
-  # username
-  VALUE=$(bashio::config 'mqtt.username')
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=""; fi
-  bashio::log.info "Using MQTT username: ${VALUE}"
-  MQTT="${MQTT}"',"username":"'"${VALUE}"'"'
-  # password
-  VALUE=$(bashio::config 'mqtt.password')
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=""; fi
-  bashio::log.info "Using MQTT password: ${VALUE}"
-  MQTT="${MQTT}"',"password":"'"${VALUE}"'"'
-  # port
-  VALUE=$(bashio::config 'mqtt.port')
-  if [ "${VALUE}" == "null" ] || [ -z "${VALUE}" ]; then VALUE=1883; fi
-  bashio::log.info "Using MQTT port: ${VALUE}"
-  MQTT="${MQTT}"',"port":'"${VALUE}"'}'
-  
-  ## finish
-  JSON="${JSON}"',"mqtt":'"${MQTT}"'}'
-
-  echo "${JSON:-null}"
-}
-
-###
-## SOURCES
-###
-
-##
-## configure (read JSON)
-##
-
-ambianic::config.sources.audio()
-{
-  bashio::log.warning "NOT IMPLEMENTED" "${FUNCNAME[0]}" "${*}"
-}
-
-ambianic::config.sources.video()
-{
-  bashio::log.trace "${FUNCNAME[0]}" "${*}"
-
-  local source="${*}"
-  local result
-  local name=$(echo "${source:-null}" | jq -r '.name')
-
-  if [ "${name:-null}" != 'null' ]; then
-    bashio::log.debug "Name: ${name}"
-    local uri=$(echo "${source:-null}" | jq -r '.uri')
-    if [ "${uri:-null}" != 'null' ]; then
-      bashio::log.debug "URI: ${uri}"
-      local type=$(echo "${source:-null}" | jq -r '.type')
-      if [ "${type:-null}" != 'null' ]; then
-        bashio::log.debug "Type: ${type}"
-        local live=$(echo "${source:-null}" | jq '.live')
-        if [ "${live:-null}" != 'null' ]; then
-          bashio::log.debug "Live: ${live}"
-
-          result='{"name":"'${name}'","uri":"'${uri}'","type":"'${type}'","live":'${live}'}'
-
-          bashio::log.debug "source: ${result}"
-        else
-          bashio::log.error "Live unspecified: ${source}"
-        fi
-      else
-        bashio::log.error  "Type unspecified: ${source}"
-      fi
-    else
-      bashio::log.error  "URI unspecified: ${source}"
-    fi
-  else
-    bashio::log.error  "Name unspecified: ${source}"
-  fi
-  echo ${result:-null}
-}
-
-ambianic::config.sources()
-{
-  bashio::log.trace "${FUNCNAME[0]} ${*}"
-  
-  local sources=$(jq '.sources' ${__BASHIO_DEFAULT_ADDON_CONFIG})
-  local result
-  local srcs
-
-  if [ "${sources:-null}" != 'null' ]; then
-    local nsource=$(echo "${sources}" | jq '.|length')
-    local i=0
-    local j=0
-
-    while [ ${i} -lt ${nsource} ]; do
-      local source=$(echo "${sources}" | jq '.['${i}']')
-      local type=$(echo "${source}" | jq -r '.type')
-      local src
-
-      case "${type:-null}" in
-        'video'|'image')
-          src=$(ambianic::config.sources.video "${source}")
-          ;;
-        'audio')
-          src=$(ambianic::config.sources.audio "${source}")
-          ;;
-        *)
-          bashio::log.warning "Invalid source type: ${type}"
-          ;;
-      esac
-      if [ "${src:-null}" = 'null' ]; then
-        bashio::log.warning "Source ${i}; type: ${type}; no source"
-      else
-        bashio::log.debug "Source ${i}; type: ${type}; source: ${src}"
-        if [ ${j} -gt 0 ]; then srcs="${srcs},"; else srcs='['; fi
-        srcs="${srcs}${src}"
-        j=$((j+1))
-      fi
-      i=$((i+1))
-    done
-    if [ ! -z "${srcs:-}" ]; then srcs="${srcs}]"; else srcs='null'; fi
-    bashio::log.debug "Sources: ${srcs}"
-    result=${srcs}
-  else
-    bashio::log.notice "No sources defined"
-  fi
-  echo ${result:-null}
-}
-
-###
 ## UPDATE (write YAML)
 ###
 
@@ -476,9 +302,173 @@ ambianic::update.pipelines()
   fi
 }
 
+ambianic::update()
+{
+  bashio::log.trace "${FUNCNAME[0]} ${*}"
+
+  local config="${*}"
+  local workspace=$(echo "${config}" | jq -r '.workspace')
+  local ambianic="${workspace}/config.yaml"
+  local secrets="${workspace}/secrets.yaml"
+  local logging=${workspace}/ambianic-log.txt
+  local timeline=${workspace}/timeline-event-log.yaml
+  local loglevel=${__BASHIO_LOG_LEVEL:-${__BASHIO_LOG_LEVEL_ALL:-9}}
+  local result
+
+  # clean logging
+  rm -f ${logging}
+  touch ${logging}
+
+  # clean timeline
+  rm -f ${timeline}
+  touch ${timeline}
+
+  # start secrets
+  rm -f ${secrets}
+  touch ${secrets}
+
+  # start config
+  rm -f ${ambianic}
+  touch ${ambianic}
+
+  # version of ambianic-edge 
+  echo "version: '${AMBIANIC_VERSION}'" >> ${ambianic}
+
+  # data directory
+  echo "data_dir: &data_dir ${workspace}" >> ${ambianic}
+
+  # logging
+  echo "logging:" >> ${ambianic}
+  echo "  file: ${logging}" >> ${ambianic}
+  # translate from
+  if [ ${loglevel} -le ${__BASHIO_LOG_LEVEL_ERROR} ]; then
+    loglevel='ERROR'
+  elif [ ${loglevel} -le ${__BASHIO_LOG_LEVEL_WARNING} ]; then
+    loglevel='WARNING'
+  elif [ ${loglevel} -le ${__BASHIO_LOG_LEVEL_INFO} ]; then
+    loglevel='INFO'
+  else 
+    # default DEBUG
+    loglevel='DEBUG'
+  fi
+  echo "  level: ${loglevel}" >> ${ambianic}
+
+  # timeline
+  echo "timeline:" >> ${ambianic}
+  echo "  event_log: ${timeline}" >> ${ambianic}
+
+  # sources
+  ambianic::update.sources $(echo "${config}" | jq '.sources') >> ${ambianic}
+
+  # ai_models
+  ambianic::update.ai_models $(echo "${config}" | jq '.ai_models') >> ${ambianic}
+
+  # pipelines
+  ambianic::update.pipelines $(echo "${config}" | jq '.pipelines') >> ${ambianic}
+
+  result='{"logging":"'${logging:-}'","loglevel":"'${loglevel:-}'","timeline":"'${timeline:-}'","path":"'${ambianic:-}'"}'
+
+  echo ${result:-null}
+}
+
 ###
 ## CONFIGURE (read JSON)
 ###
+
+## SOURCES
+
+ambianic::config.sources.audio()
+{
+  bashio::log.warning "NOT IMPLEMENTED" "${FUNCNAME[0]}" "${*}"
+}
+
+ambianic::config.sources.video()
+{
+  bashio::log.trace "${FUNCNAME[0]}" "${*}"
+
+  local source="${*}"
+  local result
+  local name=$(echo "${source:-null}" | jq -r '.name')
+
+  if [ "${name:-null}" != 'null' ]; then
+    bashio::log.debug "Name: ${name}"
+    local uri=$(echo "${source:-null}" | jq -r '.uri')
+    if [ "${uri:-null}" != 'null' ]; then
+      bashio::log.debug "URI: ${uri}"
+      local type=$(echo "${source:-null}" | jq -r '.type')
+      if [ "${type:-null}" != 'null' ]; then
+        bashio::log.debug "Type: ${type}"
+        local live=$(echo "${source:-null}" | jq '.live')
+        if [ "${live:-null}" != 'null' ]; then
+          bashio::log.debug "Live: ${live}"
+
+          result='{"name":"'${name}'","uri":"'${uri}'","type":"'${type}'","live":'${live}'}'
+
+          bashio::log.debug "source: ${result}"
+        else
+          bashio::log.error "Live unspecified: ${source}"
+        fi
+      else
+        bashio::log.error  "Type unspecified: ${source}"
+      fi
+    else
+      bashio::log.error  "URI unspecified: ${source}"
+    fi
+  else
+    bashio::log.error  "Name unspecified: ${source}"
+  fi
+  echo ${result:-null}
+}
+
+ambianic::config.sources()
+{
+  bashio::log.trace "${FUNCNAME[0]} ${*}"
+  
+  local sources=$(jq '.sources' ${__BASHIO_DEFAULT_ADDON_CONFIG})
+  local result
+  local srcs
+
+  if [ "${sources:-null}" != 'null' ]; then
+    local nsource=$(echo "${sources}" | jq '.|length')
+    local i=0
+    local j=0
+
+    while [ ${i} -lt ${nsource} ]; do
+      local source=$(echo "${sources}" | jq '.['${i}']')
+      local type=$(echo "${source}" | jq -r '.type')
+      local src
+
+      case "${type:-null}" in
+        'video'|'image')
+          src=$(ambianic::config.sources.video "${source}")
+          ;;
+        'audio')
+          src=$(ambianic::config.sources.audio "${source}")
+          ;;
+        *)
+          bashio::log.warning "Invalid source type: ${type}"
+          ;;
+      esac
+      if [ "${src:-null}" = 'null' ]; then
+        bashio::log.warning "Source ${i}; type: ${type}; no source"
+      else
+        bashio::log.debug "Source ${i}; type: ${type}; source: ${src}"
+        if [ ${j} -gt 0 ]; then srcs="${srcs},"; else srcs='['; fi
+        srcs="${srcs}${src}"
+        j=$((j+1))
+      fi
+      i=$((i+1))
+    done
+    if [ ! -z "${srcs:-}" ]; then srcs="${srcs}]"; else srcs='null'; fi
+    bashio::log.debug "Sources: ${srcs}"
+    result=${srcs}
+  else
+    bashio::log.notice "No sources defined"
+  fi
+  echo ${result:-null}
+}
+
+## AI_MODELS
 
 ambianic::config.ai_models.audio()
 {
@@ -570,9 +560,7 @@ ambianic::config.ai_models()
   echo ${result:-null}
 }
 
-##
-## configure
-##
+## PIPELINES
 
 ambianic::config.pipelines.audio()
 {
@@ -699,6 +687,40 @@ ambianic::config.pipelines()
   echo "${result:-null}"
 }
 
+## configuration
+
+ambianic::config.mqtt()
+{
+  bashio::log.trace "${FUNCNAME[0]} ${*}"
+
+  local config="${*}"
+  local mqtt 
+  local value
+
+  # host
+  value=$(bashio::config 'mqtt.host')
+  if [ "${value}" == "null" ] || [ -z "${value}" ]; then value="localhost"; fi
+  bashio::log.info "Using mqtt at ${value}"
+  mqtt='{"host":"'"${value}"'"'
+  # username
+  value=$(bashio::config 'mqtt.username')
+  if [ "${value}" == "null" ] || [ -z "${value}" ]; then value="username"; fi
+  bashio::log.info "Using mqtt username: ${value}"
+  mqtt="${mqtt}"',"username":"'"${value}"'"'
+  # password
+  value=$(bashio::config 'mqtt.password')
+  if [ "${value}" == "null" ] || [ -z "${value}" ]; then value="password"; fi
+  bashio::log.info "Using mqtt password: ${value}"
+  mqtt="${mqtt}"',"password":"'"${value}"'"'
+  # port
+  value=$(bashio::config 'mqtt.port')
+  if [ "${value}" == "null" ] || [ -z "${value}" ]; then value=1883; fi
+  bashio::log.info "Using mqtt port: ${value}"
+  mqtt="${mqtt}"',"port":'"${value}"'}'
+  
+  echo "${mqtt:-null}"
+}
+
 ###
 ## CONFIGURATION (read JSON)
 ###
@@ -707,16 +729,30 @@ ambianic::config()
 {
   bashio::log.trace "${FUNCNAME[0]}" "${*}"
 
+  local config='{"ipaddr":"'$(hostname -I | awk '{ print $1 }')'","hostname":"'$(hostname)'","arch":"'$(arch)'","timestamp":"'$(date -u +%FT%TZ)'","version":"'${AMBIANIC_VERSION}'"}'
+  local timezone=$(bashio::config 'timezone')
   local workspace=$(bashio::config 'workspace')
   local result
+
+  if [ -z "${timezone:-}" ] || [ "${timezone:-null}" == "null" ]; then 
+    timezone="GMT"
+    bashio::log.warning "timezone unspecified; defaulting to ${timezone}"
+  fi
+  if [ -s "/usr/share/zoneinfo/${timezone:-null}" ]; then
+    cp /usr/share/zoneinfo/${timezone} /etc/localtime
+    echo "${timezone}" > /etc/timezone
+    bashio::log.info "TIMEZONE: ${timezone}"
+  else
+    bashio::log.error "No known timezone: ${timezone}"
+  fi
+  config=$(echo "${config:-null}" | jq '.timezone="'${timezone}'"')
   
   if [ "${workspace:-null}" != 'null' ]; then
-
     mkdir -p "${workspace}"
     if [ -d "${workspace}" ]; then
       bashio::log.info "Workspace: ${workspace}"
 
-      local config='{"workspace":"'${workspace}'"}'
+      config=$(echo "${config:-null}" | jq '.workspace="'${workspace}'"')
       local ok
 
       # configure ai_models
@@ -783,76 +819,6 @@ ambianic::start.proxy()
   echo ${result:-null}
 }
 
-## ALL
-ambianic::update()
-{
-  bashio::log.trace "${FUNCNAME[0]} ${*}"
-
-  local config="${*}"
-  local workspace=$(echo "${config}" | jq -r '.workspace')
-  local ambianic="${workspace}/config.yaml"
-  local secrets="${workspace}/secrets.yaml"
-  local logging=${workspace}/ambianic-log.txt
-  local timeline=${workspace}/timeline-event-log.yaml
-  local loglevel=${__BASHIO_LOG_LEVEL:-${__BASHIO_LOG_LEVEL_ALL:-9}}
-  local result
-
-  # clean logging
-  rm -f ${logging}
-  touch ${logging}
-
-  # clean timeline
-  rm -f ${timeline}
-  touch ${timeline}
-
-  # start secrets
-  rm -f ${secrets}
-  touch ${secrets}
-
-  # start config
-  rm -f ${ambianic}
-  touch ${ambianic}
-
-  # version of ambianic-edge 
-  echo "version: '1.3.29'" >> ${ambianic}
-
-  # data directory
-  echo "data_dir: &data_dir ${workspace}" >> ${ambianic}
-
-  # logging
-  echo "logging:" >> ${ambianic}
-  echo "  file: ${logging}" >> ${ambianic}
-  # translate from
-  if [ ${loglevel} -le ${__BASHIO_LOG_LEVEL_ERROR} ]; then
-    loglevel='ERROR'
-  elif [ ${loglevel} -le ${__BASHIO_LOG_LEVEL_WARNING} ]; then
-    loglevel='WARNING'
-  elif [ ${loglevel} -le ${__BASHIO_LOG_LEVEL_INFO} ]; then
-    loglevel='INFO'
-  else 
-    # default DEBUG
-    loglevel='DEBUG'
-  fi
-  echo "  level: ${loglevel}" >> ${ambianic}
-
-  # timeline
-  echo "timeline:" >> ${ambianic}
-  echo "  event_log: ${timeline}" >> ${ambianic}
-
-  # sources
-  ambianic::update.sources $(echo "${config}" | jq '.sources') >> ${ambianic}
-
-  # ai_models
-  ambianic::update.ai_models $(echo "${config}" | jq '.ai_models') >> ${ambianic}
-
-  # pipelines
-  ambianic::update.pipelines $(echo "${config}" | jq '.pipelines') >> ${ambianic}
-
-  result='{"logging":"'${logging:-}'","loglevel":"'${loglevel:-}'","timeline":"'${timeline:-}'","path":"'${ambianic:-}'"}'
-
-  echo ${result:-null}
-}
-
 ## start.ambianic
 ambianic::start.ambianic()
 {
@@ -880,8 +846,8 @@ ambianic::start.ambianic()
           # change to working directory
           pushd ${workspace} &> /dev/null
           # start python3
-          export AMBIANIC_DIR=${workspace}
-          export DEFAULT_DATA_DIR=${workspace}
+          #export AMBIANIC_DIR=${workspace}
+          #export DEFAULT_DATA_DIR=${workspace}
 	  python3 -m ambianic &> ${t} &
           # test
           pid=$!; if [ ${pid:-0} -gt 0 ]; then
@@ -1055,10 +1021,12 @@ if [ ! -d "${AMBIANIC_EDGE}" ]; then
   exit 1
 fi
 
+export AMBIANIC_VERSION="${AMBIANIC_VERSION:-1.3.29}"
+
 ###
 ## MAIN
 ###
 
-bashio::log.notice "STARTING AMBIANIC"
+bashio::log.notice "STARTING AMBIANIC: path: ${AMBIANIC_EDGE}; version: ${AMBIANIC_VERSION}"
 
 main ${*}
