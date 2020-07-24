@@ -1,7 +1,7 @@
 {
   "name": "Ambianic Edge",
   "stage": "experimental",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "slug": "ambianic",
   "description": "Ambianic Edge AI",
   "url": "https://github.com/dcmartin/hassio-addons/blob/master/ambianic/README.md",
