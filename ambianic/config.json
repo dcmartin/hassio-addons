@@ -14,51 +14,13 @@
   ],
   "devices": [],
   "hassio_api": true,
-  "hassio_role": "admin",
+  "hassio_role": "default",
   "host_network": true,
-  "host_ipc": true,
-  "host_dbus": true,
-  "homeassistant_api": false,
-  "full_access": false,
-  "udev": true,
+  "homeassistant_api": true,
   "timeout": 90,
-  "tmpfs": "size=128m,uid=0,rw",
-  "map": [
-    "share:rw",
-    "config:rw"
-  ],
-  "panel_icon": "mdi:cctv",
-  "panel_title": "Ambianic Edge",
-  "panel_admin": true,
-  "privileged": [
-    "NET_ADMIN",
-    "SYS_ADMIN",
-    "SYS_RAWIO",
-    "SYS_TIME",
-    "SYS_NICE",
-    "SYS_RESOURCE",
-    "SYS_PTRACE",
-    "SYS_MODULE",
-    "DAC_READ_SEARCH"
-  ],
-  "ports": {
-    "3478/tcp": 3478,
-    "3478/udp": 3478,
-    "5004/tcp": 5004,
-    "5004/udp": 5004,
-    "8778/tcp": 8778,
-    "8778/udp": 8778
-  },
-  "ports_description": {
-    "3478/tcp": "I DONT KNOW",
-    "3478/udp": "IF ANY PORTS",
-    "5004/tcp": "ARE NECESSARY",
-    "5004/udp": "BUT THEY ARE HERE",
-    "8778/tcp": "JUST IN CASE",
-    "8778/udp": "THEY ARE NECESSARY"
-  },
   "options": {
     "log_level": "info",
+    "timezone": "America/Los_Angeles",
     "workspace": "/data/ambianic",
     "ai_models": [
       {
@@ -176,11 +138,8 @@
   "schema": {
     "log_level": "str",
     "workspace": "str",
-    "log_type": "str?",
     "group": "str?",
     "device": "str?",
-    "username": "str?",
-    "password": "str?",
     "timezone": "str?",
     "ai_models": [
       {
