@@ -1,6 +1,6 @@
 # &#127968; - `ambianic` _add-on_
 
-This [Home Assistant](http://home-assistant.io) add-on utilizes the [Ambianic project](https://ambianic.ai/) to detect and classify entity(s) in images.  
+This [Home Assistant](http://home-assistant.io) add-on utilizes the [Ambianic project](https://ambianic.ai/) to detect and classify entity(s) in images.  More information [about](docs/ABOUT.md) this _addon_.
 
 ## Status
 This _addon_ is built for the following architectures and available in Docker Hub, e.g. [`amd64`](https://hub.docker.com/repository/docker/dcmartin/amd64-addon-ambianic) version.

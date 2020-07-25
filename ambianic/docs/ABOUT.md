@@ -1,4 +1,4 @@
-# `ABOUT.MD`
+# `ABOUT` 
 The [Home Assistant](http://home-assistant.io) _addon_ provides configuration and control for the [Ambianic Edge](http://ambianic.ai) entity detection and classification in images and videos using artificial intellience (AI).
 
 ## Step 1: Add repository
