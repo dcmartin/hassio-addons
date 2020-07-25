@@ -22,7 +22,7 @@ For example: `http://github.com/dcmartin/hassio-addons`
 
 The _addons_ from the added repository are displayed in the _Add-on store_:
 
-<img src="dcmartin-addons.png" width=384>
+<img src="dcmartin-addons.png" width=512>
 
 ## Step 2: Install `ambianic`
 Install the _addon_ and the Home Assistant supervisor will download the appropriate Docker container from [Docker Hub](http://hub.docker.com/); for example the [`armv7`](https://hub.docker.com/repository/docker/dcmartin/armv7-addon-ambianic) version for RaspberryPi.
