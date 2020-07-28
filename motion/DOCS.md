@@ -1,4 +1,10 @@
 # &#127916; `motion` configuration 
+The `motion` add-on processes video information into motion detection JSON events, multi-frame GIF animations, and one representative frame with entities detected, classified, and annotated (n.b. requires Open Horizon `yolo4motion` service).  This addon is designed to work with a variety of sources, including:
+
++ `3GP` - motion-detecting WebCams (e.g. Linksys WCV80n); received via the `FTP` community _addon_
++ `MJPEG` - network accessible cameras providing Motion-JPEG real-time feed
++ `V4L2` - video for LINUX (v2) for direct attach cameras, e.g. Sony Playstation3 Eye camera or RaspberryPi v2
+
 The key options for configuration of this _addon_; the _group_, _device_, and _camera_ options identify the collection of computers and associated video sources; the `MQTT` broker is **required** to receive messages from this _addon_ as well as to enable the [`motion-ai`](http://github.com/dcmartin/motion-ai) solution.
 
 ## `group`, `device`, and `client`
