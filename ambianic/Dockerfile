@@ -74,17 +74,13 @@ RUN apt update -qq -y && apt install -qq -y --no-install-recommends \
   procps \
   udev \
   libusb-1.0-0 \
-  libc++1 \
-  libc++abi1 \
   libunwind8 \
   libgcc1 \
   git \
   python3-pip \
   libx264-dev \
   libhdf5-dev \
-  software-properties-common \
-  libcairo2-dev \
-  libgirepository1.0-dev
+  software-properties-common
 
 ## FFMPEG v4
 
@@ -95,6 +91,12 @@ RUN apt update -qq -y \
   apt install -qq -y --no-install-recommends ffmpeg \
   && \
   apt upgrade -qq -y
+
+RUN apt update -qq -y && apt upgrade -qq -y && apt install -qq -y --no-install-recommends \
+  libc++1 \
+  libc++abi1 \
+  libcairo2-dev \
+  libgirepository1.0-dev
 
 # cleanup
 RUN apt clean -qq -y && apt autoremove -qq -y && \
