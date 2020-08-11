@@ -134,6 +134,15 @@ service-push:
 	  $(MAKE) TAG=$(TAG) HZN_ORG_ID=$(HZN_ORG_ID) DOCKER_REPOSITORY=$(DOCKER_REPOSITORY) BUILD_ARCH="$${arch}" push-service; \
 	done
 
+service-manifest:
+	@echo "${MC}>>> MAKE --" $$(date +%T) "-- service-manifest: ${SERVICE_NAME}; architectures: ${SERVICE_ARCH_SUPPORT}""${NC}" > /dev/stderr
+	for arch in ${SERVICE_ARCH_SUPPORT}; do \
+	  amendments="$${amendments:-} -a ${DOCKER_NAMESPACE}/$${arch}-${SERVICE_ID}:${SERVICE_VERSION}"; \
+	done; \
+	echo "${IC}>>> MAKE --" $$(date +%T) "-- service-manifest: ${DOCKER_NAMESPACE}/${SERVICE_ID}:${SERVICE_VERSION}; amend: $${amendments}""${NC}" > /dev/stderr; \
+	docker manifest create ${DOCKER_NAMESPACE}/${SERVICE_ID}:${SERVICE_VERSION} $${amendments} && \
+	docker manifest push ${DOCKER_NAMESPACE}/${SERVICE_ID}:${SERVICE_VERSION}
+
 ## latest
 
 latest-service: 
@@ -332,9 +341,10 @@ distclean: service-clean
 ## COLORS
 ##
 MC=${LIGHT_CYAN}
-TEST_BAD=${LIGHT_RED}
-TEST_GOOD=${LIGHT_GREEN}
+TB=${LIGHT_RED}
+TG=${LIGHT_GREEN}
 NC=${NO_COLOR}
+IC=${PURPLE}
 
 NO_COLOR=\033[0m
 BLACK=\033[0;30m
