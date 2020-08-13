@@ -1,7 +1,0 @@
-{
-  "webhooks": [
-    "https://hooks.microbadger.com/images/dcmartin/amd64-addon-ambianic/hbKtiXFaksUhpvKILTGkBzR4mzw=",
-    "https://hooks.microbadger.com/images/dcmartin/aarch64-addon-ambianic/Cg9nZwMygQ9ImAMGzhAJOH5-b8s=",
-    "https://hooks.microbadger.com/images/dcmartin/armv7-addon-ambianic/IYgYikF0L4kXOsm-3Sw3kuTlsgM="
-  ]
-}
