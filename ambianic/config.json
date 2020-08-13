@@ -4,13 +4,12 @@
   "version": "1.6.0",
   "slug": "ambianic",
   "description": "Ambianic Edge AI",
-  "url": "https://github.com/dcmartin/hassio-addons/blob/master/ambianic/README.md",
+  "url": "https://github.com/dcmartin/addon-ambianic",
   "startup": "services",
   "boot": "auto",
   "arch": [
     "aarch64",
     "amd64",
-    "armhf",
     "armv7"
   ],
   "devices": [],
