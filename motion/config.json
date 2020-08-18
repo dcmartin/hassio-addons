@@ -1,9 +1,9 @@
 {
   "name": "Motion Server",
-  "version": "0.10.2",
+  "version": "0.10.3",
   "slug": "motion",
-  "description": "Motion server for network cameras only; no device support.",
-  "url": "https://github.com/dcmartin/hassio-addons/tree/master/motion/README.md",
+  "description": "Motion server; network cameras only; no device support.",
+  "url": "https://github.com/dcmartin/addon-motion/",
   "webui": "http://[HOST]:[PORT:7999]/",
   "startup": "application",
   "boot": "auto",
