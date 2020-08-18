@@ -912,7 +912,7 @@ ambianic::start()
 # main
 ###
 
-main()
+ambianic::main()
 {
   bashio::log.trace "${FUNCNAME[0]} ${*}"
   local tailen=${AMBIANIC_LOG_TAIL:-100}
@@ -1029,4 +1029,4 @@ export AMBIANIC_VERSION="${AMBIANIC_VERSION:-1.3.29}"
 
 bashio::log.notice "STARTING AMBIANIC: path: ${AMBIANIC_EDGE}; version: ${AMBIANIC_VERSION}"
 
-main ${*}
+ambianic::main ${*}

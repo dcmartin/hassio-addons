@@ -1,7 +1,7 @@
 {
   "name": "Ambianic Edge",
-  "stage": "experimental",
-  "version": "0.0.2",
+  "stage": "stable",
+  "version": "1.6.0",
   "slug": "ambianic",
   "description": "Ambianic Edge AI",
   "url": "https://github.com/dcmartin/hassio-addons/blob/master/ambianic/README.md",
@@ -10,6 +10,7 @@
   "arch": [
     "aarch64",
     "amd64",
+    "armhf",
     "armv7"
   ],
   "devices": [],

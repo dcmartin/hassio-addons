@@ -11,14 +11,14 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN apt update -qq -y && apt upgrade -qq -y
 
 # minimum
-RUN apt install -qq -y \
+RUN apt install -qq -y --no-install-recommends \
   ca-certificates \
   curl \
   apt-utils \
   jq
 
 # python3.7
-RUN apt install -qq -y \
+RUN apt install -qq -y --no-install-recommends \
   build-essential \
   zlib1g-dev \
   libncurses5-dev \
@@ -49,7 +49,7 @@ RUN \
 RUN python3 --version
 
 # maximum
-RUN apt update -qq -y && apt install -qq -y \
+RUN apt update -qq -y && apt install -qq -y --no-install-recommends \
   libgstreamer1.0-0 \
   gstreamer1.0-plugins-base \
   gstreamer1.0-plugins-good \
@@ -74,8 +74,6 @@ RUN apt update -qq -y && apt install -qq -y \
   procps \
   udev \
   libusb-1.0-0 \
-  libc++1 \
-  libc++abi1 \
   libunwind8 \
   libgcc1 \
   git \
@@ -90,9 +88,15 @@ RUN add-apt-repository ppa:jonathonf/ffmpeg-4
 
 RUN apt update -qq -y \
   && \
-  apt install -qq -y ffmpeg \
+  apt install -qq -y --no-install-recommends ffmpeg \
   && \
   apt upgrade -qq -y
+
+RUN apt update -qq -y && apt upgrade -qq -y && apt install -qq -y --no-install-recommends \
+  libc++1 \
+  libc++abi1 \
+  libcairo2-dev \
+  libgirepository1.0-dev
 
 # cleanup
 RUN apt clean -qq -y && apt autoremove -qq -y && \
@@ -110,7 +114,6 @@ RUN pip3 install --upgrade pip
 RUN pip3 install --upgrade wheel
 
 # gi
-RUN apt update -qq -y && apt install -qq -y libcairo2-dev libgirepository1.0-dev
 RUN pip3 install --upgrade pycairo
 RUN pip3 install --upgrade PyGObject
 
@@ -267,10 +270,10 @@ LABEL \
     maintainer="David C Martin <github@dcmartin.com>" \
     org.label-schema.description="Ambianic Edge" \
     org.label-schema.build-date=${BUILD_DATE} \
-    org.label-schema.name="cpu2msghub" \
+    org.label-schema.name="ambianic" \
     org.label-schema.schema-version="1.0" \
     org.label-schema.url="https://addons.community" \
-    org.label-schema.usage="https://github.com/dcmartin/hassio-addons/ambianic/tree/master/README.md" \
+    org.label-schema.usage="https://github.com/dcmartin/hassio-addons/ambianic/tree/master/DOCS.md" \
     org.label-schema.vcs-ref=${BUILD_REF} \
     org.label-schema.vcs-url="https://github.com/dcmartin/hassio-addons/ambianic" \
     org.label-schema.vendor="DCMARTIN"
