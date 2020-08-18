@@ -4,7 +4,6 @@
   "slug": "motion-video0",
   "description": "Motion addon with support for /dev/video0",
   "url": "https://github.com/dcmartin/addon-motion-video0/",
-  "url": "https://github.com/dcmartin/addon-motion-video0",
   "webui": "http://[HOST]:[PORT:7999]/",
   "startup": "application",
   "boot": "auto",
