@@ -24,7 +24,7 @@ The _identifiers_ distinguish collections as well as individuals; camera identif
 
 ## `cameras`
 + `cameras[].name` - identifier for the camera; unique across _device_ and _group_; default: _none_
-+ `cameras[].type` - `netcam`, `ftp`, `mqtt`; `local` is valid only for [device](../motion-video0/README.md) version
++ `cameras[].type` - `netcam`, `ftp`, `mqtt`; `local` is valid only for [motion-video0](http://github.com/dcmartin/addon-motion-video) version
 + `cameras[].framerate` - number of frames per second to capture/attempt
 + `cameras[].threshold_percent` - pecentage of pixels changed; over-ride count with `threshold`
 
