@@ -1,6 +1,6 @@
 {
   "name": "Motion Server",
-  "version": "0.10.4",
+  "version": "0.10.5",
   "slug": "motion",
   "description": "Motion server; network cameras only; no device support.",
   "url": "https://github.com/dcmartin/addon-motion/",
