@@ -1,8 +1,8 @@
 {
-  "name": "Motion Video0",
+  "name": "Motion Classic",
   "version": "0.10.4",
   "slug": "motion-video0",
-  "description": "Motion addon with support for /dev/video0",
+  "description": "Classic Motion addon with support for local and remote video devices",
   "url": "https://github.com/dcmartin/addon-motion-video0/",
   "webui": "http://[HOST]:[PORT:7999]/",
   "startup": "application",
