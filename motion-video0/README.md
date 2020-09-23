@@ -1,4 +1,4 @@
-# &#127916; - `motion` **classic** _add-on_
+# &#127916; - `motion` _add-on_
 
 This [Home Assistant](http://home-assistant.io) add-on utilizes the [motion project](https://motion-project.github.io/), [YOLO](https://pjreddie.com/darknet/yolo/), and other AI's to detect and classify entity(s) in images.  The _motion project_ software provides an extensive set of capabilities to capture video feeds from a variety of sources, including `RSTP`,`HTTP`, and `MJPEG` network cameras.  Locally attached USB camera on `/dev/video0` is also supported.
 
