@@ -14,6 +14,7 @@
   ],
   "ingress": true,
   "ingress_port": 7999,
+  "video": true,
   "devices": [
     "/dev/video0:/dev/video0:rwm"
   ],
