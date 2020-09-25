@@ -11,8 +11,7 @@
   "arch": [
     "aarch64",
     "amd64",
-    "armv7",
-    "armhf"
+    "armv7"
   ],
   "ingress": true,
   "ingress_port": 7999,
