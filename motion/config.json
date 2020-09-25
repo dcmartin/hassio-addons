@@ -1,6 +1,7 @@
 {
-  "name": "Motion Server",
-  "version": "0.10.4",
+  "name": "Motion Ã👁",
+  "version": "0.10.5",
+  "stage": "experimental",
   "slug": "motion",
   "description": "Video and audio surveillance with AI detection and classification",
   "url": "https://github.com/dcmartin/addon-motion/",
