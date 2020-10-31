@@ -68,12 +68,12 @@
       "password": "!secret mqtt-password"
     },
     "group": "motion",
-    "device": "hostname",
-    "client": "hostname",
+    "device": "raspberrypi",
+    "client": "raspberrypi",
     "timezone": "America/Los_Angeles",
     "cameras": [
       {
-        "name": "ps3eye",
+        "name": "local",
         "type": "local"
       }
     ]
