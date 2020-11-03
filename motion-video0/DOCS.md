@@ -108,86 +108,39 @@ require specific transports and associated attributes, e.g. credentials.  Exampl
     netcam_userpass: '!secret netcam-userpass'
 ```
 
-# Example
+# Example (_subset_)
 
 ```
-log_level: info
-log_motion_level: error
-log_motion_type: ALL
-default:
-  post_pictures: best
-  interval: 30
-  despeckle: EedDl
-  changes: 'off'
-  text_scale: 1
-  framerate: 5
-  brightness: 100
-  contrast: 50
-  event_gap: 10
-  fov: 62
-  hue: 50
-  lightswitch: 0
-  palette: 15
-  picture_quality: 100
-  stream_quality: 100
-  threshold_percent: 10
-  saturation: 0
-  netcam_userpass: 'username:password'
-  username: username
-  password: password
-  height: 480
-  width: 640
-  movie_output: 'off'
-  movie_max: 15
-  movie_quality: 60
-mqtt:
-  host: mqtt.dcmartin.com
-  port: '1883'
-  username: username
-  password: password
+...
 group: motion
-device: netcams
-client: motion-local
+device: raspberrypi
+client: raspberrypi
 timezone: America/Los_Angeles
 cameras:
-  - name: poolcam
+  - name: local
+    type: local
     w3w: []
-    netcam_url: 'http://192.168.1.162/nphMotionJpeg?Resolution=640x480&Quality=Clarity'
+    top: 50
+    left: 50
+    icon: webcam
+    width: 640
+    height: 480
+    framerate: 10
+    minimum_motion_frames: 30
+    event_gap: 60
+    threshold: 1000
+  - name: network
     type: netcam
-    icon: water
-    netcam_userpass: 'poolcamuser:poolcampass'
-  - name: interiorgate
-    w3w: []
-    netcam_url: 'http://192.168.1.38:8081/img/video.mjpeg'
-    type: netcam
-    icon: gate
-    netcam_userpass: 'interiorgateuser:interiorgatepass'
-  - name: road
-    w3w: []
-    netcam_url: 'http://192.168.1.36:8081/img/video.mjpeg'
-    type: netcam
-    icon: road
-    post_pictures: center
-    netcam_userpass: 'roaduser:roadpass'
-  - name: dogpond
-    w3w: []
-    type: netcam
-    icon: car
+    w3w:
+      - what
+      - three
+      - words
+    icon: door
     netcam_url: 'rtsp://192.168.1.224/live'
-    framerate: 2
+    netcam_userpass: 'username:password'
+    width: 640
+    height: 360
+    framerate: 5
+    event_gap: 30
     threshold_percent: 2
-  - name: pondview
-    w3w: []
-    type: netcam
-    icon: waves
-    netcam_url: 'rtsp://192.168.1.225/live'
-    framerate: 2
-    threshold_percent: 5
-  - name: shed
-    w3w: []
-    type: netcam
-    icon: window-shutter-open
-    netcam_url: 'rtsp://192.168.1.223/live'
-    framerate: 2
-    threshold_percent: 1
 ```
