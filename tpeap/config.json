@@ -8,9 +8,6 @@
   "startup": "application",
   "boot": "auto",
   "arch": [
-    "armv7",
-    "armhf",
-    "aarch64",
     "amd64"
   ],
   "ingress": false,
