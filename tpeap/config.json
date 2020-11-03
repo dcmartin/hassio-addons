@@ -8,6 +8,7 @@
   "startup": "application",
   "boot": "auto",
   "arch": [
+    "aarch64",
     "amd64"
   ],
   "ingress": false,
