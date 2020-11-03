@@ -1,0 +1,48 @@
+{
+  "name": "TP-Link EAP Server",
+  "version": "0.0.1",
+  "slug": "tpeap",
+  "description": "TP-Link server for EAP WiFi Access points",
+  "url": "https://github.com/dcmartin/hassio-addons/tree/master/tpeap/README.md",
+  "webui": "http://[HOST]:[PORT:8088]",
+  "startup": "application",
+  "boot": "auto",
+  "arch": [
+    "armv7",
+    "armhf",
+    "aarch64",
+    "amd64"
+  ],
+  "ingress": false,
+  "ingress_port": 8088,
+  "panel_admin": true,
+  "panel_icon": "mdi:router-wireless",
+  "stage": "experimental",
+  "devices": [],
+  "hassio_api": true,
+  "hassio_role": "default",
+  "host_network": true,
+  "homeassistant_api": true,
+  "privileged": [],
+  "timeout": 90,
+  "tmpfs": "size=256m,uid=0,rw",
+  "map": [],
+  "ports": {
+    "8088/tcp": 8088
+  },
+  "ports_description": {
+    "8088/tcp": "Web interface"
+  },
+  "options": {
+    "log_level": "info",
+    "timezone": "America/Los_Angeles"
+  },
+  "schema": {
+    "log_level": "str",
+    "timezone": "str?"
+  },
+  "environment": {
+    "LOG_FORMAT": "{LEVEL}: {MESSAGE}"
+  },
+  "image": "dcmartin/{arch}-addon-tpeap"
+}
