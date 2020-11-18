@@ -49,9 +49,9 @@
     "log_motion_type": "ALL",
     "default": {
       "changes": "on",
-      "event_gap": 30,
+      "event_gap": 10,
       "framerate": 5,
-      "minimum_motion_frames": 25,
+      "minimum_motion_frames": 5,
       "post_pictures": "best",
       "text_scale": 2,
       "threshold_percent": 2,
@@ -79,9 +79,7 @@
         "icon": "cctv",
         "width": 640,
         "height": 480,
-        "framerate": 10,
-        "minimum_motion_frames": 30,
-        "event_gap": 60,
+        "framerate": 5,
         "top": 50,
         "left": 50,
         "w3w": []
