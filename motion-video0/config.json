@@ -1,11 +1,11 @@
 {
   "name": "Motion Classic",
-  "version": "0.10.15",
+  "version": "0.10.16",
   "stage": "stable",
   "slug": "motion-video0",
   "description": "Classic Motion addon with support for local and remote video devices",
   "url": "https://github.com/dcmartin/addon-motion-video0/",
-  "webui": "http://[HOST]:[PORT:8080]/",
+  "webui": "http://[HOST]:[PORT:7999]/",
   "startup": "application",
   "boot": "auto",
   "arch": [
@@ -14,7 +14,7 @@
     "armv7"
   ],
   "ingress": true,
-  "ingress_port": 8080,
+  "ingress_port": 7999,
   "video": true,
   "audio": false,
   "hassio_api": true,
