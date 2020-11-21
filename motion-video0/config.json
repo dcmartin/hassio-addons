@@ -1,6 +1,6 @@
 {
   "name": "Motion Classic",
-  "version": "0.10.14",
+  "version": "0.10.15",
   "stage": "stable",
   "slug": "motion-video0",
   "description": "Classic Motion addon with support for local and remote video devices",
@@ -39,7 +39,7 @@
     "8090/tcp": 8090
   },
   "ports_description": {
-    "7999/tcp": "Web UI and API",
+    "7999/tcp": "UI and API",
     "8080/tcp": "Motion UI and API",
     "8090/tcp": "Camera stream"
   },
@@ -79,7 +79,9 @@
         "icon": "cctv",
         "width": 640,
         "height": 480,
-        "framerate": 5,
+        "framerate": 10,
+        "minimum_motion_frames": 5,
+        "event_gap": 5,
         "top": 50,
         "left": 50,
         "w3w": []
@@ -115,7 +117,7 @@
       "lightswitch_percent": "int(0,100)?",
       "lightswitch_frames": "int(0,1000)?",
       "minimum_motion_frames": "int(1,300)?",
-      "movie_max": "int(1,120)?",
+      "movie_max_time": "int(1,120)?",
       "movie_output": "list(off|mp4|3gp|mpeg4|swf|flv|ffv1|mov|mkv|hevc)?",
       "movie_quality": "int(1,100)?",
       "netcam_userpass": "str?",
@@ -152,7 +154,7 @@
         "lightswitch": "int?",
         "mac": "str?",
         "mjpeg_url": "url?",
-        "movie_max": "int(1,120)?",
+        "movie_max_time": "int(1,120)?",
         "movie_output": "list(off|mp4|mpeg4|3gp)?",
         "movie_quality": "int(1,100)?",
         "netcam_url": "str?",
