@@ -1,6 +1,6 @@
 {
   "name": "Motion Classic",
-  "version": "0.10.24",
+  "version": "0.10.26",
   "stage": "stable",
   "slug": "motion-video0",
   "description": "Classic Motion addon with support for local and remote video devices",
@@ -151,7 +151,8 @@
         "height": "int?",
         "hue": "int?",
         "icon": "str?",
-        "lightswitch": "int?",
+        "lightswitch_percent": "int(0,100)?",
+        "lightswitch_frames": "int(0,1000)?",
         "mac": "str?",
         "mjpeg_url": "url?",
         "movie_max_time": "int(1,120)?",
