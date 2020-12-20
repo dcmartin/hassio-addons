@@ -1,6 +1,6 @@
 {
   "name": "Motion Classic",
-  "version": "0.10.49",
+  "version": "0.10.51",
   "stage": "stable",
   "slug": "motion-video0",
   "description": "Classic Motion addon with support for local and remote video devices",
@@ -17,10 +17,10 @@
   "ingress_port": 7999,
   "video": true,
   "audio": false,
-  "hassio_api": true,
+  "hassio_api": false,
   "hassio_role": "default",
-  "host_network": true,
-  "homeassistant_api": true,
+  "host_network": false,
+  "homeassistant_api": false,
   "privileged": [
     "SYS_ADMIN"
   ],
