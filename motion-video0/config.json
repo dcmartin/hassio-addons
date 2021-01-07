@@ -1,17 +1,19 @@
 {
   "name": "Motion Classic",
-  "version": "0.10.85",
+  "version": "0.10.86",
   "stage": "stable",
   "slug": "motion-video0",
   "description": "Classic Motion addon with support for local and remote video devices",
   "url": "https://github.com/dcmartin/addon-motion-video0/",
   "webui": "http://[HOST]:[PORT:7999]/",
-  "startup": "application",
+  "startup": "services",
   "boot": "auto",
   "arch": [
     "aarch64",
     "amd64",
-    "armv7"
+    "armhf",
+    "armv7",
+    "i386"
   ],
   "ingress": true,
   "ingress_port": 7999,
@@ -71,10 +73,10 @@
       "username": "!secret mqtt-username",
       "password": "!secret mqtt-password"
     },
-    "group": "motion",
-    "device": "raspberrypi",
-    "client": "raspberrypi",
-    "timezone": "America/Los_Angeles",
+    "group": "!secret motion-group",
+    "device": "!secret motion-device",
+    "client": "!secret motion-client",
+    "timezone": "!secret ha-timezone",
     "cameras": [
       {
         "name": "local",
