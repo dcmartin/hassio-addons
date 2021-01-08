@@ -124,4 +124,4 @@ David C Martin (github@dcmartin.com)
 [digitsgit]: https://github.com/nvidia/digits
 [digits]: https://developer.nvidia.com/digits
 
-<img width="1" src="http://clustrmaps.com/map_v2.png?cl=ffffff&w=a&t=n&d=xnRKGfiPo38Qx9Qh6xEuzt53jlOosT0wz-h-B5bRcH8"/>
+<img width="1" src="//clustrmaps.com/map_v2.png?cl=ffffff&w=a&t=n&d=WFrWvzsRgpv7HiSkfWewUMTwpnMKbRdrAm2unNYv3gE" />
