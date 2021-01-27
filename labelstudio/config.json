@@ -8,7 +8,9 @@
   "startup": "application",
   "boot": "auto",
   "arch": [
-    "amd64"
+    "amd64",
+    "armv7",
+    "aarch64"
   ],
   "ingress": true,
   "ingress_port": 8080,
