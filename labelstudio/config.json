@@ -2,15 +2,13 @@
   "name": "Label Studio",
   "version": "0.0.1",
   "slug": "labelstudio",
-  "description": "LabelStudio",
+  "description": "Label Studio from labelstud.io",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/labelstudio/README.md",
   "webui": "http://[HOST]:[PORT:8080]",
   "startup": "application",
   "boot": "auto",
   "arch": [
-    "arm64",
-    "amd64",
-    "arm"
+    "amd64"
   ],
   "ingress": true,
   "ingress_port": 8080,
