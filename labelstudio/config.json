@@ -50,6 +50,6 @@
   "environment": {
     "LOG_FORMAT": "{LEVEL}: {MESSAGE}"
   },
-  "image": "dcmartin/{arch}-addon-labelstudio",
+  "image": "dcmartin/{arch}_com.github.dcmartin.labelstudio",
   "watchdog": "http://[HOST]:[PORT:8080]/api/health"
 }
