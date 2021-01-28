@@ -12,7 +12,7 @@
     "armv7",
     "aarch64"
   ],
-  "ingress": true,
+  "ingress": false,
   "ingress_port": 7998,
   "ingress_entry": "/welcome",
   "panel_admin": true,
