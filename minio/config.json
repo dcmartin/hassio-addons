@@ -11,7 +11,7 @@
     "aarch64"
   ],
   "panel_admin": true,
-  "panel_icon": "mdi:ufo",
+  "panel_icon": "mdi:store-24-hour",
   "stage": "experimental",
   "devices": [],
   "hassio_api": false,

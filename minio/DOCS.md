@@ -1,4 +1,4 @@
-# &#127991; - MINIO object store
+# &#127978; - MINIO object store
 
 ## Options
 
