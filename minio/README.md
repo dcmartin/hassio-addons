@@ -1,6 +1,6 @@
-# &#127991; - Label Studio
+# &#127991; - MINIO object store
 
-[Label Studio](http://labelstud.io) as an add-on
+[MINIO](http://min.io) as an add-on
 
 ## Platforms:
 
