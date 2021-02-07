@@ -28,11 +28,6 @@ comparison to installing an "app" on your smartphone.
 1. Check the logs of the add-on to information
 1. Click on the `WebUI` link to access the addon UX (iff exists)
 
-## &#128249; [`motion`](motion/README.md) _addon_
-The `motion` addon provides capabilities of the [Motion Project](https://motion-project.github.io/ ) for `RTSP`, `HTTP` network cameras as well as`FTP` connected cameras.
-
-&#9995; An attached camera (e.g. USB, Pi2, ..) may be utilized with `V4L2` (video for LINUX version 2); however, the [`motion-vi`](motion-vi/README.md) version must be utilized (n.b. it supports all other features of this _addon_).
-
 ## Authors & contributors
 
 David C Martin (github@dcmartin.com)
