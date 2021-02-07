@@ -3,10 +3,12 @@
 ![](https://img.shields.io/github/license/dcmartin/hassio-addons.svg?style=flat)
 ![](https://img.shields.io/github/release/dcmartin/hassio-addons.svg?style=flat)
 ![](https://img.shields.io/github/repo-size/dcmartin/hassio-addons.svg?style=flat)
+
 ![](https://img.shields.io/github/last-commit/dcmartin/hassio-addons.svg?style=flat)
 ![](https://img.shields.io/github/commit-activity/w/dcmartin/hassio-addons.svg?style=flat)
 ![](https://img.shields.io/github/contributors/dcmartin/hassio-addons.svg?style=flat)
 ![](https://img.shields.io/github/issues/dcmartin/hassio-addons.svg?style=flat)
+
 ![](https://img.shields.io/github/tag/dcmartin/hassio-addons.svg?style=flat)
 
 
