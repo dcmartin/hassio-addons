@@ -1,4 +1,4 @@
-# `hassio-addons` -  by _[**dcmartin**](http://www.dcmartin.com)_
+<img src="header.jpg" width="90%">
 
 ![](https://img.shields.io/github/license/dcmartin/hassio-addons.svg?style=flat)
 ![](https://img.shields.io/github/release/dcmartin/hassio-addons.svg?style=flat)
@@ -20,7 +20,7 @@
 [amd64-shield]: https://img.shields.io/badge/amd64-yes-green.svg
 [armv7-shield]: https://img.shields.io/badge/armv7-yes-green.svg
 
-## [About](STATUS.md)
+# [About](STATUS.md)
 
 This is a repository of add-ons for [Home Assistant](http://home-assistant.io)  by [**dcmartin**](http://www.dcmartin.com)
 
