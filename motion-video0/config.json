@@ -1,6 +1,6 @@
 {
   "name": "Motion Classic",
-  "version": "0.10.112",
+  "version": "0.10.113",
   "stage": "stable",
   "slug": "motion-video0",
   "description": "Classic Motion addon with support for local and remote video devices",
@@ -102,6 +102,7 @@
     "latitude": "float?",
     "longitude": "float?",
     "elevation": "int?",
+    "format": "list(gif|mp4)?",
     "timezone": "str?",
     "default": {
       "post_pictures": "list(first|last|best|most|center)?",
