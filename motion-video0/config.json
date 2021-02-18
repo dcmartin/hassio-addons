@@ -62,27 +62,21 @@
     "device": "!secret motion-device",
     "client": "!secret motion-client",
     "timezone": "!secret ha-timezone",
+    "latitude": "!secret ha-latitude",
+    "longitude": "!secret ha-longitude",
     "cameras": [
       {
-        "name": "local",
-        "type": "local",
+        "name": "camera1",
+        "type": "netcam",
+        "netcam_url": "rtsp://192.168.1.222/live",
         "icon": "cctv",
-        "width": 640,
-        "height": 480,
-        "framerate": 10,
-        "threshold": 1500,
         "w3w": []
       },
       {
-        "name": "rtsp",
+        "name": "camera2",
         "type": "netcam",
         "netcam_url": "rtsp://192.168.1.223/live",
-        "netcam_userpass": "webcamUsername:webcamPassword",
         "icon": "webcam",
-        "width": 640,
-        "height": 360,
-        "threshold": 750,
-        "framerate": 5,
         "w3w": []
       }
     ]
