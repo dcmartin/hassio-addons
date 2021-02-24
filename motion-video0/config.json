@@ -1,13 +1,4 @@
 {
-  "name": "Motion Classic",
-  "version": "0.10.115",
-  "stage": "stable",
-  "slug": "motion-video0",
-  "description": "Classic Motion addon with support for local and remote video devices",
-  "url": "https://github.com/dcmartin/addon-motion-video0/",
-  "webui": "http://[HOST]:[PORT:7999]/",
-  "startup": "services",
-  "boot": "auto",
   "arch": [
     "aarch64",
     "amd64",
@@ -15,26 +6,63 @@
     "armv7",
     "i386"
   ],
-  "ingress": true,
-  "ingress_port": 7999,
-  "video": true,
   "audio": false,
+  "boot": "auto",
+  "description": "Classic Motion addon with support for local and remote video devices",
+  "environment": {
+    "LOG_FORMAT": "{LEVEL}: {MESSAGE}"
+  },
   "hassio_api": false,
   "hassio_role": "default",
-  "host_network": true,
   "homeassistant_api": false,
-  "privileged": [
-    "SYS_ADMIN"
-  ],
-  "timeout": 90,
-  "tmpfs": "size=64m,uid=0,rw",
+  "host_network": true,
+  "image": "dcmartin/{arch}-addon-motion-video0",
+  "ingress": true,
+  "ingress_port": 7999,
   "map": [
     "share:rw",
     "config:rw"
   ],
+  "name": "Motion Classic",
+  "options": {
+    "log_level": "info",
+    "group": "!secret motion-group",
+    "device": "!secret motion-device",
+    "client": "!secret motion-client",
+    "timezone": "!secret ha-timezone",
+    "latitude": "!secret ha-latitude",
+    "longitude": "!secret ha-longitude",
+    "mqtt": {
+      "host": "!secret mqtt-broker",
+      "port": "!secret mqtt-port",
+      "username": "!secret mqtt-username",
+      "password": "!secret mqtt-password"
+    },
+    "default": {
+      "username": "!secret motioncam-username",
+      "password": "!secret motioncam-password",
+      "netcam_userpass": "!secret netcam-userpass"
+    },
+    "cameras": [
+      {
+        "name": "camera1",
+        "type": "netcam",
+        "icon": "cctv",
+        "netcam_url": "rtsp://192.168.1.222/live",
+        "w3w": []
+      },
+      {
+        "name": "camera2",
+        "type": "netcam",
+        "icon": "webcam",
+        "netcam_url": "rtsp://192.168.1.223/live",
+        "w3w": []
+      }
+    ]
+  },
+  "panel_admin": true,
   "panel_icon": "mdi:motion-sensor",
   "panel_title": "Motion-AI",
-  "panel_admin": true,
   "ports": {
     "7999/tcp": 7999,
     "8080/tcp": 8080,
@@ -45,101 +73,12 @@
     "8080/tcp": "Motion UI and API",
     "8090/tcp": "Camera stream"
   },
-  "options": {
-    "log_level": "info",
-    "default": {
-      "username": "!secret motioncam-username",
-      "password": "!secret motioncam-password",
-      "netcam_userpass": "!secret netcam-userpass"
-    },
-    "mqtt": {
-      "host": "!secret mqtt-broker",
-      "port": "!secret mqtt-port",
-      "username": "!secret mqtt-username",
-      "password": "!secret mqtt-password"
-    },
-    "group": "!secret motion-group",
-    "device": "!secret motion-device",
-    "client": "!secret motion-client",
-    "timezone": "!secret ha-timezone",
-    "latitude": "!secret ha-latitude",
-    "longitude": "!secret ha-longitude",
-    "cameras": [
-      {
-        "name": "camera1",
-        "type": "netcam",
-        "netcam_url": "rtsp://192.168.1.222/live",
-        "icon": "cctv",
-        "w3w": []
-      },
-      {
-        "name": "camera2",
-        "type": "netcam",
-        "netcam_url": "rtsp://192.168.1.223/live",
-        "icon": "webcam",
-        "w3w": []
-      }
-    ]
-  },
+  "privileged": [
+    "SYS_ADMIN"
+  ],
   "schema": {
-    "log_level": "str",
-    "log_type": "str?",
-    "log_motion": "int?",
-    "log_motion_level": "list(emergency|alert|critical|error|warn|notice|info|debug|all)?",
-    "log_motion_type": "list(COR|STR|ENC|NET|DBL|EVT|TRK|VID|ALL)?",
-    "log_file": "str?",
-    "group": "str",
-    "device": "str?",
-    "client": "str?",
-    "username": "str?",
-    "password": "str?",
-    "latitude": "float?",
-    "longitude": "float?",
-    "elevation": "int?",
-    "format": "list(gif|mp4)?",
-    "timezone": "str?",
-    "default": {
-      "post_pictures": "list(first|last|best|most|center)?",
-      "picture_output": "list(off|on|first|best)?",
-      "brightness": "int?",
-      "changes": "list(on|off)?",
-      "contrast": "int?",
-      "despeckle": "str?",
-      "event_gap": "int?",
-      "fov": "int?",
-      "framerate": "int(2,100)?",
-      "height": "int?",
-      "hue": "int?",
-      "interval": "int(60,86400)?",
-      "lightswitch_percent": "int(0,100)?",
-      "lightswitch_frames": "int(0,1000)?",
-      "minimum_motion_frames": "int(1,300)?",
-      "movie_max_time": "int(1,120)?",
-      "movie_output": "list(off|mp4|3gp|mpeg4|swf|flv|ffv1|mov|mkv|hevc)?",
-      "movie_quality": "int(1,100)?",
-      "netcam_userpass": "str?",
-      "palette": "int?",
-      "password": "str?",
-      "picture_quality": "int?",
-      "post_capture": "int?",
-      "pre_capture": "int?",
-      "saturation": "int?",
-      "stream_motion": "list(on|off)?",
-      "stream_maxrate": "int(2,100)?",
-      "stream_quality": "int(10,100)?",
-      "text_scale": "int(1,10)?",
-      "threshold": "int?",
-      "threshold_tune": "list(on|off)?",
-      "threshold_maximum": "int?",
-      "threshold_percent": "int(0,100)?",
-      "type": "list(local|netcam|ftpd|mqtt)?",
-      "username": "str?",
-      "width": "int?"
-    },
     "cameras": [
       {
-        "name": "str",
-        "type": "list(local|netcam|ftpd|mqtt)",
         "brightness": "int?",
         "changes": "list(on|off)?",
         "contrast": "int?",
@@ -159,6 +98,7 @@
         "movie_max_time": "int(1,120)?",
         "movie_output": "list(off|mp4|mpeg4|3gp)?",
         "movie_quality": "int(1,100)?",
+        "name": "str",
         "netcam_url": "str?",
         "netcam_userpass": "str?",
         "palette": "int?",
@@ -168,36 +108,97 @@
         "rotate": "int(0,360)?",
         "saturation": "int?",
         "still_image_url": "url?",
-        "stream_motion": "list(on|off)?",
         "stream_maxrate": "int(2,100)?",
+        "stream_motion": "list(on|off)?",
         "stream_quality": "int(10,100)?",
         "text_scale": "int(1,10)?",
         "threshold": "int?",
-        "threshold_tune": "list(on|off)?",
         "threshold_maximum": "int?",
         "threshold_percent": "int(0,100)?",
+        "threshold_tune": "list(on|off)?",
         "top": "int(0,100)?",
+        "type": "list(local|netcam|ftpd|mqtt)",
         "username": "str?",
         "userpass": "str?",
-        "width": "int?",
         "w3w": [
           "str?",
           "str?",
           "str?"
-        ]
+        ],
+        "width": "int?"
       }
     ],
+    "client": "str?",
+    "default": {
+      "brightness": "int?",
+      "changes": "list(on|off)?",
+      "contrast": "int?",
+      "despeckle": "str?",
+      "event_gap": "int?",
+      "fov": "int?",
+      "framerate": "int(2,100)?",
+      "height": "int?",
+      "hue": "int?",
+      "interval": "int(60,86400)?",
+      "lightswitch_frames": "int(0,1000)?",
+      "lightswitch_percent": "int(0,100)?",
+      "minimum_motion_frames": "int(1,300)?",
+      "movie_max_time": "int(1,120)?",
+      "movie_output": "list(off|mp4|3gp|mpeg4|swf|flv|ffv1|mov|mkv|hevc)?",
+      "movie_quality": "int(1,100)?",
+      "netcam_userpass": "str?",
+      "palette": "int?",
+      "password": "str?",
+      "picture_output": "list(off|on|first|best)?",
+      "picture_quality": "int?",
+      "post_capture": "int?",
+      "post_pictures": "list(first|last|best|most|center)?",
+      "pre_capture": "int?",
+      "saturation": "int?",
+      "stream_maxrate": "int(2,100)?",
+      "stream_motion": "list(on|off)?",
+      "stream_quality": "int(10,100)?",
+      "text_scale": "int(1,10)?",
+      "threshold": "int?",
+      "threshold_maximum": "int?",
+      "threshold_percent": "int(0,100)?",
+      "threshold_tune": "list(on|off)?",
+      "type": "list(local|netcam|ftpd|mqtt)?",
+      "username": "str?",
+      "width": "int?"
+    },
+    "device": "str?",
+    "elevation": "int?",
+    "format": "list(gif|mp4)?",
+    "group": "str?",
+    "latitude": "float?",
+    "log_file": "str?",
+    "log_level": "str",
+    "log_motion": "int?",
+    "log_motion_level": "list(emergency|alert|critical|error|warn|notice|info|debug|all)?",
+    "log_motion_type": "list(COR|STR|ENC|NET|DBL|EVT|TRK|VID|ALL)?",
+    "log_type": "str?",
+    "longitude": "float?",
     "mqtt": {
       "host": "str?",
+      "password": "str?",
       "port": "port?",
-      "username": "str?",
-      "password": "str?"
+      "username": "str?"
     },
+    "timezone": "str?",
+    "username": "str?",
+    "password": "str?",
+    "overview_apikey": "str?",
     "reload": "bool?"
   },
-  "environment": {
-    "LOG_FORMAT": "{LEVEL}: {MESSAGE}"
-  },
-  "image": "dcmartin/{arch}-addon-motion-video0",
-  "watchdog": "http://[HOST]:[PORT:7999]/cgi-bin/config"
+  "slug": "motion-video0",
+  "stage": "stable",
+  "startup": "services",
+  "timeout": 90,
+  "tmpfs": "size=64m,uid=0,rw",
+  "url": "https://github.com/dcmartin/addon-motion-video0/",
+  "version": "0.10.119",
+  "video": true,
+  "watchdog": "http://[HOST]:[PORT:7999]/cgi-bin/config",
+  "webui": "http://[HOST]:[PORT:7999]/"
 }
