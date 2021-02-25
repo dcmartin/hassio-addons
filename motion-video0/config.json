@@ -43,6 +43,11 @@
       "password": "!secret motioncam-password",
       "netcam_userpass": "!secret netcam-userpass"
     },
+    "overview": {},
+    "entity": {},
+    "person": {},
+    "vehicle": {},
+    "animal": {},
     "cameras": [
       {
         "name": "camera1",
@@ -188,16 +193,53 @@
     "timezone": "str?",
     "username": "str?",
     "password": "str?",
-    "overview_apikey": "str?",
+    "entity": {
+      "name": "str?",
+      "tune": "bool?",
+      "notify": "bool?",
+      "speak": "bool?",
+      "ago": "int(30,300)?",
+      "deviation": "float(0.5,6.0)?"
+    },
+    "person": {
+      "entity": "str?",
+      "tune": "bool?",
+      "notify": "bool?",
+      "speak": "bool?",
+      "ago": "int(30,300)?",
+      "deviation": "float(0.5,6.0)?"
+    },
+    "vehicle": {
+      "entity": "str?",
+      "tune": "bool?",
+      "notify": "bool?",
+      "speak": "bool?",
+      "ago": "int(30,300)?",
+      "deviation": "float(0.5,6.0)?"
+    },
+    "animal": {
+      "entity": "str?",
+      "tune": "bool?",
+      "notify": "bool?",
+      "speak": "bool?",
+      "ago": "int(30,300)?",
+      "deviation": "float(0.5,6.0)?"
+    },
+    "overview": {
+      "apikey": "str?",
+      "mode": "list(local|hybrid|roadmap|satellite|terrain)?",
+      "zoom": "int(10,22)?",
+      "image": "str?"
+    },
     "reload": "bool?"
   },
   "slug": "motion-video0",
   "stage": "stable",
   "startup": "services",
   "timeout": 90,
-  "tmpfs": "size=64m,uid=0,rw",
+  "tmpfs": true,
   "url": "https://github.com/dcmartin/addon-motion-video0/",
-  "version": "0.10.119",
+  "version": "0.10.120",
   "video": true,
   "watchdog": "http://[HOST]:[PORT:7999]/cgi-bin/config",
   "webui": "http://[HOST]:[PORT:7999]/"
