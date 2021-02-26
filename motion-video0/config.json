@@ -245,7 +245,7 @@
   "timeout": 90,
   "tmpfs": true,
   "url": "https://github.com/dcmartin/addon-motion-video0/",
-  "version": "0.10.122",
+  "version": "0.10.123",
   "video": true,
   "watchdog": "http://[HOST]:[PORT:7999]/cgi-bin/config",
   "webui": "http://[HOST]:[PORT:7999]/"
