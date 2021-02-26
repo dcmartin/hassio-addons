@@ -117,7 +117,6 @@
         "stream_maxrate": "int(2,100)?",
         "stream_motion": "list(on|off)?",
         "stream_quality": "int(10,100)?",
-        "router_name": "str?",
         "text_scale": "int(1,10)?",
         "threshold": "int?",
         "threshold_maximum": "int?",
@@ -237,6 +236,7 @@
       "zoom": "int(10,22)?",
       "image": "str?"
     },
+    "router_name": "str?",
     "reload": "bool?"
   },
   "slug": "motion-video0",
@@ -245,7 +245,7 @@
   "timeout": 90,
   "tmpfs": true,
   "url": "https://github.com/dcmartin/addon-motion-video0/",
-  "version": "0.10.124",
+  "version": "0.10.125",
   "video": true,
   "watchdog": "http://[HOST]:[PORT:7999]/cgi-bin/config",
   "webui": "http://[HOST]:[PORT:7999]/"
