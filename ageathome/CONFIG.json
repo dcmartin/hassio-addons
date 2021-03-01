@@ -14,7 +14,7 @@
   ],
   "webui": "http://[HOST]:[PORT:8998]/",
   "timeout": 30,
-  "tmpfs": "size=256m,uid=0,rw",
+  "tmpfs": true,
   "map": [
     "share:rw",
     "config:rw"

@@ -22,7 +22,7 @@
     "SYS_ADMIN"
   ],
   "timeout": 90,
-  "tmpfs": "size=256m,uid=0,rw",
+  "tmpfs": true,
   "ports": {
     "9999/tcp": 9999
   },
