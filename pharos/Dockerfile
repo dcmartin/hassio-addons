@@ -19,7 +19,7 @@ RUN apt-get update \
 # Copy root filesystem
 COPY rootfs /
 
-RUN dpkg --install /tmp/PharosControl-2.0.0-1.ub16.noarch.deb
+RUN dpkg --install /tmp/PharosControl-2.0.2-ub14.noarch.deb
 
 RUN mkdir -p /var/lock/subsys
 

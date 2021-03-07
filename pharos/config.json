@@ -1,6 +1,6 @@
 {
   "name": "Pharos Server",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "slug": "pharos",
   "description": "Pharos server for TP-LINK CPE WiFi Access points",
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/pharos/README.md",
