@@ -49,6 +49,7 @@
     "media": {},
     "vehicle": {},
     "animal": {},
+    "w3w": {},
     "cameras": [
       {
         "name": "camera1",
@@ -185,6 +186,10 @@
     "log_motion_type": "list(COR|STR|ENC|NET|DBL|EVT|TRK|VID|ALL)?",
     "log_type": "str?",
     "longitude": "float?",
+    "w3w": {
+      "apikey": "str?",
+      "email": "str?"
+    },
     "mqtt": {
       "host": "str?",
       "password": "str?",
@@ -238,6 +243,7 @@
       "image": "str?"
     },
     "router_name": "str?",
+    "camera_restart": "bool?",
     "reload": "bool?"
   },
   "slug": "motion-video0",
@@ -246,7 +252,7 @@
   "timeout": 90,
   "tmpfs": true,
   "url": "https://github.com/dcmartin/addon-motion-video0/",
-  "version": "0.10.128",
+  "version": "0.10.129",
   "video": true,
   "watchdog": "http://[HOST]:[PORT:7999]/cgi-bin/config",
   "webui": "http://[HOST]:[PORT:7999]/"
