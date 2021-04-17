@@ -250,7 +250,7 @@
   "timeout": 300,
   "tmpfs": true,
   "url": "https://github.com/dcmartin/addon-motion-video0/",
-  "version": "0.10.131",
+  "version": "0.10.132",
   "video": true,
   "webui": "http://[HOST]:[PORT:7999]/"
 }
