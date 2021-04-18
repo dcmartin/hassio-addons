@@ -23,47 +23,47 @@
   ],
   "name": "Motion Classic",
   "options": {
-    "log_level": "info",
-    "group": "!secret motion-group",
-    "device": "!secret motion-device",
-    "client": "!secret motion-client",
-    "timezone": "!secret ha-timezone",
-    "latitude": "!secret ha-latitude",
-    "longitude": "!secret ha-longitude",
-    "mqtt": {
-      "host": "!secret mqtt-broker",
-      "port": "!secret mqtt-port",
-      "username": "!secret mqtt-username",
-      "password": "!secret mqtt-password"
-    },
-    "default": {
-      "username": "!secret motioncam-username",
-      "password": "!secret motioncam-password",
-      "netcam_userpass": "!secret netcam-userpass"
-    },
-    "overview": {},
-    "entity": {},
-    "person": {},
-    "media": {},
-    "vehicle": {},
     "animal": {},
-    "w3w": {},
     "cameras": [
       {
-        "name": "camera1",
-        "type": "netcam",
         "icon": "cctv",
+        "name": "camera1",
         "netcam_url": "rtsp://192.168.1.222/live",
+        "type": "netcam",
         "w3w": []
       },
       {
-        "name": "camera2",
-        "type": "netcam",
         "icon": "webcam",
+        "name": "camera2",
         "netcam_url": "rtsp://192.168.1.223/live",
+        "type": "netcam",
         "w3w": []
       }
-    ]
+    ],
+    "client": "!secret motion-client",
+    "default": {
+      "netcam_userpass": "!secret netcam-userpass",
+      "password": "!secret motioncam-password",
+      "username": "!secret motioncam-username"
+    },
+    "device": "!secret motion-device",
+    "entity": {},
+    "group": "!secret motion-group",
+    "latitude": "!secret ha-latitude",
+    "log_level": "info",
+    "longitude": "!secret ha-longitude",
+    "media": {},
+    "mqtt": {
+      "host": "!secret mqtt-broker",
+      "password": "!secret mqtt-password",
+      "port": "!secret mqtt-port",
+      "username": "!secret mqtt-username"
+    },
+    "overview": {},
+    "person": {},
+    "timezone": "!secret ha-timezone",
+    "vehicle": {},
+    "w3w": {}
   },
   "panel_admin": true,
   "panel_icon": "mdi:motion-sensor",
@@ -81,7 +81,22 @@
   "privileged": [
     "SYS_ADMIN"
   ],
+  "runtime": {
+    "io.containerd.runc.v2": false,
+    "io.containerd.runtime.v1.linux": false,
+    "nvidia": true,
+    "runc": true
+  },
   "schema": {
+    "animal": {
+      "ago": "int(30,300)?",
+      "deviation": "float(0.1,6.0)?",
+      "entity": "str?",
+      "notify": "bool?",
+      "speak": "bool?",
+      "tune": "bool?"
+    },
+    "camera_restart": "bool?",
     "cameras": [
       {
         "brightness": "int?",
@@ -174,6 +189,14 @@
     },
     "device": "str?",
     "elevation": "int?",
+    "entity": {
+      "ago": "int(30,300)?",
+      "deviation": "float(0.1,6.0)?",
+      "name": "str?",
+      "notify": "bool?",
+      "speak": "bool?",
+      "tune": "bool?"
+    },
     "format": "list(gif|mp4)?",
     "group": "str?",
     "latitude": "float?",
@@ -184,9 +207,9 @@
     "log_motion_type": "list(COR|STR|ENC|NET|DBL|EVT|TRK|VID|ALL)?",
     "log_type": "str?",
     "longitude": "float?",
-    "w3w": {
-      "apikey": "str?",
-      "email": "str?"
+    "media": {
+      "mask": "bool?",
+      "save": "bool?"
     },
     "mqtt": {
       "host": "str?",
@@ -194,55 +217,38 @@
       "port": "port?",
       "username": "str?"
     },
-    "timezone": "str?",
-    "username": "str?",
-    "password": "str?",
-    "entity": {
-      "name": "str?",
-      "tune": "bool?",
-      "notify": "bool?",
-      "speak": "bool?",
-      "ago": "int(30,300)?",
-      "deviation": "float(0.1,6.0)?"
-    },
-    "media": {
-      "save": "bool?",
-      "mask": "bool?"
-    },
-    "person": {
-      "user": "str?",
-      "entity": "str?",
-      "tune": "bool?",
-      "notify": "bool?",
-      "speak": "bool?",
-      "ago": "int(30,300)?",
-      "deviation": "float(0.1,6.0)?"
-    },
-    "vehicle": {
-      "entity": "str?",
-      "tune": "bool?",
-      "notify": "bool?",
-      "speak": "bool?",
-      "ago": "int(30,300)?",
-      "deviation": "float(0.1,6.0)?"
-    },
-    "animal": {
-      "entity": "str?",
-      "tune": "bool?",
-      "notify": "bool?",
-      "speak": "bool?",
-      "ago": "int(30,300)?",
-      "deviation": "float(0.1,6.0)?"
-    },
     "overview": {
       "apikey": "str?",
+      "image": "str?",
       "mode": "list(local|hybrid|roadmap|satellite|terrain)?",
-      "zoom": "int(10,22)?",
-      "image": "str?"
+      "zoom": "int(10,22)?"
     },
+    "password": "str?",
+    "person": {
+      "ago": "int(30,300)?",
+      "deviation": "float(0.1,6.0)?",
+      "entity": "str?",
+      "notify": "bool?",
+      "speak": "bool?",
+      "tune": "bool?",
+      "user": "str?"
+    },
+    "reload": "bool?",
     "router_name": "str?",
-    "camera_restart": "bool?",
-    "reload": "bool?"
+    "timezone": "str?",
+    "username": "str?",
+    "vehicle": {
+      "ago": "int(30,300)?",
+      "deviation": "float(0.1,6.0)?",
+      "entity": "str?",
+      "notify": "bool?",
+      "speak": "bool?",
+      "tune": "bool?"
+    },
+    "w3w": {
+      "apikey": "str?",
+      "email": "str?"
+    }
   },
   "slug": "motion-video0",
   "stage": "stable",
