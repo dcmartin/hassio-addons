@@ -81,6 +81,7 @@
   "privileged": [
     "SYS_ADMIN"
   ],
+  "reload": true,
   "runtime": {
     "io.containerd.runc.v2": false,
     "io.containerd.runtime.v1.linux": false,
