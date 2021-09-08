@@ -89,67 +89,25 @@
     "runc": true
   },
   "schema": {
-    "animal": {
-      "ago": "int(30,300)?",
-      "deviation": "float(0.1,6.0)?",
-      "entity": "str?",
-      "notify": "bool?",
-      "speak": "bool?",
-      "tune": "bool?"
-    },
     "camera_restart": "bool?",
-    "cameras": [
-      {
-        "brightness": "int?",
-        "changes": "list(on|off)?",
-        "contrast": "int?",
-        "despeckle": "str?",
-        "device": "str?",
-        "event_gap": "int?",
-        "fov": "int?",
-        "framerate": "int(2,100)?",
-        "height": "int?",
-        "hue": "int?",
-        "icon": "str?",
-        "left": "int(0,100)?",
-        "lightswitch_frames": "int(0,1000)?",
-        "lightswitch_percent": "int(0,100)?",
-        "mac": "str?",
-        "mjpeg_url": "url?",
-        "movie_max_time": "int(1,120)?",
-        "movie_output": "list(off|mp4|mpeg4|3gp)?",
-        "movie_quality": "int(1,100)?",
-        "name": "str",
-        "netcam_url": "str?",
-        "netcam_userpass": "str?",
-        "palette": "int?",
-        "password": "str?",
-        "picture_quality": "int(1,100)?",
-        "port": "port?",
-        "rotate": "int(0,360)?",
-        "saturation": "int?",
-        "still_image_url": "url?",
-        "stream_maxrate": "int(2,100)?",
-        "stream_motion": "list(on|off)?",
-        "stream_quality": "int(10,100)?",
-        "text_scale": "int(1,10)?",
-        "threshold": "int?",
-        "threshold_maximum": "int?",
-        "threshold_percent": "int(0,100)?",
-        "threshold_tune": "list(on|off)?",
-        "top": "int(0,100)?",
-        "type": "list(local|netcam|ftpd|mqtt)",
-        "username": "str?",
-        "userpass": "str?",
-        "w3w": [
-          "str?",
-          "str?",
-          "str?"
-        ],
-        "width": "int?"
-      }
-    ],
+    "group": "str?",
+    "device": "str?",
     "client": "str?",
+    "timezone": "str?",
+    "latitude": "float?",
+    "longitude": "float?",
+    "elevation": "int?",
+    "log_file": "str?",
+    "log_level": "str",
+    "log_motion": "int?",
+    "log_motion_level": "list(emergency|alert|critical|error|warn|notice|info|debug|all)?",
+    "log_motion_type": "list(COR|STR|ENC|NET|DBL|EVT|TRK|VID|ALL)?",
+    "log_type": "str?",
+    "reload": "bool?",
+    "router_name": "str?",
+    "username": "str?",
+    "password": "str?",
+    "format": "list(gif|mp4)?",
     "default": {
       "brightness": "int?",
       "changes": "list(on|off)?",
@@ -188,26 +146,10 @@
       "username": "str?",
       "width": "int?"
     },
-    "device": "str?",
-    "elevation": "int?",
-    "entity": {
-      "ago": "int(30,300)?",
-      "deviation": "float(0.1,6.0)?",
-      "name": "str?",
-      "notify": "bool?",
-      "speak": "bool?",
-      "tune": "bool?"
+    "w3w": {
+      "apikey": "str?",
+      "email": "str?"
     },
-    "format": "list(gif|mp4)?",
-    "group": "str?",
-    "latitude": "float?",
-    "log_file": "str?",
-    "log_level": "str",
-    "log_motion": "int?",
-    "log_motion_level": "list(emergency|alert|critical|error|warn|notice|info|debug|all)?",
-    "log_motion_type": "list(COR|STR|ENC|NET|DBL|EVT|TRK|VID|ALL)?",
-    "log_type": "str?",
-    "longitude": "float?",
     "media": {
       "mask": "bool?",
       "save": "bool?"
@@ -224,7 +166,6 @@
       "mode": "list(local|hybrid|roadmap|satellite|terrain)?",
       "zoom": "int(10,22)?"
     },
-    "password": "str?",
     "person": {
       "ago": "int(30,300)?",
       "deviation": "float(0.1,6.0)?",
@@ -234,10 +175,6 @@
       "tune": "bool?",
       "user": "str?"
     },
-    "reload": "bool?",
-    "router_name": "str?",
-    "timezone": "str?",
-    "username": "str?",
     "vehicle": {
       "ago": "int(30,300)?",
       "deviation": "float(0.1,6.0)?",
@@ -246,10 +183,73 @@
       "speak": "bool?",
       "tune": "bool?"
     },
-    "w3w": {
-      "apikey": "str?",
-      "email": "str?"
-    }
+    "animal": {
+      "ago": "int(30,300)?",
+      "deviation": "float(0.1,6.0)?",
+      "entity": "str?",
+      "notify": "bool?",
+      "speak": "bool?",
+      "tune": "bool?"
+    },
+    "entity": {
+      "ago": "int(30,300)?",
+      "deviation": "float(0.1,6.0)?",
+      "name": "str?",
+      "notify": "bool?",
+      "speak": "bool?",
+      "tune": "bool?"
+    },
+    "cameras": [
+      {
+        "brightness": "int?",
+        "changes": "list(on|off)?",
+        "contrast": "int?",
+        "despeckle": "str?",
+        "device": "str?",
+        "event_gap": "int?",
+        "fov": "int?",
+        "framerate": "int(2,100)?",
+        "height": "int?",
+        "hue": "int?",
+        "icon": "str?",
+        "left": "int(0,100)?",
+        "lightswitch_frames": "int(0,1000)?",
+        "lightswitch_percent": "int(0,100)?",
+        "mac": "str?",
+        "mjpeg_url": "url?",
+        "movie_max_time": "int(1,120)?",
+        "movie_output": "list(off|mp4|mpeg4|3gp)?",
+        "movie_quality": "int(1,100)?",
+        "name": "str",
+        "netcam_url": "str?",
+        "netcam_userpass": "str?",
+        "palette": "int?",
+        "picture_quality": "int(1,100)?",
+        "port": "port?",
+        "rotate": "int(0,360)?",
+        "saturation": "int?",
+        "still_image_url": "url?",
+        "stream_maxrate": "int(2,100)?",
+        "stream_motion": "list(on|off)?",
+        "stream_quality": "int(10,100)?",
+        "text_scale": "int(1,10)?",
+        "threshold": "int?",
+        "threshold_maximum": "int?",
+        "threshold_percent": "int(0,100)?",
+        "threshold_tune": "list(on|off)?",
+        "top": "int(0,100)?",
+        "type": "list(local|netcam|ftpd|mqtt)",
+        "username": "str?",
+        "password": "str?",
+        "userpass": "str?",
+        "width": "int?",
+        "w3w": [
+          "str?",
+          "str?",
+          "str?"
+        ]
+      }
+    ]
   },
   "slug": "motion-video0",
   "stage": "stable",
@@ -257,7 +257,7 @@
   "timeout": 300,
   "tmpfs": true,
   "url": "https://github.com/dcmartin/addon-motion-video0/",
-  "version": "0.10.134",
+  "version": "0.10.135",
   "video": true,
   "webui": "http://[HOST]:[PORT:7999]/"
 }
