@@ -1,28 +1,61 @@
 {
+  "name": "Motion Classic",
+  "description": "Classic Motion addon with support for local and remote video devices",
+  "url": "https://github.com/dcmartin/addon-motion-video0/",
+  "slug": "motion-video0",
+  "image": "dcmartin/{arch}-addon-motion-video0",
+  "stage": "stable",
+  "version": "0.10.137",
   "arch": [
     "aarch64",
     "amd64",
     "armv7"
   ],
-  "audio": false,
-  "boot": "auto",
-  "description": "Classic Motion addon with support for local and remote video devices",
-  "environment": {
-    "LOG_FORMAT": "{LEVEL}: {MESSAGE}"
-  },
   "hassio_api": false,
   "hassio_role": "default",
   "homeassistant_api": false,
   "host_network": true,
-  "image": "dcmartin/{arch}-addon-motion-video0",
   "ingress": true,
   "ingress_port": 7999,
+  "startup": "services",
+  "timeout": 300,
+  "tmpfs": true,
+  "audio": false,
+  "video": true,
+  "webui": "http://[HOST]:[PORT:7999]/",
+  "boot": "auto",
+  "environment": {
+    "LOG_FORMAT": "{LEVEL}: {MESSAGE}"
+  },
   "map": [
     "share:rw",
     "config:rw"
   ],
-  "name": "Motion Classic",
   "options": {
+    "log_level": "info",
+    "group": "!secret motion-group",
+    "device": "!secret motion-device",
+    "client": "!secret motion-client",
+    "timezone": "!secret ha-timezone",
+    "latitude": "!secret ha-latitude",
+    "longitude": "!secret ha-longitude",
+    "default": {
+      "netcam_userpass": "!secret netcam-userpass",
+      "password": "!secret motioncam-password",
+      "username": "!secret motioncam-username"
+    },
+    "mqtt": {
+      "host": "!secret mqtt-broker",
+      "password": "!secret mqtt-password",
+      "port": "!secret mqtt-port",
+      "username": "!secret mqtt-username"
+    },
+    "overview": {},
+    "media": {},
+    "w3w": {},
+    "entity": {},
+    "person": {},
+    "vehicle": {},
     "animal": {},
     "cameras": [
       {
@@ -39,31 +72,7 @@
         "type": "netcam",
         "w3w": []
       }
-    ],
-    "client": "!secret motion-client",
-    "default": {
-      "netcam_userpass": "!secret netcam-userpass",
-      "password": "!secret motioncam-password",
-      "username": "!secret motioncam-username"
-    },
-    "device": "!secret motion-device",
-    "entity": {},
-    "group": "!secret motion-group",
-    "latitude": "!secret ha-latitude",
-    "log_level": "info",
-    "longitude": "!secret ha-longitude",
-    "media": {},
-    "mqtt": {
-      "host": "!secret mqtt-broker",
-      "password": "!secret mqtt-password",
-      "port": "!secret mqtt-port",
-      "username": "!secret mqtt-username"
-    },
-    "overview": {},
-    "person": {},
-    "timezone": "!secret ha-timezone",
-    "vehicle": {},
-    "w3w": {}
+    ]
   },
   "panel_admin": true,
   "panel_icon": "mdi:motion-sensor",
@@ -89,7 +98,6 @@
     "runc": true
   },
   "schema": {
-    "camera_restart": "bool?",
     "group": "str?",
     "device": "str?",
     "client": "str?",
@@ -108,6 +116,7 @@
     "username": "str?",
     "password": "str?",
     "format": "list(gif|mp4)?",
+    "camera_restart": "bool?",
     "default": {
       "brightness": "int?",
       "changes": "list(on|off)?",
@@ -147,6 +156,7 @@
       "width": "int?"
     },
     "w3w": {
+      "words": "str?",
       "apikey": "str?",
       "email": "str?"
     },
@@ -250,14 +260,5 @@
         ]
       }
     ]
-  },
-  "slug": "motion-video0",
-  "stage": "stable",
-  "startup": "services",
-  "timeout": 300,
-  "tmpfs": true,
-  "url": "https://github.com/dcmartin/addon-motion-video0/",
-  "version": "0.10.136",
-  "video": true,
-  "webui": "http://[HOST]:[PORT:7999]/"
+  }
 }
