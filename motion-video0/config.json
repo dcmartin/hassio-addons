@@ -5,7 +5,7 @@
   "slug": "motion-video0",
   "image": "dcmartin/{arch}-addon-motion-video0",
   "stage": "stable",
-  "version": "0.10.153",
+  "version": "0.10.154",
   "arch": [
     "aarch64",
     "amd64",
