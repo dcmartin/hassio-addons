@@ -1,62 +1,29 @@
 {
-  "name": "Motion Classic",
-  "description": "Classic Motion addon with support for local and remote video devices",
-  "url": "https://github.com/dcmartin/addon-motion-video0/",
-  "slug": "motion-video0",
-  "image": "dcmartin/{arch}-addon-motion-video0",
-  "stage": "stable",
-  "version": "0.10.160",
   "arch": [
     "aarch64",
     "amd64",
+    "i386",
     "armv7"
   ],
-  "init": false,
-  "hassio_api": false,
-  "hassio_role": "default",
-  "homeassistant_api": false,
-  "host_network": true,
-  "ingress": true,
-  "ingress_port": 7999,
-  "startup": "services",
-  "timeout": 300,
-  "tmpfs": true,
-  "audio": false,
-  "video": true,
-  "webui": "http://[HOST]:[PORT:7999]/",
+  "audio": true,
   "boot": "auto",
+  "description": "Classic Motion addon with support for local and remote video devices",
   "environment": {
     "LOG_FORMAT": "{LEVEL}: {MESSAGE}"
   },
+  "hassio_api": true,
+  "hassio_role": "manager",
+  "homeassistant_api": true,
+  "host_network": true,
+  "image": "dcmartin/{arch}-addon-motion-video0",
+  "ingress": true,
+  "ingress_port": 7999,
   "map": [
     "share:rw",
     "config:rw"
   ],
+  "name": "Motion Classic",
   "options": {
-    "log_level": "info",
-    "group": "!secret motion-group",
-    "device": "!secret motion-device",
-    "client": "!secret motion-client",
-    "timezone": "!secret ha-timezone",
-    "latitude": "!secret ha-latitude",
-    "longitude": "!secret ha-longitude",
-    "default": {
-      "netcam_userpass": "!secret netcam-userpass",
-      "password": "!secret motioncam-password",
-      "username": "!secret motioncam-username"
-    },
-    "mqtt": {
-      "host": "!secret mqtt-broker",
-      "password": "!secret mqtt-password",
-      "port": "!secret mqtt-port",
-      "username": "!secret mqtt-username"
-    },
-    "overview": {},
-    "media": {},
-    "w3w": {},
-    "entity": {},
-    "person": {},
-    "vehicle": {},
     "animal": {},
     "cameras": [
       {
@@ -73,7 +40,31 @@
         "type": "netcam",
         "w3w": []
       }
-    ]
+    ],
+    "client": "!secret motion-client",
+    "default": {
+      "netcam_userpass": "!secret netcam-userpass",
+      "password": "!secret motioncam-password",
+      "username": "!secret motioncam-username"
+    },
+    "device": "!secret motion-device",
+    "entity": {},
+    "group": "!secret motion-group",
+    "latitude": "!secret ha-latitude",
+    "log_level": "info",
+    "longitude": "!secret ha-longitude",
+    "media": {},
+    "mqtt": {
+      "host": "!secret mqtt-broker",
+      "password": "!secret mqtt-password",
+      "port": "!secret mqtt-port",
+      "username": "!secret mqtt-username"
+    },
+    "overview": {},
+    "person": {},
+    "timezone": "!secret ha-timezone",
+    "vehicle": {},
+    "w3w": {}
   },
   "panel_admin": true,
   "panel_icon": "mdi:motion-sensor",
@@ -99,26 +90,69 @@
     "runc": true
   },
   "schema": {
-    "group": "str?",
-    "device": "str?",
-    "client": "str?",
-    "timezone": "str?",
-    "latitude": "float?",
-    "longitude": "float?",
-    "elevation": "int?",
-    "log_file": "str?",
-    "log_level": "str",
-    "log_motion": "int?",
-    "log_motion_level": "list(emergency|alert|critical|error|warn|notice|info|debug|all)?",
-    "log_motion_type": "list(COR|STR|ENC|NET|DBL|EVT|TRK|VID|ALL)?",
-    "log_type": "str?",
-    "reload": "bool?",
-    "router_name": "str?",
-    "username": "str?",
-    "password": "str?",
-    "format": "list(gif|mp4)?",
-    "camera_restart": "bool?",
+    "animal": {
+      "ago": "int(30,300)?",
+      "deviation": "float(0.1,6.0)?",
+      "entity": "str?",
+      "notify": "bool?",
+      "speak": "bool?",
+      "tune": "bool?"
+    },
     "camera_any": "bool?",
+    "camera_restart": "bool?",
+    "cameras": [
+      {
+        "brightness": "int?",
+        "changes": "list(on|off)?",
+        "contrast": "int?",
+        "despeckle": "str?",
+        "device": "str?",
+        "event_gap": "int?",
+        "fov": "int?",
+        "framerate": "int(2,100)?",
+        "height": "int?",
+        "hue": "int?",
+        "icon": "str?",
+        "left": "int(0,100)?",
+        "lightswitch_frames": "int(0,1000)?",
+        "lightswitch_percent": "int(0,100)?",
+        "mac": "str?",
+        "mjpeg_url": "url?",
+        "movie_max_time": "int(1,120)?",
+        "movie_output": "list(off|mp4|mpeg4|3gp)?",
+        "movie_quality": "int(1,100)?",
+        "name": "str",
+        "netcam_url": "str?",
+        "netcam_userpass": "str?",
+        "palette": "int?",
+        "password": "str?",
+        "picture_quality": "int(1,100)?",
+        "port": "port?",
+        "rotate": "int(0,360)?",
+        "saturation": "int?",
+        "still_image_url": "url?",
+        "stream_maxrate": "int(2,100)?",
+        "stream_motion": "list(on|off)?",
+        "stream_quality": "int(10,100)?",
+        "text_scale": "int(1,10)?",
+        "threshold": "int?",
+        "threshold_maximum": "int?",
+        "threshold_percent": "int(0,100)?",
+        "threshold_tune": "list(on|off)?",
+        "top": "int(0,100)?",
+        "type": "list(local|netcam|ftpd|mqtt)",
+        "username": "str?",
+        "userpass": "str?",
+        "w3w": [
+          "str?",
+          "str?",
+          "str?"
+        ],
+        "width": "int?",
+        "words": "str?"
+      }
+    ],
+    "client": "str?",
     "default": {
       "brightness": "int?",
       "changes": "list(on|off)?",
@@ -157,11 +191,26 @@
       "username": "str?",
       "width": "int?"
     },
-    "w3w": {
-      "words": "str?",
-      "apikey": "str?",
-      "email": "str?"
+    "device": "str?",
+    "elevation": "int?",
+    "entity": {
+      "ago": "int(30,300)?",
+      "deviation": "float(0.1,6.0)?",
+      "name": "str?",
+      "notify": "bool?",
+      "speak": "bool?",
+      "tune": "bool?"
     },
+    "format": "list(gif|mp4)?",
+    "group": "str?",
+    "latitude": "float?",
+    "log_file": "str?",
+    "log_level": "str",
+    "log_motion": "int?",
+    "log_motion_level": "list(emergency|alert|critical|error|warn|notice|info|debug|all)?",
+    "log_motion_type": "list(COR|STR|ENC|NET|DBL|EVT|TRK|VID|ALL)?",
+    "log_type": "str?",
+    "longitude": "float?",
     "media": {
       "mask": "bool?",
       "save": "bool?"
@@ -178,6 +227,7 @@
       "mode": "list(local|hybrid|roadmap|satellite|terrain)?",
       "zoom": "int(10,22)?"
     },
+    "password": "str?",
     "person": {
       "ago": "int(30,300)?",
       "deviation": "float(0.1,6.0)?",
@@ -187,6 +237,10 @@
       "tune": "bool?",
       "user": "str?"
     },
+    "reload": "bool?",
+    "router_name": "str?",
+    "timezone": "str?",
+    "username": "str?",
     "vehicle": {
       "ago": "int(30,300)?",
       "deviation": "float(0.1,6.0)?",
@@ -195,73 +249,19 @@
       "speak": "bool?",
       "tune": "bool?"
     },
-    "animal": {
-      "ago": "int(30,300)?",
-      "deviation": "float(0.1,6.0)?",
-      "entity": "str?",
-      "notify": "bool?",
-      "speak": "bool?",
-      "tune": "bool?"
-    },
-    "entity": {
-      "ago": "int(30,300)?",
-      "deviation": "float(0.1,6.0)?",
-      "name": "str?",
-      "notify": "bool?",
-      "speak": "bool?",
-      "tune": "bool?"
-    },
-    "cameras": [
-      {
-        "brightness": "int?",
-        "changes": "list(on|off)?",
-        "contrast": "int?",
-        "despeckle": "str?",
-        "device": "str?",
-        "event_gap": "int?",
-        "fov": "int?",
-        "framerate": "int(2,100)?",
-        "height": "int?",
-        "hue": "int?",
-        "icon": "str?",
-        "left": "int(0,100)?",
-        "lightswitch_frames": "int(0,1000)?",
-        "lightswitch_percent": "int(0,100)?",
-        "mac": "str?",
-        "mjpeg_url": "url?",
-        "movie_max_time": "int(1,120)?",
-        "movie_output": "list(off|mp4|mpeg4|3gp)?",
-        "movie_quality": "int(1,100)?",
-        "name": "str",
-        "netcam_url": "str?",
-        "netcam_userpass": "str?",
-        "palette": "int?",
-        "picture_quality": "int(1,100)?",
-        "port": "port?",
-        "rotate": "int(0,360)?",
-        "saturation": "int?",
-        "still_image_url": "url?",
-        "stream_maxrate": "int(2,100)?",
-        "stream_motion": "list(on|off)?",
-        "stream_quality": "int(10,100)?",
-        "text_scale": "int(1,10)?",
-        "threshold": "int?",
-        "threshold_maximum": "int?",
-        "threshold_percent": "int(0,100)?",
-        "threshold_tune": "list(on|off)?",
-        "top": "int(0,100)?",
-        "type": "list(local|netcam|ftpd|mqtt)",
-        "username": "str?",
-        "password": "str?",
-        "userpass": "str?",
-        "width": "int?",
-        "words": "str?",
-        "w3w": [
-          "str?",
-          "str?",
-          "str?"
-        ]
-      }
-    ]
-  }
+    "w3w": {
+      "apikey": "str?",
+      "email": "str?",
+      "words": "str?"
+    }
+  },
+  "slug": "motion-video0",
+  "stage": "stable",
+  "startup": "services",
+  "timeout": 300,
+  "tmpfs": true,
+  "url": "https://github.com/dcmartin/addon-motion-video0/",
+  "version": "0.11.0",
+  "video": true,
+  "webui": "http://[HOST]:[PORT:7999]/"
 }
