@@ -254,6 +254,18 @@
       "apikey": "str?",
       "email": "str?",
       "words": "str?"
+    },
+    "devices": {
+      "person": "str?",
+      "primary": "str?",
+      "secondary": "str?",
+      "tertiary": "str?"
+    },
+    "roles": {
+      "person": "str?",
+      "primary": "str?",
+      "secondary": "str?",
+      "tertiary": "str?"
     }
   },
   "slug": "motion-video0",
@@ -262,7 +274,7 @@
   "timeout": 300,
   "tmpfs": true,
   "url": "https://github.com/dcmartin/addon-motion-video0/",
-  "version": "0.11.7",
+  "version": "0.12.0",
   "video": true,
   "webui": "http://[HOST]:[PORT:7999]/"
 }
