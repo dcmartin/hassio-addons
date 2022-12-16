@@ -254,18 +254,6 @@
       "apikey": "str?",
       "email": "str?",
       "words": "str?"
-    },
-    "devices": {
-      "person": "str?",
-      "primary": "str?",
-      "secondary": "str?",
-      "tertiary": "str?"
-    },
-    "roles": {
-      "person": "str?",
-      "primary": "str?",
-      "secondary": "str?",
-      "tertiary": "str?"
     }
   },
   "slug": "motion-video0",
