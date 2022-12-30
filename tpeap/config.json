@@ -1,6 +1,5 @@
 {
   "arch": [
-    "armv7",
     "aarch64",
     "amd64"
   ],
