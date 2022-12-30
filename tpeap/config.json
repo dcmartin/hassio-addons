@@ -1,5 +1,7 @@
 {
   "arch": [
+    "armv7",
+    "aarch64",
     "amd64"
   ],
   "boot": "auto",
@@ -40,6 +42,6 @@
   "timeout": 90,
   "tmpfs": true,
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/tpeap/README.md",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "webui": "https://[HOST]:[PORT:8043]"
 }
