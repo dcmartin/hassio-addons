@@ -34,7 +34,7 @@ main()
 
   bashio::log.info "Setting TIMEZONE ${VALUE}" >&2
 
-  cp /usr/share/zoneinfo/${VALUE} /etc/localtime
+  cp -f /usr/share/zoneinfo/${VALUE} /etc/localtime
   JSON="${JSON}"',"timezone":"'"${VALUE}"'"'
   # PHAROS
   JSON="${JSON}"',"tpeap":{"port":8088}'
