@@ -14,7 +14,7 @@ tpeap_install()
 {
   bashio::log.trace "${FUNCNAME[0]}"
 
-  cd /opt/omada/Omada_SDN_Controller_v4.1.5_linux_x64
+  cd /opt/omada/Omada_SDN_Controller_v5.6.3_Linux_x64
   yes YES | bash -x ./install.sh &> /dev/stderr || true
 }
 
