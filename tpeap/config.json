@@ -5,7 +5,7 @@
   ],
   "init": false,
   "boot": "auto",
-  "description": "TP-Link Omada server (v5.6.3)",
+  "description": "TP-Link Omada server (v5.7.4)",
   "devices": [],
   "environment": {
     "LOG_FORMAT": "{LEVEL}: {MESSAGE}"
