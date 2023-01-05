@@ -35,7 +35,7 @@ RUN rm -fr \
 RUN \
   mkdir /opt/omada \
   && \
-  wget -qO - https://static.tp-link.com/upload/software/2022/202210/20221024/Omada_SDN_Controller_v5.7.4_Linux_x64.tar.gz \
+  wget -qO - https://static.tp-link.com/upload/software/2022/202211/20221121/Omada_SDN_Controller_v5.7.4_Linux_x64.tar.gz \
     | tar xzf - -C /opt/omada 
 
 CMD ["/usr/bin/run.sh"]
