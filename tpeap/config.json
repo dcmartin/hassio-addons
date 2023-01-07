@@ -16,7 +16,7 @@
   "host_network": true,
   "image": "dcmartin/{arch}-addon-tpeap",
   "ingress": true,
-  "ingress_port": 8043,
+  "ingress_port": 8088,
   "map": [],
   "name": "TP-Link EAP Server",
   "options": {
@@ -42,6 +42,6 @@
   "timeout": 90,
   "tmpfs": true,
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/tpeap/README.md",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "webui": "https://[HOST]:[PORT:8043]"
 }
