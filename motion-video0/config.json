@@ -13,6 +13,7 @@
   },
   "hassio_api": true,
   "hassio_role": "manager",
+  "homeassistant": "2023.2.2",
   "homeassistant_api": true,
   "host_network": true,
   "image": "dcmartin/{arch}-addon-motion-video0",
@@ -25,47 +26,100 @@
   ],
   "name": "Motion Classic",
   "options": {
-    "animal": {},
+    "animal": {
+      "tune": true,
+      "deviation": 1.5,
+      "ago": 30,
+      "notify": false,
+      "speak": false
+    },
     "cameras": [
       {
-        "icon": "cctv",
-        "name": "camera1",
-        "netcam_url": "rtsp://192.168.1.222/live",
+        "name": "wyze-rtsp",
         "type": "netcam",
-        "w3w": []
+        "icon": "cctv",
+        "netcam_url": "rtsp://192.168.1.222/live",
+        "w3w": [
+          "glass",
+          "grapes",
+          "wiser"
+        ]
       },
       {
-        "icon": "webcam",
-        "name": "camera2",
-        "netcam_url": "rtsp://192.168.1.223/live",
+        "name": "panasonic-http",
         "type": "netcam",
-        "w3w": []
+        "netcam_url": "http://192.168.1.162/nphMotionJpeg?Resolution=640x480&Quality=Clarity",
+        "netcam_userpass": "notthesame:astheothers",
+        "icon": "webcam",
+        "w3w": [
+          "pushy",
+          "funded",
+          "slick"
+        ],
+        "entity": {
+          "notify": true,
+          "speak": true,
+          "entity": "person",
+          "confirmed": true,
+          "critical": true
+        }
+      },
+      {
+        "name": "reolink-rtsp",
+        "type": "netcam",
+        "netcam_url": "rtsp://192.168.1.184//h264Preview_01_sub",
+        "netcam_userpass": "another:different",
+        "icon": "webcam",
+        "w3w": [
+          "bike",
+          "mice",
+          "zones"
+        ],
+        "entity": {
+          "notify": true,
+          "speak": true,
+          "entity": "person",
+          "confirmed": false,
+          "critical": true
+        }
       }
     ],
-    "client": "!secret motion-client",
-    "default": {
-      "netcam_userpass": "!secret netcam-userpass",
-      "password": "!secret motioncam-password",
-      "username": "!secret motioncam-username"
-    },
-    "device": "!secret motion-device",
+    "device": "",
     "entity": {},
-    "group": "!secret motion-group",
-    "latitude": "!secret ha-latitude",
+    "group": "motion",
+    "latitude": "none",
     "log_level": "info",
-    "longitude": "!secret ha-longitude",
-    "media": {},
+    "longitude": "none",
+    "media": {
+      "save": true,
+      "mask": false
+    },
     "mqtt": {
-      "host": "!secret mqtt-broker",
-      "password": "!secret mqtt-password",
-      "port": "!secret mqtt-port",
-      "username": "!secret mqtt-username"
+      "host": "core-mosquitto",
+      "password": "password",
+      "port": "1883",
+      "username": "username"
     },
     "overview": {},
-    "person": {},
-    "timezone": "!secret ha-timezone",
-    "vehicle": {},
-    "w3w": {}
+    "person": {
+      "tune": true,
+      "deviation": 1.5,
+      "ago": 30,
+      "notify": false,
+      "speak": false
+    },
+    "timezone": "GMT",
+    "vehicle": {
+      "tune": true,
+      "deviation": 1.5,
+      "ago": 30,
+      "notify": false,
+      "speak": false
+    },
+    "w3w": {
+      "apikey": "APIKEY",
+      "words": "///what.three.words"
+    }
   },
   "panel_admin": true,
   "panel_icon": "mdi:motion-sensor",
@@ -262,7 +316,7 @@
   "timeout": 300,
   "tmpfs": true,
   "url": "https://github.com/dcmartin/addon-motion-video0/",
-  "version": "0.12.2",
+  "version": "0.13.1",
   "video": true,
   "webui": "http://[HOST]:[PORT:7999]/"
 }
