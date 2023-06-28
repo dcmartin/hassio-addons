@@ -43,6 +43,6 @@
   "timeout": 90,
   "tmpfs": true,
   "url": "https://github.com/dcmartin/hassio-addons/tree/master/tpeap/README.md",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "webui": "https://[HOST]:[PORT:8043]"
 }
