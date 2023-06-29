@@ -4,7 +4,7 @@
     "amd64"
   ],
   "boot": "auto",
-  "description": "TP-Link Omada server (v5.7.4)",
+  "description": "TP-Link Omada server (v5.9.31)",
   "devices": [],
   "environment": {
     "LOG_FORMAT": "{LEVEL}: {MESSAGE}"
